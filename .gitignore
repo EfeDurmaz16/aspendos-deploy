@@ -2,7 +2,8 @@
 node_modules/
 .pnpm-store/
 
-# Build outputs
+# Local samples (not tracked)
+ui-samples/
 dist/
 .next/
 .turbo/
