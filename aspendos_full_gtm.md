@@ -64,9 +64,10 @@ ULTRA ($99/mo):
 - **New margin: 48%** âœ“
 
 **New pricing:**
+- STARTER: $19/mo 
 - PRO: $49/mo (unchanged)
 - ULTRA: $129/mo (was $99) â€” still cheaper than ChatGPT Pro ($200) + Claude ($20) + Gemini ($20)
-- Yearly: PRO $499, ULTRA $1,299 (save $249 on ULTRA)
+- Yearly: STARTER $199, PRO $499, ULTRA $1,299 (save $249 on ULTRA)
 
 ---
 

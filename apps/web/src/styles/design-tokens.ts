@@ -270,7 +270,7 @@ export const typography = {
             textTransform: 'uppercase' as const,
         },
         labelSmall: {
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Berkeley Mono', monospace",
             fontSize: '0.75rem',
             fontWeight: 500,
             lineHeight: 1.4,
