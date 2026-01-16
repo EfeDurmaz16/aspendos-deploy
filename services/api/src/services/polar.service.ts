@@ -1,26 +1,20 @@
 /**
  * Polar Billing Service
- * Handles Polar SDK integration for subscriptions and checkout.
+ * Handles Polar API integration for subscriptions and checkout.
+ * Uses direct fetch calls for more control over API interface.
  */
-import { Polar } from '@polar-sh/sdk';
 import { prisma } from '@aspendos/db';
 import crypto from 'crypto';
+import { TIER_CONFIG, TierName, getTierConfig } from '../config/tiers';
 
-// Initialize Polar client
-const polar = new Polar({
-    accessToken: process.env.POLAR_ACCESS_TOKEN || '',
-});
+const POLAR_API_URL = 'https://api.polar.sh/v1';
+const POLAR_ACCESS_TOKEN = process.env.POLAR_ACCESS_TOKEN || '';
 
 // Product IDs from Polar dashboard
 const PRODUCT_IDS = {
+    STARTER: process.env.POLAR_STARTER_PRODUCT_ID || '',
     PRO: process.env.POLAR_PRO_PRODUCT_ID || '',
     ULTRA: process.env.POLAR_ULTRA_PRODUCT_ID || '',
-};
-
-const TIER_CREDITS = {
-    pro: 50,
-    ultra: 120,
-    enterprise: 500,
 };
 
 // ============================================
@@ -30,7 +24,7 @@ const TIER_CREDITS = {
 export interface CreateCheckoutOptions {
     userId: string;
     email: string;
-    plan: 'pro' | 'ultra';
+    plan: 'starter' | 'pro' | 'ultra';
     successUrl: string;
     cancelUrl?: string;
 }
@@ -39,21 +33,35 @@ export interface CreateCheckoutOptions {
  * Create a checkout session for subscription
  */
 export async function createCheckout(options: CreateCheckoutOptions) {
-    const productId = options.plan === 'ultra' ? PRODUCT_IDS.ULTRA : PRODUCT_IDS.PRO;
+    const productId = PRODUCT_IDS[options.plan.toUpperCase() as keyof typeof PRODUCT_IDS];
 
     if (!productId) {
         throw new Error(`Product ID not configured for plan: ${options.plan}`);
     }
 
-    const checkout = await polar.checkouts.custom.create({
-        productId,
-        successUrl: options.successUrl,
-        customerEmail: options.email,
-        metadata: {
-            userId: options.userId,
-            plan: options.plan,
+    const response = await fetch(`${POLAR_API_URL}/checkouts/`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${POLAR_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+            product_id: productId,
+            success_url: options.successUrl,
+            customer_email: options.email,
+            metadata: {
+                userId: options.userId,
+                plan: options.plan,
+            },
+        }),
     });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Polar checkout failed: ${error}`);
+    }
+
+    const checkout = await response.json() as { url: string; id: string };
 
     return {
         checkoutUrl: checkout.url,
@@ -66,29 +74,26 @@ export async function createCheckout(options: CreateCheckoutOptions) {
 // ============================================
 
 /**
- * Get subscription for user from Polar
- */
-export async function getSubscription(customerId: string) {
-    try {
-        const subscriptions = await polar.subscriptions.list({
-            customerId,
-            active: true,
-        });
-
-        return subscriptions.result.items[0] || null;
-    } catch (error) {
-        console.error('Error fetching subscription:', error);
-        return null;
-    }
-}
-
-/**
- * Cancel subscription
+ * Cancel subscription (at period end)
  */
 export async function cancelSubscription(subscriptionId: string) {
-    return polar.subscriptions.cancel({
-        id: subscriptionId,
+    const response = await fetch(`${POLAR_API_URL}/subscriptions/${subscriptionId}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${POLAR_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            cancel_at_period_end: true,
+        }),
     });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Polar subscription cancel failed: ${error}`);
+    }
+
+    return response.json();
 }
 
 // ============================================
@@ -106,10 +111,15 @@ export function verifyWebhookSignature(
     const hmac = crypto.createHmac('sha256', secret);
     hmac.update(payload);
     const expectedSignature = hmac.digest('hex');
-    return crypto.timingSafeEqual(
-        Buffer.from(signature),
-        Buffer.from(expectedSignature)
-    );
+
+    try {
+        return crypto.timingSafeEqual(
+            Buffer.from(signature),
+            Buffer.from(expectedSignature)
+        );
+    } catch {
+        return false;
+    }
 }
 
 export interface PolarWebhookEvent {
@@ -139,15 +149,11 @@ export async function handleWebhook(event: PolarWebhookEvent) {
 
     switch (type) {
         case 'checkout.created':
-            // Checkout started - no action needed
-            break;
-
         case 'checkout.updated':
-            // Checkout in progress
+            // Checkout in progress - no action needed
             break;
 
         case 'order.created':
-            // One-time payment completed
             await handleOrderCreated(data);
             break;
 
@@ -156,19 +162,13 @@ export async function handleWebhook(event: PolarWebhookEvent) {
             break;
 
         case 'subscription.updated':
-            await handleSubscriptionUpdated(data);
-            break;
-
         case 'subscription.active':
             await handleSubscriptionActive(data);
             break;
 
         case 'subscription.canceled':
-            await handleSubscriptionCanceled(data);
-            break;
-
         case 'subscription.revoked':
-            await handleSubscriptionRevoked(data);
+            await handleSubscriptionCanceled(data);
             break;
 
         default:
@@ -179,9 +179,7 @@ export async function handleWebhook(event: PolarWebhookEvent) {
 async function handleOrderCreated(data: PolarWebhookEvent['data']) {
     const userId = data.metadata?.userId;
     if (!userId) return;
-
-    // For one-time purchases, update user credits
-    // (Usually for credit top-ups, not subscriptions)
+    // For one-time purchases - usually credit top-ups
 }
 
 async function handleSubscriptionCreated(data: PolarWebhookEvent['data']) {
@@ -191,7 +189,9 @@ async function handleSubscriptionCreated(data: PolarWebhookEvent['data']) {
         return;
     }
 
-    const plan = data.metadata?.plan || 'pro';
+    const plan = (data.metadata?.plan || 'starter') as 'starter' | 'pro' | 'ultra';
+    const tier = plan.toUpperCase() as TierName;
+    const config = getTierConfig(tier);
 
     // Update or create billing account
     await prisma.billingAccount.upsert({
@@ -202,7 +202,9 @@ async function handleSubscriptionCreated(data: PolarWebhookEvent['data']) {
             subscriptionId: data.id,
             plan,
             status: 'active',
-            monthlyCredit: TIER_CREDITS[plan as keyof typeof TIER_CREDITS] || 50,
+            monthlyCredit: config.monthlyTokens / 1000,
+            chatsRemaining: config.monthlyChats,
+            voiceMinutesRemaining: config.dailyVoiceMinutes * 30,
             creditUsed: 0,
             resetDate: new Date(),
         },
@@ -211,31 +213,16 @@ async function handleSubscriptionCreated(data: PolarWebhookEvent['data']) {
             subscriptionId: data.id,
             plan,
             status: 'active',
-            monthlyCredit: TIER_CREDITS[plan as keyof typeof TIER_CREDITS] || 50,
+            monthlyCredit: config.monthlyTokens / 1000,
+            chatsRemaining: config.monthlyChats,
+            voiceMinutesRemaining: config.dailyVoiceMinutes * 30,
         },
     });
 
     // Update user tier
     await prisma.user.update({
         where: { id: userId },
-        data: { tier: plan.toUpperCase() as 'PRO' | 'ULTRA' | 'ENTERPRISE' },
-    });
-}
-
-async function handleSubscriptionUpdated(data: PolarWebhookEvent['data']) {
-    if (!data.customer_id) return;
-
-    const account = await prisma.billingAccount.findFirst({
-        where: { polarCustomerId: data.customer_id },
-    });
-
-    if (!account) return;
-
-    await prisma.billingAccount.update({
-        where: { id: account.id },
-        data: {
-            status: data.status || account.status,
-        },
+        data: { tier },
     });
 }
 
@@ -248,12 +235,17 @@ async function handleSubscriptionActive(data: PolarWebhookEvent['data']) {
 
     if (!account) return;
 
+    const tier = account.plan.toUpperCase() as TierName;
+    const config = getTierConfig(tier);
+
     // Reset credits on renewal
     await prisma.billingAccount.update({
         where: { id: account.id },
         data: {
             status: 'active',
             creditUsed: 0,
+            chatsRemaining: config.monthlyChats,
+            voiceMinutesRemaining: config.dailyVoiceMinutes * 30,
             resetDate: new Date(),
         },
     });
@@ -262,34 +254,27 @@ async function handleSubscriptionActive(data: PolarWebhookEvent['data']) {
 async function handleSubscriptionCanceled(data: PolarWebhookEvent['data']) {
     if (!data.customer_id) return;
 
-    await prisma.billingAccount.updateMany({
-        where: { polarCustomerId: data.customer_id },
-        data: { status: 'canceled' },
-    });
-}
-
-async function handleSubscriptionRevoked(data: PolarWebhookEvent['data']) {
-    if (!data.customer_id) return;
-
     const account = await prisma.billingAccount.findFirst({
         where: { polarCustomerId: data.customer_id },
     });
 
     if (!account) return;
 
-    // Downgrade to free tier
+    // Downgrade to starter
+    const starterConfig = getTierConfig('STARTER');
+
     await prisma.billingAccount.update({
         where: { id: account.id },
         data: {
             status: 'canceled',
-            plan: 'pro',
-            monthlyCredit: 0,
+            plan: 'starter',
+            monthlyCredit: starterConfig.monthlyTokens / 1000,
         },
     });
 
     await prisma.user.update({
         where: { id: account.userId },
-        data: { tier: 'PRO' },
+        data: { tier: 'STARTER' },
     });
 }
 
@@ -301,6 +286,5 @@ async function handleSubscriptionRevoked(data: PolarWebhookEvent['data']) {
  * Get Polar customer portal URL for managing subscription
  */
 export async function getCustomerPortalUrl(customerId: string): Promise<string> {
-    // Polar provides a customer portal for subscription management
-    return `https://polar.sh/customer/${customerId}`;
+    return `https://polar.sh/purchases/subscriptions`;
 }

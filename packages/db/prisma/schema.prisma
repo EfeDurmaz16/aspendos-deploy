@@ -20,7 +20,7 @@ model User {
   email     String   @unique
   name      String?
   avatar    String?
-  tier      Tier     @default(PRO)
+  tier      Tier     @default(STARTER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -37,9 +37,9 @@ model User {
 }
 
 enum Tier {
+  STARTER
   PRO
   ULTRA
-  ENTERPRISE
 }
 
 // ============================================
@@ -47,18 +47,21 @@ enum Tier {
 // ============================================
 
 model BillingAccount {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  polarCustomerId  String?
-  stripeCustomerId String?
-  subscriptionId   String?
-  plan             String   @default("pro") // pro, ultra
-  status           String   @default("active") // active, past_due, canceled
-  monthlyCredit    Int      @default(50) // $50 for PRO, $120 for ULTRA
-  creditUsed       Int      @default(0)
-  resetDate        DateTime @default(now())
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  polarCustomerId       String?
+  stripeCustomerId      String?
+  subscriptionId        String?
+  plan                  String   @default("starter") // starter, pro, ultra
+  status                String   @default("active") // active, past_due, canceled
+  billingCycle          String   @default("monthly") // weekly, monthly
+  monthlyCredit         Int      @default(1000) // Token budget in K tokens (1M = 1000)
+  creditUsed            Float    @default(0) // K tokens used
+  chatsRemaining        Int      @default(300) // Chats remaining this period
+  voiceMinutesRemaining Int      @default(300) // Voice minutes remaining (10 min/day * 30)
+  resetDate             DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   creditHistory CreditLog[]

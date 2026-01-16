@@ -32,16 +32,23 @@ app.get('/usage', requireAuth, async (c) => {
     return c.json({ history });
 });
 
+// GET /api/billing/tiers - Get tier comparison
+app.get('/tiers', async (c) => {
+    const comparison = billingService.getTierComparison();
+    return c.json(comparison);
+});
+
 // POST /api/billing/checkout - Create checkout session
 app.post('/checkout', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const user = c.get('user')!;
     const body = await c.req.json();
 
-    const plan = body.plan as 'pro' | 'ultra';
+    const plan = body.plan as 'starter' | 'pro' | 'ultra';
+    const cycle = body.cycle as 'weekly' | 'monthly' || 'monthly';
 
-    if (!['pro', 'ultra'].includes(plan)) {
-        return c.json({ error: 'Invalid plan. Must be "pro" or "ultra"' }, 400);
+    if (!['starter', 'pro', 'ultra'].includes(plan)) {
+        return c.json({ error: 'Invalid plan. Must be "starter", "pro", or "ultra"' }, 400);
     }
 
     try {
@@ -56,6 +63,8 @@ app.post('/checkout', requireAuth, async (c) => {
         return c.json({
             checkout_url: checkoutUrl,
             checkout_id: checkoutId,
+            plan,
+            cycle,
         });
     } catch (error) {
         console.error('Checkout creation failed:', error);

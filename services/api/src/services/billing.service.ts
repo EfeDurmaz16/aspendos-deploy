@@ -3,12 +3,7 @@
  * Handles billing account and credit operations using Prisma.
  */
 import { prisma, BillingAccount, Tier } from '@aspendos/db';
-
-const TIER_CREDITS = {
-    PRO: 50,      // $50/month
-    ULTRA: 120,   // $120/month
-    ENTERPRISE: 500,
-};
+import { TIER_CONFIG, TierName, getTierConfig } from '../config/tiers';
 
 /**
  * Get or create billing account for user
@@ -20,11 +15,16 @@ export async function getOrCreateBillingAccount(userId: string): Promise<Billing
 
     if (existing) return existing;
 
+    // New users start on STARTER
+    const starterConfig = getTierConfig('STARTER');
+
     return prisma.billingAccount.create({
         data: {
             userId,
-            plan: 'pro',
-            monthlyCredit: TIER_CREDITS.PRO,
+            plan: 'starter',
+            monthlyCredit: starterConfig.monthlyTokens / 1000, // Store in K tokens
+            chatsRemaining: starterConfig.monthlyChats,
+            voiceMinutesRemaining: starterConfig.dailyVoiceMinutes * 30,
         },
     });
 }
@@ -34,39 +34,81 @@ export async function getOrCreateBillingAccount(userId: string): Promise<Billing
  */
 export async function getBillingStatus(userId: string) {
     const account = await getOrCreateBillingAccount(userId);
+    const tier = account.plan.toUpperCase() as TierName;
+    const config = getTierConfig(tier);
 
-    const remainingCredit = account.monthlyCredit - account.creditUsed;
+    const tokensUsed = account.creditUsed * 1000; // Convert from K tokens
+    const tokensRemaining = (account.monthlyCredit - account.creditUsed) * 1000;
     const usagePercentage = (account.creditUsed / account.monthlyCredit) * 100;
 
     return {
+        // Plan info
         plan: account.plan,
+        tier,
         status: account.status,
-        monthlyCredit: account.monthlyCredit,
-        creditUsed: account.creditUsed,
-        remainingCredit,
-        usagePercentage: Math.round(usagePercentage),
+
+        // Pricing
+        monthlyPrice: config.monthlyPrice,
+        weeklyPrice: config.weeklyPrice,
+
+        // Usage
+        tokens: {
+            used: tokensUsed,
+            remaining: tokensRemaining,
+            limit: config.monthlyTokens,
+            percentage: Math.round(usagePercentage),
+        },
+        chats: {
+            used: config.monthlyChats - (account.chatsRemaining || config.monthlyChats),
+            remaining: account.chatsRemaining || config.monthlyChats,
+            limit: config.monthlyChats,
+        },
+        voice: {
+            dailyMinutes: config.dailyVoiceMinutes,
+        },
+
+        // Features
+        features: {
+            multiModel: config.multiModel,
+            multiModelLimit: config.multiModelLimit,
+            memoryLevel: config.memoryLevel,
+            memoryInspector: config.memoryInspector,
+            customAgents: config.customAgents,
+            routingPriority: config.routingPriority,
+        },
+
+        // Billing dates
         resetDate: account.resetDate,
+        subscriptionId: account.subscriptionId,
     };
 }
 
 /**
- * Record credit usage
+ * Record token usage
  */
-export async function recordUsage(
+export async function recordTokenUsage(
     userId: string,
-    amount: number,
-    reason: string,
+    tokensIn: number,
+    tokensOut: number,
+    modelId: string,
     metadata?: Record<string, unknown>
 ) {
     const account = await getOrCreateBillingAccount(userId);
+    const totalTokens = tokensIn + tokensOut;
+    const creditsUsed = totalTokens / 1000; // Store in K tokens
 
     // Create credit log
     await prisma.creditLog.create({
         data: {
             billingAccountId: account.id,
-            amount: -amount, // Negative for usage
-            reason,
-            metadata,
+            amount: Math.round(-creditsUsed), // Negative for usage
+            reason: 'model_inference',
+            metadata: {
+                model: modelId,
+                tokens_in: tokensIn,
+                tokens_out: tokensOut,
+                ...metadata,
+            },
         },
     });
 
@@ -74,36 +116,66 @@ export async function recordUsage(
     await prisma.billingAccount.update({
         where: { id: account.id },
         data: {
-            creditUsed: { increment: amount },
+            creditUsed: { increment: creditsUsed },
         },
     });
 }
 
 /**
- * Check if user has sufficient credits
+ * Record chat usage
  */
-export async function hasCredits(userId: string, amount: number): Promise<boolean> {
+export async function recordChatUsage(userId: string) {
+    await prisma.billingAccount.updateMany({
+        where: { userId },
+        data: {
+            chatsRemaining: { decrement: 1 },
+        },
+    });
+}
+
+/**
+ * Check if user has sufficient tokens
+ */
+export async function hasTokens(userId: string, estimatedTokens: number): Promise<boolean> {
     const account = await getOrCreateBillingAccount(userId);
-    return (account.monthlyCredit - account.creditUsed) >= amount;
+    const estimatedCredits = estimatedTokens / 1000;
+    return (account.monthlyCredit - account.creditUsed) >= estimatedCredits;
+}
+
+/**
+ * Check if user has chats remaining
+ */
+export async function hasChatsRemaining(userId: string): Promise<boolean> {
+    const account = await getOrCreateBillingAccount(userId);
+    return (account.chatsRemaining || 0) > 0;
 }
 
 /**
  * Upgrade user to new tier
  */
-export async function upgradeTier(userId: string, newPlan: 'ultra' | 'enterprise') {
-    const credits = newPlan === 'ultra' ? TIER_CREDITS.ULTRA : TIER_CREDITS.ENTERPRISE;
+export async function upgradeTier(userId: string, newPlan: 'starter' | 'pro' | 'ultra') {
+    const tier = newPlan.toUpperCase() as TierName;
+    const config = getTierConfig(tier);
 
-    return prisma.billingAccount.update({
+    // Update billing account
+    await prisma.billingAccount.update({
         where: { userId },
         data: {
             plan: newPlan,
-            monthlyCredit: credits,
+            monthlyCredit: config.monthlyTokens / 1000,
+            chatsRemaining: config.monthlyChats,
         },
+    });
+
+    // Update user tier
+    await prisma.user.update({
+        where: { id: userId },
+        data: { tier: tier as Tier },
     });
 }
 
 /**
- * Reset monthly credits (called by cron job)
+ * Reset monthly credits (called by cron job or webhook)
  */
 export async function resetMonthlyCredits(userId: string) {
     const account = await prisma.billingAccount.findUnique({
@@ -112,17 +184,15 @@ export async function resetMonthlyCredits(userId: string) {
 
     if (!account) return;
 
-    const credits = account.plan === 'ultra'
-        ? TIER_CREDITS.ULTRA
-        : account.plan === 'enterprise'
-            ? TIER_CREDITS.ENTERPRISE
-            : TIER_CREDITS.PRO;
+    const tier = account.plan.toUpperCase() as TierName;
+    const config = getTierConfig(tier);
 
     return prisma.billingAccount.update({
         where: { userId },
         data: {
             creditUsed: 0,
-            monthlyCredit: credits,
+            chatsRemaining: config.monthlyChats,
+            monthlyCredit: config.monthlyTokens / 1000,
             resetDate: new Date(),
         },
     });
@@ -143,4 +213,15 @@ export async function getUsageHistory(userId: string, limit?: number) {
         orderBy: { createdAt: 'desc' },
         take: limit || 50,
     });
+}
+
+/**
+ * Get tier comparison for upgrade UI
+ */
+export function getTierComparison() {
+    return {
+        starter: TIER_CONFIG.STARTER,
+        pro: TIER_CONFIG.PRO,
+        ultra: TIER_CONFIG.ULTRA,
+    };
 }
