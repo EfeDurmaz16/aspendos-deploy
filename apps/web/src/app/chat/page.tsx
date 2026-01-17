@@ -1,155 +1,174 @@
-"use client";
+'use client';
 
-import { useRef } from "react";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { ChatSidebar } from "@/components/chat/chat-sidebar";
-import { ChatInput } from "@/components/chat/chat-input";
-import { MemoryPanel } from "@/components/chat/memory-panel";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { SidebarSimple, List } from "@phosphor-icons/react";
-import { ImperativePanelHandle } from "@/components/ui/resizable";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
+import { Button } from '@/components/ui/button';
+import { Plus, ChatCircle, CircleNotch } from '@phosphor-icons/react';
+import { cn } from '@/lib/utils';
 
-export default function ChatPage() {
-    const sidebarRef = useRef<ImperativePanelHandle>(null);
-    const memoryRef = useRef<ImperativePanelHandle>(null);
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-    const toggleSidebar = () => {
-        const panel = sidebarRef.current;
-        console.log("Toggle Sidebar Clicked. Panel Ref:", panel);
-        if (panel) {
-            const collapsed = panel.isCollapsed();
-            console.log("Is Collapsed:", collapsed);
-            if (collapsed) {
-                panel.resize(20);
-            } else {
-                panel.collapse();
+interface Chat {
+    id: string;
+    title: string;
+    modelPreference: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export default function ChatIndexPage() {
+    const router = useRouter();
+    const { getToken, isLoaded, isSignedIn } = useAuth();
+    const [chats, setChats] = useState<Chat[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
+
+    // Load chat list
+    useEffect(() => {
+        if (!isLoaded || !isSignedIn) return;
+
+        const loadChats = async () => {
+            try {
+                setIsLoading(true);
+                const token = await getToken();
+                const res = await fetch(`${API_BASE}/api/chat`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const chatList = data.chats || [];
+                    setChats(chatList);
+
+                    // If there are chats, redirect to the most recent one
+                    if (chatList.length > 0) {
+                        router.push(`/chat/${chatList[0].id}`);
+                    }
+                }
+            } catch {
+                // Handle error silently
+            } finally {
+                setIsLoading(false);
             }
+        };
+
+        loadChats();
+    }, [isLoaded, isSignedIn, getToken, router]);
+
+    // Create new chat
+    const handleNewChat = async () => {
+        try {
+            setIsCreating(true);
+            const token = await getToken();
+            const res = await fetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title: 'New Chat' }),
+            });
+
+            if (res.ok) {
+                const newChat = await res.json();
+                router.push(`/chat/${newChat.id}`);
+            }
+        } catch {
+            // Handle error
+        } finally {
+            setIsCreating(false);
         }
     };
 
-    const toggleMemory = () => {
-        const panel = memoryRef.current;
-        console.log("Toggle Memory Clicked. Panel Ref:", panel);
-        if (panel) {
-            const collapsed = panel.isCollapsed();
-            console.log("Is Memory Collapsed:", collapsed);
-            if (collapsed) {
-                panel.resize(25);
-            } else {
-                panel.collapse();
-            }
-        }
-    };
+    if (!isLoaded) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-background">
+                <CircleNotch className="w-8 h-8 animate-spin text-zinc-400" />
+            </div>
+        );
+    }
 
+    if (!isSignedIn) {
+        router.push('/login');
+        return null;
+    }
+
+    // Show loading while checking for existing chats
+    if (isLoading) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-background">
+                <CircleNotch className="w-8 h-8 animate-spin text-zinc-400" />
+            </div>
+        );
+    }
+
+    // Show welcome screen if no chats exist
     return (
-        <div className="h-screen bg-background overflow-hidden font-sans">
-            <ResizablePanelGroup direction="horizontal">
+        <div className="h-screen flex flex-col items-center justify-center bg-background px-4">
+            <div className="max-w-md w-full text-center">
+                {/* Logo */}
+                <div className="mb-8">
+                    <h1 className="font-serif text-4xl font-bold mb-2">ASPENDOS</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400">
+                        AI assistant with cognitive memory
+                    </p>
+                </div>
 
-                {/* Sidebar */}
-                <ResizablePanel
-                    ref={sidebarRef}
-                    defaultSize={18}
-                    minSize={15}
-                    maxSize={25}
-                    collapsible={true}
-                    collapsedSize={0}
-                    className="bg-zinc-50 dark:bg-black"
+                {/* Create Chat Button */}
+                <Button
+                    size="lg"
+                    onClick={handleNewChat}
+                    disabled={isCreating}
+                    className="w-full max-w-xs gap-2 bg-zinc-900 dark:bg-zinc-50 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900"
                 >
-                    <ChatSidebar />
-                </ResizablePanel>
+                    {isCreating ? (
+                        <CircleNotch className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <Plus className="w-5 h-5" />
+                    )}
+                    Start a new conversation
+                </Button>
 
-                <ResizableHandle withHandle />
-
-                {/* Main Chat */}
-                <ResizablePanel defaultSize={57}>
-                    <div className="h-full flex flex-col relative bg-background dark:bg-zinc-950 dark:text-zinc-100">
-                        {/* Header with Toggles */}
-                        <div className="flex items-center justify-between p-4 border-b border-zinc-100 dark:border-zinc-900 bg-background/50 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
-                            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-8 w-8 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50" title="Toggle Sidebar">
-                                <SidebarSimple weight="duotone" className="w-5 h-5" />
-                            </Button>
-                            <span className="text-xs font-medium text-zinc-400">GPT-4o</span>
-                            <Button variant="ghost" size="icon" onClick={toggleMemory} className="h-8 w-8 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50" title="Toggle Memory">
-                                <List weight="duotone" className="w-5 h-5" />
-                            </Button>
-                        </div>
-
-                        <ScrollArea className="flex-1 p-6 pt-20">
-                            <div className="max-w-3xl mx-auto space-y-8 pb-32">
-                                <Message
-                                    role="assistant"
-                                    content="Welcome back, Efe. I've loaded your context regarding the **Aspendos Launch**. We last discussed the landing page aesthetics. Ready to continue?"
-                                    memoryRef="Aspendos Launch"
-                                />
-                                <Message
-                                    role="user"
-                                    content="Yes, let's focus on the typography. Can we mix Instrument Serif with Inter?"
-                                />
-                                <Message
-                                    role="assistant"
-                                    content="Absolutely. That's a classic **high-contrast** pairing. 
-
-The strategy:
-1. Use **Instrument Serif** for headlines to convey 'Human' warmth and prestige.
-2. Use **Inter** for UI and body text for maximum legibility and 'Machine' precision.
-
-This mirrors the Linear Method's approach to density but adds a editorial layer."
-                                />
-                            </div>
-                        </ScrollArea>
-
-                        <ChatInput />
-                    </div>
-                </ResizablePanel>
-
-                <ResizableHandle withHandle />
-
-                {/* Memory Panel */}
-                <ResizablePanel
-                    ref={memoryRef}
-                    defaultSize={25}
-                    minSize={20}
-                    maxSize={35}
-                    collapsible={true}
-                    collapsedSize={0}
-                >
-                    <MemoryPanel />
-                </ResizablePanel>
-
-            </ResizablePanelGroup>
+                {/* Features */}
+                <div className="mt-12 grid grid-cols-1 gap-4 text-left">
+                    <Feature
+                        icon={<ChatCircle className="w-5 h-5 text-emerald-500" />}
+                        title="Contextual Memory"
+                        description="Remembers your preferences and past conversations"
+                    />
+                    <Feature
+                        icon={<ChatCircle className="w-5 h-5 text-blue-500" />}
+                        title="Multi-Model Support"
+                        description="Choose from GPT-4, Claude, Gemini, and more"
+                    />
+                    <Feature
+                        icon={<ChatCircle className="w-5 h-5 text-purple-500" />}
+                        title="Tool Integration"
+                        description="Connect to Figma, Notion, Slack, and GitHub"
+                    />
+                </div>
+            </div>
         </div>
     );
 }
 
-function Message({ role, content, memoryRef }: { role: "user" | "assistant", content: string, memoryRef?: string }) {
-    const isUser = role === "user";
+function Feature({
+    icon,
+    title,
+    description,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+}) {
     return (
-        <div className={`flex gap-4 ${isUser ? "flex-row-reverse" : ""}`}>
-            <Avatar className="w-8 h-8 mt-1 border border-zinc-200 dark:border-zinc-800">
-                <AvatarFallback className={isUser ? "bg-zinc-200 text-zinc-700" : "bg-zinc-900 text-zinc-50 font-serif"}>
-                    {isUser ? "EB" : "As"}
-                </AvatarFallback>
-            </Avatar>
-
-            <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-50">{isUser ? "You" : "Aspendos"}</span>
-                    <span className="text-[11px] text-zinc-400">10:42 AM</span>
-                </div>
-
-                <div className={`text-[15px] leading-relaxed whitespace-pre-wrap ${isUser ? "text-zinc-800 dark:text-zinc-200" : "text-zinc-600 dark:text-zinc-400"}`}>
-                    {content}
-                </div>
-
-                {memoryRef && (
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-[11px] text-zinc-500">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        Memory: {memoryRef}
-                    </div>
-                )}
+        <div className="flex items-start gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+            <div className="mt-0.5">{icon}</div>
+            <div>
+                <h3 className="font-medium text-sm text-zinc-900 dark:text-zinc-100">{title}</h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{description}</p>
             </div>
         </div>
-    )
+    );
 }
