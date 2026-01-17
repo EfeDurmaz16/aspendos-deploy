@@ -2,7 +2,7 @@
  * Chat Database Service
  * Handles CRUD operations for chats and messages using Prisma.
  */
-import { prisma, Chat, Message, User } from '@aspendos/db';
+import { prisma, Chat, Message, User, Prisma } from '@aspendos/db';
 
 // ============================================
 // USER OPERATIONS
@@ -169,7 +169,7 @@ export async function createMessage(input: CreateMessageInput): Promise<Message>
             tokensIn: input.tokensIn || 0,
             tokensOut: input.tokensOut || 0,
             costUsd: input.costUsd || 0,
-            metadata: input.metadata,
+            metadata: input.metadata as Prisma.InputJsonValue | undefined,
         },
     });
 }

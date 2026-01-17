@@ -4,6 +4,8 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { clerkAuth } from './middleware/auth';
 import { auth } from './lib/auth';
+import { initializeMCPClients, closeMCPClients, getConnectedMCPServers } from './lib/mcp-clients';
+import { SUPPORTED_MODELS, getModelsForTier } from './lib/ai-providers';
 
 // Routes
 import chatRoutes from './routes/chat';
@@ -47,31 +49,55 @@ app.use('*', clerkAuth);
 app.get('/health', (c) => c.json({
     status: 'ok',
     service: 'api',
-    version: '0.2.0',
-    timestamp: new Date().toISOString()
+    version: '0.3.0',
+    timestamp: new Date().toISOString(),
+    mcp: {
+        initialized: getConnectedMCPServers().length > 0,
+        servers: getConnectedMCPServers(),
+    },
 }));
 
-// Models endpoint (proxy to agent service)
-app.get('/api/models', async (c) => {
-    const agentsUrl = process.env.AGENTS_URL || 'http://localhost:8082';
-    try {
-        const response = await fetch(`${agentsUrl}/models`);
-        const data = await response.json();
-        return c.json(data);
-    } catch (error) {
-        return c.json({ error: 'Agent service unavailable' }, 503);
-    }
+// Models endpoint - now uses local configuration
+app.get('/api/models', (c) => {
+    return c.json({
+        models: SUPPORTED_MODELS.map(m => ({
+            id: m.id,
+            name: m.name,
+            provider: m.provider,
+            tier: m.tier,
+        })),
+    });
 });
 
-app.get('/api/models/pinned', async (c) => {
-    const agentsUrl = process.env.AGENTS_URL || 'http://localhost:8082';
-    try {
-        const response = await fetch(`${agentsUrl}/models/pinned`);
-        const data = await response.json();
-        return c.json(data);
-    } catch (error) {
-        return c.json({ error: 'Agent service unavailable' }, 503);
-    }
+// Models for specific tier
+app.get('/api/models/tier/:tier', (c) => {
+    const tier = c.req.param('tier').toUpperCase() as 'STARTER' | 'PRO' | 'ULTRA';
+    const models = getModelsForTier(tier);
+    return c.json({
+        tier,
+        models: models.map(m => ({
+            id: m.id,
+            name: m.name,
+            provider: m.provider,
+        })),
+    });
+});
+
+// Pinned/recommended models
+app.get('/api/models/pinned', (c) => {
+    const pinnedModels = [
+        SUPPORTED_MODELS.find(m => m.id === 'openai/gpt-4o-mini'),
+        SUPPORTED_MODELS.find(m => m.id === 'anthropic/claude-3-5-haiku-20241022'),
+        SUPPORTED_MODELS.find(m => m.id === 'google/gemini-2.0-flash'),
+    ].filter(Boolean);
+
+    return c.json({
+        pinned: pinnedModels.map(m => ({
+            id: m!.id,
+            name: m!.name,
+            provider: m!.provider,
+        })),
+    });
 });
 
 // Better Auth routes
@@ -84,13 +110,45 @@ app.route('/api/chat', chatRoutes);
 app.route('/api/memory', memoryRoutes);
 app.route('/api/billing', billingRoutes);
 
-// Start server
+// Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080');
-console.log(`🚀 Aspendos API Server starting on port ${port}`);
 
-serve({
-    fetch: app.fetch,
-    port,
-});
+async function startServer() {
+    console.log('🚀 Aspendos API Server starting...');
+
+    // Initialize MCP clients (optional, non-blocking)
+    try {
+        await initializeMCPClients();
+    } catch (error) {
+        console.warn('[MCP] Failed to initialize MCP clients:', error);
+        // Continue without MCP - it's optional
+    }
+
+    const server = serve({
+        fetch: app.fetch,
+        port,
+    });
+
+    console.log(`✅ Aspendos API Server running on port ${port}`);
+
+    // Graceful shutdown
+    const shutdown = async () => {
+        console.log('\n🛑 Shutting down gracefully...');
+        try {
+            await closeMCPClients();
+            console.log('✅ MCP clients closed');
+        } catch (error) {
+            console.error('Error closing MCP clients:', error);
+        }
+        process.exit(0);
+    };
+
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+
+    return server;
+}
+
+startServer().catch(console.error);
 
 export default app;

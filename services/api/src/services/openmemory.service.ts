@@ -84,14 +84,14 @@ export async function searchMemories(
         limit: options?.limit || 5,
     });
 
-    return results.map((r: Record<string, unknown>) => ({
-        id: r.id as string,
-        content: r.content as string,
+    return results.map((r) => ({
+        id: r.id,
+        content: r.content,
         sector: (r.metadata as Record<string, unknown>)?.sector as string || 'semantic',
-        salience: r.salience as number,
-        createdAt: r.created_at as string,
-        metadata: r.metadata as Record<string, unknown>,
-        trace: r.trace as { recall_reason: string; waypoints?: string[] },
+        salience: r.salience || 0,
+        createdAt: r.created_at,
+        metadata: r.metadata,
+        trace: r.trace,
     }));
 }
 
@@ -110,13 +110,13 @@ export async function listMemories(
         limit: options?.limit || 50,
     });
 
-    return results.map((r: Record<string, unknown>) => ({
-        id: r.id as string,
-        content: r.content as string,
+    return results.map((r) => ({
+        id: r.id,
+        content: r.content,
         sector: (r.metadata as Record<string, unknown>)?.sector as string || 'semantic',
-        salience: r.salience as number,
-        createdAt: r.created_at as string,
-        metadata: r.metadata as Record<string, unknown>,
+        salience: r.salience || 0,
+        createdAt: r.created_at,
+        metadata: r.metadata,
     }));
 }
 

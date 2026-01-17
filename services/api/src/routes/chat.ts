@@ -1,18 +1,25 @@
 /**
  * Chat API Routes
- * Handles chat CRUD and message streaming via Agent Service.
+ * Handles chat CRUD and message streaming via Vercel AI SDK.
  * Uses OpenMemory for cognitive memory retrieval.
  */
 import { Hono } from 'hono';
-import { streamSSE } from 'hono/streaming';
+import { streamText, generateText, stepCountIs } from 'ai';
 import { requireAuth } from '../middleware/auth';
 import * as chatService from '../services/chat.service';
 import * as openMemory from '../services/openmemory.service';
+import { getModel, isModelAvailableForTier } from '../lib/ai-providers';
+import { getToolsForTier, type UserTier } from '../tools';
+import { getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
+import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
+
+// Message type for AI SDK
+interface Message {
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+}
 
 const app = new Hono();
-
-// Agent service URL
-const AGENTS_URL = process.env.AGENTS_URL || 'http://localhost:8082';
 
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
@@ -93,7 +100,16 @@ app.post('/:id/message', async (c) => {
     const chatId = c.req.param('id');
     const body = await c.req.json();
 
-    const { content, model_id, routing_mode, enable_thinking, stream: shouldStream } = body;
+    const {
+        content,
+        model_id,
+        enable_thinking,
+        stream: shouldStream = true,
+    } = body;
+
+    // Get user tier (default to STARTER if not available)
+    const user = c.get('user');
+    const userTier: UserTier = ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
 
     // Verify chat exists and belongs to user
     const chat = await chatService.getChat(chatId, userId);
@@ -101,8 +117,16 @@ app.post('/:id/message', async (c) => {
         return c.json({ error: 'Chat not found' }, 404);
     }
 
+    // Determine model to use
+    const modelId = model_id || chat.modelPreference || 'openai/gpt-4o-mini';
+
+    // Validate model is available for user's tier
+    if (!isModelAvailableForTier(modelId, userTier)) {
+        return c.json({ error: 'Model not available for your tier' }, 403);
+    }
+
     // Save user message to database
-    const userMessage = await chatService.createMessage({
+    await chatService.createMessage({
         chatId,
         userId,
         role: 'user',
@@ -116,171 +140,146 @@ app.post('/:id/message', async (c) => {
     }
 
     // ========================================
+    // MEMORY DECISION LAYER
+    // ========================================
+    const memoryAgent = getMemoryAgent();
+    const decision = await memoryAgent.decideMemoryUsage(userId, content);
+
+    // ========================================
     // OPENMEMORY RETRIEVAL
     // ========================================
     let memoriesUsed: { id: string; content: string; sector: string; confidence: number; trace?: { recall_reason: string } }[] = [];
 
-    try {
-        // Search memories using OpenMemory (with explainable traces)
-        const memories = await openMemory.searchMemories(content, userId, { limit: 5 });
-
-        memoriesUsed = memories.map(m => ({
-            id: m.id,
-            content: m.content,
-            sector: m.sector || 'semantic',
-            confidence: m.salience || 0.8,
-            trace: m.trace,
-        }));
-    } catch (error) {
-        console.error('[Memory] OpenMemory search failed:', error);
-        // Continue without memory context
+    if (decision.useMemory) {
+        try {
+            const memories = await openMemory.searchMemories(content, userId, { limit: 5 });
+            memoriesUsed = memories.map(m => ({
+                id: m.id,
+                content: m.content,
+                sector: m.sector || 'semantic',
+                confidence: m.salience || 0.8,
+                trace: m.trace,
+            }));
+        } catch (error) {
+            console.error('[Memory] OpenMemory search failed:', error);
+            // Continue without memory context
+        }
     }
 
-    // Get message history for context
-    const history = existingMessages.map(m => ({
-        role: m.role,
+    // Build message history
+    const history: Message[] = existingMessages.map(m => ({
+        role: m.role as 'user' | 'assistant',
         content: m.content,
     }));
 
-    // Build request to agent service
-    const agentRequest = {
-        messages: history,
-        model_id: model_id || chat.modelPreference || 'openai/gpt-5.2',
-        user_id: userId,
-        chat_id: chatId,
-        include_mcp_tools: true,
-        stream: shouldStream !== false,
-        routing_mode: routing_mode || 'manual',
-        enable_thinking: enable_thinking || false,
-        temperature: 0.7,
-        // Include memory context if using memory
-        memory_context: decision.useMemory ? memoriesUsed.map(m => m.content).join('\n\n') : undefined,
-    };
+    // Build system prompt with memory context
+    const systemPrompt = buildSystemPrompt(decision, memoriesUsed, enable_thinking);
 
-    // Stream response from agent service
-    if (shouldStream !== false) {
-        return streamSSE(c, async (stream) => {
-            let fullContent = '';
-            let modelUsed = model_id;
+    // Get tools for user's tier
+    const tools = getToolsForTier(userTier, userId);
 
-            try {
-                // ========================================
-                // EMIT DECISION EVENT (Transparency)
-                // ========================================
-                await stream.writeSSE({
-                    data: JSON.stringify({
-                        type: 'decision',
-                        queryType: decision.queryType,
-                        useMemory: decision.useMemory,
-                        sectors: decision.sectors,
-                        reasoning: decision.reasoning,
-                    })
-                });
-
-                // Emit memories used if any
-                if (memoriesUsed.length > 0) {
-                    await stream.writeSSE({
-                        data: JSON.stringify({
-                            type: 'memories_used',
-                            memories: memoriesUsed,
-                        })
-                    });
-                }
-
-                const response = await fetch(`${AGENTS_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(agentRequest),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Agent service error: ${response.status}`);
-                }
-
-                const reader = response.body?.getReader();
-                if (!reader) throw new Error('No response body');
-
-                const decoder = new TextDecoder();
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value, { stream: true });
-
-                    // Parse SSE events
-                    const lines = chunk.split('\n');
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const data = JSON.parse(line.slice(6));
-
-                                if (data.type === 'token') {
-                                    fullContent += data.content;
-                                }
-                                if (data.type === 'routing') {
-                                    modelUsed = data.model;
-                                }
-
-                                await stream.writeSSE({ data: JSON.stringify(data) });
-                            } catch {
-                                // Skip malformed JSON
-                            }
-                        }
-                    }
-                }
-
-                // Save assistant message to database
-                await chatService.createMessage({
-                    chatId,
-                    userId,
-                    role: 'assistant',
-                    content: fullContent,
-                    modelUsed,
-                });
-
-                await stream.writeSSE({ data: JSON.stringify({ type: 'end' }) });
-
-            } catch (error) {
-                console.error('Streaming error:', error);
-                await stream.writeSSE({
-                    data: JSON.stringify({ type: 'error', message: String(error) })
-                });
-            }
-        });
+    // Merge MCP tools if available
+    let allTools = { ...tools };
+    if (isMCPInitialized()) {
+        try {
+            const mcpTools = await getMCPTools();
+            allTools = { ...tools, ...mcpTools };
+        } catch (error) {
+            console.error('[MCP] Failed to get MCP tools:', error);
+        }
     }
 
-    // Non-streaming response
-    try {
-        const response = await fetch(`${AGENTS_URL}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...agentRequest, stream: false }),
-        });
+    // ========================================
+    // STREAMING RESPONSE
+    // ========================================
+    if (shouldStream) {
+        try {
+            const result = streamText({
+                model: getModel(modelId),
+                system: systemPrompt,
+                messages: history,
+                tools: allTools,
+                stopWhen: stepCountIs(5), // Allow up to 5 tool calls
+                temperature: 0.7,
+                onFinish: async ({ text, usage }) => {
+                    // Save assistant message to database
+                    await chatService.createMessage({
+                        chatId,
+                        userId,
+                        role: 'assistant',
+                        content: text,
+                        modelUsed: modelId,
+                        tokensIn: usage?.totalTokens,
+                        tokensOut: usage?.totalTokens,
+                    });
+                },
+            });
 
-        if (!response.ok) {
-            throw new Error(`Agent service error: ${response.status}`);
+            // Return AI SDK compatible stream response
+            // Include custom headers for decision metadata
+            const response = result.toTextStreamResponse({
+                headers: {
+                    'X-Memory-Decision': JSON.stringify({
+                        useMemory: decision.useMemory,
+                        queryType: decision.queryType,
+                        sectors: decision.sectors,
+                        reasoning: decision.reasoning,
+                    }),
+                    'X-Memories-Used': JSON.stringify(memoriesUsed.map(m => ({
+                        id: m.id,
+                        sector: m.sector,
+                        confidence: m.confidence,
+                    }))),
+                },
+            });
+
+            return response;
+        } catch (error) {
+            console.error('[Chat] Streaming error:', error);
+            return c.json({
+                error: 'Failed to stream response',
+                details: error instanceof Error ? error.message : 'Unknown error',
+            }, 500);
         }
+    }
 
-        const result = await response.json() as { content: string; model_used: string; routing?: unknown };
+    // ========================================
+    // NON-STREAMING RESPONSE
+    // ========================================
+    try {
+        const result = await generateText({
+            model: getModel(modelId),
+            system: systemPrompt,
+            messages: history,
+            tools: allTools,
+            stopWhen: stepCountIs(5),
+            temperature: 0.7,
+        });
 
         // Save assistant message
         const assistantMessage = await chatService.createMessage({
             chatId,
             userId,
             role: 'assistant',
-            content: result.content,
-            modelUsed: result.model_used,
+            content: result.text,
+            modelUsed: modelId,
+            tokensIn: result.usage?.totalTokens,
+            tokensOut: result.usage?.totalTokens,
         });
 
         return c.json({
-            userMessage,
-            assistantMessage,
-            routing: result.routing,
+            message: assistantMessage,
+            decision,
+            memoriesUsed,
+            usage: result.usage,
+            toolCalls: result.toolCalls,
         });
     } catch (error) {
-        console.error('Chat error:', error);
-        return c.json({ error: 'Failed to get response from agent' }, 500);
+        console.error('[Chat] Generation error:', error);
+        return c.json({
+            error: 'Failed to generate response',
+            details: error instanceof Error ? error.message : 'Unknown error',
+        }, 500);
     }
 });
 
@@ -289,6 +288,13 @@ app.post('/:id/multi', async (c) => {
     const userId = c.get('userId')!;
     const chatId = c.req.param('id');
     const body = await c.req.json();
+    const user = c.get('user');
+    const userTier: UserTier = ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+
+    // Check ULTRA tier
+    if (userTier !== 'ULTRA') {
+        return c.json({ error: 'Multi-model comparison requires ULTRA tier' }, 403);
+    }
 
     // Verify chat exists
     const chat = await chatService.getChat(chatId, userId);
@@ -296,9 +302,7 @@ app.post('/:id/multi', async (c) => {
         return c.json({ error: 'Chat not found' }, 404);
     }
 
-    // TODO: Check user tier is ULTRA
-
-    const { content, models } = body;
+    const { content, models = ['openai/gpt-4o', 'anthropic/claude-sonnet-4-20250514', 'google/gemini-2.0-flash'] } = body;
 
     // Save user message
     await chatService.createMessage({
@@ -310,36 +314,77 @@ app.post('/:id/multi', async (c) => {
 
     // Get message history
     const messages = await chatService.getMessages(chatId);
-    const history = messages.map(m => ({
-        role: m.role,
+    const history: Message[] = messages.map(m => ({
+        role: m.role as 'user' | 'assistant',
         content: m.content,
     }));
 
-    const agentRequest = {
-        messages: history,
-        models: models || ['openai/gpt-5.2', 'anthropic/claude-sonnet-4.5', 'google/gemini-3-flash-preview'],
-        user_id: userId,
-        chat_id: chatId,
-    };
+    // Run all models in parallel
+    const results = await Promise.allSettled(
+        models.map(async (modelId: string) => {
+            try {
+                const result = await generateText({
+                    model: getModel(modelId),
+                    messages: history,
+                    temperature: 0.7,
+                });
+                return {
+                    modelId,
+                    text: result.text,
+                    usage: result.usage,
+                };
+            } catch (error) {
+                return {
+                    modelId,
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                };
+            }
+        })
+    );
 
-    try {
-        const response = await fetch(`${AGENTS_URL}/chat/multi`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(agentRequest),
-        });
-
-        if (!response.ok) {
-            throw new Error(`Agent service error: ${response.status}`);
+    const responses = results.map((r, i) => {
+        if (r.status === 'fulfilled') {
+            return r.value;
         }
+        return {
+            modelId: models[i],
+            error: 'Failed to generate response',
+        };
+    });
 
-        const result = await response.json();
-        return c.json(result);
-
-    } catch (error) {
-        console.error('Multi-model error:', error);
-        return c.json({ error: 'Failed to get multi-model response' }, 500);
-    }
+    return c.json({ responses });
 });
+
+/**
+ * Build system prompt with memory context
+ */
+function buildSystemPrompt(
+    decision: MemoryDecision,
+    memories: { content: string; sector: string; confidence: number }[],
+    enableThinking?: boolean
+): string {
+    let prompt = `You are Aspendos, a thoughtful AI assistant with cognitive memory capabilities.
+
+Your approach:
+- Be concise but thorough
+- Use the user's memories when relevant to personalize responses
+- Leverage available tools when they can help answer questions
+- Think step by step for complex problems`;
+
+    if (enableThinking) {
+        prompt += `\n\nWrap your reasoning process in <thinking> tags before providing your response.`;
+    }
+
+    if (decision.useMemory && memories.length > 0) {
+        prompt += `\n\n## User Context (from memory)
+The following memories from the user may be relevant to this conversation:
+
+${memories.map((m, i) => `[${m.sector}] ${m.content}`).join('\n\n')}
+
+Use this context to personalize your response when appropriate. Don't mention that you're using memories unless directly asked.`;
+    }
+
+    return prompt;
+}
 
 export default app;
