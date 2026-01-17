@@ -9,6 +9,7 @@ import { SidebarSimple, List, PaperPlaneRight, CircleNotch } from '@phosphor-ico
 import { StreamingMessage } from '@/components/chat/StreamingMessage';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { MemoryPanel } from '@/components/chat/memory-panel';
+import { ModelSelector } from '@/components/chat/model-selector';
 import { useStreamingChat, type ChatMessage } from '@/hooks/useStreamingChat';
 import { cn } from '@/lib/utils';
 
@@ -192,6 +193,26 @@ export default function ChatPage() {
         }
     };
 
+    // Handle model change
+    const handleModelChange = useCallback(async (modelId: string) => {
+        try {
+            const token = await getToken();
+            await fetch(`${API_BASE}/api/chat/${chatId}`, {
+                method: 'PATCH',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ model_id: modelId }),
+            });
+
+            // Update local state
+            setChat(prev => prev ? { ...prev, modelPreference: modelId } : prev);
+        } catch {
+            // Handle error silently
+        }
+    }, [chatId, getToken]);
+
     // Combine initial messages with streaming messages
     const allMessages = [...initialMessages, ...messages];
 
@@ -238,9 +259,11 @@ export default function ChatPage() {
                     >
                         <SidebarSimple weight="duotone" className="w-5 h-5" />
                     </Button>
-                    <span className="text-xs font-medium text-zinc-400">
-                        {chat?.modelPreference?.split('/')[1] || 'GPT-4o Mini'}
-                    </span>
+                    <ModelSelector
+                        selectedModel={chat?.modelPreference || 'openai/gpt-4o-mini'}
+                        onModelChange={handleModelChange}
+                        disabled={isStreaming}
+                    />
                     <Button
                         variant="ghost"
                         size="icon"
