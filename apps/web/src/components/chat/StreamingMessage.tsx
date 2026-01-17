@@ -2,6 +2,7 @@
 
 import { memo, useState, useCallback } from 'react'
 import { MessageRenderer } from './MessageRenderer'
+import { AudioPlayer } from './audio-player'
 import type { ChatMessage } from '@/hooks/useStreamingChat'
 import { ChevronDown, ChevronUp, Brain, Clock, Lightbulb, Heart, Sparkles, Copy, Check, ThumbsUp, ThumbsDown } from 'lucide-react'
 
@@ -68,8 +69,11 @@ function MessageActions({
                 )}
             </button>
 
+            {/* Audio player for TTS */}
+            <AudioPlayer text={content} className="ml-1" />
+
             {/* Feedback buttons */}
-            <div className="flex items-center gap-0.5 ml-1">
+            <div className="flex items-center gap-0.5 ml-auto">
                 <button
                     onClick={() => handleFeedback('up')}
                     className={`p-1.5 rounded-md transition-colors ${
