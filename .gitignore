@@ -54,3 +54,6 @@ packages/db/prisma/*.db-journal
 # Misc
 *.tsbuildinfo
 .eslintcache
+
+
+*.md
