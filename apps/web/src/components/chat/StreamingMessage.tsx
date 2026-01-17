@@ -91,6 +91,62 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
 }
 
 // ============================================
+// DECISION SECTION (Agentic Transparency)
+// ============================================
+
+interface MemoryDecision {
+    queryType: string
+    useMemory: boolean
+    sectors: string[]
+    reasoning: string
+}
+
+function DecisionSection({ decision }: { decision: MemoryDecision }) {
+    const [isExpanded, setIsExpanded] = useState(false)
+
+    return (
+        <div className="mt-3 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50">
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors w-full"
+            >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>AI Decision: {decision.queryType.replace('_', ' ')}</span>
+                {decision.useMemory && (
+                    <span className="ml-1 px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[10px] uppercase">
+                        Memory
+                    </span>
+                )}
+                {isExpanded ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+            </button>
+
+            {isExpanded && (
+                <div className="mt-2 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg p-2 text-xs space-y-1">
+                    <p className="text-zinc-700 dark:text-zinc-300">
+                        {decision.reasoning}
+                    </p>
+                    {decision.sectors.length > 0 && (
+                        <div className="flex items-center gap-1.5 mt-2">
+                            <span className="text-zinc-500">Searched:</span>
+                            {decision.sectors.map((sector) => {
+                                const SectorIcon = SECTOR_ICONS[sector] || Brain
+                                const sectorColor = SECTOR_COLORS[sector] || 'text-zinc-500'
+                                return (
+                                    <span key={sector} className="flex items-center gap-0.5">
+                                        <SectorIcon className={`w-3 h-3 ${sectorColor}`} />
+                                        <span className="text-zinc-600 dark:text-zinc-400">{sector}</span>
+                                    </span>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
+// ============================================
 // COMPONENT
 // ============================================
 
@@ -138,6 +194,11 @@ function StreamingMessageComponent({ message, isCurrentUser = false }: Streaming
                 {/* Memories Used */}
                 {!isUser && message.memoriesUsed && message.memoriesUsed.length > 0 && !message.streaming && (
                     <MemoriesUsedSection memories={message.memoriesUsed} />
+                )}
+
+                {/* AI Decision (Agentic Transparency) */}
+                {!isUser && message.decision && !message.streaming && (
+                    <DecisionSection decision={message.decision} />
                 )}
 
                 {/* Metadata */}

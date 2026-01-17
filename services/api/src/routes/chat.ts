@@ -1,11 +1,14 @@
 /**
  * Chat API Routes
  * Handles chat CRUD and message streaming via Agent Service.
+ * Includes Agentic Decision Layer for intelligent memory usage.
  */
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { requireAuth } from '../middleware/auth';
 import * as chatService from '../services/chat.service';
+import { getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
+import * as memoryService from '../services/memory.service';
 
 const app = new Hono();
 
@@ -113,6 +116,34 @@ app.post('/:id/message', async (c) => {
         await chatService.autoGenerateTitle(chatId, content);
     }
 
+    // ========================================
+    // AGENTIC DECISION LAYER
+    // ========================================
+    const memoryAgent = getMemoryAgent();
+    const decision: MemoryDecision = await memoryAgent.decideMemoryUsage(userId, content);
+
+    // Retrieve relevant memories if decision says to use them
+    let memoriesUsed: { id: string; content: string; sector: string; confidence: number }[] = [];
+
+    if (decision.useMemory && decision.sectors.length > 0) {
+        // Get memories filtered by selected sectors
+        const result = await memoryService.listMemoriesForDashboard({
+            userId,
+            sector: decision.sectors[0], // Primary sector
+            sortBy: 'confidence',
+            sortOrder: 'desc',
+            page: 1,
+            limit: 5,
+        });
+
+        memoriesUsed = result.memories.map(m => ({
+            id: m.id,
+            content: m.content,
+            sector: m.sector,
+            confidence: m.confidence,
+        }));
+    }
+
     // Get message history for context
     const history = existingMessages.map(m => ({
         role: m.role,
@@ -130,6 +161,8 @@ app.post('/:id/message', async (c) => {
         routing_mode: routing_mode || 'manual',
         enable_thinking: enable_thinking || false,
         temperature: 0.7,
+        // Include memory context if using memory
+        memory_context: decision.useMemory ? memoriesUsed.map(m => m.content).join('\n\n') : undefined,
     };
 
     // Stream response from agent service
@@ -139,6 +172,29 @@ app.post('/:id/message', async (c) => {
             let modelUsed = model_id;
 
             try {
+                // ========================================
+                // EMIT DECISION EVENT (Transparency)
+                // ========================================
+                await stream.writeSSE({
+                    data: JSON.stringify({
+                        type: 'decision',
+                        queryType: decision.queryType,
+                        useMemory: decision.useMemory,
+                        sectors: decision.sectors,
+                        reasoning: decision.reasoning,
+                    })
+                });
+
+                // Emit memories used if any
+                if (memoriesUsed.length > 0) {
+                    await stream.writeSSE({
+                        data: JSON.stringify({
+                            type: 'memories_used',
+                            memories: memoriesUsed,
+                        })
+                    });
+                }
+
                 const response = await fetch(`${AGENTS_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

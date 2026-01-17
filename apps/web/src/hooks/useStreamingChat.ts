@@ -6,6 +6,20 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 // TYPES
 // ============================================
 
+export interface MemoryUsed {
+    id: string
+    content: string
+    sector: string
+    confidence: number
+}
+
+export interface MemoryDecision {
+    queryType: string
+    useMemory: boolean
+    sectors: string[]
+    reasoning: string
+}
+
 export interface ChatMessage {
     id: string
     role: 'user' | 'assistant'
@@ -13,6 +27,8 @@ export interface ChatMessage {
     timestamp: Date
     streaming?: boolean
     error?: string
+    decision?: MemoryDecision
+    memoriesUsed?: MemoryUsed[]
     metadata?: {
         model?: string
         tokensIn?: number
@@ -22,9 +38,16 @@ export interface ChatMessage {
 }
 
 export interface StreamChunk {
-    type: 'text' | 'memory_context' | 'error' | 'done'
-    content: string
+    type: 'text' | 'memory_context' | 'error' | 'done' | 'decision' | 'memories_used'
+    content?: string
     metadata?: Record<string, unknown>
+    // Decision event fields
+    queryType?: string
+    useMemory?: boolean
+    sectors?: string[]
+    reasoning?: string
+    // Memories event fields
+    memories?: MemoryUsed[]
 }
 
 export interface StreamingOptions {
@@ -187,7 +210,7 @@ export function useStreamingChat(chatId: string) {
                         if (!chunk) continue
 
                         if (chunk.type === 'error') {
-                            const errorMsg = chunk.content
+                            const errorMsg = chunk.content || 'Unknown error'
                             setState((prev) => ({
                                 ...prev,
                                 error: errorMsg,
@@ -215,8 +238,27 @@ export function useStreamingChat(chatId: string) {
                             return finalMessage
                         }
 
+                        // Handle decision event (agentic layer transparency)
+                        if (chunk.type === 'decision') {
+                            updateMessage(assistantId, {
+                                decision: {
+                                    queryType: chunk.queryType || 'unknown',
+                                    useMemory: chunk.useMemory || false,
+                                    sectors: chunk.sectors || [],
+                                    reasoning: chunk.reasoning || '',
+                                }
+                            })
+                        }
+
+                        // Handle memories used event
+                        if (chunk.type === 'memories_used' && chunk.memories) {
+                            updateMessage(assistantId, {
+                                memoriesUsed: chunk.memories
+                            })
+                        }
+
                         if (chunk.type === 'text') {
-                            accumulatedContentRef.current += chunk.content
+                            accumulatedContentRef.current += chunk.content || ''
                             updateMessage(assistantId, { content: accumulatedContentRef.current })
                         }
 
