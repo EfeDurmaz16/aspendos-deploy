@@ -46,7 +46,7 @@ export const POST = Webhooks({
 
     onOrderCreated: async (payload) => {
         const { data: order } = payload
-        console.log(`[Polar Webhook] Order: ${order.id} - ${order.amount} ${order.currency}`)
+        console.log(`[Polar Webhook] Order: ${order.id} - ${(order as Record<string, unknown>).amount || 'N/A'} ${order.currency}`)
 
         // Get the Clerk user ID from metadata
         const clerkId = (order.customer_metadata as { clerkId?: string })?.clerkId

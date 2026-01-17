@@ -129,7 +129,7 @@ model Message {
 }
 
 // ============================================
-// MEMORY SYSTEM
+// MEMORY SYSTEM (5-Sector HMD Model)
 // ============================================
 
 model Memory {
@@ -137,21 +137,46 @@ model Memory {
   userId         String
   chatId         String? // null = global memory
   content        String    @db.Text
-  type           String // "context", "preference", "insight", "project"
-  source         String? // "user_input", "extracted", "ai_generated"
+  summary        String?   @db.Text // Auto-generated summary
+  type           String // "context", "preference", "insight", "project" (legacy)
+  sector         String    @default("semantic") // episodic, semantic, procedural, emotional, reflective
+  source         String? // "user_input", "extracted", "ai_generated", "conversation"
   importance     Int       @default(50) // 1-100 scale
+  confidence     Float     @default(0.8) // 0.0 - 1.0
+  decayScore     Float     @default(1.0) // 1.0 = fresh, decays over time
+  accessCount    Int       @default(0)
+  isActive       Boolean   @default(true)
+  isPinned       Boolean   @default(false)
   tags           String[]
   expiresAt      DateTime? // null = never expires
   lastAccessedAt DateTime  @default(now())
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chat Chat? @relation(fields: [chatId], references: [id], onDelete: SetNull)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat     Chat?            @relation(fields: [chatId], references: [id], onDelete: SetNull)
+  feedback MemoryFeedback[]
 
   @@index([userId])
+  @@index([userId, sector])
+  @@index([userId, isActive])
   @@index([chatId])
   @@index([type])
+}
+
+model MemoryFeedback {
+  id         String   @id @default(cuid())
+  memoryId   String
+  userId     String
+  wasHelpful Boolean
+  notes      String?
+  queryText  String?  @db.Text // What query triggered this memory
+  createdAt  DateTime @default(now())
+
+  memory Memory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@index([memoryId])
+  @@index([userId])
 }
 
 // ============================================

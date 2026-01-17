@@ -1,16 +1,93 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { MessageRenderer } from './MessageRenderer'
 import type { ChatMessage } from '@/hooks/useStreamingChat'
+import { ChevronDown, ChevronUp, Brain, Clock, Lightbulb, Heart, Sparkles } from 'lucide-react'
 
 // ============================================
 // TYPES
 // ============================================
 
+interface MemoryUsed {
+    id: string
+    content: string
+    sector: string
+    confidence: number
+}
+
 interface StreamingMessageProps {
-    message: ChatMessage
+    message: ChatMessage & { memoriesUsed?: MemoryUsed[] }
     isCurrentUser?: boolean
+}
+
+// Sector icon map
+const SECTOR_ICONS: Record<string, React.ElementType> = {
+    episodic: Clock,
+    semantic: Lightbulb,
+    procedural: Brain,
+    emotional: Heart,
+    reflective: Sparkles,
+}
+
+const SECTOR_COLORS: Record<string, string> = {
+    episodic: 'text-blue-500',
+    semantic: 'text-emerald-500',
+    procedural: 'text-purple-500',
+    emotional: 'text-rose-500',
+    reflective: 'text-amber-500',
+}
+
+// ============================================
+// MEMORIES USED COMPONENT
+// ============================================
+
+function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
+    const [isExpanded, setIsExpanded] = useState(false)
+
+    if (!memories || memories.length === 0) return null
+
+    return (
+        <div className="mt-3 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50">
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors w-full"
+            >
+                <Brain className="w-3.5 h-3.5" />
+                <span>{memories.length} memories used</span>
+                {isExpanded ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+            </button>
+
+            {isExpanded && (
+                <div className="mt-2 space-y-2">
+                    {memories.map((memory) => {
+                        const SectorIcon = SECTOR_ICONS[memory.sector] || Brain
+                        const sectorColor = SECTOR_COLORS[memory.sector] || 'text-zinc-500'
+
+                        return (
+                            <div
+                                key={memory.id}
+                                className="bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg p-2 text-xs"
+                            >
+                                <div className="flex items-center gap-2 mb-1">
+                                    <SectorIcon className={`w-3 h-3 ${sectorColor}`} />
+                                    <span className="uppercase tracking-wide font-medium text-zinc-600 dark:text-zinc-400">
+                                        {memory.sector}
+                                    </span>
+                                    <span className="ml-auto font-mono text-zinc-500">
+                                        {Math.round(memory.confidence * 100)}%
+                                    </span>
+                                </div>
+                                <p className="text-zinc-700 dark:text-zinc-300 line-clamp-2">
+                                    {memory.content}
+                                </p>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+        </div>
+    )
 }
 
 // ============================================
@@ -25,6 +102,7 @@ interface StreamingMessageProps {
  * - Streaming indicator
  * - Error display
  * - Metadata display (model, tokens, cost)
+ * - Memories used display (collapsible)
  */
 function StreamingMessageComponent({ message, isCurrentUser = false }: StreamingMessageProps) {
     const isUser = message.role === 'user'
@@ -33,8 +111,8 @@ function StreamingMessageComponent({ message, isCurrentUser = false }: Streaming
         <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
             <div
                 className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser
-                        ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900'
-                        : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                    ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900'
+                    : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
                     }`}
             >
                 {/* Error display */}
@@ -55,6 +133,11 @@ function StreamingMessageComponent({ message, isCurrentUser = false }: Streaming
                         content={message.content || ''}
                         streaming={message.streaming}
                     />
+                )}
+
+                {/* Memories Used */}
+                {!isUser && message.memoriesUsed && message.memoriesUsed.length > 0 && !message.streaming && (
+                    <MemoriesUsedSection memories={message.memoriesUsed} />
                 )}
 
                 {/* Metadata */}
@@ -90,3 +173,4 @@ function StreamingMessageComponent({ message, isCurrentUser = false }: Streaming
 // Memoize to prevent unnecessary re-renders during streaming
 export const StreamingMessage = memo(StreamingMessageComponent)
 export default StreamingMessage
+
