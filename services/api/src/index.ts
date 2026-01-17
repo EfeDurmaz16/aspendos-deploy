@@ -105,6 +105,20 @@ app.on(['POST', 'GET'], '/api/auth/*', (c) => {
     return auth.handler(c.req.raw);
 });
 
+// Public: Get shared chat by token (no auth required)
+app.get('/api/chat/shared/:token', async (c) => {
+    const { getSharedChat } = await import('./services/chat.service');
+    const token = c.req.param('token');
+
+    const sharedChat = await getSharedChat(token);
+
+    if (!sharedChat) {
+        return c.json({ error: 'Shared chat not found or expired' }, 404);
+    }
+
+    return c.json(sharedChat);
+});
+
 // API Routes
 app.route('/api/chat', chatRoutes);
 app.route('/api/memory', memoryRoutes);

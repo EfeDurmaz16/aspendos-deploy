@@ -1,9 +1,9 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { MessageRenderer } from './MessageRenderer'
 import type { ChatMessage } from '@/hooks/useStreamingChat'
-import { ChevronDown, ChevronUp, Brain, Clock, Lightbulb, Heart, Sparkles } from 'lucide-react'
+import { ChevronDown, ChevronUp, Brain, Clock, Lightbulb, Heart, Sparkles, Copy, Check, ThumbsUp, ThumbsDown } from 'lucide-react'
 
 // ============================================
 // TYPES
@@ -19,6 +19,82 @@ interface MemoryUsed {
 interface StreamingMessageProps {
     message: ChatMessage & { memoriesUsed?: MemoryUsed[] }
     isCurrentUser?: boolean
+    onFeedback?: (messageId: string, feedback: 'up' | 'down') => void
+}
+
+// ============================================
+// MESSAGE ACTIONS (Copy, Feedback)
+// ============================================
+
+function MessageActions({
+    content,
+    messageId,
+    onFeedback,
+}: {
+    content: string
+    messageId: string
+    onFeedback?: (messageId: string, feedback: 'up' | 'down') => void
+}) {
+    const [copied, setCopied] = useState(false)
+    const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
+
+    const handleCopy = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(content)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        } catch (err) {
+            console.error('Failed to copy:', err)
+        }
+    }, [content])
+
+    const handleFeedback = useCallback((type: 'up' | 'down') => {
+        setFeedback(type)
+        onFeedback?.(messageId, type)
+    }, [messageId, onFeedback])
+
+    return (
+        <div className="flex items-center gap-1 mt-2 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50">
+            {/* Copy button */}
+            <button
+                onClick={handleCopy}
+                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Copy message"
+            >
+                {copied ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                )}
+            </button>
+
+            {/* Feedback buttons */}
+            <div className="flex items-center gap-0.5 ml-1">
+                <button
+                    onClick={() => handleFeedback('up')}
+                    className={`p-1.5 rounded-md transition-colors ${
+                        feedback === 'up'
+                            ? 'text-emerald-500 bg-emerald-500/10'
+                            : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                    }`}
+                    title="Good response"
+                >
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                </button>
+                <button
+                    onClick={() => handleFeedback('down')}
+                    className={`p-1.5 rounded-md transition-colors ${
+                        feedback === 'down'
+                            ? 'text-rose-500 bg-rose-500/10'
+                            : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                    }`}
+                    title="Bad response"
+                >
+                    <ThumbsDown className="w-3.5 h-3.5" />
+                </button>
+            </div>
+        </div>
+    )
 }
 
 // Sector icon map
@@ -160,7 +236,7 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
  * - Metadata display (model, tokens, cost)
  * - Memories used display (collapsible)
  */
-function StreamingMessageComponent({ message, isCurrentUser = false }: StreamingMessageProps) {
+function StreamingMessageComponent({ message, isCurrentUser = false, onFeedback }: StreamingMessageProps) {
     const isUser = message.role === 'user'
 
     return (
@@ -216,6 +292,15 @@ function StreamingMessageComponent({ message, isCurrentUser = false }: Streaming
                             <span>${message.metadata.costUsd.toFixed(4)}</span>
                         )}
                     </div>
+                )}
+
+                {/* Message Actions (Copy, Feedback) - only for assistant messages when not streaming */}
+                {!isUser && !message.streaming && message.content && (
+                    <MessageActions
+                        content={message.content}
+                        messageId={message.id}
+                        onFeedback={onFeedback}
+                    />
                 )}
 
                 {/* Streaming indicator */}

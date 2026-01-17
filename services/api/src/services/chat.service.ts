@@ -199,3 +199,193 @@ export async function autoGenerateTitle(chatId: string, firstMessage: string) {
         data: { title },
     });
 }
+
+/**
+ * Add feedback to a message
+ */
+export async function addMessageFeedback(
+    messageId: string,
+    userId: string,
+    feedback: 'up' | 'down'
+): Promise<Message | null> {
+    // Find the message and verify ownership through chat
+    const message = await prisma.message.findFirst({
+        where: { id: messageId },
+        include: { chat: true },
+    });
+
+    if (!message || message.chat.userId !== userId) {
+        return null;
+    }
+
+    // Update message metadata with feedback
+    const existingMetadata = (message.metadata as Record<string, unknown>) || {};
+    const updatedMetadata = {
+        ...existingMetadata,
+        feedback,
+        feedbackAt: new Date().toISOString(),
+    };
+
+    return prisma.message.update({
+        where: { id: messageId },
+        data: { metadata: updatedMetadata as Prisma.InputJsonValue },
+    });
+}
+
+// ============================================
+// FORK & SHARE OPERATIONS
+// ============================================
+
+/**
+ * Fork a chat from a specific message
+ * Creates a new chat with all messages up to and including the specified message
+ */
+export async function forkChat(chatId: string, userId: string, fromMessageId?: string): Promise<Chat> {
+    // Get original chat
+    const originalChat = await getChatWithMessages(chatId, userId);
+    if (!originalChat) {
+        throw new Error('Chat not found');
+    }
+
+    // Determine which messages to include
+    let messagesToCopy = originalChat.messages;
+    if (fromMessageId) {
+        const messageIndex = messagesToCopy.findIndex(m => m.id === fromMessageId);
+        if (messageIndex === -1) {
+            throw new Error('Message not found in chat');
+        }
+        messagesToCopy = messagesToCopy.slice(0, messageIndex + 1);
+    }
+
+    // Create new chat
+    const newChat = await prisma.chat.create({
+        data: {
+            userId,
+            title: `Fork of: ${originalChat.title}`,
+            modelPreference: originalChat.modelPreference,
+        },
+    });
+
+    // Copy messages to new chat
+    for (const msg of messagesToCopy) {
+        await prisma.message.create({
+            data: {
+                chatId: newChat.id,
+                userId: msg.userId,
+                role: msg.role,
+                content: msg.content,
+                modelUsed: msg.modelUsed,
+                tokensIn: msg.tokensIn,
+                tokensOut: msg.tokensOut,
+                costUsd: msg.costUsd,
+                metadata: msg.metadata as Prisma.InputJsonValue | undefined,
+            },
+        });
+    }
+
+    return newChat;
+}
+
+/**
+ * Generate a share token for a chat
+ */
+export async function createShareToken(chatId: string, userId: string): Promise<string> {
+    // Verify ownership
+    const chat = await getChat(chatId, userId);
+    if (!chat) {
+        throw new Error('Chat not found');
+    }
+
+    // Generate a random token
+    const token = generateRandomToken(32);
+
+    // Store the share token in chat metadata or a separate table
+    // For simplicity, we'll use the chat's description field temporarily
+    // In production, you'd want a dedicated ChatShare table
+    await prisma.chat.update({
+        where: { id: chatId },
+        data: {
+            description: JSON.stringify({
+                shareToken: token,
+                sharedAt: new Date().toISOString(),
+            }),
+        },
+    });
+
+    return token;
+}
+
+/**
+ * Get a shared chat by token (public access)
+ */
+export async function getSharedChat(token: string) {
+    // Find chat with matching share token in description
+    const chats = await prisma.chat.findMany({
+        where: {
+            description: {
+                contains: token,
+            },
+        },
+        include: {
+            messages: {
+                orderBy: { createdAt: 'asc' },
+            },
+            user: {
+                select: {
+                    name: true,
+                    avatar: true,
+                },
+            },
+        },
+    });
+
+    // Verify the token matches
+    for (const chat of chats) {
+        try {
+            const meta = JSON.parse(chat.description || '{}');
+            if (meta.shareToken === token) {
+                return {
+                    id: chat.id,
+                    title: chat.title,
+                    messages: chat.messages.map(m => ({
+                        id: m.id,
+                        role: m.role,
+                        content: m.content,
+                        createdAt: m.createdAt,
+                    })),
+                    author: chat.user?.name || 'Anonymous',
+                    sharedAt: meta.sharedAt,
+                };
+            }
+        } catch {
+            continue;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Revoke a share token
+ */
+export async function revokeShareToken(chatId: string, userId: string): Promise<void> {
+    const chat = await getChat(chatId, userId);
+    if (!chat) {
+        throw new Error('Chat not found');
+    }
+
+    await prisma.chat.update({
+        where: { id: chatId },
+        data: { description: null },
+    });
+}
+
+// Helper to generate random token
+function generateRandomToken(length: number): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}

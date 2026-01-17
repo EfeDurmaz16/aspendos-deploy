@@ -387,4 +387,84 @@ Use this context to personalize your response when appropriate. Don't mention th
     return prompt;
 }
 
+// ============================================
+// FEEDBACK ENDPOINT
+// ============================================
+
+// POST /api/chat/message/:messageId/feedback - Add feedback to a message
+app.post('/message/:messageId/feedback', async (c) => {
+    const userId = c.get('userId')!;
+    const messageId = c.req.param('messageId');
+    const body = await c.req.json();
+
+    const { feedback } = body;
+    if (!feedback || !['up', 'down'].includes(feedback)) {
+        return c.json({ error: 'Invalid feedback. Must be "up" or "down".' }, 400);
+    }
+
+    const updatedMessage = await chatService.addMessageFeedback(messageId, userId, feedback);
+
+    if (!updatedMessage) {
+        return c.json({ error: 'Message not found' }, 404);
+    }
+
+    return c.json({ success: true });
+});
+
+// ============================================
+// FORK & SHARE ENDPOINTS
+// ============================================
+
+// POST /api/chat/:id/fork - Fork a chat from a specific message
+app.post('/:id/fork', async (c) => {
+    const userId = c.get('userId')!;
+    const chatId = c.req.param('id');
+    const body = await c.req.json().catch(() => ({}));
+
+    try {
+        const newChat = await chatService.forkChat(chatId, userId, body.fromMessageId);
+        return c.json(newChat, 201);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to fork chat';
+        if (message.includes('not found')) {
+            return c.json({ error: message }, 404);
+        }
+        return c.json({ error: message }, 500);
+    }
+});
+
+// POST /api/chat/:id/share - Create or get share token for a chat
+app.post('/:id/share', async (c) => {
+    const userId = c.get('userId')!;
+    const chatId = c.req.param('id');
+
+    try {
+        const token = await chatService.createShareToken(chatId, userId);
+        return c.json({ token, url: `/chat/shared/${token}` });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to create share token';
+        if (message.includes('not found')) {
+            return c.json({ error: message }, 404);
+        }
+        return c.json({ error: message }, 500);
+    }
+});
+
+// DELETE /api/chat/:id/share - Revoke share token for a chat
+app.delete('/:id/share', async (c) => {
+    const userId = c.get('userId')!;
+    const chatId = c.req.param('id');
+
+    try {
+        await chatService.revokeShareToken(chatId, userId);
+        return c.json({ success: true });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to revoke share token';
+        if (message.includes('not found')) {
+            return c.json({ error: message }, 404);
+        }
+        return c.json({ error: message }, 500);
+    }
+});
+
 export default app;
