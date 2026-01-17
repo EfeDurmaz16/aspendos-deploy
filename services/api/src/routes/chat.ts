@@ -1,14 +1,13 @@
 /**
  * Chat API Routes
  * Handles chat CRUD and message streaming via Agent Service.
- * Includes Agentic Decision Layer for intelligent memory usage.
+ * Uses OpenMemory for cognitive memory retrieval.
  */
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { requireAuth } from '../middleware/auth';
 import * as chatService from '../services/chat.service';
-import { getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
-import * as memoryService from '../services/memory.service';
+import * as openMemory from '../services/openmemory.service';
 
 const app = new Hono();
 
@@ -117,31 +116,24 @@ app.post('/:id/message', async (c) => {
     }
 
     // ========================================
-    // AGENTIC DECISION LAYER
+    // OPENMEMORY RETRIEVAL
     // ========================================
-    const memoryAgent = getMemoryAgent();
-    const decision: MemoryDecision = await memoryAgent.decideMemoryUsage(userId, content);
+    let memoriesUsed: { id: string; content: string; sector: string; confidence: number; trace?: { recall_reason: string } }[] = [];
 
-    // Retrieve relevant memories if decision says to use them
-    let memoriesUsed: { id: string; content: string; sector: string; confidence: number }[] = [];
+    try {
+        // Search memories using OpenMemory (with explainable traces)
+        const memories = await openMemory.searchMemories(content, userId, { limit: 5 });
 
-    if (decision.useMemory && decision.sectors.length > 0) {
-        // Get memories filtered by selected sectors
-        const result = await memoryService.listMemoriesForDashboard({
-            userId,
-            sector: decision.sectors[0], // Primary sector
-            sortBy: 'confidence',
-            sortOrder: 'desc',
-            page: 1,
-            limit: 5,
-        });
-
-        memoriesUsed = result.memories.map(m => ({
+        memoriesUsed = memories.map(m => ({
             id: m.id,
             content: m.content,
-            sector: m.sector,
-            confidence: m.confidence,
+            sector: m.sector || 'semantic',
+            confidence: m.salience || 0.8,
+            trace: m.trace,
         }));
+    } catch (error) {
+        console.error('[Memory] OpenMemory search failed:', error);
+        // Continue without memory context
     }
 
     // Get message history for context

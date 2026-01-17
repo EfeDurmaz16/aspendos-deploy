@@ -32,8 +32,14 @@ model User {
   billingAccount BillingAccount?
   apiKeys        ApiKey[]
 
+  emailVerified Boolean   @default(false)
+  image         String?
+  sessions      Session[]
+  accounts      Account[]
+
   @@index([clerkId])
   @@index([email])
+  @@map("user")
 }
 
 enum Tier {
@@ -87,16 +93,16 @@ model CreditLog {
 // ============================================
 
 model Chat {
-  id              String    @id @default(cuid())
+  id              String   @id @default(cuid())
   userId          String
-  title           String    @default("New Chat")
+  title           String   @default("New Chat")
   description     String?
   modelPreference String? // null = auto-select
-  memoryScope     String    @default("global") // global, project, chat
+  memoryScope     String   @default("global") // global, project, chat
   projectId       String?
-  isArchived      Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages Message[]
@@ -184,17 +190,17 @@ model MemoryFeedback {
 // ============================================
 
 model Agent {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  description String?
-  modelId     String   @default("gpt-4o")
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  description  String?
+  modelId      String   @default("gpt-4o")
   systemPrompt String?  @db.Text
-  tools       Json? // Array of tool configs
-  isActive    Boolean  @default(true)
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tools        Json? // Array of tool configs
+  isActive     Boolean  @default(true)
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -220,4 +226,52 @@ model ApiKey {
 
   @@index([userId])
   @@index([keyHash])
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
