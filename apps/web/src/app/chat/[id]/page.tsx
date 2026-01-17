@@ -10,6 +10,7 @@ import { StreamingMessage } from '@/components/chat/StreamingMessage';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { MemoryPanel } from '@/components/chat/memory-panel';
 import { ModelSelector } from '@/components/chat/model-selector';
+import { VoiceButton } from '@/components/chat/voice-button';
 import { useStreamingChat, type ChatMessage } from '@/hooks/useStreamingChat';
 import { cn } from '@/lib/utils';
 
@@ -328,18 +329,24 @@ export default function ChatPage() {
                             <span className="text-xs text-zinc-400">
                                 {inputValue.length} / 4000
                             </span>
-                            <Button
-                                size="icon"
-                                onClick={handleSend}
-                                disabled={!inputValue.trim() || isStreaming}
-                                className="h-8 w-8 rounded-lg bg-zinc-900 dark:bg-zinc-50 hover:bg-zinc-700 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 disabled:opacity-50"
-                            >
-                                {isStreaming ? (
-                                    <CircleNotch className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <PaperPlaneRight weight="bold" className="w-4 h-4" />
-                                )}
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                <VoiceButton
+                                    onTranscription={(text) => setInputValue((prev) => prev + text)}
+                                    disabled={isStreaming}
+                                />
+                                <Button
+                                    size="icon"
+                                    onClick={handleSend}
+                                    disabled={!inputValue.trim() || isStreaming}
+                                    className="h-8 w-8 rounded-lg bg-zinc-900 dark:bg-zinc-50 hover:bg-zinc-700 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 disabled:opacity-50"
+                                >
+                                    {isStreaming ? (
+                                        <CircleNotch className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <PaperPlaneRight weight="bold" className="w-4 h-4" />
+                                    )}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                     <p className="text-center text-[11px] text-zinc-400 mt-2">

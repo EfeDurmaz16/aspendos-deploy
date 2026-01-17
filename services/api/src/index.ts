@@ -11,6 +11,7 @@ import { SUPPORTED_MODELS, getModelsForTier } from './lib/ai-providers';
 import chatRoutes from './routes/chat';
 import memoryRoutes from './routes/memory';
 import billingRoutes from './routes/billing';
+import voiceRoutes from './routes/voice';
 
 type Variables = {
     user: typeof auth.$Infer.Session.user | null;
@@ -123,6 +124,7 @@ app.get('/api/chat/shared/:token', async (c) => {
 app.route('/api/chat', chatRoutes);
 app.route('/api/memory', memoryRoutes);
 app.route('/api/billing', billingRoutes);
+app.route('/api/voice', voiceRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080');
