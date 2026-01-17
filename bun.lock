@@ -12,6 +12,7 @@
       "name": "@aspendos/web",
       "version": "0.1.0",
       "dependencies": {
+        "@aspendos/db": "workspace:*",
         "@clerk/nextjs": "^6.36.7",
         "@phosphor-icons/react": "^2.1.10",
         "@polar-sh/nextjs": "^0.9.3",

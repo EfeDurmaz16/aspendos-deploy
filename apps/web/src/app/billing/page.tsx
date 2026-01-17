@@ -1,39 +1,37 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-// Mock data - TODO: Replace with actual API call to billing service
-const mockBillingData = {
-    plan: 'Pro',
-    status: 'active',
-    renewalDate: '2026-02-17',
+interface BillingData {
+    plan: string
+    status: string
     usage: {
-        tokens: { used: 3500000, limit: 10000000 },
-        chats: { used: 847, limit: 3000 },
-        voice: { used: 25, limit: 60 },
-        images: { used: 32, limit: 50 },
-    },
+        tokens: { used: number; limit: number; percent: number; formatted: { used: string; limit: string } }
+        chats: { remaining: number; percent: number }
+        voice: { remaining: number }
+    }
+    renewal: {
+        date: string
+        daysRemaining: number
+    }
 }
 
-function UsageBar({ label, used, limit, unit }: { label: string; used: number; limit: number; unit: string }) {
-    const percentage = Math.min((used / limit) * 100, 100)
-    const isHigh = percentage > 80
+function UsageBar({ label, percent, usedLabel }: { label: string; percent: number; usedLabel: string }) {
+    const isHigh = percent > 80
 
     return (
         <div className="space-y-2">
             <div className="flex justify-between text-sm">
                 <span className="text-zinc-600 dark:text-zinc-400">{label}</span>
-                <span className="text-zinc-900 dark:text-zinc-50 font-medium">
-                    {used.toLocaleString()} / {limit.toLocaleString()} {unit}
-                </span>
+                <span className="text-zinc-900 dark:text-zinc-50 font-medium">{usedLabel}</span>
             </div>
             <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                 <div
                     className={`h-full rounded-full transition-all ${isHigh ? 'bg-amber-500' : 'bg-zinc-900 dark:bg-zinc-50'
                         }`}
-                    style={{ width: `${percentage}%` }}
+                    style={{ width: `${Math.min(percent, 100)}%` }}
                 />
             </div>
         </div>
@@ -45,19 +43,65 @@ function BillingContent() {
     const searchParams = useSearchParams()
     const success = searchParams.get('success')
 
-    if (!isLoaded) {
-        return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-    }
+    const [billing, setBilling] = useState<BillingData | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
-    if (!user) {
+    useEffect(() => {
+        if (isLoaded && user) {
+            fetch('/api/billing')
+                .then(res => {
+                    if (!res.ok) throw new Error('Failed to load billing')
+                    return res.json()
+                })
+                .then(data => {
+                    setBilling(data)
+                    setLoading(false)
+                })
+                .catch(err => {
+                    setError(err.message)
+                    setLoading(false)
+                })
+        }
+    }, [isLoaded, user])
+
+    if (!isLoaded || loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p>Please sign in to view billing.</p>
+            <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+                <div className="animate-pulse text-zinc-500">Loading billing...</div>
             </div>
         )
     }
 
-    const data = mockBillingData
+    if (!user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+                <p className="text-zinc-600 dark:text-zinc-400">Please sign in to view billing.</p>
+            </div>
+        )
+    }
+
+    if (error || !billing) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+                <div className="text-center">
+                    <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+                        {error || 'Unable to load billing information'}
+                    </p>
+                    <a href="/pricing" className="text-zinc-900 dark:text-zinc-50 underline">
+                        View pricing plans →
+                    </a>
+                </div>
+            </div>
+        )
+    }
+
+    const planDisplayName = billing.plan.charAt(0).toUpperCase() + billing.plan.slice(1)
+    const renewalDate = new Date(billing.renewal.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    })
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
@@ -87,22 +131,20 @@ function BillingContent() {
                         <div>
                             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Current Plan</p>
                             <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-                                {data.plan}
+                                {planDisplayName}
                             </p>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${data.status === 'active'
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${billing.status === 'active'
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
-                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
+                                : billing.status === 'past_due'
+                                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
+                                    : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
                             }`}>
-                            {data.status.charAt(0).toUpperCase() + data.status.slice(1)}
+                            {billing.status.charAt(0).toUpperCase() + billing.status.slice(1).replace('_', ' ')}
                         </span>
                     </div>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                        Renews on {new Date(data.renewalDate).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        })}
+                        Renews on {renewalDate} ({billing.renewal.daysRemaining} days remaining)
                     </p>
                     <div className="flex gap-4">
                         <a
@@ -128,27 +170,18 @@ function BillingContent() {
                     <div className="space-y-6">
                         <UsageBar
                             label="Tokens"
-                            used={data.usage.tokens.used}
-                            limit={data.usage.tokens.limit}
-                            unit="tokens"
+                            percent={billing.usage.tokens.percent}
+                            usedLabel={`${billing.usage.tokens.formatted.used} / ${billing.usage.tokens.formatted.limit} tokens`}
                         />
                         <UsageBar
                             label="Chats"
-                            used={data.usage.chats.used}
-                            limit={data.usage.chats.limit}
-                            unit="chats"
+                            percent={100 - billing.usage.chats.percent}
+                            usedLabel={`${billing.usage.chats.remaining} chats remaining`}
                         />
                         <UsageBar
-                            label="Voice Minutes"
-                            used={data.usage.voice.used}
-                            limit={data.usage.voice.limit}
-                            unit="min/day"
-                        />
-                        <UsageBar
-                            label="Images"
-                            used={data.usage.images.used}
-                            limit={data.usage.images.limit}
-                            unit="images/day"
+                            label="Voice"
+                            percent={100 - (billing.usage.voice.remaining / 300 * 100)}
+                            usedLabel={`${billing.usage.voice.remaining} min remaining`}
                         />
                     </div>
                 </div>
@@ -185,7 +218,7 @@ function BillingContent() {
 
 export default function BillingPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">Loading...</div>}>
             <BillingContent />
         </Suspense>
     )
