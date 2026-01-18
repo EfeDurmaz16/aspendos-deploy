@@ -50,6 +50,8 @@ export async function getBillingStatus(userId: string) {
         // Pricing
         monthlyPrice: config.monthlyPrice,
         weeklyPrice: config.weeklyPrice,
+        annualPrice: config.annualPrice,
+        annualSavings: Math.round(((config.monthlyPrice * 12) - config.annualPrice) / (config.monthlyPrice * 12) * 100),
 
         // Usage
         tokens: {

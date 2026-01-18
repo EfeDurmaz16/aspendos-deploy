@@ -10,11 +10,18 @@ import { TIER_CONFIG, TierName, getTierConfig } from '../config/tiers';
 const POLAR_API_URL = 'https://api.polar.sh/v1';
 const POLAR_ACCESS_TOKEN = process.env.POLAR_ACCESS_TOKEN || '';
 
-// Product IDs from Polar dashboard
+// Product IDs from Polar dashboard (monthly)
 const PRODUCT_IDS = {
     STARTER: process.env.POLAR_STARTER_PRODUCT_ID || '',
     PRO: process.env.POLAR_PRO_PRODUCT_ID || '',
     ULTRA: process.env.POLAR_ULTRA_PRODUCT_ID || '',
+};
+
+// Annual product IDs (separate products in Polar)
+const ANNUAL_PRODUCT_IDS = {
+    STARTER: process.env.POLAR_STARTER_ANNUAL_PRODUCT_ID || '',
+    PRO: process.env.POLAR_PRO_ANNUAL_PRODUCT_ID || '',
+    ULTRA: process.env.POLAR_ULTRA_ANNUAL_PRODUCT_ID || '',
 };
 
 // ============================================
@@ -25,6 +32,7 @@ export interface CreateCheckoutOptions {
     userId: string;
     email: string;
     plan: 'starter' | 'pro' | 'ultra';
+    cycle: 'monthly' | 'annual';
     successUrl: string;
     cancelUrl?: string;
 }
@@ -33,10 +41,16 @@ export interface CreateCheckoutOptions {
  * Create a checkout session for subscription
  */
 export async function createCheckout(options: CreateCheckoutOptions) {
-    const productId = PRODUCT_IDS[options.plan.toUpperCase() as keyof typeof PRODUCT_IDS];
+    const planKey = options.plan.toUpperCase() as keyof typeof PRODUCT_IDS;
+    const isAnnual = options.cycle === 'annual';
+
+    // Select the correct product ID based on billing cycle
+    const productId = isAnnual
+        ? ANNUAL_PRODUCT_IDS[planKey] || PRODUCT_IDS[planKey]  // Fallback to monthly if annual not configured
+        : PRODUCT_IDS[planKey];
 
     if (!productId) {
-        throw new Error(`Product ID not configured for plan: ${options.plan}`);
+        throw new Error(`Product ID not configured for plan: ${options.plan} (${options.cycle})`);
     }
 
     const response = await fetch(`${POLAR_API_URL}/checkouts/`, {
@@ -52,6 +66,7 @@ export async function createCheckout(options: CreateCheckoutOptions) {
             metadata: {
                 userId: options.userId,
                 plan: options.plan,
+                cycle: options.cycle,
             },
         }),
     });

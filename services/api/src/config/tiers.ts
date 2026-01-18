@@ -8,6 +8,7 @@ export const TIER_CONFIG = {
         // Pricing
         monthlyPrice: 19.99,
         weeklyPrice: 7.50,
+        annualPrice: 191.88,  // ~$16/mo (20% discount)
 
         // Chat & Token Limits
         monthlyChats: 300,          // ~10/day
@@ -48,6 +49,7 @@ export const TIER_CONFIG = {
         // Pricing
         monthlyPrice: 49.00,
         weeklyPrice: 15.00,
+        annualPrice: 468.00,  // ~$39/mo (20% discount)
 
         // Chat & Token Limits
         monthlyChats: 1500,         // ~50/day
@@ -88,6 +90,7 @@ export const TIER_CONFIG = {
         // Pricing
         monthlyPrice: 99.00,
         weeklyPrice: 30.00,
+        annualPrice: 948.00,  // ~$79/mo (20% discount)
 
         // Chat & Token Limits
         monthlyChats: 5000,         // ~166/day (practically unlimited)

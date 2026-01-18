@@ -230,7 +230,7 @@ export default function StyleguidePage() {
                                             fontFamily: style.fontFamily,
                                             fontSize: style.fontSize,
                                             fontWeight: style.fontWeight,
-                                            lineHeight: style.lineHeight,
+                                            lineHeight: 'lineHeight' in style ? style.lineHeight : 1.5,
                                             letterSpacing: 'letterSpacing' in style ? style.letterSpacing : undefined,
                                         }}
                                     >

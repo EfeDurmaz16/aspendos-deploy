@@ -46,10 +46,11 @@ export const POST = Webhooks({
 
     onOrderCreated: async (payload) => {
         const { data: order } = payload
-        console.log(`[Polar Webhook] Order: ${order.id} - ${(order as Record<string, unknown>).amount || 'N/A'} ${order.currency}`)
+        console.log(`[Polar Webhook] Order: ${order.id} - ${order.totalAmount || 'N/A'} ${order.currency}`)
 
-        // Get the Clerk user ID from metadata
-        const clerkId = (order.customer_metadata as { clerkId?: string })?.clerkId
+        // Get the Clerk user ID from metadata (try order metadata first, then customer metadata)
+        const clerkId = (order.metadata as { clerkId?: string })?.clerkId ||
+            (order.customer?.metadata as { clerkId?: string })?.clerkId
         if (!clerkId) {
             console.log('[Polar Webhook] No clerkId in metadata, skipping')
             return
@@ -67,8 +68,9 @@ export const POST = Webhooks({
         const { data: subscription } = payload
         console.log(`[Polar Webhook] Subscription created: ${subscription.id}`)
 
-        // Get the Clerk user ID from metadata
-        const clerkId = (subscription.customer_metadata as { clerkId?: string })?.clerkId
+        // Get the Clerk user ID from metadata (try subscription metadata first, then customer metadata)
+        const clerkId = (subscription.metadata as { clerkId?: string })?.clerkId ||
+            (subscription.customer?.metadata as { clerkId?: string })?.clerkId
         if (!clerkId) {
             console.log('[Polar Webhook] No clerkId in metadata')
             return
@@ -102,7 +104,7 @@ export const POST = Webhooks({
                 prisma.billingAccount.update({
                     where: { userId: user.id },
                     data: {
-                        polarCustomerId: subscription.customer_id,
+                        polarCustomerId: subscription.customerId,
                         subscriptionId: subscription.id,
                         plan,
                         status: 'active',
@@ -133,12 +135,20 @@ export const POST = Webhooks({
         const status = statusMap[subscription.status] || 'active'
 
         try {
-            await prisma.billingAccount.update({
-                where: { subscriptionId: subscription.id },
-                data: { status }
+            // Find the billing account first, then update
+            const billingAccount = await prisma.billingAccount.findFirst({
+                where: { subscriptionId: subscription.id }
             })
 
-            console.log(`[Polar Webhook] Subscription status: ${status}`)
+            if (billingAccount) {
+                await prisma.billingAccount.update({
+                    where: { id: billingAccount.id },
+                    data: { status }
+                })
+                console.log(`[Polar Webhook] Subscription status: ${status}`)
+            } else {
+                console.log('[Polar Webhook] Billing account not found for subscription')
+            }
         } catch (error) {
             console.error('[Polar Webhook] Error updating status:', error)
         }

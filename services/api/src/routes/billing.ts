@@ -45,10 +45,14 @@ app.post('/checkout', requireAuth, async (c) => {
     const body = await c.req.json();
 
     const plan = body.plan as 'starter' | 'pro' | 'ultra';
-    const cycle = body.cycle as 'weekly' | 'monthly' || 'monthly';
+    const cycle = body.cycle as 'monthly' | 'annual' || 'monthly';
 
     if (!['starter', 'pro', 'ultra'].includes(plan)) {
         return c.json({ error: 'Invalid plan. Must be "starter", "pro", or "ultra"' }, 400);
+    }
+
+    if (!['monthly', 'annual'].includes(cycle)) {
+        return c.json({ error: 'Invalid cycle. Must be "monthly" or "annual"' }, 400);
     }
 
     try {
@@ -56,6 +60,7 @@ app.post('/checkout', requireAuth, async (c) => {
             userId,
             email: user.email,
             plan,
+            cycle,
             successUrl: body.success_url || `${process.env.FRONTEND_URL}/billing/success`,
             cancelUrl: body.cancel_url,
         });
