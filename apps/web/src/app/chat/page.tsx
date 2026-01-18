@@ -19,7 +19,7 @@ interface Chat {
 export default function ChatIndexPage() {
     const router = useRouter();
     const { isLoaded, isSignedIn } = useAuth();
-    const [chats, setChats] = useState<Chat[]>([]);
+    const [_chats, setChats] = useState<Chat[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
 

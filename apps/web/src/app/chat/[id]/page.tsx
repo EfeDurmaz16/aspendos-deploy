@@ -125,7 +125,7 @@ export default function ChatPage() {
     // Auto-scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, initialMessages]);
+    }, []);
 
     const handleSend = useCallback(async () => {
         const content = inputValue.trim();

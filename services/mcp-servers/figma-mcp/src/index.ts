@@ -10,10 +10,7 @@
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-    CallToolRequestSchema,
-    ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 
 // Figma API configuration
@@ -26,7 +23,7 @@ const ListFilesSchema = z.object({
     projectId: z.string().optional().describe('Project ID to list files from'),
 });
 
-const GetFileSchema = z.object({
+const _GetFileSchema = z.object({
     fileKey: z.string().describe('The Figma file key'),
     nodeIds: z.array(z.string()).optional().describe('Specific node IDs to retrieve'),
 });
@@ -137,7 +134,10 @@ async function getDesignTokens(input: z.infer<typeof GetDesignTokensSchema>) {
 
     // Extract color styles
     if (data.styles) {
-        for (const [styleId, style] of Object.entries(data.styles) as [string, { name: string; styleType: string }][]) {
+        for (const [styleId, style] of Object.entries(data.styles) as [
+            string,
+            { name: string; styleType: string },
+        ][]) {
             if (style.styleType === 'FILL') {
                 tokens.colors[style.name] = {
                     hex: `#${styleId.slice(0, 6)}`, // Placeholder - real impl needs node lookup
@@ -155,19 +155,26 @@ async function getDesignTokens(input: z.infer<typeof GetDesignTokensSchema>) {
     }
 
     // Traverse document for design values
-    function extractTokens(node: { type?: string; children?: unknown[]; fills?: { color?: { r: number; g: number; b: number; a: number } }[]; style?: { fontFamily?: string; fontSize?: number; fontWeight?: number } }) {
+    function extractTokens(node: {
+        type?: string;
+        children?: unknown[];
+        fills?: { color?: { r: number; g: number; b: number; a: number } }[];
+        style?: { fontFamily?: string; fontSize?: number; fontWeight?: number };
+    }) {
         if (node.type === 'RECTANGLE' || node.type === 'FRAME') {
             // Extract fill colors
             if (node.fills && Array.isArray(node.fills)) {
-                node.fills.forEach((fill: { color?: { r: number; g: number; b: number; a: number } }) => {
-                    if (fill.color) {
-                        const hex = rgbToHex(fill.color.r, fill.color.g, fill.color.b);
-                        tokens.colors[hex] = {
-                            hex,
-                            rgba: `rgba(${Math.round(fill.color.r * 255)}, ${Math.round(fill.color.g * 255)}, ${Math.round(fill.color.b * 255)}, ${fill.color.a})`,
-                        };
+                node.fills.forEach(
+                    (fill: { color?: { r: number; g: number; b: number; a: number } }) => {
+                        if (fill.color) {
+                            const hex = rgbToHex(fill.color.r, fill.color.g, fill.color.b);
+                            tokens.colors[hex] = {
+                                hex,
+                                rgba: `rgba(${Math.round(fill.color.r * 255)}, ${Math.round(fill.color.g * 255)}, ${Math.round(fill.color.b * 255)}, ${fill.color.a})`,
+                            };
+                        }
                     }
-                });
+                );
             }
         }
 
@@ -181,7 +188,7 @@ async function getDesignTokens(input: z.infer<typeof GetDesignTokensSchema>) {
         }
 
         if (node.children && Array.isArray(node.children)) {
-            node.children.forEach(child => extractTokens(child as typeof node));
+            node.children.forEach((child) => extractTokens(child as typeof node));
         }
     }
 
@@ -309,7 +316,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'get_design_tokens',
-                description: 'Extract design tokens (colors, typography, spacing) from a Figma file',
+                description:
+                    'Extract design tokens (colors, typography, spacing) from a Figma file',
                 inputSchema: {
                     type: 'object',
                     properties: {

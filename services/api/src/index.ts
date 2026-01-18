@@ -153,7 +153,7 @@ app.route('/api/voice', voiceRoutes);
 app.route('/api/scheduler', schedulerRoutes);
 
 // Start server with MCP initialization
-const port = parseInt(process.env.PORT || '8080');
+const port = parseInt(process.env.PORT || '8080', 10);
 
 async function startServer() {
     console.log('🚀 Aspendos API Server starting...');

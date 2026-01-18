@@ -89,7 +89,7 @@ export function createMemoryAddTool(userId: string) {
 /**
  * Reinforce an existing memory (increases importance)
  */
-export function createMemoryReinforceTool(userId: string) {
+export function createMemoryReinforceTool(_userId: string) {
     return tool({
         description:
             'Reinforce an existing memory to increase its importance and prevent decay. Use when a memory proves useful or relevant.',
@@ -145,7 +145,7 @@ export const calculatorTool = tool({
                 expression,
                 result: Number(result),
             };
-        } catch (error) {
+        } catch (_error) {
             return {
                 success: false,
                 error: 'Failed to evaluate expression',

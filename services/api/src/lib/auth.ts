@@ -1,13 +1,17 @@
 import { prisma } from '@aspendos/db';
-import { polar, checkout, portal } from '@polar-sh/better-auth';
+import { checkout, polar, portal } from '@polar-sh/better-auth';
 import { Polar } from '@polar-sh/sdk';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 
 // Initialize Polar client
+// Initialize Polar client
+const accessToken = process.env.POLAR_ACCESS_TOKEN || '';
+const isSandbox = accessToken.startsWith('polar_sat_');
+
 const polarClient = new Polar({
-    accessToken: process.env.POLAR_ACCESS_TOKEN,
-    server: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+    accessToken,
+    server: isSandbox ? 'sandbox' : 'production',
 });
 
 export const auth = betterAuth({

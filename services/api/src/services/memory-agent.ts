@@ -178,7 +178,7 @@ export class MemoryDecisionAgent {
      * Uses decision matrix for known types, can call LLM for UNKNOWN.
      */
     async decideMemoryUsage(
-        userId: string,
+        _userId: string,
         query: string,
         queryType?: QueryType
     ): Promise<MemoryDecision> {

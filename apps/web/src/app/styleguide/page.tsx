@@ -97,7 +97,7 @@ export default function StyleguidePage() {
                                     key={name}
                                     name={name}
                                     value={value}
-                                    textDark={parseInt(name) < 500}
+                                    textDark={parseInt(name, 10) < 500}
                                 />
                             ))}
                         </div>
@@ -422,7 +422,7 @@ export default function StyleguidePage() {
                                             <div
                                                 className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
                                                 style={{
-                                                    width: `${(parseInt(value) / 500) * 100}%`,
+                                                    width: `${(parseInt(value, 10) / 500) * 100}%`,
                                                 }}
                                             />
                                         </div>

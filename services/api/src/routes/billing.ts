@@ -52,7 +52,7 @@ app.post('/sync', requireAuth, async (c) => {
 // GET /api/billing/usage - Get usage history
 app.get('/usage', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const limit = parseInt(c.req.query('limit') || '50');
+    const limit = parseInt(c.req.query('limit') || '50', 10);
 
     const history = await billingService.getUsageHistory(userId, limit);
 
@@ -108,7 +108,7 @@ app.post('/checkout', requireAuth, async (c) => {
 app.post('/cancel', requireAuth, async (c) => {
     const userId = c.get('userId')!;
 
-    const account = await billingService.getBillingStatus(userId);
+    const _account = await billingService.getBillingStatus(userId);
 
     // Get subscription ID from billing account
     const billingAccount = await billingService.getOrCreateBillingAccount(userId);

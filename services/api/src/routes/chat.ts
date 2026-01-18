@@ -31,7 +31,7 @@ app.get('/', async (c) => {
     const user = c.get('user')!;
 
     // Ensure user exists in database
-    await chatService.getOrCreateUser(userId, user.email, user.firstName);
+    await chatService.getOrCreateUser(userId, user.email, user.name);
 
     const chats = await chatService.listChats({ userId });
 
@@ -45,7 +45,7 @@ app.post('/', async (c) => {
     const body = await c.req.json();
 
     // Ensure user exists
-    await chatService.getOrCreateUser(userId, user.email, user.firstName);
+    await chatService.getOrCreateUser(userId, user.email, user.name);
 
     const chat = await chatService.createChat({
         userId,
@@ -394,7 +394,7 @@ Your approach:
         prompt += `\n\n## User Context (from memory)
 The following memories from the user may be relevant to this conversation:
 
-${memories.map((m, i) => `[${m.sector}] ${m.content}`).join('\n\n')}
+${memories.map((m, _i) => `[${m.sector}] ${m.content}`).join('\n\n')}
 
 Use this context to personalize your response when appropriate. Don't mention that you're using memories unless directly asked.`;
     }

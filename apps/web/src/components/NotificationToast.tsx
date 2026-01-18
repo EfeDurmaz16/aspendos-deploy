@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, MessageSquare, Bell, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Bell, ChevronRight, MessageSquare, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { PACNotification } from '@/hooks/useNotifications';
 
 interface NotificationToastProps {
@@ -139,9 +139,7 @@ export function NotificationContainer({
     };
 
     return (
-        <div
-            className={`fixed z-50 ${positionClasses[position]} flex flex-col gap-3`}
-        >
+        <div className={`fixed z-50 ${positionClasses[position]} flex flex-col gap-3`}>
             <AnimatePresence mode="popLayout">
                 {notifications.slice(0, 3).map((notification, index) => (
                     <NotificationToast

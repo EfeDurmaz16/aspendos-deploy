@@ -2,7 +2,7 @@ import { prisma } from '@aspendos/db';
 import type { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth';
-import { createEmbedding, createStreamingChatCompletion, openai } from '@/lib/services/openai';
+import { createEmbedding, createStreamingChatCompletion } from '@/lib/services/openai';
 import { searchMemories, storeConversationEmbedding } from '@/lib/services/qdrant';
 
 // ============================================

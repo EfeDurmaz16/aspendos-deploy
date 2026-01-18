@@ -30,7 +30,7 @@ app.get('/dashboard/stats', async (c) => {
  */
 app.get('/dashboard/list', async (c) => {
     const userId = c.get('userId')!;
-    const limit = Math.min(parseInt(c.req.query('limit') || '50'), 100);
+    const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 100);
 
     const memories = await openMemory.listMemories(userId, { limit });
 
@@ -138,7 +138,7 @@ app.post('/dashboard/feedback', async (c) => {
 app.get('/', async (c) => {
     const userId = c.get('userId')!;
     const query = c.req.query('q') || '';
-    const limit = parseInt(c.req.query('limit') || '10');
+    const limit = parseInt(c.req.query('limit') || '10', 10);
 
     if (query) {
         const memories = await openMemory.searchMemories(query, userId, { limit });

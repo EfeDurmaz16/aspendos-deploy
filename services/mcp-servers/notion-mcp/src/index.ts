@@ -10,10 +10,7 @@
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-    CallToolRequestSchema,
-    ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { Client } from '@notionhq/client';
 import { z } from 'zod';
 
@@ -25,10 +22,7 @@ const notion = new Client({
 // Tool input schemas
 const QueryDatabaseSchema = z.object({
     databaseId: z.string().describe('The Notion database ID'),
-    filter: z
-        .record(z.unknown())
-        .optional()
-        .describe('Filter object for the query'),
+    filter: z.record(z.unknown()).optional().describe('Filter object for the query'),
     sorts: z
         .array(
             z.object({
@@ -45,14 +39,8 @@ const CreatePageSchema = z.object({
     parentId: z.string().describe('Parent page or database ID'),
     parentType: z.enum(['page', 'database']).default('database'),
     title: z.string().describe('Page title'),
-    properties: z
-        .record(z.unknown())
-        .optional()
-        .describe('Page properties (for database pages)'),
-    content: z
-        .array(z.record(z.unknown()))
-        .optional()
-        .describe('Page content blocks'),
+    properties: z.record(z.unknown()).optional().describe('Page properties (for database pages)'),
+    content: z.array(z.record(z.unknown())).optional().describe('Page content blocks'),
 });
 
 const UpdatePageSchema = z.object({
@@ -161,7 +149,9 @@ async function updatePage(input: z.infer<typeof UpdatePageSchema>) {
     };
 
     if (input.properties) {
-        updateData.properties = input.properties as Parameters<typeof notion.pages.update>[0]['properties'];
+        updateData.properties = input.properties as Parameters<
+            typeof notion.pages.update
+        >[0]['properties'];
     }
 
     if (input.archived !== undefined) {
@@ -237,7 +227,9 @@ async function searchContent(input: z.infer<typeof SearchContentSchema>) {
             if (result.object === 'database' && 'title' in result) {
                 return {
                     ...base,
-                    title: result.title.map((t) => ('plain_text' in t ? t.plain_text : '')).join(''),
+                    title: result.title
+                        .map((t) => ('plain_text' in t ? t.plain_text : ''))
+                        .join(''),
                     url: result.url,
                     lastEditedTime: result.last_edited_time,
                 };

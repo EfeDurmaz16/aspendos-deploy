@@ -78,7 +78,7 @@ export function useStreamingChat(chatId: string) {
     // Track memory decision and memories (fetched separately or from stream)
     const [currentDecision, setCurrentDecision] = useState<MemoryDecision | null>(null);
     const [currentMemories, setCurrentMemories] = useState<MemoryUsed[]>([]);
-    const [selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
+    const [_selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
 
     // Create transport with memoization
     const transport = useMemo(

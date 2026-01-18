@@ -57,7 +57,7 @@ export async function authMiddleware(c: Context, next: Next) {
  * Returns 401 if user is not authenticated.
  */
 export async function requireAuth(c: Context, next: Next) {
-    await authMiddleware(c, async () => { });
+    await authMiddleware(c, async () => {});
 
     if (!c.get('userId')) {
         return c.json({ error: 'Unauthorized' }, 401);

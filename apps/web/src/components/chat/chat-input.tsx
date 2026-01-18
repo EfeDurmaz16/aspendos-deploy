@@ -2,7 +2,6 @@
 
 import { ArrowUp, Globe, Microphone, Paperclip } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 export function ChatInput() {
     return (

@@ -19,7 +19,7 @@ export const {
     getSession,
     // Polar checkout functions
     checkout,
-    customerPortal,
+    // customerPortal, // Not available in current plugin version
 } = authClient;
 
 export type Session = typeof authClient.$Infer.Session;

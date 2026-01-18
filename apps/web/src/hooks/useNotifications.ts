@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -25,7 +25,10 @@ interface OneSignalInstance {
         permission: boolean;
         requestPermission: () => Promise<void>;
         addEventListener: (event: string, callback: (event: NotificationEventData) => void) => void;
-        removeEventListener: (event: string, callback: (event: NotificationEventData) => void) => void;
+        removeEventListener: (
+            event: string,
+            callback: (event: NotificationEventData) => void
+        ) => void;
     };
 }
 
@@ -79,7 +82,9 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
     const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [pushPermission, setPushPermission] = useState<'default' | 'granted' | 'denied'>('default');
+    const [pushPermission, setPushPermission] = useState<'default' | 'granted' | 'denied'>(
+        'default'
+    );
     const [isPushSubscribed, setIsPushSubscribed] = useState(false);
     const [isSSEConnected, setIsSSEConnected] = useState(false);
     const [notifications, setNotifications] = useState<PACNotification[]>([]);
@@ -174,40 +179,25 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
             setIsPushSubscribed(OneSignal.User.PushSubscription.optedIn);
 
             // Listen for notification events
-            OneSignal.Notifications.addEventListener('foregroundWillDisplay', (event: NotificationEventData) => {
-                const notification: PACNotification = {
-                    type: 'pac_followup',
-                    title: event.notification.title,
-                    body: event.notification.body,
-                    data: event.notification.data,
-                    timestamp: new Date().toISOString(),
-                };
+            OneSignal.Notifications.addEventListener(
+                'foregroundWillDisplay',
+                (event: NotificationEventData) => {
+                    const notification: PACNotification = {
+                        type: 'pac_followup',
+                        title: event.notification.title,
+                        body: event.notification.body,
+                        data: event.notification.data,
+                        timestamp: new Date().toISOString(),
+                    };
 
-                setNotifications((prev) => [notification, ...prev].slice(0, 50));
-                onNotificationRef.current?.(notification);
-            });
+                    setNotifications((prev) => [notification, ...prev].slice(0, 50));
+                    onNotificationRef.current?.(notification);
+                }
+            );
         });
     }, []);
 
-    const requestPushPermission = useCallback(async () => {
-        if (!window.OneSignal) {
-            await initOneSignal();
-        }
-
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        window.OneSignalDeferred.push(async (OneSignal) => {
-            await OneSignal.Notifications.requestPermission();
-            setPushPermission(OneSignal.Notifications.permission ? 'granted' : 'denied');
-            setIsPushSubscribed(OneSignal.User.PushSubscription.optedIn);
-
-            // Register subscription with backend
-            if (OneSignal.User.PushSubscription.id) {
-                await registerPushSubscription(OneSignal.User.PushSubscription.id);
-            }
-        });
-    }, [initOneSignal]);
-
-    const registerPushSubscription = async (playerId: string) => {
+    const registerPushSubscription = useCallback(async (playerId: string) => {
         try {
             const response = await fetch(`${API_URL}/api/notifications/subscribe`, {
                 method: 'POST',
@@ -229,7 +219,25 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
             console.error('Push registration failed:', err);
             return false;
         }
-    };
+    }, []);
+
+    const requestPushPermission = useCallback(async () => {
+        if (!window.OneSignal) {
+            await initOneSignal();
+        }
+
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        window.OneSignalDeferred.push(async (OneSignal) => {
+            await OneSignal.Notifications.requestPermission();
+            setPushPermission(OneSignal.Notifications.permission ? 'granted' : 'denied');
+            setIsPushSubscribed(OneSignal.User.PushSubscription.optedIn);
+
+            // Register subscription with backend
+            if (OneSignal.User.PushSubscription.id) {
+                await registerPushSubscription(OneSignal.User.PushSubscription.id);
+            }
+        });
+    }, [initOneSignal, registerPushSubscription]);
 
     const setOneSignalExternalUserId = useCallback(async (userId: string) => {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -315,9 +323,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 
     const markNotificationAsRead = useCallback(async (taskId: string) => {
         // TODO: Send to backend to update notification log
-        setNotifications((prev) =>
-            prev.filter((n) => n.taskId !== taskId)
-        );
+        setNotifications((prev) => prev.filter((n) => n.taskId !== taskId));
     }, []);
 
     // ============================================

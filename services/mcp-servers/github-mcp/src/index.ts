@@ -13,10 +13,7 @@
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-    CallToolRequestSchema,
-    ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { Octokit } from '@octokit/rest';
 import { z } from 'zod';
 
@@ -245,7 +242,10 @@ async function getFileContent(input: z.infer<typeof GetFileContentSchema>) {
             path: data.path,
             size: data.size,
             sha: data.sha,
-            content: content.length > 50000 ? content.substring(0, 50000) + '\n... (truncated)' : content,
+            content:
+                content.length > 50000
+                    ? `${content.substring(0, 50000)}\n... (truncated)`
+                    : content,
             encoding: data.encoding,
             htmlUrl: data.html_url,
         };

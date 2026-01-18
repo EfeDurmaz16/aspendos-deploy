@@ -21,7 +21,7 @@ app.get('/tasks', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const status = c.req.query('status') as ScheduledTaskStatus | undefined;
     const chatId = c.req.query('chatId');
-    const limit = parseInt(c.req.query('limit') || '50');
+    const limit = parseInt(c.req.query('limit') || '50', 10);
 
     const tasks = await schedulerService.getUserScheduledTasks(userId, {
         status,
@@ -64,7 +64,7 @@ app.post('/tasks', requireAuth, async (c) => {
         triggerDate = schedulerService.parseTimeExpression(body.triggerAt);
     }
 
-    if (!triggerDate || isNaN(triggerDate.getTime())) {
+    if (!triggerDate || Number.isNaN(triggerDate.getTime())) {
         return c.json({ error: 'Invalid triggerAt format' }, 400);
     }
 
@@ -159,7 +159,7 @@ app.patch('/tasks/:id', requireAuth, async (c) => {
         triggerDate = schedulerService.parseTimeExpression(body.triggerAt);
     }
 
-    if (!triggerDate || isNaN(triggerDate.getTime())) {
+    if (!triggerDate || Number.isNaN(triggerDate.getTime())) {
         return c.json({ error: 'Invalid triggerAt format' }, 400);
     }
 

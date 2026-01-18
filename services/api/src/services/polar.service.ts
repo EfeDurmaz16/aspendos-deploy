@@ -3,12 +3,18 @@
  * Handles Polar API integration for subscriptions and checkout.
  * Uses direct fetch calls for more control over API interface.
  */
-import { prisma } from '@aspendos/db';
-import crypto from 'crypto';
-import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
 
-const POLAR_API_URL = 'https://api.polar.sh/v1';
+import crypto from 'node:crypto';
+import { prisma } from '@aspendos/db';
+import { getTierConfig, type TierName } from '../config/tiers';
+
 const POLAR_ACCESS_TOKEN = process.env.POLAR_ACCESS_TOKEN || '';
+// Auto-detect environment based on token prefix
+const IS_SANDBOX = POLAR_ACCESS_TOKEN.startsWith('polar_sat_');
+const POLAR_API_URL = IS_SANDBOX ? 'https://sandbox-api.polar.sh/v1' : 'https://api.polar.sh/v1';
+
+console.log('Polar Enviroment:', IS_SANDBOX ? 'SANDBOX' : 'PRODUCTION');
+console.log('Polar Token Loaded:', POLAR_ACCESS_TOKEN ? `${POLAR_ACCESS_TOKEN.substring(0, 4)}...` : 'NONE');
 
 // Product IDs from Polar dashboard (monthly)
 const PRODUCT_IDS = {
@@ -66,7 +72,9 @@ export async function createCustomer(options: {
 /**
  * Get a Polar customer by external ID (our user ID)
  */
-export async function getCustomerByExternalId(userId: string): Promise<{ id: string; email: string }> {
+export async function getCustomerByExternalId(
+    userId: string
+): Promise<{ id: string; email: string }> {
     const response = await fetch(`${POLAR_API_URL}/customers/external/${userId}`, {
         method: 'GET',
         headers: {
@@ -354,6 +362,6 @@ async function handleSubscriptionCanceled(data: PolarWebhookEvent['data']) {
 /**
  * Get Polar customer portal URL for managing subscription
  */
-export async function getCustomerPortalUrl(customerId: string): Promise<string> {
+export async function getCustomerPortalUrl(_customerId: string): Promise<string> {
     return `https://polar.sh/purchases/subscriptions`;
 }

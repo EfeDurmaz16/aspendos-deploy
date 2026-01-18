@@ -27,7 +27,7 @@ function getOpenAI(): OpenAI {
 app.post('/transcribe', async (c) => {
     try {
         const body = await c.req.parseBody();
-        const audioFile = body['audio'];
+        const audioFile = body.audio;
 
         if (!audioFile || !(audioFile instanceof File)) {
             return c.json({ error: 'No audio file provided' }, 400);

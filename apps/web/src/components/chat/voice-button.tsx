@@ -127,7 +127,7 @@ export function VoiceButton({ onTranscription, disabled = false, className }: Vo
             console.error('Failed to start recording:', err);
             setError('Failed to access microphone');
         }
-    }, [checkSilence]);
+    }, [checkSilence, processAudio]);
 
     const handleClick = () => {
         if (isRecording) stopRecording();

@@ -202,7 +202,7 @@ export async function getMessages(chatId: string, limit?: number): Promise<Messa
  */
 export async function autoGenerateTitle(chatId: string, firstMessage: string) {
     // Take first 50 chars of message as title
-    const title = firstMessage.length > 50 ? firstMessage.substring(0, 47) + '...' : firstMessage;
+    const title = firstMessage.length > 50 ? `${firstMessage.substring(0, 47)}...` : firstMessage;
 
     return prisma.chat.update({
         where: { id: chatId },
@@ -371,7 +371,7 @@ export async function getSharedChat(token: string) {
                     sharedAt: meta.sharedAt,
                 };
             }
-        } catch { }
+        } catch {}
     }
 
     return null;

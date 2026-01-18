@@ -1,4 +1,3 @@
-import { prisma } from '@aspendos/db';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth';
@@ -21,7 +20,7 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const query = searchParams.get('q');
-        const limit = parseInt(searchParams.get('limit') || '10');
+        const limit = parseInt(searchParams.get('limit') || '10', 10);
         const type = searchParams.get('type') as 'context' | 'preference' | 'insight' | undefined;
 
         if (!query) {

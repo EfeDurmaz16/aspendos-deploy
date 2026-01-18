@@ -9,7 +9,6 @@ import {
     MagnifyingGlass,
     PencilSimple,
     Plus,
-    PushPin,
     Sparkle,
     Trash,
     X,
@@ -17,7 +16,6 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';

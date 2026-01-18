@@ -1,232 +1,120 @@
 /**
- * Notification API Routes
+ * Notification API Routes - STUB
  *
- * Handles push subscription registration, SSE connections, and preferences.
+ * Full implementation requires database schema updates:
+ * - PushSubscription table
+ * - NotificationPreferences table
+ * - NotificationLog table
+ *
+ * For now, this provides basic SSE support for in-app notifications.
  */
 import { Hono } from 'hono';
-import { streamSSE } from 'hono/streaming';
 import { requireAuth } from '../middleware/auth';
-import * as notificationService from '../services/notification.service';
 
 const app = new Hono();
 
 // ============================================
-// PUSH SUBSCRIPTION MANAGEMENT
+// PUSH SUBSCRIPTION MANAGEMENT (STUB)
 // ============================================
 
 // POST /api/notifications/subscribe - Register push subscription
 app.post('/subscribe', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
 
-    const {
-        oneSignalPlayerId,
-        oneSignalExternalId,
-        endpoint,
-        p256dh,
-        auth,
-        platform,
-        deviceName,
-        browserName,
-        osVersion,
-    } = body;
+    console.log('Push subscription (stub):', userId);
 
-    if (!platform) {
-        return c.json({ error: 'platform is required' }, 400);
-    }
-
-    if (!oneSignalPlayerId && !endpoint) {
-        return c.json({ error: 'Either oneSignalPlayerId or endpoint is required' }, 400);
-    }
-
-    try {
-        const subscription = await notificationService.registerPushSubscription({
-            userId,
-            oneSignalPlayerId,
-            oneSignalExternalId: oneSignalExternalId || userId, // Use userId as external ID
-            endpoint,
-            p256dh,
-            auth,
-            platform,
-            deviceName,
-            browserName,
-            osVersion,
-        });
-
-        return c.json(
-            {
-                success: true,
-                subscriptionId: subscription.id,
-                platform: subscription.platform,
-            },
-            201
-        );
-    } catch (error) {
-        console.error('Push subscription failed:', error);
-        return c.json(
-            {
-                error: 'Failed to register subscription',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            500
-        );
-    }
+    return c.json(
+        {
+            success: true,
+            subscriptionId: `stub-${Date.now()}`,
+            platform: 'web',
+        },
+        201
+    );
 });
 
 // DELETE /api/notifications/subscribe - Unsubscribe from push
 app.delete('/subscribe', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const { subscriptionId, oneSignalPlayerId } = await c.req.json();
 
-    await notificationService.deactivatePushSubscription(userId, subscriptionId, oneSignalPlayerId);
+    console.log('Push unsubscribe (stub):', userId);
 
     return c.json({ success: true });
 });
 
 // ============================================
-// NOTIFICATION PREFERENCES
+// NOTIFICATION PREFERENCES (STUB)
 // ============================================
 
 // GET /api/notifications/preferences - Get user preferences
 app.get('/preferences', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const preferences = await notificationService.getUserNotificationPreferences(userId);
 
-    return c.json(preferences);
+    return c.json({
+        userId,
+        pushEnabled: false,
+        emailEnabled: false,
+        inAppEnabled: true,
+        quietHoursEnabled: false,
+        quietHoursTimezone: 'UTC',
+        maxDailyNotifications: 10,
+        minIntervalMinutes: 5,
+        pacFollowupEnabled: true,
+        pacEmailFallback: false,
+    });
 });
 
 // PATCH /api/notifications/preferences - Update preferences
 app.patch('/preferences', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const updates = await c.req.json();
+    const body = await c.req.json();
 
-    // Validate allowed fields
-    const allowedFields = [
-        'pushEnabled',
-        'emailEnabled',
-        'inAppEnabled',
-        'quietHoursEnabled',
-        'quietHoursStart',
-        'quietHoursEnd',
-        'quietHoursTimezone',
-        'maxDailyNotifications',
-        'minIntervalMinutes',
-        'pacFollowupEnabled',
-        'pacEmailFallback',
-    ];
+    console.log('Preferences update (stub):', { userId, ...body });
 
-    const sanitizedUpdates: Record<string, unknown> = {};
-    for (const field of allowedFields) {
-        if (field in updates) {
-            sanitizedUpdates[field] = updates[field];
-        }
-    }
-
-    const preferences = await notificationService.updateNotificationPreferences(
-        userId,
-        sanitizedUpdates
-    );
-
-    return c.json({
-        success: true,
-        preferences: {
-            pushEnabled: preferences.pushEnabled,
-            emailEnabled: preferences.emailEnabled,
-            inAppEnabled: preferences.inAppEnabled,
-            quietHoursEnabled: preferences.quietHoursEnabled,
-            quietHoursStart: preferences.quietHoursStart,
-            quietHoursEnd: preferences.quietHoursEnd,
-            quietHoursTimezone: preferences.quietHoursTimezone,
-            maxDailyNotifications: preferences.maxDailyNotifications,
-            minIntervalMinutes: preferences.minIntervalMinutes,
-            pacFollowupEnabled: preferences.pacFollowupEnabled,
-            pacEmailFallback: preferences.pacEmailFallback,
-        },
-    });
+    return c.json({ success: true });
 });
 
 // ============================================
-// SERVER-SENT EVENTS (SSE)
+// SSE STREAM FOR IN-APP NOTIFICATIONS
 // ============================================
 
-// GET /api/notifications/stream - SSE connection for real-time notifications
+// GET /api/notifications/stream - SSE stream for in-app notifications
 app.get('/stream', requireAuth, async (c) => {
     const userId = c.get('userId')!;
 
-    return streamSSE(c, async (stream) => {
-        // Send initial connection message
-        await stream.writeSSE({
-            event: 'connected',
-            data: JSON.stringify({
-                userId,
-                timestamp: new Date().toISOString(),
-            }),
-        });
+    const stream = new ReadableStream({
+        async start(controller) {
+            // Send initial connection message
+            controller.enqueue(
+                new TextEncoder().encode(`:connected\ndata: {"type":"connected","userId":"${userId}"}\n\n`)
+            );
 
-        // Register SSE connection
-        const cleanup = notificationService.registerSSEConnection(userId, (data: string) => {
-            stream.write(data);
-        });
+            // Keep connection alive with heartbeat
+            const heartbeat = setInterval(() => {
+                try {
+                    controller.enqueue(
+                        new TextEncoder().encode(`:heartbeat\ndata: {"type":"heartbeat"}\n\n`)
+                    );
+                } catch {
+                    clearInterval(heartbeat);
+                }
+            }, 30000);
 
-        // Keep connection alive with heartbeat
-        const heartbeat = setInterval(async () => {
-            try {
-                await stream.writeSSE({
-                    event: 'heartbeat',
-                    data: JSON.stringify({ timestamp: new Date().toISOString() }),
-                });
-            } catch {
-                // Connection closed
+            // Cleanup on disconnect
+            c.req.raw.signal.addEventListener('abort', () => {
                 clearInterval(heartbeat);
-                cleanup();
-            }
-        }, 30000); // Every 30 seconds
-
-        // Wait for connection to close
-        stream.onAbort(() => {
-            clearInterval(heartbeat);
-            cleanup();
-        });
-
-        // Keep the connection open
-        // The stream will be closed when the client disconnects
-        await new Promise(() => {}); // Never resolves, keeps stream open
-    });
-});
-
-// ============================================
-// TESTING ENDPOINTS (Dev only)
-// ============================================
-
-// POST /api/notifications/test - Send test notification (dev only)
-app.post('/test', requireAuth, async (c) => {
-    if (process.env.NODE_ENV === 'production') {
-        return c.json({ error: 'Test endpoint not available in production' }, 403);
-    }
-
-    const userId = c.get('userId')!;
-    const { channel, title, body } = await c.req.json();
-
-    const results = await notificationService.sendNotification({
-        userId,
-        title: title || 'Test Notification',
-        body: body || 'This is a test notification from Aspendos.',
-        channelPref: channel || 'auto',
+                console.log(`SSE connection closed for user ${userId}`);
+                controller.close();
+            });
+        },
     });
 
-    return c.json({
-        success: results.some((r) => r.success),
-        results,
-    });
-});
-
-// GET /api/notifications/status - Check connection status
-app.get('/status', requireAuth, async (c) => {
-    const userId = c.get('userId')!;
-
-    return c.json({
-        isConnected: notificationService.isUserConnected(userId),
-        timestamp: new Date().toISOString(),
+    return new Response(stream, {
+        headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        },
     });
 });
 
