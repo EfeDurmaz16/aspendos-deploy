@@ -4,7 +4,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { clerkAuth } from './middleware/auth';
 import { auth } from './lib/auth';
-import { initializeMCPClients, closeMCPClients, getConnectedMCPServers } from './lib/mcp-clients';
+import { initializeMCPClients, closeMCPClients, getConnectedMCPServers, getMCPStatus } from './lib/mcp-clients';
 import { SUPPORTED_MODELS, getModelsForTier } from './lib/ai-providers';
 
 // Routes
@@ -55,6 +55,7 @@ app.get('/health', (c) => c.json({
     mcp: {
         initialized: getConnectedMCPServers().length > 0,
         servers: getConnectedMCPServers(),
+        status: getMCPStatus(),
     },
 }));
 
