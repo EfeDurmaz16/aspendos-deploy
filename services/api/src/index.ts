@@ -13,6 +13,7 @@ import chatRoutes from './routes/chat';
 import memoryRoutes from './routes/memory';
 import billingRoutes from './routes/billing';
 import voiceRoutes from './routes/voice';
+import schedulerRoutes from './routes/scheduler';
 
 type Variables = {
     user: typeof auth.$Infer.Session.user | null;
@@ -143,6 +144,7 @@ app.route('/api/chat', chatRoutes);
 app.route('/api/memory', memoryRoutes);
 app.route('/api/billing', billingRoutes);
 app.route('/api/voice', voiceRoutes);
+app.route('/api/scheduler', schedulerRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080');

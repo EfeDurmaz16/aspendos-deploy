@@ -31,6 +31,7 @@ model User {
   agents         Agent[]
   billingAccount BillingAccount?
   apiKeys        ApiKey[]
+  scheduledTasks ScheduledTask[]
 
   emailVerified Boolean   @default(false)
   image         String?
@@ -205,6 +206,48 @@ model Agent {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ============================================
+// SCHEDULED TASKS (Proactive Agentic Callback)
+// ============================================
+
+model ScheduledTask {
+  id             String            @id @default(cuid())
+  userId         String
+  chatId         String
+  triggerAt      DateTime          // When to execute
+  status         ScheduledTaskStatus @default(PENDING)
+  taskType       String            @default("PROACTIVE_FOLLOWUP")
+  intent         String            @db.Text // What the AI promised to do
+  contextSummary String?           @db.Text // Summary for context restoration
+  topic          String?           // Topic of the follow-up
+  tone           String            @default("friendly") // friendly, professional, encouraging
+  channelPref    String            @default("auto") // auto, push, email, in_app
+  metadata       Json?             // Additional task data
+  executedAt     DateTime?         // When it was actually executed
+  resultMessage  String?           @db.Text // The generated follow-up message
+  deliveryStatus String?           // pending, delivered, opened, dismissed, failed
+  errorMessage   String?           // Error if failed
+  externalJobId  String?           // QStash or cron job ID
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([triggerAt])
+  @@index([status, triggerAt])
+  @@map("scheduled_task")
+}
+
+enum ScheduledTaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELED
 }
 
 // ============================================
