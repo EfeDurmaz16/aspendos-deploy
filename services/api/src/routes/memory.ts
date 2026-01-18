@@ -53,12 +53,61 @@ app.get('/dashboard/list', async (c) => {
 });
 
 /**
+ * PATCH /api/memory/dashboard/:id - Update a memory
+ * Note: OpenMemory doesn't support direct updates, so we delete and re-add
+ */
+app.patch('/dashboard/:id', async (c) => {
+    const userId = c.get('userId')!;
+    const memoryId = c.req.param('id');
+    const body = await c.req.json();
+
+    // Delete old memory
+    try {
+        await openMemory.deleteMemory(memoryId);
+    } catch {
+        // Ignore if not found
+    }
+
+    // Add updated memory
+    const newMemory = await openMemory.addMemory(body.content, userId, {
+        sector: body.sector,
+        metadata: body.metadata,
+    });
+
+    return c.json({ success: true, memory: newMemory });
+});
+
+/**
  * DELETE /api/memory/dashboard/:id
  */
 app.delete('/dashboard/:id', async (c) => {
     const memoryId = c.req.param('id');
     await openMemory.deleteMemory(memoryId);
     return c.json({ success: true, message: 'Memory deleted' });
+});
+
+/**
+ * POST /api/memory/dashboard/bulk-delete - Bulk delete memories
+ */
+app.post('/dashboard/bulk-delete', async (c) => {
+    const body = await c.req.json();
+    const ids = body.ids as string[];
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return c.json({ error: 'ids array is required' }, 400);
+    }
+
+    let deleted = 0;
+    for (const id of ids) {
+        try {
+            await openMemory.deleteMemory(id);
+            deleted++;
+        } catch {
+            // Continue with next
+        }
+    }
+
+    return c.json({ success: true, deleted });
 });
 
 /**
