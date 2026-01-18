@@ -7,6 +7,7 @@ import { Suspense, useState } from 'react';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/hooks/use-auth';
+import { checkout } from '@/lib/auth-client';
 
 type BillingPeriod = 'weekly' | 'monthly' | 'annual';
 
@@ -70,6 +71,17 @@ function PricingContent() {
     const { isSignedIn } = useUser();
     const success = searchParams.get('success');
     const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
+    const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+    const handleCheckout = async (slug: string) => {
+        setCheckoutLoading(slug);
+        try {
+            await checkout({ slug });
+        } catch (error) {
+            console.error('Checkout error:', error);
+            setCheckoutLoading(null);
+        }
+    };
 
     const getPrice = (tierName: string) =>
         PRICING_DATA[tierName as keyof typeof PRICING_DATA][billingPeriod];
@@ -138,8 +150,8 @@ function PricingContent() {
                                 key={period}
                                 onClick={() => setBillingPeriod(period)}
                                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all relative ${billingPeriod === period
-                                        ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 shadow-sm'
-                                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                                    ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 shadow-sm'
+                                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
                                     }`}
                             >
                                 {period.charAt(0).toUpperCase() + period.slice(1)}
@@ -159,8 +171,8 @@ function PricingContent() {
                         <div
                             key={tier.name}
                             className={`relative bg-white dark:bg-zinc-900 rounded-2xl border p-8 flex flex-col hover-lift ${tier.popular
-                                    ? 'border-zinc-900 dark:border-zinc-50 ring-2 ring-zinc-900/10 dark:ring-zinc-50/10 md:-translate-y-4 shadow-xl glow'
-                                    : 'border-zinc-200 dark:border-zinc-800 shadow-sm'
+                                ? 'border-zinc-900 dark:border-zinc-50 ring-2 ring-zinc-900/10 dark:ring-zinc-50/10 md:-translate-y-4 shadow-xl glow'
+                                : 'border-zinc-200 dark:border-zinc-800 shadow-sm'
                                 }`}
                             style={{ animationDelay: `${(index + 3) * 100}ms` }}
                         >
@@ -217,27 +229,36 @@ function PricingContent() {
                                 ))}
                             </ul>
 
-                            <Button
-                                variant={tier.popular ? 'default' : 'outline'}
-                                className="w-full rounded-full"
-                                asChild
-                            >
-                                {tier.name === 'Starter' && !isSignedIn ? (
-                                    <Link href="/signup">{tier.cta}</Link>
-                                ) : tier.name === 'Starter' && isSignedIn ? (
-                                    <Link href="/chat">{tier.cta}</Link>
-                                ) : isSignedIn ? (
-                                    <Link
-                                        href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/checkout/${tier.slug}`}
-                                    >
+                            {tier.name === 'Starter' ? (
+                                <Button
+                                    variant={tier.popular ? 'default' : 'outline'}
+                                    className="w-full rounded-full"
+                                    asChild
+                                >
+                                    <Link href={isSignedIn ? '/chat' : '/signup'}>
                                         {tier.cta}
                                     </Link>
-                                ) : (
+                                </Button>
+                            ) : isSignedIn ? (
+                                <Button
+                                    variant={tier.popular ? 'default' : 'outline'}
+                                    className="w-full rounded-full"
+                                    onClick={() => handleCheckout(tier.slug)}
+                                    disabled={checkoutLoading === tier.slug}
+                                >
+                                    {checkoutLoading === tier.slug ? 'Loading...' : tier.cta}
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant={tier.popular ? 'default' : 'outline'}
+                                    className="w-full rounded-full"
+                                    asChild
+                                >
                                     <Link href={`/signup?redirect=pricing&tier=${tier.slug}`}>
                                         {tier.cta}
                                     </Link>
-                                )}
-                            </Button>
+                                </Button>
+                            )}
                         </div>
                     ))}
                 </div>
