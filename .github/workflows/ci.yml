@@ -197,13 +197,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy API to staging
+      - name: Install Railway CLI
+        if: env.RAILWAY_API_TOKEN != ''
+        run: npm install -g @railway/cli
+
+      - name: Deploy API to staging (Railway)
+        if: env.RAILWAY_API_TOKEN != ''
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
         run: |
-          echo "Deploying API to staging..."
-          echo "Staging deployment instructions:"
-          echo "1. Configure RAILWAY_API_TOKEN secret for Railway.app deployment"
-          echo "2. Or configure SSH_KEY and STAGING_HOST for VPS deployment"
-          echo "3. Or use your preferred deployment platform"
+          railway up \
+            --service aspendos-api \
+            --environment staging \
+            --detach
+        continue-on-error: true
+
+      - name: Deploy Web to staging (Railway)
+        if: env.RAILWAY_API_TOKEN != ''
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+        run: |
+          railway up \
+            --service aspendos-web \
+            --environment staging \
+            --detach
+        continue-on-error: true
+
+      - name: Deployment instructions
+        if: env.RAILWAY_API_TOKEN == ''
+        run: |
+          echo "⚠️  Staging deployment skipped - no RAILWAY_API_TOKEN configured"
+          echo ""
+          echo "To enable automated staging deployments:"
+          echo "1. Go to GitHub Settings → Secrets and variables → Actions"
+          echo "2. Add RAILWAY_API_TOKEN from https://railway.app/account/tokens"
+          echo "3. Ensure Railway project is linked in railway.json"
 
   # ============================================
   # DEPLOY TO PRODUCTION
@@ -220,11 +248,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to production
+      - name: Install Railway CLI
+        if: env.RAILWAY_API_TOKEN != ''
+        run: npm install -g @railway/cli
+
+      - name: Deploy API to production (Railway)
+        if: env.RAILWAY_API_TOKEN != ''
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
         run: |
-          echo "Deploying to production..."
-          echo "Production deployment instructions:"
-          echo "1. Configure RAILWAY_API_TOKEN secret for Railway.app deployment"
-          echo "2. Or configure SSH_KEY and PROD_HOST for VPS deployment"
-          echo "3. Or configure VERCEL_TOKEN for web hosting"
-          echo "4. See .github/workflows/DEPLOYMENT.md for detailed setup"
+          railway up \
+            --service aspendos-api \
+            --environment production \
+            --detach
+        continue-on-error: true
+
+      - name: Deploy Web to production (Railway)
+        if: env.RAILWAY_API_TOKEN != ''
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+        run: |
+          railway up \
+            --service aspendos-web \
+            --environment production \
+            --detach
+        continue-on-error: true
+
+      - name: Deployment instructions
+        if: env.RAILWAY_API_TOKEN == ''
+        run: |
+          echo "⚠️  Production deployment skipped - no RAILWAY_API_TOKEN configured"
+          echo ""
+          echo "To enable automated production deployments:"
+          echo "1. Go to GitHub Settings → Secrets and variables → Actions"
+          echo "2. Add RAILWAY_API_TOKEN from https://railway.app/account/tokens"
+          echo "3. Ensure Railway project is linked in railway.json"
+          echo "4. See .github/DEPLOYMENT.md for detailed setup instructions"

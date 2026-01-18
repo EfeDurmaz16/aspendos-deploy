@@ -150,6 +150,39 @@ For large-scale deployments with auto-scaling.
     kubectl rollout restart deployment/aspendos-api
 ```
 
+## Quick Start: Enable Railway Deployments (Recommended)
+
+The CI/CD pipeline is already configured to use Railway. To enable automated deployments:
+
+1. **Create Railway Account & Project**
+   - Go to [Railway.app](https://railway.app) and sign up
+   - Create a new project called `aspendos`
+
+2. **Generate API Token**
+   - In Railway: Account Settings → API Tokens
+   - Create a new token
+   - Copy the token (you'll only see it once)
+
+3. **Add GitHub Secret**
+   - Go to your GitHub repo: Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `RAILWAY_API_TOKEN`
+   - Value: Paste the token from Railway
+   - Click "Add secret"
+
+4. **Link Services in Railway**
+   - In Railway, create two services for your project:
+     - `aspendos-api`: pointing to `services/api` directory
+     - `aspendos-web`: pointing to `apps/web` directory
+   - Configure environment variables in each service (DATABASE_URL, API keys, etc.)
+
+5. **Test Deployment**
+   - Push to `develop` branch to trigger staging deployment
+   - Check GitHub Actions tab for real-time logs
+   - Once tested, push to `main` branch for production
+
+**That's it!** From now on, every push to `main` will automatically deploy to production, and every push to `develop` will deploy to staging.
+
 ## GitHub Secrets Configuration
 
 Add these secrets to your GitHub repository (Settings → Secrets and variables → Actions):
@@ -158,8 +191,8 @@ Add these secrets to your GitHub repository (Settings → Secrets and variables 
 - `NEXT_PUBLIC_API_URL`: Your API endpoint URL
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk public key
 
-### For Railway Deployment:
-- `RAILWAY_API_TOKEN`: Railway API token
+### For Railway Deployment (Recommended):
+- `RAILWAY_API_TOKEN`: Railway API token (follow Quick Start above)
 - `DATABASE_URL`: PostgreSQL connection (optional - Railway can manage)
 
 ### For Vercel Deployment:
