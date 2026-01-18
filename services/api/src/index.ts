@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { clerkAuth } from './middleware/auth';
 import { auth } from './lib/auth';
+import { rateLimit, getRateLimitStatus } from './middleware/rate-limit';
 import { initializeMCPClients, closeMCPClients, getConnectedMCPServers, getMCPStatus } from './lib/mcp-clients';
 import { SUPPORTED_MODELS, getModelsForTier } from './lib/ai-providers';
 
@@ -46,6 +47,9 @@ app.use('*', async (c, next) => {
 // Apply Clerk auth to all routes (optional - doesn't block)
 app.use('*', clerkAuth);
 
+// Apply rate limiting
+app.use('*', rateLimit());
+
 // Health check
 app.get('/health', (c) => c.json({
     status: 'ok',
@@ -83,6 +87,19 @@ app.get('/api/models/tier/:tier', (c) => {
             provider: m.provider,
         })),
     });
+});
+
+// Rate limit status
+app.get('/api/rate-limit', (c) => {
+    const userId = c.get('userId');
+    if (!userId) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const user = c.get('user');
+    const tier = ((user as Record<string, unknown>)?.tier as 'STARTER' | 'PRO' | 'ULTRA') || 'STARTER';
+
+    return c.json(getRateLimitStatus(userId, tier));
 });
 
 // Pinned/recommended models
