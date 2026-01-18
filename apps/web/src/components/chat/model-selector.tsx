@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/hooks/use-auth';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -56,7 +56,7 @@ export function ModelSelector({
     disabled = false,
     className,
 }: ModelSelectorProps) {
-    const { getToken } = useAuth();
+    // Better Auth uses cookies - getToken removed
     const [models, setModels] = useState<Model[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -66,7 +66,7 @@ export function ModelSelector({
             try {
                 const token = await getToken();
                 const res = await fetch(`${API_BASE}/api/models`, {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    headers: token ? { /* credentials: include handles auth */ } : {},
                 });
 
                 if (res.ok) {

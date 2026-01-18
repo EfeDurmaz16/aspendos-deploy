@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { SidebarSimple, List, PaperPlaneRight, CircleNotch } from '@phosphor-icons/react';
@@ -27,7 +27,7 @@ interface Chat {
 export default function ChatPage() {
     const params = useParams();
     const router = useRouter();
-    const { getToken, isLoaded, isSignedIn } = useAuth();
+    const { isLoaded, isSignedIn } = useAuth();
     const chatId = params.id as string;
 
     // Panel visibility state (simplified - no refs needed)
@@ -65,7 +65,7 @@ export default function ChatPage() {
 
                 // Load chat with messages
                 const res = await fetch(`${API_BASE}/api/chat/${chatId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: { /* credentials: include handles auth */ },
                 });
 
                 if (!res.ok) {
@@ -122,7 +122,7 @@ export default function ChatPage() {
             try {
                 const token = await getToken();
                 const res = await fetch(`${API_BASE}/api/chat`, {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: { /* credentials: include handles auth */ },
                 });
                 if (res.ok) {
                     const data = await res.json();
@@ -179,7 +179,7 @@ export default function ChatPage() {
             const res = await fetch(`${API_BASE}/api/chat`, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    /* credentials: include handles auth */,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ title: 'New Chat' }),
@@ -201,7 +201,7 @@ export default function ChatPage() {
             await fetch(`${API_BASE}/api/chat/${chatId}`, {
                 method: 'PATCH',
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    /* credentials: include handles auth */,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ model_id: modelId }),

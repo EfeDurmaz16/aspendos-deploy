@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/hooks/use-auth'
 import { Suspense, useState } from 'react'
 
 // Pricing tiers based on approved strategy

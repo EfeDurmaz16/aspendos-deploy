@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import {
     Brain,
@@ -45,7 +45,7 @@ interface MemoryPanelProps {
 }
 
 export function MemoryPanel({ onClose }: MemoryPanelProps) {
-    const { getToken } = useAuth();
+    // Better Auth uses cookies - getToken removed
     const [memories, setMemories] = useState<Memory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -65,7 +65,7 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                 : `${API_BASE}/api/memory/dashboard/list?limit=50`;
 
             const res = await fetch(url, {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { /* credentials: include handles auth */ },
             });
 
             if (res.ok) {
@@ -97,7 +97,7 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
             const res = await fetch(`${API_BASE}/api/memory`, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    /* credentials: include handles auth */,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -125,7 +125,7 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
             await fetch(`${API_BASE}/api/memory/dashboard/${editingMemory.id}`, {
                 method: 'PATCH',
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    /* credentials: include handles auth */,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -147,7 +147,7 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
             const token = await getToken();
             await fetch(`${API_BASE}/api/memory/dashboard/${id}`, {
                 method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { /* credentials: include handles auth */ },
             });
             fetchMemories();
         } catch (err) {
@@ -164,7 +164,7 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
             await fetch(`${API_BASE}/api/memory/dashboard/bulk-delete`, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    /* credentials: include handles auth */,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ ids: Array.from(selectedIds) }),

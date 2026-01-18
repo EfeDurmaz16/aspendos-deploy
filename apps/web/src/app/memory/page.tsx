@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/hooks/use-auth';
 import { Brain, Database, Lightbulb, Heart, Sparkles, Clock, Pin, Trash2, Edit, ThumbsUp, ThumbsDown, Search, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -216,7 +216,7 @@ function MemoryCard({
 // ============================================
 
 export default function MemoryDashboardPage() {
-    const { getToken } = useAuth();
+    // Better Auth uses cookies - getToken removed
 
     const [stats, setStats] = useState<MemoryStats | null>(null);
     const [memories, setMemories] = useState<Memory[]>([]);

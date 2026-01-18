@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth'
 import { NextRequest } from 'next/server'
 import { prisma } from '@aspendos/db'
 import { openai, createEmbedding, createStreamingChatCompletion } from '@/lib/services/openai'
@@ -46,9 +46,9 @@ function createSSEEncoder() {
 // ============================================
 
 export async function POST(req: NextRequest) {
-    const { userId: clerkId } = await auth()
+    const session = await auth()
 
-    if (!clerkId) {
+    if (!session?.userId) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
             headers: { 'Content-Type': 'application/json' }
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
         // Get user from database
         const user = await prisma.user.findUnique({
-            where: { clerkId },
+            where: { id: session.userId },
             include: { billingAccount: true }
         })
 

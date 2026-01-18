@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 import { prisma } from '@aspendos/db'
 
@@ -7,15 +7,15 @@ import { prisma } from '@aspendos/db'
  * Returns the current user's data including billing information
  */
 export async function GET() {
-    const { userId: clerkId } = await auth()
+    const session = await auth()
 
-    if (!clerkId) {
+    if (!session?.userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     try {
         const user = await prisma.user.findUnique({
-            where: { clerkId },
+            where: { id: session.userId },
             include: {
                 billingAccount: true,
                 _count: {
@@ -34,7 +34,6 @@ export async function GET() {
 
         return NextResponse.json({
             id: user.id,
-            clerkId: user.clerkId,
             email: user.email,
             name: user.name,
             avatar: user.avatar,

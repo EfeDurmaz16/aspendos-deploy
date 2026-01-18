@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@aspendos/db'
 import { createEmbedding } from '@/lib/services/openai'
@@ -12,18 +12,13 @@ import { v4 as uuidv4 } from 'uuid'
  */
 
 export async function GET(req: NextRequest) {
-    const { userId: clerkId } = await auth()
+    const session = await auth()
 
-    if (!clerkId) {
+    if (!session?.userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     try {
-        const user = await prisma.user.findUnique({ where: { clerkId } })
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        }
-
         const { searchParams } = new URL(req.url)
         const query = searchParams.get('q')
         const limit = parseInt(searchParams.get('limit') || '10')
@@ -33,11 +28,8 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Query parameter "q" is required' }, { status: 400 })
         }
 
-        // Create embedding for the query
         const queryEmbedding = await createEmbedding(query)
-
-        // Search memories
-        const memories = await searchMemories(user.id, queryEmbedding, limit, type)
+        const memories = await searchMemories(session.userId, queryEmbedding, limit, type)
 
         return NextResponse.json({ memories })
     } catch (error) {
@@ -47,18 +39,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const { userId: clerkId } = await auth()
+    const session = await auth()
 
-    if (!clerkId) {
+    if (!session?.userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     try {
-        const user = await prisma.user.findUnique({ where: { clerkId } })
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        }
-
         const body = await req.json()
         const { content, type = 'context', conversationId, metadata } = body
 
@@ -66,46 +53,35 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Content is required' }, { status: 400 })
         }
 
-        // Create embedding
         const embedding = await createEmbedding(content)
-
-        // Store in Qdrant
         const memoryId = uuidv4()
+
         await storeMemory({
             id: memoryId,
             vector: embedding,
-            userId: user.id,
+            userId: session.userId,
             content,
             type,
             conversationId,
             metadata,
         })
 
-        return NextResponse.json({
-            id: memoryId,
-            message: 'Memory stored successfully'
-        }, { status: 201 })
+        return NextResponse.json({ id: memoryId, message: 'Memory stored successfully' }, { status: 201 })
     } catch (error) {
         console.error('[API /memory POST] Error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
-export async function DELETE(req: NextRequest) {
-    const { userId: clerkId } = await auth()
+export async function DELETE() {
+    const session = await auth()
 
-    if (!clerkId) {
+    if (!session?.userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     try {
-        const user = await prisma.user.findUnique({ where: { clerkId } })
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        }
-
-        await deleteUserMemories(user.id)
-
+        await deleteUserMemories(session.userId)
         return NextResponse.json({ message: 'All memories cleared' })
     } catch (error) {
         console.error('[API /memory DELETE] Error:', error)

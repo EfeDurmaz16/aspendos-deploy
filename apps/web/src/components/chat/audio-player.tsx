@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/hooks/use-auth';
 import {
     Play,
     Pause,
@@ -38,7 +38,7 @@ interface AudioPlayerProps {
 }
 
 export function AudioPlayer({ text, className }: AudioPlayerProps) {
-    const { getToken } = useAuth();
+    // Better Auth uses cookies - getToken removed
     const [isLoading, setIsLoading] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [selectedVoice, setSelectedVoice] = useState<VoiceId>('alloy');
@@ -87,7 +87,7 @@ export function AudioPlayer({ text, className }: AudioPlayerProps) {
             const response = await fetch(`${API_BASE}/api/voice/synthesize`, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    /* credentials: include handles auth */,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({

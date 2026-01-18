@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@aspendos/db'
 
@@ -8,21 +8,13 @@ import { prisma } from '@aspendos/db'
  */
 
 export async function GET(req: NextRequest) {
-    const { userId: clerkId } = await auth()
+    const session = await auth()
 
-    if (!clerkId) {
+    if (!session?.userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { clerkId }
-        })
-
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        }
-
         const { searchParams } = new URL(req.url)
         const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
         const cursor = searchParams.get('cursor')
@@ -30,7 +22,7 @@ export async function GET(req: NextRequest) {
 
         const chats = await prisma.chat.findMany({
             where: {
-                userId: user.id,
+                userId: session.userId,
                 isArchived: archived
             },
             take: limit + 1,
@@ -72,27 +64,19 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const { userId: clerkId } = await auth()
+    const session = await auth()
 
-    if (!clerkId) {
+    if (!session?.userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { clerkId }
-        })
-
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        }
-
         const body = await req.json().catch(() => ({}))
         const { title = 'New Chat', modelPreference } = body
 
         const chat = await prisma.chat.create({
             data: {
-                userId: user.id,
+                userId: session.userId,
                 title,
                 modelPreference,
             }

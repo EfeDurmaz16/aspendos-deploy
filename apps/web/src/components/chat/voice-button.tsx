@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/hooks/use-auth';
 import { Microphone, Stop, CircleNotch } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ export function VoiceButton({
     disabled = false,
     className,
 }: VoiceButtonProps) {
-    const { getToken } = useAuth();
+    // Better Auth uses cookies - getToken removed
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -157,7 +157,7 @@ export function VoiceButton({
             const response = await fetch(`${API_BASE}/api/voice/transcribe`, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    /* credentials: include handles auth */,
                 },
                 body: formData,
             });

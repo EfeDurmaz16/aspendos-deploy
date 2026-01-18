@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Plus, ChatCircle, CircleNotch } from '@phosphor-icons/react';
-import { cn } from '@/lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -19,7 +18,7 @@ interface Chat {
 
 export default function ChatIndexPage() {
     const router = useRouter();
-    const { getToken, isLoaded, isSignedIn } = useAuth();
+    const { isLoaded, isSignedIn } = useAuth();
     const [chats, setChats] = useState<Chat[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
@@ -31,9 +30,8 @@ export default function ChatIndexPage() {
         const loadChats = async () => {
             try {
                 setIsLoading(true);
-                const token = await getToken();
                 const res = await fetch(`${API_BASE}/api/chat`, {
-                    headers: { Authorization: `Bearer ${token}` },
+                    credentials: 'include',
                 });
 
                 if (res.ok) {
@@ -41,7 +39,6 @@ export default function ChatIndexPage() {
                     const chatList = data.chats || [];
                     setChats(chatList);
 
-                    // If there are chats, redirect to the most recent one
                     if (chatList.length > 0) {
                         router.push(`/chat/${chatList[0].id}`);
                     }
@@ -54,19 +51,16 @@ export default function ChatIndexPage() {
         };
 
         loadChats();
-    }, [isLoaded, isSignedIn, getToken, router]);
+    }, [isLoaded, isSignedIn, router]);
 
     // Create new chat
     const handleNewChat = async () => {
         try {
             setIsCreating(true);
-            const token = await getToken();
             const res = await fetch(`${API_BASE}/api/chat`, {
                 method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: 'New Chat' }),
             });
 

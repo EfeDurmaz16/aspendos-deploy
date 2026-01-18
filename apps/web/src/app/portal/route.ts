@@ -1,31 +1,26 @@
 import { CustomerPortal } from '@polar-sh/nextjs'
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth'
+import { prisma } from '@aspendos/db'
 
 /**
  * Polar Customer Portal Route
- * 
- * This route opens Polar's customer portal for managing subscriptions.
- * The user must be authenticated (handled by middleware).
+ * Opens Polar's customer portal for managing subscriptions.
  */
 export const GET = CustomerPortal({
     accessToken: process.env.POLAR_ACCESS_TOKEN!,
     server: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
-    getCustomerId: async (req) => {
-        // Get the current user's Polar customer ID from our database
-        const { userId } = await auth()
+    getCustomerId: async () => {
+        const session = await auth()
 
-        if (!userId) {
+        if (!session?.userId) {
             throw new Error('User not authenticated')
         }
 
-        // TODO: Look up the Polar customer ID from our database
-        // const user = await db.user.findUnique({
-        //   where: { clerkId: userId },
-        //   include: { billingAccount: true }
-        // })
-        // return user?.billingAccount?.polarCustomerId || ''
+        const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            include: { billingAccount: true }
+        })
 
-        // For now, return empty string (will be updated when db is connected)
-        return ''
+        return user?.billingAccount?.polarCustomerId || ''
     },
 })

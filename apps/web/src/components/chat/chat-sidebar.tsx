@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Plus, ChatCircle, DotsThree, CircleNotch } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '@/hooks/use-auth';
 
 interface Chat {
     id: string;
