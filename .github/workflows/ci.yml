@@ -1,5 +1,5 @@
-# Aspendos CI/CD Pipeline
-name: CI
+# Aspendos CI/CD Pipeline with Deployment
+name: CI/CD
 
 on:
   push:
@@ -10,6 +10,9 @@ on:
 env:
   BUN_VERSION: '1.1.0'
   NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_NAME_API: aspendos/api
+  IMAGE_NAME_WEB: aspendos/web
 
 jobs:
   # ============================================
@@ -32,11 +35,11 @@ jobs:
 
       - name: Type check API
         run: cd services/api && bunx tsc --noEmit
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Type check Web
         run: cd apps/web && bunx tsc --noEmit
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Lint
         run: bun run lint 2>/dev/null || true
@@ -68,6 +71,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:8080' }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_ONESIGNAL_APP_ID: ${{ secrets.NEXT_PUBLIC_ONESIGNAL_APP_ID || '' }}
 
   # ============================================
   # TEST
@@ -109,13 +113,18 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/aspendos_test
 
   # ============================================
-  # DOCKER BUILD
+  # DOCKER BUILD & PUSH
   # ============================================
   docker:
-    name: Docker Build
+    name: Docker Build & Push
     runs-on: ubuntu-latest
     needs: [build, test]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      api-image: ${{ steps.meta-api.outputs.tags }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -123,43 +132,99 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build API Docker image
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for API
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push API Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./services/api
-          push: false
-          tags: aspendos-api:${{ github.sha }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Extract metadata for Web
+        id: meta-web
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Web Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/web
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-web.outputs.tags }}
+          labels: ${{ steps.meta-web.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # ============================================
-  # DEPLOY (Optional - configure as needed)
+  # DEPLOY TO STAGING
   # ============================================
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: docker
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: staging
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://staging.aspendos.app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to staging
-        run: echo "Deploy to staging - configure your deployment here"
-        # Add your deployment commands here
-        # e.g., Railway, Vercel, AWS, etc.
+      - name: Deploy API to staging
+        run: |
+          echo "Deploying API to staging..."
+          echo "Staging deployment instructions:"
+          echo "1. Configure RAILWAY_API_TOKEN secret for Railway.app deployment"
+          echo "2. Or configure SSH_KEY and STAGING_HOST for VPS deployment"
+          echo "3. Or use your preferred deployment platform"
 
+  # ============================================
+  # DEPLOY TO PRODUCTION
+  # ============================================
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: deploy-staging
+    needs: docker
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
+    environment:
+      name: production
+      url: https://aspendos.app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Deploy to production
-        run: echo "Deploy to production - configure your deployment here"
-        # Add your production deployment commands here
+        run: |
+          echo "Deploying to production..."
+          echo "Production deployment instructions:"
+          echo "1. Configure RAILWAY_API_TOKEN secret for Railway.app deployment"
+          echo "2. Or configure SSH_KEY and PROD_HOST for VPS deployment"
+          echo "3. Or configure VERCEL_TOKEN for web hosting"
+          echo "4. See .github/workflows/DEPLOYMENT.md for detailed setup"
