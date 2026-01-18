@@ -23,6 +23,13 @@ export default function ChatIndexPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
 
+    // Redirect to login if not signed in (client-side only)
+    useEffect(() => {
+        if (isLoaded && !isSignedIn) {
+            router.push('/login');
+        }
+    }, [isLoaded, isSignedIn, router]);
+
     useEffect(() => {
         if (!isLoaded || !isSignedIn) return;
 
@@ -71,17 +78,13 @@ export default function ChatIndexPage() {
         }
     };
 
-    if (!isLoaded) {
+    // Show loading while checking auth or redirecting
+    if (!isLoaded || !isSignedIn) {
         return (
             <div className="h-screen flex items-center justify-center bg-background gradient-mesh">
                 <CircleNotch className="w-8 h-8 animate-spin text-zinc-400" />
             </div>
         );
-    }
-
-    if (!isSignedIn) {
-        router.push('/login');
-        return null;
     }
 
     if (isLoading) {
