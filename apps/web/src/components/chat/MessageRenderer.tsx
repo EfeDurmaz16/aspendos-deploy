@@ -1,26 +1,26 @@
-'use client'
+'use client';
 
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
-import rehypeHighlight from 'rehype-highlight'
-import { useState, useCallback } from 'react'
-import 'katex/dist/katex.min.css'
+import { useCallback, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
+import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import 'katex/dist/katex.min.css';
 
 // ============================================
 // TYPES
 // ============================================
 
 interface MessageRendererProps {
-    content: string
-    streaming?: boolean
-    className?: string
+    content: string;
+    streaming?: boolean;
+    className?: string;
 }
 
 interface CodeBlockProps {
-    language: string
-    code: string
+    language: string;
+    code: string;
 }
 
 // ============================================
@@ -28,13 +28,13 @@ interface CodeBlockProps {
 // ============================================
 
 function CodeBlock({ language, code }: CodeBlockProps) {
-    const [copied, setCopied] = useState(false)
+    const [copied, setCopied] = useState(false);
 
     const copyToClipboard = useCallback(() => {
-        navigator.clipboard.writeText(code)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-    }, [code])
+        navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    }, [code]);
 
     return (
         <div className="relative group my-4">
@@ -46,12 +46,32 @@ function CodeBlock({ language, code }: CodeBlockProps) {
                     className="text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                     {copied ? (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                            />
                         </svg>
                     ) : (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
                         </svg>
                     )}
                 </button>
@@ -62,7 +82,7 @@ function CodeBlock({ language, code }: CodeBlockProps) {
                 <code className={`language-${language} text-sm`}>{code}</code>
             </pre>
         </div>
-    )
+    );
 }
 
 // ============================================
@@ -71,7 +91,7 @@ function CodeBlock({ language, code }: CodeBlockProps) {
 
 /**
  * MessageRenderer - Renders markdown with math, code highlighting, and GFM
- * 
+ *
  * Features:
  * - GitHub Flavored Markdown (tables, strikethrough, etc)
  * - KaTeX math rendering ($inline$ and $$block$$)
@@ -79,7 +99,11 @@ function CodeBlock({ language, code }: CodeBlockProps) {
  * - Copy to clipboard for code
  * - Streaming cursor indicator
  */
-export function MessageRenderer({ content, streaming = false, className = '' }: MessageRendererProps) {
+export function MessageRenderer({
+    content,
+    streaming = false,
+    className = '',
+}: MessageRendererProps) {
     return (
         <div className={`prose prose-zinc dark:prose-invert max-w-none ${className}`}>
             <ReactMarkdown
@@ -88,8 +112,8 @@ export function MessageRenderer({ content, streaming = false, className = '' }: 
                 components={{
                     // Custom code block renderer
                     code({ className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || '')
-                        const isInline = !match
+                        const match = /language-(\w+)/.exec(className || '');
+                        const isInline = !match;
 
                         if (isInline) {
                             return (
@@ -99,18 +123,18 @@ export function MessageRenderer({ content, streaming = false, className = '' }: 
                                 >
                                     {children}
                                 </code>
-                            )
+                            );
                         }
 
-                        const language = match?.[1] || 'plaintext'
-                        const code = String(children).replace(/\n$/, '')
+                        const language = match?.[1] || 'plaintext';
+                        const code = String(children).replace(/\n$/, '');
 
-                        return <CodeBlock language={language} code={code} />
+                        return <CodeBlock language={language} code={code} />;
                     },
 
                     // Custom pre to prevent double wrapping
                     pre({ children }) {
-                        return <>{children}</>
+                        return <>{children}</>;
                     },
 
                     // Custom table styles
@@ -121,7 +145,7 @@ export function MessageRenderer({ content, streaming = false, className = '' }: 
                                     {children}
                                 </table>
                             </div>
-                        )
+                        );
                     },
 
                     th({ children }) {
@@ -129,7 +153,7 @@ export function MessageRenderer({ content, streaming = false, className = '' }: 
                             <th className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-left text-sm font-semibold">
                                 {children}
                             </th>
-                        )
+                        );
                     },
 
                     td({ children }) {
@@ -137,7 +161,7 @@ export function MessageRenderer({ content, streaming = false, className = '' }: 
                             <td className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-700 text-sm">
                                 {children}
                             </td>
-                        )
+                        );
                     },
 
                     // Custom link styles
@@ -151,7 +175,7 @@ export function MessageRenderer({ content, streaming = false, className = '' }: 
                             >
                                 {children}
                             </a>
-                        )
+                        );
                     },
 
                     // Custom blockquote styles
@@ -160,31 +184,43 @@ export function MessageRenderer({ content, streaming = false, className = '' }: 
                             <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-600 pl-4 italic text-zinc-600 dark:text-zinc-400">
                                 {children}
                             </blockquote>
-                        )
+                        );
                     },
 
                     // Custom heading styles
                     h1({ children }) {
-                        return <h1 className="text-2xl font-serif font-semibold mt-6 mb-3">{children}</h1>
+                        return (
+                            <h1 className="text-2xl font-serif font-semibold mt-6 mb-3">
+                                {children}
+                            </h1>
+                        );
                     },
                     h2({ children }) {
-                        return <h2 className="text-xl font-serif font-semibold mt-5 mb-2">{children}</h2>
+                        return (
+                            <h2 className="text-xl font-serif font-semibold mt-5 mb-2">
+                                {children}
+                            </h2>
+                        );
                     },
                     h3({ children }) {
-                        return <h3 className="text-lg font-semibold mt-4 mb-2">{children}</h3>
+                        return <h3 className="text-lg font-semibold mt-4 mb-2">{children}</h3>;
                     },
 
                     // Custom list styles
                     ul({ children }) {
-                        return <ul className="list-disc list-outside ml-6 space-y-1">{children}</ul>
+                        return (
+                            <ul className="list-disc list-outside ml-6 space-y-1">{children}</ul>
+                        );
                     },
                     ol({ children }) {
-                        return <ol className="list-decimal list-outside ml-6 space-y-1">{children}</ol>
+                        return (
+                            <ol className="list-decimal list-outside ml-6 space-y-1">{children}</ol>
+                        );
                     },
 
                     // Horizontal rule
                     hr() {
-                        return <hr className="my-6 border-zinc-200 dark:border-zinc-700" />
+                        return <hr className="my-6 border-zinc-200 dark:border-zinc-700" />;
                     },
                 }}
             >
@@ -196,7 +232,7 @@ export function MessageRenderer({ content, streaming = false, className = '' }: 
                 <span className="inline-block w-2 h-5 bg-zinc-900 dark:bg-zinc-50 animate-pulse ml-0.5" />
             )}
         </div>
-    )
+    );
 }
 
-export default MessageRenderer
+export default MessageRenderer;

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Brain, CircleNotch, Lightning, Plus, Sparkle } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Brain, Lightning, Sparkle, CircleNotch } from '@phosphor-icons/react';
+import { useAuth } from '@/hooks/use-auth';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -104,9 +104,14 @@ export default function ChatIndexPage() {
                 {/* Logo with animation */}
                 <div className="mb-10 animate-fade-up opacity-0">
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-zinc-900 dark:bg-zinc-50 mb-6 animate-float glass">
-                        <Brain className="w-10 h-10 text-white dark:text-zinc-900" weight="duotone" />
+                        <Brain
+                            className="w-10 h-10 text-white dark:text-zinc-900"
+                            weight="duotone"
+                        />
                     </div>
-                    <h1 className="font-serif text-4xl font-bold text-zinc-900 dark:text-white mb-3">Welcome to Aspendos</h1>
+                    <h1 className="font-serif text-4xl font-bold text-zinc-900 dark:text-white mb-3">
+                        Welcome to Aspendos
+                    </h1>
                     <p className="text-zinc-500 dark:text-zinc-400">
                         Your AI assistant with cognitive memory
                     </p>
@@ -123,7 +128,10 @@ export default function ChatIndexPage() {
                         {isCreating ? (
                             <CircleNotch className="w-5 h-5 animate-spin" />
                         ) : (
-                            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" weight="bold" />
+                            <Plus
+                                className="w-5 h-5 group-hover:rotate-90 transition-transform"
+                                weight="bold"
+                            />
                         )}
                         Start a new conversation
                     </Button>
@@ -152,7 +160,15 @@ export default function ChatIndexPage() {
                 <div className="mt-10 pt-8 border-t border-zinc-200 dark:border-zinc-800 animate-fade-up opacity-0 animation-delay-300">
                     <p className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Pro Tips</p>
                     <p className="text-sm text-zinc-500">
-                        Press <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono">⌘</kbd> + <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono">K</kbd> to quickly start a new chat
+                        Press{' '}
+                        <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono">
+                            ⌘
+                        </kbd>{' '}
+                        +{' '}
+                        <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono">
+                            K
+                        </kbd>{' '}
+                        to quickly start a new chat
                     </p>
                 </div>
             </div>
@@ -160,7 +176,15 @@ export default function ChatIndexPage() {
     );
 }
 
-function Feature({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function Feature({
+    icon,
+    title,
+    description,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+}) {
     return (
         <div className="flex items-start gap-3 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm hover-lift transition-all">
             <div className="mt-0.5 p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">{icon}</div>

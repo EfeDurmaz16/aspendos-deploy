@@ -2,7 +2,7 @@
  * Chat Database Service
  * Handles CRUD operations for chats and messages using Prisma.
  */
-import { prisma, Chat, Message, User, Prisma } from '@aspendos/db';
+import { type Chat, type Message, type Prisma, prisma, type User } from '@aspendos/db';
 
 // ============================================
 // USER OPERATIONS
@@ -11,7 +11,11 @@ import { prisma, Chat, Message, User, Prisma } from '@aspendos/db';
 /**
  * Get or create user from Clerk ID
  */
-export async function getOrCreateUser(clerkId: string, email: string, name?: string): Promise<User> {
+export async function getOrCreateUser(
+    clerkId: string,
+    email: string,
+    name?: string
+): Promise<User> {
     const existing = await prisma.user.findUnique({
         where: { clerkId },
     });
@@ -111,7 +115,11 @@ export async function getChat(chatId: string, userId: string): Promise<Chat | nu
 /**
  * Update chat
  */
-export async function updateChat(chatId: string, userId: string, data: Partial<Pick<Chat, 'title' | 'modelPreference' | 'isArchived'>>) {
+export async function updateChat(
+    chatId: string,
+    userId: string,
+    data: Partial<Pick<Chat, 'title' | 'modelPreference' | 'isArchived'>>
+) {
     return prisma.chat.updateMany({
         where: {
             id: chatId,
@@ -190,9 +198,7 @@ export async function getMessages(chatId: string, limit?: number): Promise<Messa
  */
 export async function autoGenerateTitle(chatId: string, firstMessage: string) {
     // Take first 50 chars of message as title
-    const title = firstMessage.length > 50
-        ? firstMessage.substring(0, 47) + '...'
-        : firstMessage;
+    const title = firstMessage.length > 50 ? firstMessage.substring(0, 47) + '...' : firstMessage;
 
     return prisma.chat.update({
         where: { id: chatId },
@@ -240,7 +246,11 @@ export async function addMessageFeedback(
  * Fork a chat from a specific message
  * Creates a new chat with all messages up to and including the specified message
  */
-export async function forkChat(chatId: string, userId: string, fromMessageId?: string): Promise<Chat> {
+export async function forkChat(
+    chatId: string,
+    userId: string,
+    fromMessageId?: string
+): Promise<Chat> {
     // Get original chat
     const originalChat = await getChatWithMessages(chatId, userId);
     if (!originalChat) {
@@ -250,7 +260,7 @@ export async function forkChat(chatId: string, userId: string, fromMessageId?: s
     // Determine which messages to include
     let messagesToCopy = originalChat.messages;
     if (fromMessageId) {
-        const messageIndex = messagesToCopy.findIndex(m => m.id === fromMessageId);
+        const messageIndex = messagesToCopy.findIndex((m) => m.id === fromMessageId);
         if (messageIndex === -1) {
             throw new Error('Message not found in chat');
         }
@@ -347,7 +357,7 @@ export async function getSharedChat(token: string) {
                 return {
                     id: chat.id,
                     title: chat.title,
-                    messages: chat.messages.map(m => ({
+                    messages: chat.messages.map((m) => ({
                         id: m.id,
                         role: m.role,
                         content: m.content,
@@ -357,9 +367,7 @@ export async function getSharedChat(token: string) {
                     sharedAt: meta.sharedAt,
                 };
             }
-        } catch {
-            continue;
-        }
+        } catch {}
     }
 
     return null;

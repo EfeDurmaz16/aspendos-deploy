@@ -2,8 +2,8 @@
  * Billing Database Service
  * Handles billing account and credit operations using Prisma.
  */
-import { prisma, BillingAccount, Tier } from '@aspendos/db';
-import { TIER_CONFIG, TierName, getTierConfig } from '../config/tiers';
+import { type BillingAccount, prisma, type Tier } from '@aspendos/db';
+import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
 
 /**
  * Get or create billing account for user
@@ -51,7 +51,9 @@ export async function getBillingStatus(userId: string) {
         monthlyPrice: config.monthlyPrice,
         weeklyPrice: config.weeklyPrice,
         annualPrice: config.annualPrice,
-        annualSavings: Math.round(((config.monthlyPrice * 12) - config.annualPrice) / (config.monthlyPrice * 12) * 100),
+        annualSavings: Math.round(
+            ((config.monthlyPrice * 12 - config.annualPrice) / (config.monthlyPrice * 12)) * 100
+        ),
 
         // Usage
         tokens: {
@@ -141,7 +143,7 @@ export async function recordChatUsage(userId: string) {
 export async function hasTokens(userId: string, estimatedTokens: number): Promise<boolean> {
     const account = await getOrCreateBillingAccount(userId);
     const estimatedCredits = estimatedTokens / 1000;
-    return (account.monthlyCredit - account.creditUsed) >= estimatedCredits;
+    return account.monthlyCredit - account.creditUsed >= estimatedCredits;
 }
 
 /**

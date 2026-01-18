@@ -1,6 +1,6 @@
 /**
  * Memory API Routes (OpenMemory Integration)
- * 
+ *
  * Uses OpenMemory SDK for cognitive memory with HMD sectors,
  * decay, waypoints, and explainable traces.
  */
@@ -36,7 +36,7 @@ app.get('/dashboard/list', async (c) => {
 
     // Map to frontend expected format
     return c.json({
-        memories: memories.map(m => ({
+        memories: memories.map((m) => ({
             id: m.id,
             content: m.content,
             sector: m.sector || 'semantic',
@@ -172,15 +172,13 @@ app.post('/search', async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
 
-    const memories = await openMemory.searchMemories(
-        body.query,
-        userId,
-        { limit: body.limit || 5 }
-    );
+    const memories = await openMemory.searchMemories(body.query, userId, {
+        limit: body.limit || 5,
+    });
 
     return c.json({
         memories,
-        traces: memories.map(m => m.trace).filter(Boolean),
+        traces: memories.map((m) => m.trace).filter(Boolean),
     });
 });
 

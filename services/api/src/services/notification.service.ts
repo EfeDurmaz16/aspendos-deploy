@@ -6,7 +6,7 @@
  * - Email (Resend)
  * - In-app (SSE/WebSocket)
  */
-import { prisma, Prisma, ScheduledTask } from '@aspendos/db';
+import { type Prisma, prisma, type ScheduledTask } from '@aspendos/db';
 
 // ============================================
 // CONFIGURATION
@@ -82,20 +82,24 @@ export async function sendNotification(payload: NotificationPayload): Promise<De
     if (preferences.quietHoursEnabled && isInQuietHours(preferences)) {
         console.log(`User ${payload.userId} is in quiet hours, deferring notification`);
         // Queue for later delivery or skip
-        return [{
-            success: false,
-            channel: 'push',
-            error: 'User is in quiet hours',
-        }];
+        return [
+            {
+                success: false,
+                channel: 'push',
+                error: 'User is in quiet hours',
+            },
+        ];
     }
 
     // Check if PAC follow-ups are enabled
     if (payload.taskId && !preferences.pacFollowupEnabled) {
-        return [{
-            success: false,
-            channel: 'push',
-            error: 'PAC follow-ups disabled by user',
-        }];
+        return [
+            {
+                success: false,
+                channel: 'push',
+                error: 'PAC follow-ups disabled by user',
+            },
+        ];
     }
 
     // Determine channels to use based on preference
@@ -143,7 +147,6 @@ export async function sendNotification(payload: NotificationPayload): Promise<De
 
             // If push failed and email fallback is enabled, continue to email
             if (!result.success && channel === 'push' && preferences.pacEmailFallback) {
-                continue;
             }
         } catch (error) {
             console.error(`Failed to send ${channel} notification:`, error);
@@ -201,9 +204,7 @@ async function sendPushNotification(payload: NotificationPayload): Promise<Deliv
             external_id: [payload.userId],
         },
         // Deep link to chat if available
-        url: payload.chatId
-            ? `${WEB_APP_URL}/chat/${payload.chatId}`
-            : WEB_APP_URL,
+        url: payload.chatId ? `${WEB_APP_URL}/chat/${payload.chatId}` : WEB_APP_URL,
         // Web-specific options
         chrome_web_image: `${WEB_APP_URL}/icon-192.png`,
         chrome_web_badge: `${WEB_APP_URL}/badge.png`,
@@ -228,7 +229,7 @@ async function sendPushNotification(payload: NotificationPayload): Promise<Deliv
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8',
-                'Authorization': `Key ${ONESIGNAL_REST_API_KEY}`,
+                Authorization: `Key ${ONESIGNAL_REST_API_KEY}`,
             },
             body: JSON.stringify(oneSignalPayload),
         });
@@ -243,7 +244,7 @@ async function sendPushNotification(payload: NotificationPayload): Promise<Deliv
             };
         }
 
-        const result = await response.json() as {
+        const result = (await response.json()) as {
             id: string;
             recipients: number;
         };
@@ -290,9 +291,7 @@ async function sendEmailNotification(payload: NotificationPayload): Promise<Deli
     }
 
     // Build email content
-    const chatUrl = payload.chatId
-        ? `${WEB_APP_URL}/chat/${payload.chatId}`
-        : WEB_APP_URL;
+    const chatUrl = payload.chatId ? `${WEB_APP_URL}/chat/${payload.chatId}` : WEB_APP_URL;
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -344,7 +343,7 @@ async function sendEmailNotification(payload: NotificationPayload): Promise<Deli
         const response = await fetch(RESEND_API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
+                Authorization: `Bearer ${RESEND_API_KEY}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -361,7 +360,7 @@ async function sendEmailNotification(payload: NotificationPayload): Promise<Deli
         });
 
         if (!response.ok) {
-            const errorData = await response.json() as { message?: string };
+            const errorData = (await response.json()) as { message?: string };
             return {
                 success: false,
                 channel: 'email',
@@ -369,7 +368,7 @@ async function sendEmailNotification(payload: NotificationPayload): Promise<Deli
             };
         }
 
-        const result = await response.json() as { id: string };
+        const result = (await response.json()) as { id: string };
 
         return {
             success: true,
@@ -553,7 +552,9 @@ export async function deactivatePushSubscription(
 /**
  * Get user's notification preferences
  */
-export async function getUserNotificationPreferences(userId: string): Promise<NotificationPreferences> {
+export async function getUserNotificationPreferences(
+    userId: string
+): Promise<NotificationPreferences> {
     const prefs = await prisma.notificationPreferences.findUnique({
         where: { userId },
     });
@@ -624,13 +625,14 @@ function determineChannels(
         case 'in_app':
             return preferences.inAppEnabled ? ['in_app'] : [];
         case 'auto':
-        default:
+        default: {
             // Priority: in_app (if connected) > push > email
             const channels: NotificationChannel[] = [];
             if (preferences.inAppEnabled) channels.push('in_app');
             if (preferences.pushEnabled) channels.push('push');
             if (preferences.emailEnabled) channels.push('email');
             return channels;
+        }
     }
 }
 
@@ -638,7 +640,11 @@ function determineChannels(
  * Check if current time is within quiet hours
  */
 function isInQuietHours(preferences: NotificationPreferences): boolean {
-    if (!preferences.quietHoursEnabled || !preferences.quietHoursStart || !preferences.quietHoursEnd) {
+    if (
+        !preferences.quietHoursEnabled ||
+        !preferences.quietHoursStart ||
+        !preferences.quietHoursEnd
+    ) {
         return false;
     }
 

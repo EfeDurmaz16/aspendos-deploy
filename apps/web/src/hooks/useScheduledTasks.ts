@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -77,42 +77,47 @@ export function useScheduledTasks(options: UseScheduledTasksOptions = {}) {
     /**
      * Create a new scheduled task
      */
-    const createTask = useCallback(async (input: {
-        chatId: string;
-        triggerAt: string;
-        intent: string;
-        contextSummary?: string;
-        topic?: string;
-        tone?: 'friendly' | 'professional' | 'encouraging';
-        channelPref?: 'auto' | 'push' | 'email' | 'in_app';
-        metadata?: Record<string, unknown>;
-    }): Promise<ScheduledTask | null> => {
-        try {
-            const response = await fetch(`${API_URL}/api/scheduler/tasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(input),
-            });
+    const createTask = useCallback(
+        async (input: {
+            chatId: string;
+            triggerAt: string;
+            intent: string;
+            contextSummary?: string;
+            topic?: string;
+            tone?: 'friendly' | 'professional' | 'encouraging';
+            channelPref?: 'auto' | 'push' | 'email' | 'in_app';
+            metadata?: Record<string, unknown>;
+        }): Promise<ScheduledTask | null> => {
+            try {
+                const response = await fetch(`${API_URL}/api/scheduler/tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(input),
+                });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to create task');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to create task');
+                }
+
+                const task = await response.json();
+
+                // Add to local state
+                setTasks((prev) =>
+                    [...prev, task].sort(
+                        (a, b) => new Date(a.triggerAt).getTime() - new Date(b.triggerAt).getTime()
+                    )
+                );
+
+                return task;
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Unknown error');
+                return null;
             }
-
-            const task = await response.json();
-
-            // Add to local state
-            setTasks((prev) => [...prev, task].sort(
-                (a, b) => new Date(a.triggerAt).getTime() - new Date(b.triggerAt).getTime()
-            ));
-
-            return task;
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error');
-            return null;
-        }
-    }, []);
+        },
+        []
+    );
 
     /**
      * Cancel a scheduled task
@@ -140,45 +145,50 @@ export function useScheduledTasks(options: UseScheduledTasksOptions = {}) {
     /**
      * Reschedule a task
      */
-    const rescheduleTask = useCallback(async (
-        taskId: string,
-        newTriggerAt: string
-    ): Promise<ScheduledTask | null> => {
-        try {
-            const response = await fetch(`${API_URL}/api/scheduler/tasks/${taskId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ triggerAt: newTriggerAt }),
-            });
+    const rescheduleTask = useCallback(
+        async (taskId: string, newTriggerAt: string): Promise<ScheduledTask | null> => {
+            try {
+                const response = await fetch(`${API_URL}/api/scheduler/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ triggerAt: newTriggerAt }),
+                });
 
-            if (!response.ok) {
-                throw new Error('Failed to reschedule task');
+                if (!response.ok) {
+                    throw new Error('Failed to reschedule task');
+                }
+
+                const updatedTask = await response.json();
+
+                // Update local state
+                setTasks((prev) =>
+                    prev
+                        .map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
+                        .sort(
+                            (a, b) =>
+                                new Date(a.triggerAt).getTime() - new Date(b.triggerAt).getTime()
+                        )
+                );
+
+                return updatedTask;
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Unknown error');
+                return null;
             }
-
-            const updatedTask = await response.json();
-
-            // Update local state
-            setTasks((prev) =>
-                prev.map((t) => (t.id === taskId ? { ...t, ...updatedTask } : t))
-                    .sort((a, b) => new Date(a.triggerAt).getTime() - new Date(b.triggerAt).getTime())
-            );
-
-            return updatedTask;
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error');
-            return null;
-        }
-    }, []);
+        },
+        []
+    );
 
     /**
      * Get pending tasks for a specific chat
      */
-    const getPendingTasksForChat = useCallback((chatId: string): ScheduledTask[] => {
-        return tasks.filter(
-            (t) => t.chatId === chatId && t.status === 'PENDING'
-        );
-    }, [tasks]);
+    const getPendingTasksForChat = useCallback(
+        (chatId: string): ScheduledTask[] => {
+            return tasks.filter((t) => t.chatId === chatId && t.status === 'PENDING');
+        },
+        [tasks]
+    );
 
     return {
         tasks,

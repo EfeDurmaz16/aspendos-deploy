@@ -2,9 +2,10 @@
  * AI Provider Registry
  * Unified interface for multiple AI providers using Vercel AI SDK.
  */
-import { createOpenAI } from '@ai-sdk/openai';
+
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createOpenAI } from '@ai-sdk/openai';
 
 // Initialize providers
 const openai = createOpenAI({
@@ -55,16 +56,41 @@ export const SUPPORTED_MODELS = [
     { id: 'openai/o1-mini', name: 'O1 Mini', provider: 'openai', tier: 'PRO' },
 
     // Anthropic
-    { id: 'anthropic/claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'anthropic', tier: 'PRO' },
-    { id: 'anthropic/claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', provider: 'anthropic', tier: 'STARTER' },
-    { id: 'anthropic/claude-opus-4-20250514', name: 'Claude Opus 4', provider: 'anthropic', tier: 'ULTRA' },
+    {
+        id: 'anthropic/claude-sonnet-4-20250514',
+        name: 'Claude Sonnet 4',
+        provider: 'anthropic',
+        tier: 'PRO',
+    },
+    {
+        id: 'anthropic/claude-3-5-haiku-20241022',
+        name: 'Claude 3.5 Haiku',
+        provider: 'anthropic',
+        tier: 'STARTER',
+    },
+    {
+        id: 'anthropic/claude-opus-4-20250514',
+        name: 'Claude Opus 4',
+        provider: 'anthropic',
+        tier: 'ULTRA',
+    },
 
     // Google
-    { id: 'google/gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'google', tier: 'STARTER' },
-    { id: 'google/gemini-2.5-pro-preview-05-06', name: 'Gemini 2.5 Pro', provider: 'google', tier: 'PRO' },
+    {
+        id: 'google/gemini-2.0-flash',
+        name: 'Gemini 2.0 Flash',
+        provider: 'google',
+        tier: 'STARTER',
+    },
+    {
+        id: 'google/gemini-2.5-pro-preview-05-06',
+        name: 'Gemini 2.5 Pro',
+        provider: 'google',
+        tier: 'PRO',
+    },
 ] as const;
 
-export type SupportedModelId = typeof SUPPORTED_MODELS[number]['id'];
+export type SupportedModelId = (typeof SUPPORTED_MODELS)[number]['id'];
 
 /**
  * Get models available for a specific tier
@@ -73,7 +99,7 @@ export function getModelsForTier(tier: 'STARTER' | 'PRO' | 'ULTRA') {
     const tierOrder = { STARTER: 0, PRO: 1, ULTRA: 2 };
     const userTierLevel = tierOrder[tier];
 
-    return SUPPORTED_MODELS.filter(model => {
+    return SUPPORTED_MODELS.filter((model) => {
         const modelTierLevel = tierOrder[model.tier as keyof typeof tierOrder];
         return modelTierLevel <= userTierLevel;
     });
@@ -82,7 +108,10 @@ export function getModelsForTier(tier: 'STARTER' | 'PRO' | 'ULTRA') {
 /**
  * Validate if a model is available for a user's tier
  */
-export function isModelAvailableForTier(modelId: string, tier: 'STARTER' | 'PRO' | 'ULTRA'): boolean {
+export function isModelAvailableForTier(
+    modelId: string,
+    tier: 'STARTER' | 'PRO' | 'ULTRA'
+): boolean {
     const availableModels = getModelsForTier(tier);
-    return availableModels.some(m => m.id === modelId);
+    return availableModels.some((m) => m.id === modelId);
 }

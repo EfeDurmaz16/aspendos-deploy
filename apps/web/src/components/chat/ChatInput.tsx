@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { useState, useRef, useCallback, KeyboardEvent } from 'react'
+import { type KeyboardEvent, useCallback, useRef, useState } from 'react';
 
 // ============================================
 // TYPES
 // ============================================
 
 interface ChatInputProps {
-    onSend: (message: string) => void
-    disabled?: boolean
-    placeholder?: string
-    maxLength?: number
+    onSend: (message: string) => void;
+    disabled?: boolean;
+    placeholder?: string;
+    maxLength?: number;
 }
 
 // ============================================
@@ -26,41 +26,41 @@ export function ChatInput({
     placeholder = 'Send a message...',
     maxLength = 10000,
 }: ChatInputProps) {
-    const [value, setValue] = useState('')
-    const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const [value, setValue] = useState('');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Auto-resize textarea
     const adjustHeight = useCallback(() => {
-        const textarea = textareaRef.current
-        if (!textarea) return
-        textarea.style.height = 'auto'
-        textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
-    }, [])
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+        textarea.style.height = 'auto';
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }, []);
 
     // Handle submit
     const handleSubmit = useCallback(() => {
-        const trimmed = value.trim()
-        if (!trimmed || disabled) return
+        const trimmed = value.trim();
+        if (!trimmed || disabled) return;
 
-        onSend(trimmed)
-        setValue('')
+        onSend(trimmed);
+        setValue('');
 
         // Reset height
         if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto'
+            textareaRef.current.style.height = 'auto';
         }
-    }, [value, disabled, onSend])
+    }, [value, disabled, onSend]);
 
     // Handle key press
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
             if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit()
+                e.preventDefault();
+                handleSubmit();
             }
         },
         [handleSubmit]
-    )
+    );
 
     return (
         <div className="relative">
@@ -69,8 +69,8 @@ export function ChatInput({
                     ref={textareaRef}
                     value={value}
                     onChange={(e) => {
-                        setValue(e.target.value)
-                        adjustHeight()
+                        setValue(e.target.value);
+                        adjustHeight();
                     }}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
@@ -86,7 +86,12 @@ export function ChatInput({
                     className="p-2 rounded-lg bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                        />
                     </svg>
                 </button>
             </div>
@@ -98,7 +103,7 @@ export function ChatInput({
                 </div>
             )}
         </div>
-    )
+    );
 }
 
-export default ChatInput
+export default ChatInput;

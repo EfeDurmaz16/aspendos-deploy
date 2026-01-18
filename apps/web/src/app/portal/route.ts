@@ -1,6 +1,6 @@
-import { CustomerPortal } from '@polar-sh/nextjs'
-import { auth } from '@/lib/auth'
-import { prisma } from '@aspendos/db'
+import { prisma } from '@aspendos/db';
+import { CustomerPortal } from '@polar-sh/nextjs';
+import { auth } from '@/lib/auth';
 
 /**
  * Polar Customer Portal Route
@@ -10,17 +10,17 @@ export const GET = CustomerPortal({
     accessToken: process.env.POLAR_ACCESS_TOKEN!,
     server: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
     getCustomerId: async () => {
-        const session = await auth()
+        const session = await auth();
 
         if (!session?.userId) {
-            throw new Error('User not authenticated')
+            throw new Error('User not authenticated');
         }
 
         const user = await prisma.user.findUnique({
             where: { id: session.userId },
-            include: { billingAccount: true }
-        })
+            include: { billingAccount: true },
+        });
 
-        return user?.billingAccount?.polarCustomerId || ''
+        return user?.billingAccount?.polarCustomerId || '';
     },
-})
+});

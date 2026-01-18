@@ -3,11 +3,12 @@
  *
  * Handles scheduled task management and webhook execution.
  */
+
+import { ScheduledTaskStatus } from '@aspendos/db';
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
-import * as schedulerService from '../services/scheduler.service';
 import * as commitmentService from '../services/commitment-detector.service';
-import { ScheduledTaskStatus } from '@aspendos/db';
+import * as schedulerService from '../services/scheduler.service';
 
 const app = new Hono();
 
@@ -29,7 +30,7 @@ app.get('/tasks', requireAuth, async (c) => {
     });
 
     return c.json({
-        tasks: tasks.map(task => ({
+        tasks: tasks.map((task) => ({
             id: task.id,
             chatId: task.chatId,
             triggerAt: task.triggerAt.toISOString(),
@@ -84,15 +85,18 @@ app.post('/tasks', requireAuth, async (c) => {
         metadata,
     });
 
-    return c.json({
-        id: task.id,
-        chatId: task.chatId,
-        triggerAt: task.triggerAt.toISOString(),
-        triggerAtFormatted: schedulerService.formatScheduledTime(task.triggerAt),
-        status: task.status,
-        intent: task.intent,
-        topic: task.topic,
-    }, 201);
+    return c.json(
+        {
+            id: task.id,
+            chatId: task.chatId,
+            triggerAt: task.triggerAt.toISOString(),
+            triggerAtFormatted: schedulerService.formatScheduledTime(task.triggerAt),
+            status: task.status,
+            intent: task.intent,
+            topic: task.topic,
+        },
+        201
+    );
 });
 
 // GET /api/scheduler/tasks/:id - Get a single task
@@ -227,7 +231,10 @@ app.post('/execute', async (c) => {
         });
     } catch (error) {
         console.error('Task execution failed:', error);
-        await schedulerService.markTaskFailed(taskId, error instanceof Error ? error.message : 'Unknown error');
+        await schedulerService.markTaskFailed(
+            taskId,
+            error instanceof Error ? error.message : 'Unknown error'
+        );
         return c.json({ error: 'Task execution failed' }, 500);
     }
 });
@@ -251,8 +258,15 @@ app.post('/poll', async (c) => {
             await schedulerService.markTaskCompleted(task.id, message, 'pending_delivery');
             results.push({ taskId: task.id, success: true });
         } catch (error) {
-            await schedulerService.markTaskFailed(task.id, error instanceof Error ? error.message : 'Unknown error');
-            results.push({ taskId: task.id, success: false, error: error instanceof Error ? error.message : 'Unknown' });
+            await schedulerService.markTaskFailed(
+                task.id,
+                error instanceof Error ? error.message : 'Unknown error'
+            );
+            results.push({
+                taskId: task.id,
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown',
+            });
         }
     }
 

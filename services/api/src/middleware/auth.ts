@@ -2,8 +2,9 @@
  * Clerk Authentication Middleware for Hono
  * Verifies JWT tokens and attaches user info to context.
  */
-import { Context, Next } from 'hono';
+
 import { createClerkClient, verifyToken } from '@clerk/backend';
+import type { Context, Next } from 'hono';
 
 // Initialize Clerk client
 const clerkClient = createClerkClient({
@@ -56,7 +57,6 @@ export async function clerkAuth(c: Context, next: Next) {
             imageUrl: user.imageUrl || undefined,
         });
         c.set('userId', user.id);
-
     } catch (error) {
         console.error('Clerk auth error:', error);
         c.set('user', null);
@@ -71,7 +71,7 @@ export async function clerkAuth(c: Context, next: Next) {
  * Returns 401 if user is not authenticated.
  */
 export async function requireAuth(c: Context, next: Next) {
-    await clerkAuth(c, async () => { });
+    await clerkAuth(c, async () => {});
 
     if (!c.get('userId')) {
         return c.json({ error: 'Unauthorized' }, 401);

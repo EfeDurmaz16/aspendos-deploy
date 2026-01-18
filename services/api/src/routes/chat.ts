@@ -3,15 +3,16 @@
  * Handles chat CRUD and message streaming via Vercel AI SDK.
  * Uses OpenMemory for cognitive memory retrieval.
  */
+
+import { generateText, stepCountIs, streamText } from 'ai';
 import { Hono } from 'hono';
-import { streamText, generateText, stepCountIs } from 'ai';
+import { getModel, isModelAvailableForTier } from '../lib/ai-providers';
+import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
 import { requireAuth } from '../middleware/auth';
 import * as chatService from '../services/chat.service';
-import * as openMemory from '../services/openmemory.service';
-import { getModel, isModelAvailableForTier } from '../lib/ai-providers';
-import { getToolsForTier, type UserTier } from '../tools';
 import { getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
-import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
+import * as openMemory from '../services/openmemory.service';
+import { getToolsForTier, type UserTier } from '../tools';
 
 // Message type for AI SDK
 interface Message {
@@ -100,16 +101,12 @@ app.post('/:id/message', async (c) => {
     const chatId = c.req.param('id');
     const body = await c.req.json();
 
-    const {
-        content,
-        model_id,
-        enable_thinking,
-        stream: shouldStream = true,
-    } = body;
+    const { content, model_id, enable_thinking, stream: shouldStream = true } = body;
 
     // Get user tier (default to STARTER if not available)
     const user = c.get('user');
-    const userTier: UserTier = ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+    const userTier: UserTier =
+        ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
 
     // Verify chat exists and belongs to user
     const chat = await chatService.getChat(chatId, userId);
@@ -148,12 +145,18 @@ app.post('/:id/message', async (c) => {
     // ========================================
     // OPENMEMORY RETRIEVAL
     // ========================================
-    let memoriesUsed: { id: string; content: string; sector: string; confidence: number; trace?: { recall_reason: string } }[] = [];
+    let memoriesUsed: {
+        id: string;
+        content: string;
+        sector: string;
+        confidence: number;
+        trace?: { recall_reason: string };
+    }[] = [];
 
     if (decision.useMemory) {
         try {
             const memories = await openMemory.searchMemories(content, userId, { limit: 5 });
-            memoriesUsed = memories.map(m => ({
+            memoriesUsed = memories.map((m) => ({
                 id: m.id,
                 content: m.content,
                 sector: m.sector || 'semantic',
@@ -167,7 +170,7 @@ app.post('/:id/message', async (c) => {
     }
 
     // Build message history
-    const history: Message[] = existingMessages.map(m => ({
+    const history: Message[] = existingMessages.map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
     }));
@@ -225,21 +228,26 @@ app.post('/:id/message', async (c) => {
                         sectors: decision.sectors,
                         reasoning: decision.reasoning,
                     }),
-                    'X-Memories-Used': JSON.stringify(memoriesUsed.map(m => ({
-                        id: m.id,
-                        sector: m.sector,
-                        confidence: m.confidence,
-                    }))),
+                    'X-Memories-Used': JSON.stringify(
+                        memoriesUsed.map((m) => ({
+                            id: m.id,
+                            sector: m.sector,
+                            confidence: m.confidence,
+                        }))
+                    ),
                 },
             });
 
             return response;
         } catch (error) {
             console.error('[Chat] Streaming error:', error);
-            return c.json({
-                error: 'Failed to stream response',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            }, 500);
+            return c.json(
+                {
+                    error: 'Failed to stream response',
+                    details: error instanceof Error ? error.message : 'Unknown error',
+                },
+                500
+            );
         }
     }
 
@@ -276,10 +284,13 @@ app.post('/:id/message', async (c) => {
         });
     } catch (error) {
         console.error('[Chat] Generation error:', error);
-        return c.json({
-            error: 'Failed to generate response',
-            details: error instanceof Error ? error.message : 'Unknown error',
-        }, 500);
+        return c.json(
+            {
+                error: 'Failed to generate response',
+                details: error instanceof Error ? error.message : 'Unknown error',
+            },
+            500
+        );
     }
 });
 
@@ -289,7 +300,8 @@ app.post('/:id/multi', async (c) => {
     const chatId = c.req.param('id');
     const body = await c.req.json();
     const user = c.get('user');
-    const userTier: UserTier = ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+    const userTier: UserTier =
+        ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
 
     // Check ULTRA tier
     if (userTier !== 'ULTRA') {
@@ -302,7 +314,10 @@ app.post('/:id/multi', async (c) => {
         return c.json({ error: 'Chat not found' }, 404);
     }
 
-    const { content, models = ['openai/gpt-4o', 'anthropic/claude-sonnet-4-20250514', 'google/gemini-2.0-flash'] } = body;
+    const {
+        content,
+        models = ['openai/gpt-4o', 'anthropic/claude-sonnet-4-20250514', 'google/gemini-2.0-flash'],
+    } = body;
 
     // Save user message
     await chatService.createMessage({
@@ -314,7 +329,7 @@ app.post('/:id/multi', async (c) => {
 
     // Get message history
     const messages = await chatService.getMessages(chatId);
-    const history: Message[] = messages.map(m => ({
+    const history: Message[] = messages.map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
     }));

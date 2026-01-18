@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+import OpenAI from 'openai';
 
 // ============================================
 // OPENAI CLIENT
@@ -6,13 +6,13 @@ import OpenAI from 'openai'
 
 export const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-})
+});
 
 // ============================================
 // EMBEDDING MODEL
 // ============================================
 
-const EMBEDDING_MODEL = 'text-embedding-3-small'
+const EMBEDDING_MODEL = 'text-embedding-3-small';
 
 // ============================================
 // EMBEDDING OPERATIONS
@@ -25,8 +25,8 @@ export async function createEmbedding(text: string): Promise<number[]> {
     const response = await openai.embeddings.create({
         model: EMBEDDING_MODEL,
         input: text,
-    })
-    return response.data[0].embedding
+    });
+    return response.data[0].embedding;
 }
 
 /**
@@ -36,8 +36,8 @@ export async function createEmbeddings(texts: string[]): Promise<number[][]> {
     const response = await openai.embeddings.create({
         model: EMBEDDING_MODEL,
         input: texts,
-    })
-    return response.data.map((d) => d.embedding)
+    });
+    return response.data.map((d) => d.embedding);
 }
 
 // ============================================
@@ -45,42 +45,35 @@ export async function createEmbeddings(texts: string[]): Promise<number[][]> {
 // ============================================
 
 interface ChatOptions {
-    model?: string
-    temperature?: number
-    maxTokens?: number
-    systemPrompt?: string
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    systemPrompt?: string;
 }
 
 interface ChatMessage {
-    role: 'system' | 'user' | 'assistant'
-    content: string
+    role: 'system' | 'user' | 'assistant';
+    content: string;
 }
 
 /**
  * Create a chat completion (non-streaming)
  */
-export async function createChatCompletion(
-    messages: ChatMessage[],
-    options: ChatOptions = {}
-) {
-    const {
-        model = 'gpt-4o-mini',
-        temperature = 0.7,
-        maxTokens = 4000,
-    } = options
+export async function createChatCompletion(messages: ChatMessage[], options: ChatOptions = {}) {
+    const { model = 'gpt-4o-mini', temperature = 0.7, maxTokens = 4000 } = options;
 
     const response = await openai.chat.completions.create({
         model,
         messages,
         temperature,
         max_tokens: maxTokens,
-    })
+    });
 
     return {
         content: response.choices[0].message.content || '',
         usage: response.usage,
         model: response.model,
-    }
+    };
 }
 
 /**
@@ -90,11 +83,7 @@ export async function* createStreamingChatCompletion(
     messages: ChatMessage[],
     options: ChatOptions = {}
 ): AsyncGenerator<{ type: 'text' | 'done'; content: string }> {
-    const {
-        model = 'gpt-4o-mini',
-        temperature = 0.7,
-        maxTokens = 4000,
-    } = options
+    const { model = 'gpt-4o-mini', temperature = 0.7, maxTokens = 4000 } = options;
 
     const stream = await openai.chat.completions.create({
         model,
@@ -102,16 +91,16 @@ export async function* createStreamingChatCompletion(
         temperature,
         max_tokens: maxTokens,
         stream: true,
-    })
+    });
 
     for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content
+        const content = chunk.choices[0]?.delta?.content;
         if (content) {
-            yield { type: 'text', content }
+            yield { type: 'text', content };
         }
     }
 
-    yield { type: 'done', content: '' }
+    yield { type: 'done', content: '' };
 }
 
 // ============================================
@@ -121,9 +110,7 @@ export async function* createStreamingChatCompletion(
 /**
  * Extract key insights from a conversation for memory storage
  */
-export async function extractMemoryInsights(
-    conversationText: string
-): Promise<string[]> {
+export async function extractMemoryInsights(conversationText: string): Promise<string[]> {
     const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -144,14 +131,14 @@ Return ONLY a JSON array of strings, each string being one insight. No explanati
         ],
         temperature: 0.3,
         max_tokens: 500,
-    })
+    });
 
     try {
-        const content = response.choices[0].message.content || '[]'
-        return JSON.parse(content)
+        const content = response.choices[0].message.content || '[]';
+        return JSON.parse(content);
     } catch {
-        return []
+        return [];
     }
 }
 
-export default openai
+export default openai;

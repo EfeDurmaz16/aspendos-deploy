@@ -1,14 +1,21 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Brain, CheckCircle, CloudArrowUp, ShieldCheck } from "@phosphor-icons/react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+import {
+    ArrowLeft,
+    ArrowRight,
+    Brain,
+    CheckCircle,
+    CloudArrowUp,
+    ShieldCheck,
+} from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
+import Link from 'next/link';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 const TOTAL_STEPS = 5;
 
@@ -47,20 +54,21 @@ export default function OnboardingPage() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-950 font-sans">
-
             {/* Progress Bar */}
             <div className="fixed top-0 left-0 w-full h-1 bg-zinc-200 dark:bg-zinc-900">
                 <motion.div
                     className="h-full bg-zinc-900 dark:bg-zinc-50"
-                    initial={{ width: "0%" }}
+                    initial={{ width: '0%' }}
                     animate={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
-                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    transition={{ duration: 0.5, ease: 'easeInOut' }}
                 />
             </div>
 
             <div className="w-full max-w-2xl">
                 <div className="mb-12 text-center">
-                    <span className="font-serif text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">ASPENDOS</span>
+                    <span className="font-serif text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                        ASPENDOS
+                    </span>
                 </div>
 
                 <AnimatePresence mode="wait" custom={direction}>
@@ -71,7 +79,7 @@ export default function OnboardingPage() {
                         initial="enter"
                         animate="center"
                         exit="exit"
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         className="w-full"
                     >
                         {step === 1 && <Step1_Identity />}
@@ -139,12 +147,14 @@ function Step1_Identity() {
                             <option>Researcher</option>
                             <option>Creative</option>
                         </select>
-                        <p className="text-xs text-muted-foreground">This helps us choose default models for you.</p>
+                        <p className="text-xs text-muted-foreground">
+                            This helps us choose default models for you.
+                        </p>
                     </div>
                 </CardContent>
             </Card>
         </div>
-    )
+    );
 }
 
 function Step2_Import() {
@@ -155,24 +165,32 @@ function Step2_Import() {
             </div>
             <div>
                 <h2 className="font-serif text-3xl mb-2">Don't start from zero.</h2>
-                <p className="text-zinc-500 max-w-sm mx-auto">Import your history from ChatGPT or Claude to jumpstart your memory graph.</p>
+                <p className="text-zinc-500 max-w-sm mx-auto">
+                    Import your history from ChatGPT or Claude to jumpstart your memory graph.
+                </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
                 <button className="flex flex-col items-center p-6 border rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:border-zinc-300 transition-all text-center space-y-3 group bg-white dark:bg-black">
-                    <div className="w-10 h-10 rounded-full bg-[#74aa9c] flex items-center justify-center text-white font-bold">O</div>
+                    <div className="w-10 h-10 rounded-full bg-[#74aa9c] flex items-center justify-center text-white font-bold">
+                        O
+                    </div>
                     <div className="font-medium">Import ChatGPT</div>
                     <p className="text-xs text-zinc-500">Upload .zip export</p>
                 </button>
                 <button className="flex flex-col items-center p-6 border rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:border-zinc-300 transition-all text-center space-y-3 group bg-white dark:bg-black">
-                    <div className="w-10 h-10 rounded-full bg-[#d97757] flex items-center justify-center text-white font-serif italic">Cl</div>
+                    <div className="w-10 h-10 rounded-full bg-[#d97757] flex items-center justify-center text-white font-serif italic">
+                        Cl
+                    </div>
                     <div className="font-medium">Import Claude</div>
                     <p className="text-xs text-zinc-500">Connect via API</p>
                 </button>
             </div>
-            <p className="text-xs text-zinc-400 cursor-pointer hover:text-zinc-600 underline underline-offset-4">Skip for now</p>
+            <p className="text-xs text-zinc-400 cursor-pointer hover:text-zinc-600 underline underline-offset-4">
+                Skip for now
+            </p>
         </div>
-    )
+    );
 }
 
 function Step3_Memory() {
@@ -183,7 +201,9 @@ function Step3_Memory() {
             </div>
             <div>
                 <h2 className="font-serif text-3xl mb-2">Seed your memory.</h2>
-                <p className="text-zinc-500">Tell Aspendos 3 facts about you that it should never forget.</p>
+                <p className="text-zinc-500">
+                    Tell Aspendos 3 facts about you that it should never forget.
+                </p>
             </div>
 
             <Card className="text-left border-zinc-200 dark:border-zinc-800 shadow-sm max-w-md mx-auto">
@@ -193,15 +213,23 @@ function Step3_Memory() {
                     <Input placeholder="e.g. I prefer concise, technical answers" />
 
                     <div className="flex flex-wrap gap-2 pt-2">
-                        <span className="text-[11px] uppercase font-medium text-zinc-400">Quick Add:</span>
-                        <button className="px-2 py-1 rounded-md bg-zinc-100 text-xs text-zinc-600 hover:bg-zinc-200">I use Next.js</button>
-                        <button className="px-2 py-1 rounded-md bg-zinc-100 text-xs text-zinc-600 hover:bg-zinc-200">Concise Mode</button>
-                        <button className="px-2 py-1 rounded-md bg-zinc-100 text-xs text-zinc-600 hover:bg-zinc-200">No emojis</button>
+                        <span className="text-[11px] uppercase font-medium text-zinc-400">
+                            Quick Add:
+                        </span>
+                        <button className="px-2 py-1 rounded-md bg-zinc-100 text-xs text-zinc-600 hover:bg-zinc-200">
+                            I use Next.js
+                        </button>
+                        <button className="px-2 py-1 rounded-md bg-zinc-100 text-xs text-zinc-600 hover:bg-zinc-200">
+                            Concise Mode
+                        </button>
+                        <button className="px-2 py-1 rounded-md bg-zinc-100 text-xs text-zinc-600 hover:bg-zinc-200">
+                            No emojis
+                        </button>
                     </div>
                 </CardContent>
             </Card>
         </div>
-    )
+    );
 }
 
 function Step4_Safety() {
@@ -217,20 +245,35 @@ function Step4_Safety() {
 
             <div className="max-w-md mx-auto space-y-4 text-left bg-white dark:bg-zinc-900 border rounded-xl p-6 shadow-sm">
                 <div className="flex gap-4">
-                    <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" weight="fill" />
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300">We <strong>do not</strong> train our models on your data.</p>
+                    <CheckCircle
+                        className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5"
+                        weight="fill"
+                    />
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                        We <strong>do not</strong> train our models on your data.
+                    </p>
                 </div>
                 <div className="flex gap-4">
-                    <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" weight="fill" />
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300">Your memory graph is encrypted and isolated.</p>
+                    <CheckCircle
+                        className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5"
+                        weight="fill"
+                    />
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                        Your memory graph is encrypted and isolated.
+                    </p>
                 </div>
                 <div className="flex gap-4">
-                    <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" weight="fill" />
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300">You can export or delete your memories at any time.</p>
+                    <CheckCircle
+                        className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5"
+                        weight="fill"
+                    />
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                        You can export or delete your memories at any time.
+                    </p>
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
 function Step5_Ready() {
@@ -249,5 +292,5 @@ function Step5_Ready() {
                 </div>
             </div>
         </div>
-    )
+    );
 }

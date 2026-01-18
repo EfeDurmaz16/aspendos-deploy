@@ -1,9 +1,9 @@
 'use client';
 
+import { ChatCircle, CircleNotch, DotsThree, Plus } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { Plus, ChatCircle, DotsThree, CircleNotch } from '@phosphor-icons/react';
-import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
 
 interface Chat {
     id: string;

@@ -4,12 +4,13 @@
  * Handles scheduling and execution of proactive follow-up tasks.
  * The AI can schedule tasks to re-engage users at specific times.
  */
-import { prisma, Prisma, ScheduledTask, ScheduledTaskStatus } from '@aspendos/db';
+import { type Prisma, prisma, type ScheduledTask, ScheduledTaskStatus } from '@aspendos/db';
 
 // Upstash QStash configuration (optional - can use polling fallback)
 const QSTASH_TOKEN = process.env.QSTASH_TOKEN || '';
 const QSTASH_URL = process.env.QSTASH_URL || 'https://qstash.upstash.io/v2';
-const WEBHOOK_BASE_URL = process.env.WEBHOOK_BASE_URL || process.env.API_URL || 'http://localhost:8080';
+const WEBHOOK_BASE_URL =
+    process.env.WEBHOOK_BASE_URL || process.env.API_URL || 'http://localhost:8080';
 
 export interface CreateScheduledTaskInput {
     userId: string;
@@ -25,11 +26,11 @@ export interface CreateScheduledTaskInput {
 
 export interface CommitmentDetectionResult {
     hasCommitment: boolean;
-    timeFrame?: string;      // "1 week", "tomorrow", "in 3 days"
-    intent?: string;         // "Discuss study plan progress"
-    topic?: string;          // "Gym Motivation Check-in"
+    timeFrame?: string; // "1 week", "tomorrow", "in 3 days"
+    intent?: string; // "Discuss study plan progress"
+    topic?: string; // "Gym Motivation Check-in"
     tone?: 'friendly' | 'professional' | 'encouraging';
-    absoluteTime?: Date;     // Calculated absolute timestamp
+    absoluteTime?: Date; // Calculated absolute timestamp
 }
 
 // ============================================
@@ -83,7 +84,7 @@ async function scheduleQStashWebhook(taskId: string, triggerAt: Date): Promise<s
     const response = await fetch(`${QSTASH_URL}/publish/${webhookUrl}`, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer ${QSTASH_TOKEN}`,
+            Authorization: `Bearer ${QSTASH_TOKEN}`,
             'Content-Type': 'application/json',
             'Upstash-Delay': `${delay}s`,
         },
@@ -95,7 +96,7 @@ async function scheduleQStashWebhook(taskId: string, triggerAt: Date): Promise<s
         throw new Error(`QStash scheduling failed: ${error}`);
     }
 
-    const result = await response.json() as { messageId: string };
+    const result = (await response.json()) as { messageId: string };
     return result.messageId;
 }
 
@@ -155,7 +156,10 @@ export async function getTaskById(taskId: string): Promise<ScheduledTask | null>
 /**
  * Cancel a scheduled task
  */
-export async function cancelScheduledTask(taskId: string, userId: string): Promise<ScheduledTask | null> {
+export async function cancelScheduledTask(
+    taskId: string,
+    userId: string
+): Promise<ScheduledTask | null> {
     const task = await prisma.scheduledTask.findFirst({
         where: { id: taskId, userId },
     });
@@ -169,7 +173,7 @@ export async function cancelScheduledTask(taskId: string, userId: string): Promi
         try {
             await fetch(`${QSTASH_URL}/messages/${task.externalJobId}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${QSTASH_TOKEN}` },
+                headers: { Authorization: `Bearer ${QSTASH_TOKEN}` },
             });
         } catch (error) {
             console.error('Failed to cancel QStash job:', error);
@@ -203,7 +207,7 @@ export async function rescheduleTask(
         try {
             await fetch(`${QSTASH_URL}/messages/${task.externalJobId}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${QSTASH_TOKEN}` },
+                headers: { Authorization: `Bearer ${QSTASH_TOKEN}` },
             });
         } catch (error) {
             console.error('Failed to cancel old QStash job:', error);
@@ -280,7 +284,7 @@ export function parseTimeExpression(expression: string, fromDate: Date = new Dat
 
     // Absolute time patterns
     const absolutePatterns = [
-        /(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/,  // ISO format
+        /(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/, // ISO format
     ];
 
     for (const pattern of absolutePatterns) {
@@ -293,49 +297,64 @@ export function parseTimeExpression(expression: string, fromDate: Date = new Dat
     // Relative time patterns
     const relativePatterns: [RegExp, (match: RegExpMatchArray) => Date][] = [
         // "tomorrow"
-        [/^tomorrow$/i, () => {
-            const d = new Date(fromDate);
-            d.setDate(d.getDate() + 1);
-            d.setHours(9, 0, 0, 0);  // Default to 9 AM
-            return d;
-        }],
+        [
+            /^tomorrow$/i,
+            () => {
+                const d = new Date(fromDate);
+                d.setDate(d.getDate() + 1);
+                d.setHours(9, 0, 0, 0); // Default to 9 AM
+                return d;
+            },
+        ],
         // "next week"
-        [/^next\s+week$/i, () => {
-            const d = new Date(fromDate);
-            d.setDate(d.getDate() + 7);
-            d.setHours(9, 0, 0, 0);
-            return d;
-        }],
+        [
+            /^next\s+week$/i,
+            () => {
+                const d = new Date(fromDate);
+                d.setDate(d.getDate() + 7);
+                d.setHours(9, 0, 0, 0);
+                return d;
+            },
+        ],
         // "in X days/weeks/hours/minutes"
-        [/^in\s+(\d+)\s+(day|days|week|weeks|hour|hours|minute|minutes)$/i, (m) => {
-            const amount = parseInt(m[1], 10);
-            const unit = m[2].toLowerCase();
-            const d = new Date(fromDate);
-            if (unit.startsWith('day')) d.setDate(d.getDate() + amount);
-            else if (unit.startsWith('week')) d.setDate(d.getDate() + amount * 7);
-            else if (unit.startsWith('hour')) d.setHours(d.getHours() + amount);
-            else if (unit.startsWith('minute')) d.setMinutes(d.getMinutes() + amount);
-            return d;
-        }],
+        [
+            /^in\s+(\d+)\s+(day|days|week|weeks|hour|hours|minute|minutes)$/i,
+            (m) => {
+                const amount = parseInt(m[1], 10);
+                const unit = m[2].toLowerCase();
+                const d = new Date(fromDate);
+                if (unit.startsWith('day')) d.setDate(d.getDate() + amount);
+                else if (unit.startsWith('week')) d.setDate(d.getDate() + amount * 7);
+                else if (unit.startsWith('hour')) d.setHours(d.getHours() + amount);
+                else if (unit.startsWith('minute')) d.setMinutes(d.getMinutes() + amount);
+                return d;
+            },
+        ],
         // "X days/weeks from now"
-        [/^(\d+)\s+(day|days|week|weeks)\s+from\s+now$/i, (m) => {
-            const amount = parseInt(m[1], 10);
-            const unit = m[2].toLowerCase();
-            const d = new Date(fromDate);
-            if (unit.startsWith('day')) d.setDate(d.getDate() + amount);
-            else if (unit.startsWith('week')) d.setDate(d.getDate() + amount * 7);
-            return d;
-        }],
+        [
+            /^(\d+)\s+(day|days|week|weeks)\s+from\s+now$/i,
+            (m) => {
+                const amount = parseInt(m[1], 10);
+                const unit = m[2].toLowerCase();
+                const d = new Date(fromDate);
+                if (unit.startsWith('day')) d.setDate(d.getDate() + amount);
+                else if (unit.startsWith('week')) d.setDate(d.getDate() + amount * 7);
+                return d;
+            },
+        ],
         // "1 week" / "2 days" etc.
-        [/^(\d+)\s+(day|days|week|weeks|hour|hours)$/i, (m) => {
-            const amount = parseInt(m[1], 10);
-            const unit = m[2].toLowerCase();
-            const d = new Date(fromDate);
-            if (unit.startsWith('day')) d.setDate(d.getDate() + amount);
-            else if (unit.startsWith('week')) d.setDate(d.getDate() + amount * 7);
-            else if (unit.startsWith('hour')) d.setHours(d.getHours() + amount);
-            return d;
-        }],
+        [
+            /^(\d+)\s+(day|days|week|weeks|hour|hours)$/i,
+            (m) => {
+                const amount = parseInt(m[1], 10);
+                const unit = m[2].toLowerCase();
+                const d = new Date(fromDate);
+                if (unit.startsWith('day')) d.setDate(d.getDate() + amount);
+                else if (unit.startsWith('week')) d.setDate(d.getDate() + amount * 7);
+                else if (unit.startsWith('hour')) d.setHours(d.getHours() + amount);
+                return d;
+            },
+        ],
     ];
 
     for (const [pattern, handler] of relativePatterns) {

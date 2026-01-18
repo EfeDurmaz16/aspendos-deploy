@@ -1,20 +1,20 @@
-'use client'
+'use client';
 
-import { useSearchParams } from 'next/navigation'
-import { useUser } from '@/hooks/use-auth'
-import { Suspense, useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { CheckCircle, ArrowLeft, Sparkle } from '@phosphor-icons/react'
-import { ModeToggle } from '@/components/mode-toggle'
+import { ArrowLeft, CheckCircle, Sparkle } from '@phosphor-icons/react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { ModeToggle } from '@/components/mode-toggle';
+import { Button } from '@/components/ui/button';
+import { useUser } from '@/hooks/use-auth';
 
-type BillingPeriod = 'weekly' | 'monthly' | 'annual'
+type BillingPeriod = 'weekly' | 'monthly' | 'annual';
 
 const PRICING_DATA = {
     Starter: { weekly: 7, monthly: 20, annual: 200 },
     Pro: { weekly: 15, monthly: 50, annual: 500 },
     Ultra: { weekly: 30, monthly: 100, annual: 1000 },
-}
+};
 
 const PRICING_TIERS = [
     {
@@ -62,29 +62,36 @@ const PRICING_TIERS = [
         productId: process.env.NEXT_PUBLIC_POLAR_ULTRA_PRODUCT_ID,
         popular: false,
     },
-]
+];
 
 function PricingContent() {
-    const searchParams = useSearchParams()
-    const { isSignedIn } = useUser()
-    const success = searchParams.get('success')
-    const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly')
+    const searchParams = useSearchParams();
+    const { isSignedIn } = useUser();
+    const success = searchParams.get('success');
+    const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
-    const getPrice = (tierName: string) => PRICING_DATA[tierName as keyof typeof PRICING_DATA][billingPeriod]
-    const getPeriodLabel = () => billingPeriod === 'weekly' ? 'week' : billingPeriod === 'monthly' ? 'month' : 'year'
+    const getPrice = (tierName: string) =>
+        PRICING_DATA[tierName as keyof typeof PRICING_DATA][billingPeriod];
+    const getPeriodLabel = () =>
+        billingPeriod === 'weekly' ? 'week' : billingPeriod === 'monthly' ? 'month' : 'year';
     const getAnnualSavings = (tierName: string) => {
-        const tier = PRICING_DATA[tierName as keyof typeof PRICING_DATA]
-        return (tier.monthly * 12) - tier.annual
-    }
+        const tier = PRICING_DATA[tierName as keyof typeof PRICING_DATA];
+        return tier.monthly * 12 - tier.annual;
+    };
 
     return (
         <div className="min-h-screen bg-background gradient-mesh">
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
                 <div className="container max-w-7xl mx-auto flex h-16 items-center justify-between px-6 lg:px-8">
-                    <Link href="/" className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+                    <Link
+                        href="/"
+                        className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                    >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="font-serif text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">ASPENDOS</span>
+                        <span className="font-serif text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+                            ASPENDOS
+                        </span>
                     </Link>
                     <nav className="flex gap-4 items-center">
                         <ModeToggle />
@@ -129,10 +136,11 @@ function PricingContent() {
                             <button
                                 key={period}
                                 onClick={() => setBillingPeriod(period)}
-                                className={`px-5 py-2 rounded-full text-sm font-medium transition-all relative ${billingPeriod === period
-                                    ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 shadow-sm'
-                                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                                    }`}
+                                className={`px-5 py-2 rounded-full text-sm font-medium transition-all relative ${
+                                    billingPeriod === period
+                                        ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 shadow-sm'
+                                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                                }`}
                             >
                                 {period.charAt(0).toUpperCase() + period.slice(1)}
                                 {period === 'annual' && (
@@ -150,10 +158,11 @@ function PricingContent() {
                     {PRICING_TIERS.map((tier, index) => (
                         <div
                             key={tier.name}
-                            className={`relative bg-white dark:bg-zinc-900 rounded-2xl border p-8 flex flex-col hover-lift ${tier.popular
-                                ? 'border-zinc-900 dark:border-zinc-50 ring-2 ring-zinc-900/10 dark:ring-zinc-50/10 md:-translate-y-4 shadow-xl glow'
-                                : 'border-zinc-200 dark:border-zinc-800 shadow-sm'
-                                }`}
+                            className={`relative bg-white dark:bg-zinc-900 rounded-2xl border p-8 flex flex-col hover-lift ${
+                                tier.popular
+                                    ? 'border-zinc-900 dark:border-zinc-50 ring-2 ring-zinc-900/10 dark:ring-zinc-50/10 md:-translate-y-4 shadow-xl glow'
+                                    : 'border-zinc-200 dark:border-zinc-800 shadow-sm'
+                            }`}
                             style={{ animationDelay: `${(index + 3) * 100}ms` }}
                         >
                             {tier.popular && (
@@ -163,39 +172,69 @@ function PricingContent() {
                             )}
 
                             <div className="mb-6">
-                                <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-2">{tier.name}</h2>
-                                <p className="text-zinc-600 dark:text-zinc-400 text-sm">{tier.description}</p>
+                                <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
+                                    {tier.name}
+                                </h2>
+                                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+                                    {tier.description}
+                                </p>
                             </div>
 
                             <div className="mb-2">
-                                <span className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">${getPrice(tier.name)}</span>
-                                <span className="text-zinc-600 dark:text-zinc-400">/{getPeriodLabel()}</span>
+                                <span className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
+                                    ${getPrice(tier.name)}
+                                </span>
+                                <span className="text-zinc-600 dark:text-zinc-400">
+                                    /{getPeriodLabel()}
+                                </span>
                             </div>
 
                             {billingPeriod === 'annual' && (
-                                <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-4">Save ${getAnnualSavings(tier.name)}/year — 2 months free</p>
+                                <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-4">
+                                    Save ${getAnnualSavings(tier.name)}/year — 2 months free
+                                </p>
                             )}
                             {billingPeriod === 'weekly' && (
-                                <p className="text-xs text-zinc-500 mb-4">or ${PRICING_DATA[tier.name as keyof typeof PRICING_DATA].monthly}/month (save more)</p>
+                                <p className="text-xs text-zinc-500 mb-4">
+                                    or $
+                                    {PRICING_DATA[tier.name as keyof typeof PRICING_DATA].monthly}
+                                    /month (save more)
+                                </p>
                             )}
                             {billingPeriod === 'monthly' && <div className="h-6 mb-4" />}
 
                             <ul className="space-y-3 mb-8 flex-grow">
                                 {tier.features.map((feature) => (
-                                    <li key={feature} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                                        <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" weight="fill" />
+                                    <li
+                                        key={feature}
+                                        className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400"
+                                    >
+                                        <CheckCircle
+                                            className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"
+                                            weight="fill"
+                                        />
                                         {feature}
                                     </li>
                                 ))}
                             </ul>
 
                             {tier.name === 'Starter' ? (
-                                <Button variant={tier.popular ? 'default' : 'outline'} className="w-full rounded-full" asChild>
+                                <Button
+                                    variant={tier.popular ? 'default' : 'outline'}
+                                    className="w-full rounded-full"
+                                    asChild
+                                >
                                     <Link href={isSignedIn ? '/chat' : '/signup'}>{tier.cta}</Link>
                                 </Button>
                             ) : (
-                                <Button variant={tier.popular ? 'default' : 'outline'} className="w-full rounded-full" asChild>
-                                    <Link href={`/checkout?productId=${tier.productId}`}>{tier.cta}</Link>
+                                <Button
+                                    variant={tier.popular ? 'default' : 'outline'}
+                                    className="w-full rounded-full"
+                                    asChild
+                                >
+                                    <Link href={`/checkout?productId=${tier.productId}`}>
+                                        {tier.cta}
+                                    </Link>
                                 </Button>
                             )}
                         </div>
@@ -205,7 +244,10 @@ function PricingContent() {
                 {/* Manage subscription link */}
                 {isSignedIn && (
                     <div className="text-center mt-12">
-                        <Link href="/portal" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 underline underline-offset-4">
+                        <Link
+                            href="/portal"
+                            className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 underline underline-offset-4"
+                        >
                             Manage your subscription →
                         </Link>
                     </div>
@@ -214,20 +256,25 @@ function PricingContent() {
                 {/* Comparison note */}
                 <div className="text-center mt-16 max-w-2xl mx-auto">
                     <p className="text-sm text-zinc-500">
-                        Compare: ChatGPT Plus $20/mo (1 model) vs Aspendos Pro $50/mo (all models, memory, voice).
+                        Compare: ChatGPT Plus $20/mo (1 model) vs Aspendos Pro $50/mo (all models,
+                        memory, voice).
                         <br />
                         Cancel anytime. All prices in USD.
                     </p>
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
 export default function PricingPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center">Loading...</div>
+            }
+        >
             <PricingContent />
         </Suspense>
-    )
+    );
 }

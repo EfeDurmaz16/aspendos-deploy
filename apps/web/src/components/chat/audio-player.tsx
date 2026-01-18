@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Play, Pause, Stop, SpeakerHigh, CircleNotch } from '@phosphor-icons/react';
+import { CircleNotch, Pause, Play, SpeakerHigh, Stop } from '@phosphor-icons/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -22,7 +22,7 @@ const VOICES = [
     { id: 'shimmer', name: 'Shimmer', description: 'Clear and gentle' },
 ] as const;
 
-type VoiceId = typeof VOICES[number]['id'];
+type VoiceId = (typeof VOICES)[number]['id'];
 
 interface AudioPlayerProps {
     text: string;
@@ -123,27 +123,67 @@ export function AudioPlayer({ text, className }: AudioPlayerProps) {
 
     return (
         <div className={cn('flex items-center gap-1', className)}>
-            <Button type="button" variant="ghost" size="icon" onClick={isPlaying ? handlePause : handlePlay} disabled={isLoading || !text} className="h-7 w-7" title={isPlaying ? 'Pause' : 'Play'}>
-                {isLoading ? <CircleNotch className="w-3.5 h-3.5 animate-spin" /> : isPlaying ? <Pause weight="fill" className="w-3.5 h-3.5" /> : <Play weight="fill" className="w-3.5 h-3.5" />}
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={isPlaying ? handlePause : handlePlay}
+                disabled={isLoading || !text}
+                className="h-7 w-7"
+                title={isPlaying ? 'Pause' : 'Play'}
+            >
+                {isLoading ? (
+                    <CircleNotch className="w-3.5 h-3.5 animate-spin" />
+                ) : isPlaying ? (
+                    <Pause weight="fill" className="w-3.5 h-3.5" />
+                ) : (
+                    <Play weight="fill" className="w-3.5 h-3.5" />
+                )}
             </Button>
 
             {isPlaying && (
-                <Button type="button" variant="ghost" size="icon" onClick={handleStop} className="h-7 w-7" title="Stop">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleStop}
+                    className="h-7 w-7"
+                    title="Stop"
+                >
                     <Stop weight="fill" className="w-3.5 h-3.5" />
                 </Button>
             )}
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" title="Select voice">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs gap-1"
+                        title="Select voice"
+                    >
                         <SpeakerHigh className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{VOICES.find((v) => v.id === selectedVoice)?.name}</span>
+                        <span className="hidden sm:inline">
+                            {VOICES.find((v) => v.id === selectedVoice)?.name}
+                        </span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                     {VOICES.map((voice) => (
-                        <DropdownMenuItem key={voice.id} onClick={() => handleVoiceChange(voice.id)} className="flex flex-col items-start cursor-pointer">
-                            <span className={cn('text-sm font-medium', selectedVoice === voice.id && 'text-emerald-500')}>{voice.name}</span>
+                        <DropdownMenuItem
+                            key={voice.id}
+                            onClick={() => handleVoiceChange(voice.id)}
+                            className="flex flex-col items-start cursor-pointer"
+                        >
+                            <span
+                                className={cn(
+                                    'text-sm font-medium',
+                                    selectedVoice === voice.id && 'text-emerald-500'
+                                )}
+                            >
+                                {voice.name}
+                            </span>
                             <span className="text-xs text-zinc-400">{voice.description}</span>
                         </DropdownMenuItem>
                     ))}

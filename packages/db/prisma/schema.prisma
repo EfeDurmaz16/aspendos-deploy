@@ -16,7 +16,7 @@ datasource db {
 
 model User {
   id        String   @id @default(cuid())
-  clerkId   String   @unique
+  clerkId   String?  @unique // Legacy - kept for data migration, now optional
   email     String   @unique
   name      String?
   avatar    String?
@@ -38,7 +38,6 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
-  @@index([clerkId])
   @@index([email])
   @@map("user")
 }

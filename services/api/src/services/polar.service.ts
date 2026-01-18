@@ -5,7 +5,7 @@
  */
 import { prisma } from '@aspendos/db';
 import crypto from 'crypto';
-import { TIER_CONFIG, TierName, getTierConfig } from '../config/tiers';
+import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
 
 const POLAR_API_URL = 'https://api.polar.sh/v1';
 const POLAR_ACCESS_TOKEN = process.env.POLAR_ACCESS_TOKEN || '';
@@ -46,7 +46,7 @@ export async function createCheckout(options: CreateCheckoutOptions) {
 
     // Select the correct product ID based on billing cycle
     const productId = isAnnual
-        ? ANNUAL_PRODUCT_IDS[planKey] || PRODUCT_IDS[planKey]  // Fallback to monthly if annual not configured
+        ? ANNUAL_PRODUCT_IDS[planKey] || PRODUCT_IDS[planKey] // Fallback to monthly if annual not configured
         : PRODUCT_IDS[planKey];
 
     if (!productId) {
@@ -56,7 +56,7 @@ export async function createCheckout(options: CreateCheckoutOptions) {
     const response = await fetch(`${POLAR_API_URL}/checkouts/`, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer ${POLAR_ACCESS_TOKEN}`,
+            Authorization: `Bearer ${POLAR_ACCESS_TOKEN}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -76,7 +76,7 @@ export async function createCheckout(options: CreateCheckoutOptions) {
         throw new Error(`Polar checkout failed: ${error}`);
     }
 
-    const checkout = await response.json() as { url: string; id: string };
+    const checkout = (await response.json()) as { url: string; id: string };
 
     return {
         checkoutUrl: checkout.url,
@@ -95,7 +95,7 @@ export async function cancelSubscription(subscriptionId: string) {
     const response = await fetch(`${POLAR_API_URL}/subscriptions/${subscriptionId}`, {
         method: 'PATCH',
         headers: {
-            'Authorization': `Bearer ${POLAR_ACCESS_TOKEN}`,
+            Authorization: `Bearer ${POLAR_ACCESS_TOKEN}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -128,10 +128,7 @@ export function verifyWebhookSignature(
     const expectedSignature = hmac.digest('hex');
 
     try {
-        return crypto.timingSafeEqual(
-            Buffer.from(signature),
-            Buffer.from(expectedSignature)
-        );
+        return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
     } catch {
         return false;
     }

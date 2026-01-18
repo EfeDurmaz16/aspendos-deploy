@@ -1,6 +1,6 @@
 /**
  * OpenMemory Service
- * 
+ *
  * Wrapper around openmemory-js SDK for Aspendos.
  * Provides cognitive memory with HMD sectors, decay, and explainable traces.
  */
@@ -87,7 +87,7 @@ export async function searchMemories(
     return results.map((r) => ({
         id: r.id,
         content: r.content,
-        sector: (r.metadata as Record<string, unknown>)?.sector as string || 'semantic',
+        sector: ((r.metadata as Record<string, unknown>)?.sector as string) || 'semantic',
         salience: r.salience || 0,
         createdAt: r.created_at,
         metadata: r.metadata,
@@ -113,7 +113,7 @@ export async function listMemories(
     return results.map((r) => ({
         id: r.id,
         content: r.content,
-        sector: (r.metadata as Record<string, unknown>)?.sector as string || 'semantic',
+        sector: ((r.metadata as Record<string, unknown>)?.sector as string) || 'semantic',
         salience: r.salience || 0,
         createdAt: r.created_at,
         metadata: r.metadata,

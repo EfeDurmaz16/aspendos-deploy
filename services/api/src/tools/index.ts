@@ -15,17 +15,22 @@ import * as openMemory from '../services/openmemory.service';
  */
 export function createMemorySearchTool(userId: string) {
     return tool({
-        description: 'Search the user\'s memories for relevant context based on a query. Use this to find information the user has previously shared or discussed.',
+        description:
+            "Search the user's memories for relevant context based on a query. Use this to find information the user has previously shared or discussed.",
         inputSchema: z.object({
             query: z.string().describe('The search query to find relevant memories'),
-            limit: z.number().optional().default(5).describe('Maximum number of memories to return'),
+            limit: z
+                .number()
+                .optional()
+                .default(5)
+                .describe('Maximum number of memories to return'),
         }),
         execute: async ({ query, limit }) => {
             try {
                 const memories = await openMemory.searchMemories(query, userId, { limit });
                 return {
                     success: true,
-                    memories: memories.map(m => ({
+                    memories: memories.map((m) => ({
                         content: m.content,
                         sector: m.sector,
                         confidence: m.salience || 0.8,
@@ -48,11 +53,15 @@ export function createMemorySearchTool(userId: string) {
  */
 export function createMemoryAddTool(userId: string) {
     return tool({
-        description: 'Save important information to the user\'s memory. Use this when the user shares preferences, important facts, or things they want to remember.',
+        description:
+            "Save important information to the user's memory. Use this when the user shares preferences, important facts, or things they want to remember.",
         inputSchema: z.object({
             content: z.string().describe('The content to save as a memory'),
-            sector: z.enum(['episodic', 'semantic', 'procedural', 'emotional', 'reflective'])
-                .describe('The memory sector: episodic (events), semantic (facts), procedural (how-to), emotional (feelings), reflective (insights)'),
+            sector: z
+                .enum(['episodic', 'semantic', 'procedural', 'emotional', 'reflective'])
+                .describe(
+                    'The memory sector: episodic (events), semantic (facts), procedural (how-to), emotional (feelings), reflective (insights)'
+                ),
             tags: z.array(z.string()).optional().describe('Optional tags for categorization'),
         }),
         execute: async ({ content, sector, tags }) => {
@@ -82,7 +91,8 @@ export function createMemoryAddTool(userId: string) {
  */
 export function createMemoryReinforceTool(userId: string) {
     return tool({
-        description: 'Reinforce an existing memory to increase its importance and prevent decay. Use when a memory proves useful or relevant.',
+        description:
+            'Reinforce an existing memory to increase its importance and prevent decay. Use when a memory proves useful or relevant.',
         inputSchema: z.object({
             memoryId: z.string().describe('The ID of the memory to reinforce'),
         }),
@@ -114,7 +124,9 @@ export function createMemoryReinforceTool(userId: string) {
 export const calculatorTool = tool({
     description: 'Perform basic mathematical calculations. Use for arithmetic, percentages, etc.',
     inputSchema: z.object({
-        expression: z.string().describe('Mathematical expression to evaluate (e.g., "2 + 2", "100 * 0.15")'),
+        expression: z
+            .string()
+            .describe('Mathematical expression to evaluate (e.g., "2 + 2", "100 * 0.15")'),
     }),
     execute: async ({ expression }) => {
         try {
@@ -148,7 +160,11 @@ export const calculatorTool = tool({
 export const currentTimeTool = tool({
     description: 'Get the current date and time.',
     inputSchema: z.object({
-        timezone: z.string().optional().default('UTC').describe('Timezone (e.g., "America/New_York", "UTC")'),
+        timezone: z
+            .string()
+            .optional()
+            .default('UTC')
+            .describe('Timezone (e.g., "America/New_York", "UTC")'),
     }),
     execute: async ({ timezone }) => {
         try {

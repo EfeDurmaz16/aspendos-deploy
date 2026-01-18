@@ -1,14 +1,13 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { ArrowUp, Paperclip, Globe, Microphone } from "@phosphor-icons/react";
-import { cn } from "@/lib/utils";
+import { ArrowUp, Globe, Microphone, Paperclip } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export function ChatInput() {
     return (
         <div className="max-w-3xl mx-auto w-full px-4 mb-6">
             <div className="relative flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-zinc-300 dark:focus-within:ring-zinc-700 transition-shadow">
-
                 {/* Input Area */}
                 <textarea
                     className="w-full min-h-[60px] max-h-[200px] p-4 bg-transparent resize-none outline-none text-[15px] placeholder:text-zinc-400"
@@ -24,7 +23,10 @@ export function ChatInput() {
                         <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-1" />
                         <SimpleModelSelector />
                     </div>
-                    <Button size="icon" className="h-8 w-8 rounded-lg bg-zinc-900 dark:bg-zinc-50 hover:bg-zinc-700 dark:hover:bg-zinc-200 text-white dark:text-zinc-900">
+                    <Button
+                        size="icon"
+                        className="h-8 w-8 rounded-lg bg-zinc-900 dark:bg-zinc-50 hover:bg-zinc-700 dark:hover:bg-zinc-200 text-white dark:text-zinc-900"
+                    >
                         <ArrowUp weight="bold" />
                     </Button>
                 </div>
@@ -36,19 +38,24 @@ export function ChatInput() {
     );
 }
 
-function ToolButton({ icon, label }: { icon: React.ReactNode, label: string }) {
+function ToolButton({ icon, label }: { icon: React.ReactNode; label: string }) {
     return (
-        <button className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors" title={label}>
+        <button
+            className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
+            title={label}
+        >
             {icon}
         </button>
-    )
+    );
 }
 
 function SimpleModelSelector() {
     return (
         <button className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[13px] font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-            <div className="w-4 h-4 rounded-sm bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-[10px] font-bold">4</div>
+            <div className="w-4 h-4 rounded-sm bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-[10px] font-bold">
+                4
+            </div>
             GPT-4o
         </button>
-    )
+    );
 }

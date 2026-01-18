@@ -2,7 +2,7 @@
  * Rate Limiting Middleware
  * Token bucket algorithm with tier-based limits.
  */
-import { Context, Next } from 'hono';
+import type { Context, Next } from 'hono';
 
 // Rate limit configuration per tier
 const TIER_LIMITS = {
@@ -36,16 +36,19 @@ interface RateLimitState {
 const rateLimitStore = new Map<string, RateLimitState>();
 
 // Clean up old entries periodically
-setInterval(() => {
-    const now = Date.now();
-    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+setInterval(
+    () => {
+        const now = Date.now();
+        const oneDayAgo = now - 24 * 60 * 60 * 1000;
 
-    for (const [key, state] of rateLimitStore) {
-        if (state.lastRefill < oneDayAgo) {
-            rateLimitStore.delete(key);
+        for (const [key, state] of rateLimitStore) {
+            if (state.lastRefill < oneDayAgo) {
+                rateLimitStore.delete(key);
+            }
         }
-    }
-}, 60 * 60 * 1000); // Clean every hour
+    },
+    60 * 60 * 1000
+); // Clean every hour
 
 /**
  * Get or create rate limit state for a user
@@ -148,7 +151,10 @@ export function rateLimit() {
         // Set rate limit headers
         c.header('X-RateLimit-Limit', String(limits.requestsPerMinute));
         c.header('X-RateLimit-Remaining', String(Math.floor(state.tokens)));
-        c.header('X-RateLimit-Daily-Remaining', String(limits.requestsPerDay - state.requestsToday));
+        c.header(
+            'X-RateLimit-Daily-Remaining',
+            String(limits.requestsPerDay - state.requestsToday)
+        );
 
         await next();
     };

@@ -1,9 +1,9 @@
 /**
  * Memory Agent Service
- * 
+ *
  * Agentic Decision Layer for intelligent memory usage.
  * Implements Phase 2 of Aspendos Memory System.
- * 
+ *
  * Features:
  * - Query classification (7 types)
  * - Memory usage decision (matrix + LLM fallback)
@@ -16,13 +16,13 @@
 // ============================================
 
 export enum QueryType {
-    GENERAL_KNOWLEDGE = 'general_knowledge',   // "What is React?"
-    TECHNICAL_ADVICE = 'technical_advice',     // "How should I architect this?"
-    DEBUGGING = 'debugging',                   // "Help debug this error"
+    GENERAL_KNOWLEDGE = 'general_knowledge', // "What is React?"
+    TECHNICAL_ADVICE = 'technical_advice', // "How should I architect this?"
+    DEBUGGING = 'debugging', // "Help debug this error"
     PERSONAL_REFLECTION = 'personal_reflection', // "Why do I feel stuck?"
-    CODE_REVIEW = 'code_review',               // "Review my code"
-    LEARNING = 'learning',                     // "How to learn X?"
-    CREATIVE = 'creative',                     // "Design ideas?"
+    CODE_REVIEW = 'code_review', // "Review my code"
+    LEARNING = 'learning', // "How to learn X?"
+    CREATIVE = 'creative', // "Design ideas?"
     UNKNOWN = 'unknown',
 }
 
@@ -53,14 +53,14 @@ export interface ReflectionResult {
  * true = use memory, false = skip memory, null = ask LLM
  */
 const DECISION_MATRIX: Record<QueryType, boolean | null> = {
-    [QueryType.GENERAL_KNOWLEDGE]: false,      // Facts, no personalization needed
-    [QueryType.TECHNICAL_ADVICE]: true,        // Needs user's approach/style
-    [QueryType.DEBUGGING]: true,               // Needs user's tools/patterns
-    [QueryType.PERSONAL_REFLECTION]: true,     // Needs user's feelings/history
-    [QueryType.CODE_REVIEW]: true,             // Needs user's preferences
-    [QueryType.LEARNING]: true,                // Needs user's current skills
-    [QueryType.CREATIVE]: true,                // Needs user's style
-    [QueryType.UNKNOWN]: null,                 // Let LLM decide
+    [QueryType.GENERAL_KNOWLEDGE]: false, // Facts, no personalization needed
+    [QueryType.TECHNICAL_ADVICE]: true, // Needs user's approach/style
+    [QueryType.DEBUGGING]: true, // Needs user's tools/patterns
+    [QueryType.PERSONAL_REFLECTION]: true, // Needs user's feelings/history
+    [QueryType.CODE_REVIEW]: true, // Needs user's preferences
+    [QueryType.LEARNING]: true, // Needs user's current skills
+    [QueryType.CREATIVE]: true, // Needs user's style
+    [QueryType.UNKNOWN]: null, // Let LLM decide
 };
 
 /**
@@ -84,26 +84,53 @@ const SECTOR_MAP: Record<QueryType, MemorySector[]> = {
 
 const CLASSIFICATION_PATTERNS: { pattern: RegExp; type: QueryType }[] = [
     // General knowledge patterns
-    { pattern: /^(what is|what are|who is|how does|when did|where is)\b/i, type: QueryType.GENERAL_KNOWLEDGE },
-    { pattern: /\b(explain|define|describe)\s+(what|how|the)\b/i, type: QueryType.GENERAL_KNOWLEDGE },
+    {
+        pattern: /^(what is|what are|who is|how does|when did|where is)\b/i,
+        type: QueryType.GENERAL_KNOWLEDGE,
+    },
+    {
+        pattern: /\b(explain|define|describe)\s+(what|how|the)\b/i,
+        type: QueryType.GENERAL_KNOWLEDGE,
+    },
 
     // Technical advice patterns
-    { pattern: /\b(should i|how should|what approach|best way to|recommend|architect)/i, type: QueryType.TECHNICAL_ADVICE },
-    { pattern: /\b(design|structure|organize|implement)\s+(my|the|this|a)\b/i, type: QueryType.TECHNICAL_ADVICE },
+    {
+        pattern: /\b(should i|how should|what approach|best way to|recommend|architect)/i,
+        type: QueryType.TECHNICAL_ADVICE,
+    },
+    {
+        pattern: /\b(design|structure|organize|implement)\s+(my|the|this|a)\b/i,
+        type: QueryType.TECHNICAL_ADVICE,
+    },
 
     // Debugging patterns
-    { pattern: /\b(debug|error|fix|broken|not working|crash|bug|issue)/i, type: QueryType.DEBUGGING },
+    {
+        pattern: /\b(debug|error|fix|broken|not working|crash|bug|issue)/i,
+        type: QueryType.DEBUGGING,
+    },
     { pattern: /\b(why (isn't|doesn't|won't|can't)|troubleshoot)/i, type: QueryType.DEBUGGING },
 
     // Personal reflection patterns
-    { pattern: /\b(feel|feeling|stuck|frustrated|overwhelmed|motivated|inspired)/i, type: QueryType.PERSONAL_REFLECTION },
-    { pattern: /\b(why (do i|am i)|how (do i|can i) (stay|get|feel))/i, type: QueryType.PERSONAL_REFLECTION },
+    {
+        pattern: /\b(feel|feeling|stuck|frustrated|overwhelmed|motivated|inspired)/i,
+        type: QueryType.PERSONAL_REFLECTION,
+    },
+    {
+        pattern: /\b(why (do i|am i)|how (do i|can i) (stay|get|feel))/i,
+        type: QueryType.PERSONAL_REFLECTION,
+    },
 
     // Code review patterns
-    { pattern: /\b(review|check|look at|critique)\s+(my|this|the)\s*(code|implementation)/i, type: QueryType.CODE_REVIEW },
+    {
+        pattern: /\b(review|check|look at|critique)\s+(my|this|the)\s*(code|implementation)/i,
+        type: QueryType.CODE_REVIEW,
+    },
 
     // Learning patterns
-    { pattern: /\b(learn|study|master|understand|get better at|improve)/i, type: QueryType.LEARNING },
+    {
+        pattern: /\b(learn|study|master|understand|get better at|improve)/i,
+        type: QueryType.LEARNING,
+    },
     { pattern: /\b(tutorial|resources|course|where (to|can i) learn)/i, type: QueryType.LEARNING },
 
     // Creative patterns
@@ -239,11 +266,7 @@ export class MemoryDecisionAgent {
      * Self-reflection: Is the response good enough?
      * For now returns a simple check, can be enhanced with LLM.
      */
-    reflectOnResponse(
-        query: string,
-        response: string,
-        memoryUsed: boolean
-    ): ReflectionResult {
+    reflectOnResponse(query: string, response: string, memoryUsed: boolean): ReflectionResult {
         // Basic quality checks
         const responseLength = response.length;
         const hasContent = responseLength > 50;
@@ -279,10 +302,16 @@ export class MemoryDecisionAgent {
      */
     private checkRelevance(query: string, response: string): boolean {
         const queryWords = new Set(
-            query.toLowerCase().split(/\W+/).filter(w => w.length > 3)
+            query
+                .toLowerCase()
+                .split(/\W+/)
+                .filter((w) => w.length > 3)
         );
         const responseWords = new Set(
-            response.toLowerCase().split(/\W+/).filter(w => w.length > 3)
+            response
+                .toLowerCase()
+                .split(/\W+/)
+                .filter((w) => w.length > 3)
         );
 
         let overlap = 0;

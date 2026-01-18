@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { CaretDown, Check, Crown, Lightning, Sparkle } from '@phosphor-icons/react';
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -9,8 +11,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { CaretDown, Check, Lightning, Sparkle, Crown } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -47,7 +47,12 @@ const TIER_LABELS: Record<string, string> = {
     ULTRA: 'Ultra',
 };
 
-export function ModelSelector({ selectedModel = 'openai/gpt-4o-mini', onModelChange, disabled = false, className }: ModelSelectorProps) {
+export function ModelSelector({
+    selectedModel = 'openai/gpt-4o-mini',
+    onModelChange,
+    disabled = false,
+    className,
+}: ModelSelectorProps) {
     const [models, setModels] = useState<Model[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -68,51 +73,87 @@ export function ModelSelector({ selectedModel = 'openai/gpt-4o-mini', onModelCha
         fetchModels();
     }, []);
 
-    const groupedModels = models.reduce((acc, model) => {
-        const provider = model.provider || 'other';
-        if (!acc[provider]) acc[provider] = [];
-        acc[provider].push(model);
-        return acc;
-    }, {} as Record<string, Model[]>);
+    const groupedModels = models.reduce(
+        (acc, model) => {
+            const provider = model.provider || 'other';
+            if (!acc[provider]) acc[provider] = [];
+            acc[provider].push(model);
+            return acc;
+        },
+        {} as Record<string, Model[]>
+    );
 
     const currentModel = models.find((m) => m.id === selectedModel);
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild disabled={disabled}>
-                <Button variant="ghost" className={cn('h-8 px-3 gap-2 text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800', className)}>
+                <Button
+                    variant="ghost"
+                    className={cn(
+                        'h-8 px-3 gap-2 text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800',
+                        className
+                    )}
+                >
                     {isLoading ? (
                         <span className="text-zinc-400">Loading...</span>
                     ) : (
                         <>
-                            <span className={PROVIDER_COLORS[currentModel?.provider || 'openai']}>{currentModel?.name || selectedModel.split('/')[1]}</span>
+                            <span className={PROVIDER_COLORS[currentModel?.provider || 'openai']}>
+                                {currentModel?.name || selectedModel.split('/')[1]}
+                            </span>
                             <CaretDown className="w-3 h-3 text-zinc-400" />
                         </>
                     )}
                 </Button>
             </DropdownMenuTrigger>
 
-
             <DropdownMenuContent align="center" className="w-64">
                 {Object.entries(groupedModels).map(([provider, providerModels]) => (
                     <div key={provider}>
-                        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-400">{provider}</DropdownMenuLabel>
+                        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-400">
+                            {provider}
+                        </DropdownMenuLabel>
                         {providerModels.map((model) => {
                             const isSelected = model.id === selectedModel;
                             const TierIcon = TIER_ICONS[model.tier || 'STARTER'] || Lightning;
                             return (
-                                <DropdownMenuItem key={model.id} onClick={() => onModelChange(model.id)} className="flex items-center justify-between cursor-pointer">
+                                <DropdownMenuItem
+                                    key={model.id}
+                                    onClick={() => onModelChange(model.id)}
+                                    className="flex items-center justify-between cursor-pointer"
+                                >
                                     <div className="flex items-center gap-2">
-                                        <TierIcon className={cn('w-3.5 h-3.5', model.tier === 'ULTRA' ? 'text-purple-500' : model.tier === 'PRO' ? 'text-blue-500' : 'text-zinc-400')} />
+                                        <TierIcon
+                                            className={cn(
+                                                'w-3.5 h-3.5',
+                                                model.tier === 'ULTRA'
+                                                    ? 'text-purple-500'
+                                                    : model.tier === 'PRO'
+                                                      ? 'text-blue-500'
+                                                      : 'text-zinc-400'
+                                            )}
+                                        />
                                         <span className="text-sm">{model.name}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {model.tier && (
-                                            <span className={cn('text-[10px] px-1.5 py-0.5 rounded uppercase font-medium', model.tier === 'ULTRA' ? 'bg-purple-500/10 text-purple-500' : model.tier === 'PRO' ? 'bg-blue-500/10 text-blue-500' : 'bg-zinc-500/10 text-zinc-500')}>
+                                            <span
+                                                className={cn(
+                                                    'text-[10px] px-1.5 py-0.5 rounded uppercase font-medium',
+                                                    model.tier === 'ULTRA'
+                                                        ? 'bg-purple-500/10 text-purple-500'
+                                                        : model.tier === 'PRO'
+                                                          ? 'bg-blue-500/10 text-blue-500'
+                                                          : 'bg-zinc-500/10 text-zinc-500'
+                                                )}
+                                            >
                                                 {TIER_LABELS[model.tier]}
                                             </span>
                                         )}
-                                        {isSelected && <Check className="w-4 h-4 text-emerald-500" />}
+                                        {isSelected && (
+                                            <Check className="w-4 h-4 text-emerald-500" />
+                                        )}
                                     </div>
                                 </DropdownMenuItem>
                             );

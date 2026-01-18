@@ -1,6 +1,6 @@
-import { auth } from '@clerk/nextjs/server'
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@aspendos/db'
+import { prisma } from '@aspendos/db';
+import { auth } from '@clerk/nextjs/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/chats - List user's chats
@@ -8,30 +8,30 @@ import { prisma } from '@aspendos/db'
  */
 
 export async function GET(req: NextRequest) {
-    const { userId: clerkId } = await auth()
+    const { userId: clerkId } = await auth();
 
     if (!clerkId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
         const user = await prisma.user.findUnique({
-            where: { clerkId }
-        })
+            where: { clerkId },
+        });
 
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 })
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const { searchParams } = new URL(req.url)
-        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
-        const cursor = searchParams.get('cursor')
-        const archived = searchParams.get('archived') === 'true'
+        const { searchParams } = new URL(req.url);
+        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
+        const cursor = searchParams.get('cursor');
+        const archived = searchParams.get('archived') === 'true';
 
         const chats = await prisma.chat.findMany({
             where: {
                 userId: user.id,
-                isArchived: archived
+                isArchived: archived,
             },
             take: limit + 1,
             cursor: cursor ? { id: cursor } : undefined,
@@ -41,19 +41,19 @@ export async function GET(req: NextRequest) {
                 messages: {
                     take: 1,
                     orderBy: { createdAt: 'desc' },
-                    select: { content: true, createdAt: true }
-                }
-            }
-        })
+                    select: { content: true, createdAt: true },
+                },
+            },
+        });
 
-        let nextCursor: string | undefined
+        let nextCursor: string | undefined;
         if (chats.length > limit) {
-            const nextItem = chats.pop()
-            nextCursor = nextItem?.id
+            const nextItem = chats.pop();
+            nextCursor = nextItem?.id;
         }
 
         return NextResponse.json({
-            chats: chats.map(chat => ({
+            chats: chats.map((chat) => ({
                 id: chat.id,
                 title: chat.title,
                 description: chat.description,
@@ -63,48 +63,51 @@ export async function GET(req: NextRequest) {
                 createdAt: chat.createdAt,
                 updatedAt: chat.updatedAt,
             })),
-            nextCursor
-        })
+            nextCursor,
+        });
     } catch (error) {
-        console.error('[API /chats GET] Error:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('[API /chats GET] Error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
 
 export async function POST(req: NextRequest) {
-    const { userId: clerkId } = await auth()
+    const { userId: clerkId } = await auth();
 
     if (!clerkId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
         const user = await prisma.user.findUnique({
-            where: { clerkId }
-        })
+            where: { clerkId },
+        });
 
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 })
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const body = await req.json().catch(() => ({}))
-        const { title = 'New Chat', modelPreference } = body
+        const body = await req.json().catch(() => ({}));
+        const { title = 'New Chat', modelPreference } = body;
 
         const chat = await prisma.chat.create({
             data: {
                 userId: user.id,
                 title,
                 modelPreference,
-            }
-        })
+            },
+        });
 
-        return NextResponse.json({
-            id: chat.id,
-            title: chat.title,
-            createdAt: chat.createdAt,
-        }, { status: 201 })
+        return NextResponse.json(
+            {
+                id: chat.id,
+                title: chat.title,
+                createdAt: chat.createdAt,
+            },
+            { status: 201 }
+        );
     } catch (error) {
-        console.error('[API /chats POST] Error:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('[API /chats POST] Error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

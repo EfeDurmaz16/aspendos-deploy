@@ -1,24 +1,24 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { cn } from '@/lib/utils';
 import {
     Brain,
-    PushPin,
-    MagnifyingGlass,
-    Plus,
-    Trash,
-    PencilSimple,
-    X,
     CircleNotch,
     Clock,
-    Lightbulb,
     Heart,
+    Lightbulb,
+    MagnifyingGlass,
+    PencilSimple,
+    Plus,
+    PushPin,
     Sparkle,
+    Trash,
+    X,
 } from '@phosphor-icons/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -103,7 +103,10 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                 method: 'PATCH',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: editingMemory.content, sector: editingMemory.sector }),
+                body: JSON.stringify({
+                    content: editingMemory.content,
+                    sector: editingMemory.sector,
+                }),
             });
             setEditingMemory(null);
             fetchMemories();
@@ -163,19 +166,38 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                 <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
                     <Brain size={18} weight="duotone" />
                     <span className="font-serif font-medium">Memory</span>
-                    <span className="text-xs bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded">{memories.length}</span>
+                    <span className="text-xs bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+                        {memories.length}
+                    </span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsCreating(true)} title="Add memory">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setIsCreating(true)}
+                        title="Add memory"
+                    >
                         <Plus size={16} />
                     </Button>
                     {selectedIds.size > 0 && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={handleBulkDelete} title={`Delete ${selectedIds.size} selected`}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500"
+                            onClick={handleBulkDelete}
+                            title={`Delete ${selectedIds.size} selected`}
+                        >
                             <Trash size={16} />
                         </Button>
                     )}
                     {onClose && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400" onClick={onClose}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-zinc-400"
+                            onClick={onClose}
+                        >
                             <X size={16} />
                         </Button>
                     )}
@@ -184,14 +206,25 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
 
             <div className="p-3 border-b border-zinc-200 dark:border-zinc-800">
                 <div className="relative">
-                    <MagnifyingGlass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-                    <Input type="text" placeholder="Search memories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-8 text-sm" />
+                    <MagnifyingGlass
+                        size={14}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                    />
+                    <Input
+                        type="text"
+                        placeholder="Search memories..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 h-8 text-sm"
+                    />
                 </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 {isLoading ? (
-                    <div className="flex justify-center py-8"><CircleNotch className="w-6 h-6 animate-spin text-zinc-400" /></div>
+                    <div className="flex justify-center py-8">
+                        <CircleNotch className="w-6 h-6 animate-spin text-zinc-400" />
+                    </div>
                 ) : memories.length === 0 ? (
                     <div className="text-center py-8 text-zinc-400 text-sm">
                         <Brain size={32} className="mx-auto mb-2 opacity-50" />
@@ -205,13 +238,28 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                         return (
                             <div key={sector}>
                                 <div className="flex items-center gap-2 mb-2">
-                                    <SectorIcon size={14} className={config.color} weight="duotone" />
-                                    <h4 className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">{sector}</h4>
-                                    <span className="text-[10px] text-zinc-400">({sectorMemories.length})</span>
+                                    <SectorIcon
+                                        size={14}
+                                        className={config.color}
+                                        weight="duotone"
+                                    />
+                                    <h4 className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">
+                                        {sector}
+                                    </h4>
+                                    <span className="text-[10px] text-zinc-400">
+                                        ({sectorMemories.length})
+                                    </span>
                                 </div>
                                 <div className="space-y-2">
                                     {sectorMemories.map((memory) => (
-                                        <MemoryItem key={memory.id} memory={memory} isSelected={selectedIds.has(memory.id)} onSelect={() => toggleSelection(memory.id)} onEdit={() => setEditingMemory(memory)} onDelete={() => handleDelete(memory.id)} />
+                                        <MemoryItem
+                                            key={memory.id}
+                                            memory={memory}
+                                            isSelected={selectedIds.has(memory.id)}
+                                            onSelect={() => toggleSelection(memory.id)}
+                                            onEdit={() => setEditingMemory(memory)}
+                                            onDelete={() => handleDelete(memory.id)}
+                                        />
                                     ))}
                                 </div>
                             </div>
@@ -224,8 +272,17 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg w-full max-w-sm p-4">
                         <h3 className="font-medium mb-3">Add Memory</h3>
-                        <textarea value={newMemoryContent} onChange={(e) => setNewMemoryContent(e.target.value)} placeholder="What should I remember?" className="w-full h-24 p-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:bg-zinc-800 dark:border-zinc-700" />
-                        <select value={newMemorySector} onChange={(e) => setNewMemorySector(e.target.value)} className="w-full mt-2 p-2 text-sm border rounded-lg dark:bg-zinc-800 dark:border-zinc-700">
+                        <textarea
+                            value={newMemoryContent}
+                            onChange={(e) => setNewMemoryContent(e.target.value)}
+                            placeholder="What should I remember?"
+                            className="w-full h-24 p-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:bg-zinc-800 dark:border-zinc-700"
+                        />
+                        <select
+                            value={newMemorySector}
+                            onChange={(e) => setNewMemorySector(e.target.value)}
+                            className="w-full mt-2 p-2 text-sm border rounded-lg dark:bg-zinc-800 dark:border-zinc-700"
+                        >
                             <option value="semantic">Semantic (Facts)</option>
                             <option value="episodic">Episodic (Events)</option>
                             <option value="procedural">Procedural (How-to)</option>
@@ -233,8 +290,12 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                             <option value="reflective">Reflective (Insights)</option>
                         </select>
                         <div className="flex justify-end gap-2 mt-4">
-                            <Button variant="ghost" size="sm" onClick={() => setIsCreating(false)}>Cancel</Button>
-                            <Button size="sm" onClick={handleCreate}>Save</Button>
+                            <Button variant="ghost" size="sm" onClick={() => setIsCreating(false)}>
+                                Cancel
+                            </Button>
+                            <Button size="sm" onClick={handleCreate}>
+                                Save
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -244,8 +305,20 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg w-full max-w-sm p-4">
                         <h3 className="font-medium mb-3">Edit Memory</h3>
-                        <textarea value={editingMemory.content} onChange={(e) => setEditingMemory({ ...editingMemory, content: e.target.value })} className="w-full h-24 p-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:bg-zinc-800 dark:border-zinc-700" />
-                        <select value={editingMemory.sector} onChange={(e) => setEditingMemory({ ...editingMemory, sector: e.target.value })} className="w-full mt-2 p-2 text-sm border rounded-lg dark:bg-zinc-800 dark:border-zinc-700">
+                        <textarea
+                            value={editingMemory.content}
+                            onChange={(e) =>
+                                setEditingMemory({ ...editingMemory, content: e.target.value })
+                            }
+                            className="w-full h-24 p-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:bg-zinc-800 dark:border-zinc-700"
+                        />
+                        <select
+                            value={editingMemory.sector}
+                            onChange={(e) =>
+                                setEditingMemory({ ...editingMemory, sector: e.target.value })
+                            }
+                            className="w-full mt-2 p-2 text-sm border rounded-lg dark:bg-zinc-800 dark:border-zinc-700"
+                        >
                             <option value="semantic">Semantic</option>
                             <option value="episodic">Episodic</option>
                             <option value="procedural">Procedural</option>
@@ -253,8 +326,16 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                             <option value="reflective">Reflective</option>
                         </select>
                         <div className="flex justify-end gap-2 mt-4">
-                            <Button variant="ghost" size="sm" onClick={() => setEditingMemory(null)}>Cancel</Button>
-                            <Button size="sm" onClick={handleUpdate}>Save</Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingMemory(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button size="sm" onClick={handleUpdate}>
+                                Save
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -263,20 +344,60 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
     );
 }
 
-function MemoryItem({ memory, isSelected, onSelect, onEdit, onDelete }: { memory: Memory; isSelected: boolean; onSelect: () => void; onEdit: () => void; onDelete: () => void }) {
+function MemoryItem({
+    memory,
+    isSelected,
+    onSelect,
+    onEdit,
+    onDelete,
+}: {
+    memory: Memory;
+    isSelected: boolean;
+    onSelect: () => void;
+    onEdit: () => void;
+    onDelete: () => void;
+}) {
     return (
-        <div className={cn('p-3 rounded-lg border text-left transition-all group', isSelected ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}>
+        <div
+            className={cn(
+                'p-3 rounded-lg border text-left transition-all group',
+                isSelected
+                    ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+                    : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+            )}
+        >
             <div className="flex items-start gap-2">
-                <input type="checkbox" checked={isSelected} onChange={onSelect} className="mt-1 rounded" />
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={onSelect}
+                    className="mt-1 rounded"
+                />
                 <div className="flex-1 min-w-0">
-                    <p className="text-[13px] text-zinc-700 dark:text-zinc-300 line-clamp-3">{memory.content}</p>
+                    <p className="text-[13px] text-zinc-700 dark:text-zinc-300 line-clamp-3">
+                        {memory.content}
+                    </p>
                     <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] text-zinc-400">{Math.round(memory.confidence * 100)}% confidence</span>
+                        <span className="text-[10px] text-zinc-400">
+                            {Math.round(memory.confidence * 100)}% confidence
+                        </span>
                     </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={onEdit} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" title="Edit"><PencilSimple size={14} /></button>
-                    <button onClick={onDelete} className="p-1 text-zinc-400 hover:text-red-500" title="Delete"><Trash size={14} /></button>
+                    <button
+                        onClick={onEdit}
+                        className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                        title="Edit"
+                    >
+                        <PencilSimple size={14} />
+                    </button>
+                    <button
+                        onClick={onDelete}
+                        className="p-1 text-zinc-400 hover:text-red-500"
+                        title="Delete"
+                    >
+                        <Trash size={14} />
+                    </button>
                 </div>
             </div>
         </div>

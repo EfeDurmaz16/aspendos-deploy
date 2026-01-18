@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 // ============================================
 // TYPES (preserved for backwards compatibility)
@@ -81,12 +81,16 @@ export function useStreamingChat(chatId: string) {
     const [selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
 
     // Create transport with memoization
-    const transport = useMemo(() => new DefaultChatTransport({
-        api: `${API_BASE}/api/chat/${chatId}/message`,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    }), [chatId]);
+    const transport = useMemo(
+        () =>
+            new DefaultChatTransport({
+                api: `${API_BASE}/api/chat/${chatId}/message`,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }),
+        [chatId]
+    );
 
     const {
         messages: aiMessages,
@@ -122,7 +126,10 @@ export function useStreamingChat(chatId: string) {
             role: msg.role as 'user' | 'assistant',
             content: textContent,
             timestamp: new Date(),
-            streaming: isStreaming && msg.role === 'assistant' && msg === aiMessages[aiMessages.length - 1],
+            streaming:
+                isStreaming &&
+                msg.role === 'assistant' &&
+                msg === aiMessages[aiMessages.length - 1],
             decision: msg.role === 'assistant' ? currentDecision || undefined : undefined,
             memoriesUsed: msg.role === 'assistant' ? currentMemories : undefined,
         };
@@ -141,13 +148,16 @@ export function useStreamingChat(chatId: string) {
 
                 // Use sendMessage with text parameter (AI SDK v5.0)
                 // Custom data goes in body, not data
-                await aiSendMessage({
-                    text: content,
-                }, {
-                    body: {
-                        model_id: model,
+                await aiSendMessage(
+                    {
+                        text: content,
                     },
-                });
+                    {
+                        body: {
+                            model_id: model,
+                        },
+                    }
+                );
 
                 // Clear input after sending
                 setInput('');
@@ -179,14 +189,18 @@ export function useStreamingChat(chatId: string) {
     const loadMessages = useCallback((serverMessages: ChatMessage[]) => {
         // AI SDK manages its own message state
         // This is mainly for compatibility - messages come from the chat endpoint
-        console.log('[useStreamingChat] loadMessages called with', serverMessages.length, 'messages');
+        console.log(
+            '[useStreamingChat] loadMessages called with',
+            serverMessages.length,
+            'messages'
+        );
     }, []);
 
     // Retry last message
     const retryLastMessage = useCallback(
         async (options?: StreamingOptions) => {
             // Find the last user message and resend it
-            const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+            const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
             if (lastUserMessage) {
                 return sendMessage(lastUserMessage.content, options);
             }

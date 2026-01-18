@@ -1,8 +1,8 @@
 /**
  * Aspendos Design Tokens
- * 
+ *
  * Comprehensive design system extracted from aspendos_frontend.md
- * 
+ *
  * Constraints:
  * - No gradients
  * - No pure #000000 or #ffffff
@@ -20,26 +20,26 @@ export const colors = {
     // Zinc Grayscale (Primary neutral palette)
     // ---------------------------------------------------------------------------
     zinc: {
-        50: '#fafafa',   // Lightest - backgrounds, empty states
-        100: '#f4f4f5',  // Card backgrounds, hover states
-        200: '#e4e4e7',  // Borders, dividers, disabled elements
-        300: '#d4d4d8',  // Subtle borders, secondary dividers
-        400: '#a1a1a6',  // Secondary text, inactive icons
-        500: '#71717a',  // Secondary headings, muted text
-        600: '#52525b',  // Body text, primary icons
-        700: '#3f3f46',  // Strong text, primary headings
-        800: '#27272a',  // Dark headings, emphasis
-        900: '#18181b',  // Darkest text - high contrast
-        950: '#09090b',  // Near-black (dark mode background)
+        50: '#fafafa', // Lightest - backgrounds, empty states
+        100: '#f4f4f5', // Card backgrounds, hover states
+        200: '#e4e4e7', // Borders, dividers, disabled elements
+        300: '#d4d4d8', // Subtle borders, secondary dividers
+        400: '#a1a1a6', // Secondary text, inactive icons
+        500: '#71717a', // Secondary headings, muted text
+        600: '#52525b', // Body text, primary icons
+        700: '#3f3f46', // Strong text, primary headings
+        800: '#27272a', // Dark headings, emphasis
+        900: '#18181b', // Darkest text - high contrast
+        950: '#09090b', // Near-black (dark mode background)
     },
 
     // ---------------------------------------------------------------------------
     // Slate Tweaks (Accessibility adjustments)
     // ---------------------------------------------------------------------------
     slate: {
-        50: '#f8fafc',   // Very subtle warm white
-        600: '#475569',  // Slightly warmer than zinc-600
-        900: '#0f172a',  // Not pure black, slightly blue-tinted
+        50: '#f8fafc', // Very subtle warm white
+        600: '#475569', // Slightly warmer than zinc-600
+        900: '#0f172a', // Not pure black, slightly blue-tinted
     },
 
     // ---------------------------------------------------------------------------
@@ -47,26 +47,26 @@ export const colors = {
     // ---------------------------------------------------------------------------
     semantic: {
         success: {
-            primary: '#10b981',  // emerald-500
-            light: '#d1fae5',    // emerald-100
-            dark: '#059669',     // emerald-600
+            primary: '#10b981', // emerald-500
+            light: '#d1fae5', // emerald-100
+            dark: '#059669', // emerald-600
         },
         warning: {
-            primary: '#f59e0b',  // amber-500
-            light: '#fef3c7',    // amber-100
-            dark: '#d97706',     // amber-600
+            primary: '#f59e0b', // amber-500
+            light: '#fef3c7', // amber-100
+            dark: '#d97706', // amber-600
         },
         error: {
-            primary: '#ef4444',  // red-500
-            light: '#fee2e2',    // red-100
-            dark: '#dc2626',     // red-600
+            primary: '#ef4444', // red-500
+            light: '#fee2e2', // red-100
+            dark: '#dc2626', // red-600
         },
         info: {
-            primary: '#3b82f6',  // blue-500
-            light: '#dbeafe',    // blue-100
-            dark: '#1d4ed8',     // blue-600
+            primary: '#3b82f6', // blue-500
+            light: '#dbeafe', // blue-100
+            dark: '#1d4ed8', // blue-600
         },
-        focus: '#0ea5e9',      // cyan-500 - focus states, interactive elements
+        focus: '#0ea5e9', // cyan-500 - focus states, interactive elements
     },
 
     // ---------------------------------------------------------------------------
@@ -74,31 +74,31 @@ export const colors = {
     // ---------------------------------------------------------------------------
     modelProviders: {
         openai: {
-            primary: '#10a37f',    // Official teal
+            primary: '#10a37f', // Official teal
             background: '#f0fdf9',
         },
         anthropic: {
-            primary: '#d4a574',    // Warm brown, professional
+            primary: '#d4a574', // Warm brown, professional
             background: '#faf9f7',
         },
         google: {
-            primary: '#3f3f46',    // zinc-700, neutral
+            primary: '#3f3f46', // zinc-700, neutral
             background: '#f9fafb',
         },
         xai: {
-            primary: '#52525b',    // zinc-600, neutral
+            primary: '#52525b', // zinc-600, neutral
             background: '#f4f4f5',
         },
         openrouter: {
-            primary: '#71717a',    // zinc-500, neutral
+            primary: '#71717a', // zinc-500, neutral
             background: '#f9fafb',
         },
         meta: {
-            primary: '#8b5cf6',    // purple-500, distinctive
+            primary: '#8b5cf6', // purple-500, distinctive
             background: '#faf5ff',
         },
         mistral: {
-            primary: '#06b6d4',    // cyan-500
+            primary: '#06b6d4', // cyan-500
             background: '#f0fdfa',
         },
     },
@@ -107,25 +107,25 @@ export const colors = {
     // Theme-Aware Semantic Tokens
     // ---------------------------------------------------------------------------
     light: {
-        background: '#fafafa',      // zinc-50
-        surface: '#ffffff',         // Off-white (not pure #fff in practice, use zinc-50)
+        background: '#fafafa', // zinc-50
+        surface: '#ffffff', // Off-white (not pure #fff in practice, use zinc-50)
         surfaceSecondary: '#f4f4f5', // zinc-100
-        textPrimary: '#18181b',     // zinc-900
-        textSecondary: '#52525b',   // zinc-600
-        textMuted: '#71717a',       // zinc-500
-        border: '#e4e4e7',          // zinc-200
-        borderSubtle: '#f4f4f5',    // zinc-100
+        textPrimary: '#18181b', // zinc-900
+        textSecondary: '#52525b', // zinc-600
+        textMuted: '#71717a', // zinc-500
+        border: '#e4e4e7', // zinc-200
+        borderSubtle: '#f4f4f5', // zinc-100
         shadow: 'rgba(0, 0, 0, 0.1)',
     },
     dark: {
-        background: '#09090b',      // zinc-950
-        surface: '#18181b',         // zinc-900
+        background: '#09090b', // zinc-950
+        surface: '#18181b', // zinc-900
         surfaceSecondary: '#27272a', // zinc-800
-        textPrimary: '#fafafa',     // zinc-50
-        textSecondary: '#a1a1a6',   // zinc-400
-        textMuted: '#71717a',       // zinc-500
-        border: '#3f3f46',          // zinc-700
-        borderSubtle: '#27272a',    // zinc-800
+        textPrimary: '#fafafa', // zinc-50
+        textSecondary: '#a1a1a6', // zinc-400
+        textMuted: '#71717a', // zinc-500
+        border: '#3f3f46', // zinc-700
+        borderSubtle: '#27272a', // zinc-800
         shadow: 'rgba(0, 0, 0, 0.4)',
     },
 } as const;
@@ -160,44 +160,44 @@ export const typography = {
     // ---------------------------------------------------------------------------
     fontSize: {
         // Display sizes
-        'd1': '3.5rem',     // 56px
-        'd2': '3rem',       // 48px
+        d1: '3.5rem', // 56px
+        d2: '3rem', // 48px
         // Heading sizes
-        'h1': '2.25rem',    // 36px
-        'h2': '1.75rem',    // 28px
-        'h3': '1.5rem',     // 24px
-        'h4': '1.25rem',    // 20px
+        h1: '2.25rem', // 36px
+        h2: '1.75rem', // 28px
+        h3: '1.5rem', // 24px
+        h4: '1.25rem', // 20px
         // Body sizes
-        'bodyLg': '1.125rem', // 18px
-        'body': '1rem',       // 16px
-        'bodySm': '0.875rem', // 14px
+        bodyLg: '1.125rem', // 18px
+        body: '1rem', // 16px
+        bodySm: '0.875rem', // 14px
         // Label sizes
-        'labelLg': '0.875rem', // 14px
-        'label': '0.75rem',    // 12px
+        labelLg: '0.875rem', // 14px
+        label: '0.75rem', // 12px
         // Code sizes
-        'code': '0.8125rem',   // 13px
-        'codeInline': '0.875rem', // 14px
+        code: '0.8125rem', // 13px
+        codeInline: '0.875rem', // 14px
     },
 
     // ---------------------------------------------------------------------------
     // Line Heights
     // ---------------------------------------------------------------------------
     lineHeight: {
-        tight: 1.2,      // Display, H1, H2
-        snug: 1.3,       // H3
-        normal: 1.4,     // H4, labels
-        relaxed: 1.5,    // Body small
-        loose: 1.6,      // Body, code
+        tight: 1.2, // Display, H1, H2
+        snug: 1.3, // H3
+        normal: 1.4, // H4, labels
+        relaxed: 1.5, // Body small
+        loose: 1.6, // Body, code
     },
 
     // ---------------------------------------------------------------------------
     // Letter Spacing
     // ---------------------------------------------------------------------------
     letterSpacing: {
-        tighter: '-0.02em',  // D1
-        tight: '-0.015em',   // D2
-        normal: '-0.01em',   // H1
-        wide: '0.5px',       // Labels (uppercase)
+        tighter: '-0.02em', // D1
+        tight: '-0.015em', // D2
+        normal: '-0.01em', // H1
+        wide: '0.5px', // Labels (uppercase)
     },
 
     // ---------------------------------------------------------------------------
@@ -296,39 +296,39 @@ export const typography = {
 
 export const spacing = {
     0: '0px',
-    0.5: '2px',      // 0.125rem - micro-interactions
-    1: '4px',        // 0.25rem - tight
-    1.5: '6px',      // 0.375rem
-    2: '8px',        // 0.5rem - default small
-    2.5: '10px',     // 0.625rem
-    3: '12px',       // 0.75rem - component internal
-    3.5: '14px',     // 0.875rem
-    4: '16px',       // 1rem - primary spacing
-    5: '20px',       // 1.25rem - section spacing
-    6: '24px',       // 1.5rem - larger section
-    7: '28px',       // 1.75rem
-    8: '32px',       // 2rem - page sections
-    9: '36px',       // 2.25rem
-    10: '40px',      // 2.5rem - major sections
-    11: '44px',      // 2.75rem
-    12: '48px',      // 3rem - hero sections
-    14: '56px',      // 3.5rem
-    16: '64px',      // 4rem - page padding
-    20: '80px',      // 5rem - large breathing room
-    24: '96px',      // 6rem - hero padding
-    28: '112px',     // 7rem
-    32: '128px',     // 8rem
-    36: '144px',     // 9rem
-    40: '160px',     // 10rem
-    44: '176px',     // 11rem
-    48: '192px',     // 12rem
-    52: '208px',     // 13rem
-    56: '224px',     // 14rem
-    60: '240px',     // 15rem
-    64: '256px',     // 16rem
-    72: '288px',     // 18rem
-    80: '320px',     // 20rem
-    96: '384px',     // 24rem
+    0.5: '2px', // 0.125rem - micro-interactions
+    1: '4px', // 0.25rem - tight
+    1.5: '6px', // 0.375rem
+    2: '8px', // 0.5rem - default small
+    2.5: '10px', // 0.625rem
+    3: '12px', // 0.75rem - component internal
+    3.5: '14px', // 0.875rem
+    4: '16px', // 1rem - primary spacing
+    5: '20px', // 1.25rem - section spacing
+    6: '24px', // 1.5rem - larger section
+    7: '28px', // 1.75rem
+    8: '32px', // 2rem - page sections
+    9: '36px', // 2.25rem
+    10: '40px', // 2.5rem - major sections
+    11: '44px', // 2.75rem
+    12: '48px', // 3rem - hero sections
+    14: '56px', // 3.5rem
+    16: '64px', // 4rem - page padding
+    20: '80px', // 5rem - large breathing room
+    24: '96px', // 6rem - hero padding
+    28: '112px', // 7rem
+    32: '128px', // 8rem
+    36: '144px', // 9rem
+    40: '160px', // 10rem
+    44: '176px', // 11rem
+    48: '192px', // 12rem
+    52: '208px', // 13rem
+    56: '224px', // 14rem
+    60: '240px', // 15rem
+    64: '256px', // 16rem
+    72: '288px', // 18rem
+    80: '320px', // 20rem
+    96: '384px', // 24rem
 } as const;
 
 // Spacing as rem values
@@ -362,14 +362,14 @@ export const spacingRem = {
 
 export const borderRadius = {
     none: '0px',
-    xs: '2px',       // 0.125rem
-    sm: '4px',       // 0.25rem - inline code, small elements
-    md: '6px',       // 0.375rem - tags
-    DEFAULT: '8px',  // 0.5rem - buttons, inputs, cards
-    lg: '12px',      // 0.75rem - cards
-    xl: '16px',      // 1rem - modals, sheets
-    '2xl': '24px',   // 1.5rem - large cards
-    full: '9999px',  // Pill shapes, badges
+    xs: '2px', // 0.125rem
+    sm: '4px', // 0.25rem - inline code, small elements
+    md: '6px', // 0.375rem - tags
+    DEFAULT: '8px', // 0.5rem - buttons, inputs, cards
+    lg: '12px', // 0.75rem - cards
+    xl: '16px', // 1rem - modals, sheets
+    '2xl': '24px', // 1.5rem - large cards
+    full: '9999px', // Pill shapes, badges
 } as const;
 
 // =============================================================================
@@ -415,11 +415,11 @@ export const shadows = {
 // =============================================================================
 
 export const breakpoints = {
-    xs: '375px',    // Mobile portrait
-    sm: '640px',    // Mobile landscape
-    md: '768px',    // Tablet
-    lg: '1024px',   // Large tablet / smaller desktop
-    xl: '1280px',   // Desktop
+    xs: '375px', // Mobile portrait
+    sm: '640px', // Mobile landscape
+    md: '768px', // Tablet
+    lg: '1024px', // Large tablet / smaller desktop
+    xl: '1280px', // Desktop
     '2xl': '1536px', // Large desktop
 } as const;
 
@@ -461,8 +461,8 @@ export const animation = {
     // Easing functions
     easing: {
         standard: 'cubic-bezier(0.4, 0, 0.2, 1)', // Material standard
-        easeOut: 'cubic-bezier(0, 0, 0.2, 1)',    // Entrance
-        easeIn: 'cubic-bezier(0.4, 0, 1, 1)',     // Exit
+        easeOut: 'cubic-bezier(0, 0, 0.2, 1)', // Entrance
+        easeIn: 'cubic-bezier(0.4, 0, 1, 1)', // Exit
         easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)', // Continuous
         linear: 'linear',
     },

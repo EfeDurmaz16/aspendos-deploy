@@ -1,7 +1,7 @@
 /**
  * Memory Database Service
  * Handles CRUD operations for memories using Prisma.
- * 
+ *
  * Dashboard Functions (Phase 1):
  * - getMemoryStats: Aggregate stats by sector
  * - listMemoriesForDashboard: Filtered/paginated list
@@ -9,7 +9,7 @@
  * - softDeleteMemory: Archive (isActive = false)
  * - submitFeedback: Log user feedback
  */
-import { prisma, Memory, MemoryFeedback } from '@aspendos/db';
+import { type Memory, type MemoryFeedback, prisma } from '@aspendos/db';
 
 // ============================================
 // TYPES
@@ -90,7 +90,7 @@ export async function getMemoryStats(userId: string): Promise<MemoryStats> {
     const [total, active, pinned, sectors, avgConfidence] = await Promise.all([
         // Total memories
         prisma.memory.count({ where: { userId } }),
-        // Active memories  
+        // Active memories
         prisma.memory.count({ where: { userId, isActive: true } }),
         // Pinned memories
         prisma.memory.count({ where: { userId, isPinned: true } }),
@@ -170,10 +170,7 @@ export async function listMemoriesForDashboard(
 /**
  * Update a memory
  */
-export async function updateMemory(
-    id: string,
-    data: UpdateMemoryInput
-): Promise<Memory> {
+export async function updateMemory(id: string, data: UpdateMemoryInput): Promise<Memory> {
     // Filter out undefined values
     const updateData: Record<string, unknown> = {};
     if (data.content !== undefined) updateData.content = data.content;
@@ -230,7 +227,7 @@ export async function submitFeedback(input: FeedbackInput): Promise<MemoryFeedba
 }
 
 // ============================================
-// LEGACY CRUD FUNCTIONS  
+// LEGACY CRUD FUNCTIONS
 // ============================================
 
 /**

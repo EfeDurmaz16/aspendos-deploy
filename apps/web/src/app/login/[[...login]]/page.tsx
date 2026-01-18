@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { signIn } from "@/lib/auth-client";
-import { ArrowRight, Envelope, Lock, SpinnerGap, Warning } from "@phosphor-icons/react";
+import { ArrowRight, Envelope, Lock, SpinnerGap, Warning } from '@phosphor-icons/react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { signIn } from '@/lib/auth-client';
 
 export default function LoginPage() {
     const router = useRouter();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -21,12 +21,12 @@ export default function LoginPage() {
         try {
             const result = await signIn.email({ email, password });
             if (result.error) {
-                setError(result.error.message || "Invalid email or password");
+                setError(result.error.message || 'Invalid email or password');
                 return;
             }
-            router.push("/chat");
+            router.push('/chat');
         } catch {
-            setError("An unexpected error occurred. Please try again.");
+            setError('An unexpected error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -39,9 +39,7 @@ export default function LoginPage() {
                     <h1 className="font-serif text-4xl font-normal tracking-tight text-foreground">
                         Welcome back
                     </h1>
-                    <p className="mt-2 text-muted-foreground">
-                        Sign in to continue to Aspendos
-                    </p>
+                    <p className="mt-2 text-muted-foreground">Sign in to continue to Aspendos</p>
                 </div>
 
                 <div className="bg-card border border-border rounded-xl p-8 shadow-sm">
@@ -73,7 +71,10 @@ export default function LoginPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label htmlFor="password" className="text-sm font-medium text-foreground">
+                            <label
+                                htmlFor="password"
+                                className="text-sm font-medium text-foreground"
+                            >
                                 Password
                             </label>
                             <div className="relative">
@@ -113,7 +114,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="text-center text-sm text-muted-foreground">
-                    Don&apos;t have an account?{" "}
+                    Don&apos;t have an account?{' '}
                     <Link href="/signup" className="font-medium text-foreground hover:underline">
                         Sign up
                     </Link>

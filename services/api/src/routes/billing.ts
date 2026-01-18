@@ -45,7 +45,7 @@ app.post('/checkout', requireAuth, async (c) => {
     const body = await c.req.json();
 
     const plan = body.plan as 'starter' | 'pro' | 'ultra';
-    const cycle = body.cycle as 'monthly' | 'annual' || 'monthly';
+    const cycle = (body.cycle as 'monthly' | 'annual') || 'monthly';
 
     if (!['starter', 'pro', 'ultra'].includes(plan)) {
         return c.json({ error: 'Invalid plan. Must be "starter", "pro", or "ultra"' }, 400);

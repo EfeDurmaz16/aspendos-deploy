@@ -1,17 +1,17 @@
-import { auth } from '@/lib/auth'
-import { NextResponse } from 'next/server'
-import { prisma } from '@aspendos/db'
+import { prisma } from '@aspendos/db';
+import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 
 /**
  * GET /api/billing
  * Returns detailed billing information for the current user
  */
 export async function GET() {
-    const session = await auth()
-    const userId = session?.userId
+    const session = await auth();
+    const userId = session?.userId;
 
     if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
@@ -22,28 +22,30 @@ export async function GET() {
                     include: {
                         creditHistory: {
                             orderBy: { createdAt: 'desc' },
-                            take: 20
-                        }
-                    }
-                }
-            }
-        })
+                            take: 20,
+                        },
+                    },
+                },
+            },
+        });
 
         if (!user || !user.billingAccount) {
-            return NextResponse.json({ error: 'Billing account not found' }, { status: 404 })
+            return NextResponse.json({ error: 'Billing account not found' }, { status: 404 });
         }
 
-        const billing = user.billingAccount
+        const billing = user.billingAccount;
 
         // Calculate usage percentages
-        const tokenUsagePercent = Math.round((billing.creditUsed / billing.monthlyCredit) * 100)
-        const chatsUsagePercent = Math.round(((300 - billing.chatsRemaining) / 300) * 100) // Approx based on starter
+        const tokenUsagePercent = Math.round((billing.creditUsed / billing.monthlyCredit) * 100);
+        const chatsUsagePercent = Math.round(((300 - billing.chatsRemaining) / 300) * 100); // Approx based on starter
 
         // Days until reset
-        const now = new Date()
-        const resetDate = new Date(billing.resetDate)
-        resetDate.setMonth(resetDate.getMonth() + 1) // Next reset is 1 month after last reset
-        const daysUntilReset = Math.ceil((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        const now = new Date();
+        const resetDate = new Date(billing.resetDate);
+        resetDate.setMonth(resetDate.getMonth() + 1); // Next reset is 1 month after last reset
+        const daysUntilReset = Math.ceil(
+            (resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
 
         return NextResponse.json({
             plan: billing.plan,
@@ -58,7 +60,7 @@ export async function GET() {
                     formatted: {
                         used: `${(billing.creditUsed / 1000).toFixed(1)}M`,
                         limit: `${(billing.monthlyCredit / 1000).toFixed(1)}M`,
-                    }
+                    },
                 },
                 chats: {
                     remaining: billing.chatsRemaining,
@@ -66,7 +68,7 @@ export async function GET() {
                 },
                 voice: {
                     remaining: billing.voiceMinutesRemaining,
-                }
+                },
             },
 
             renewal: {
@@ -86,9 +88,9 @@ export async function GET() {
                 metadata: log.metadata,
                 createdAt: log.createdAt,
             })),
-        })
+        });
     } catch (error) {
-        console.error('[API /billing] Error:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('[API /billing] Error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

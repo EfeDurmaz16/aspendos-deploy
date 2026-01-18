@@ -141,7 +141,9 @@ async function reconnectMCPServer(name: string): Promise<boolean> {
     }
 
     state.reconnectAttempts++;
-    console.log(`[MCP] Attempting to reconnect to ${name} (attempt ${state.reconnectAttempts}/${CONFIG.maxReconnectAttempts})`);
+    console.log(
+        `[MCP] Attempting to reconnect to ${name} (attempt ${state.reconnectAttempts}/${CONFIG.maxReconnectAttempts})`
+    );
 
     // Close existing client if any
     if (state.client) {
@@ -269,7 +271,7 @@ export async function getMCPTools(): Promise<Record<string, unknown>> {
  */
 export function getMCPClient(name: string): MCPClient | undefined {
     const state = mcpStates.get(name);
-    return state?.isConnected ? state.client ?? undefined : undefined;
+    return state?.isConnected ? (state.client ?? undefined) : undefined;
 }
 
 /**
@@ -291,16 +293,22 @@ export function getConnectedMCPServers(): string[] {
 /**
  * Get detailed status of all MCP servers
  */
-export function getMCPStatus(): Record<string, {
-    connected: boolean;
-    lastHealthCheck: string | null;
-    reconnectAttempts: number;
-}> {
-    const status: Record<string, {
+export function getMCPStatus(): Record<
+    string,
+    {
         connected: boolean;
         lastHealthCheck: string | null;
         reconnectAttempts: number;
-    }> = {};
+    }
+> {
+    const status: Record<
+        string,
+        {
+            connected: boolean;
+            lastHealthCheck: string | null;
+            reconnectAttempts: number;
+        }
+    > = {};
 
     for (const [name, state] of mcpStates) {
         status[name] = {

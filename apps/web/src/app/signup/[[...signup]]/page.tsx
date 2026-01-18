@@ -1,17 +1,25 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { signUp } from "@/lib/auth-client";
-import { ArrowRight, Envelope, Lock, User, SpinnerGap, Warning, CheckCircle } from "@phosphor-icons/react";
+import {
+    ArrowRight,
+    CheckCircle,
+    Envelope,
+    Lock,
+    SpinnerGap,
+    User,
+    Warning,
+} from '@phosphor-icons/react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { signUp } from '@/lib/auth-client';
 
 export default function SignupPage() {
     const router = useRouter();
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -22,7 +30,7 @@ export default function SignupPage() {
         setError(null);
 
         if (password !== confirmPassword) {
-            setError("Passwords do not match");
+            setError('Passwords do not match');
             setIsLoading(false);
             return;
         }
@@ -30,13 +38,13 @@ export default function SignupPage() {
         try {
             const result = await signUp.email({ email, password, name });
             if (result.error) {
-                setError(result.error.message || "Failed to create account");
+                setError(result.error.message || 'Failed to create account');
                 return;
             }
             setSuccess(true);
-            setTimeout(() => router.push("/chat"), 1500);
+            setTimeout(() => router.push('/chat'), 1500);
         } catch {
-            setError("An unexpected error occurred. Please try again.");
+            setError('An unexpected error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -49,9 +57,7 @@ export default function SignupPage() {
                     <h1 className="font-serif text-4xl font-normal tracking-tight text-foreground">
                         Create your account
                     </h1>
-                    <p className="mt-2 text-muted-foreground">
-                        Start your journey with Aspendos
-                    </p>
+                    <p className="mt-2 text-muted-foreground">Start your journey with Aspendos</p>
                 </div>
 
                 <div className="bg-card border border-border rounded-xl p-8 shadow-sm">
@@ -71,47 +77,122 @@ export default function SignupPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">
-                            <label htmlFor="name" className="text-sm font-medium text-foreground">Full Name</label>
+                            <label htmlFor="name" className="text-sm font-medium text-foreground">
+                                Full Name
+                            </label>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <input id="name" type="text" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" required disabled={isLoading || success} />
+                                <input
+                                    id="name"
+                                    type="text"
+                                    placeholder="John Doe"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    required
+                                    disabled={isLoading || success}
+                                />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium text-foreground">Email</label>
+                            <label htmlFor="email" className="text-sm font-medium text-foreground">
+                                Email
+                            </label>
                             <div className="relative">
                                 <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" required disabled={isLoading || success} />
+                                <input
+                                    id="email"
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    required
+                                    disabled={isLoading || success}
+                                />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label htmlFor="password" className="text-sm font-medium text-foreground">Password</label>
+                            <label
+                                htmlFor="password"
+                                className="text-sm font-medium text-foreground"
+                            >
+                                Password
+                            </label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" required disabled={isLoading || success} minLength={8} />
+                                <input
+                                    id="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    required
+                                    disabled={isLoading || success}
+                                    minLength={8}
+                                />
                             </div>
-                            <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
+                            <p className="text-xs text-muted-foreground">
+                                Must be at least 8 characters
+                            </p>
                         </div>
 
                         <div className="space-y-2">
-                            <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">Confirm Password</label>
+                            <label
+                                htmlFor="confirmPassword"
+                                className="text-sm font-medium text-foreground"
+                            >
+                                Confirm Password
+                            </label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <input id="confirmPassword" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" required disabled={isLoading || success} minLength={8} />
+                                <input
+                                    id="confirmPassword"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    required
+                                    disabled={isLoading || success}
+                                    minLength={8}
+                                />
                             </div>
                         </div>
 
-                        <button type="submit" disabled={isLoading || success} className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
-                            {isLoading ? (<><SpinnerGap className="h-4 w-4 animate-spin" />Creating account...</>) : success ? (<><CheckCircle className="h-4 w-4" />Account created!</>) : (<>Create account<ArrowRight className="h-4 w-4" /></>)}
+                        <button
+                            type="submit"
+                            disabled={isLoading || success}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <SpinnerGap className="h-4 w-4 animate-spin" />
+                                    Creating account...
+                                </>
+                            ) : success ? (
+                                <>
+                                    <CheckCircle className="h-4 w-4" />
+                                    Account created!
+                                </>
+                            ) : (
+                                <>
+                                    Create account
+                                    <ArrowRight className="h-4 w-4" />
+                                </>
+                            )}
                         </button>
                     </form>
                 </div>
 
                 <p className="text-center text-sm text-muted-foreground">
-                    Already have an account?{" "}
-                    <Link href="/login" className="font-medium text-foreground hover:underline">Sign in</Link>
+                    Already have an account?{' '}
+                    <Link href="/login" className="font-medium text-foreground hover:underline">
+                        Sign in
+                    </Link>
                 </p>
             </div>
         </div>

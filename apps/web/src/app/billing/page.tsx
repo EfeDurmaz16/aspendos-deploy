@@ -1,25 +1,38 @@
-'use client'
+'use client';
 
-import { useUser } from '@/hooks/use-auth'
-import { Suspense, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useUser } from '@/hooks/use-auth';
 
 interface BillingData {
-    plan: string
-    status: string
+    plan: string;
+    status: string;
     usage: {
-        tokens: { used: number; limit: number; percent: number; formatted: { used: string; limit: string } }
-        chats: { remaining: number; percent: number }
-        voice: { remaining: number }
-    }
+        tokens: {
+            used: number;
+            limit: number;
+            percent: number;
+            formatted: { used: string; limit: string };
+        };
+        chats: { remaining: number; percent: number };
+        voice: { remaining: number };
+    };
     renewal: {
-        date: string
-        daysRemaining: number
-    }
+        date: string;
+        daysRemaining: number;
+    };
 }
 
-function UsageBar({ label, percent, usedLabel }: { label: string; percent: number; usedLabel: string }) {
-    const isHigh = percent > 80
+function UsageBar({
+    label,
+    percent,
+    usedLabel,
+}: {
+    label: string;
+    percent: number;
+    usedLabel: string;
+}) {
+    const isHigh = percent > 80;
 
     return (
         <div className="space-y-2">
@@ -29,48 +42,49 @@ function UsageBar({ label, percent, usedLabel }: { label: string; percent: numbe
             </div>
             <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                 <div
-                    className={`h-full rounded-full transition-all ${isHigh ? 'bg-amber-500' : 'bg-zinc-900 dark:bg-zinc-50'
-                        }`}
+                    className={`h-full rounded-full transition-all ${
+                        isHigh ? 'bg-amber-500' : 'bg-zinc-900 dark:bg-zinc-50'
+                    }`}
                     style={{ width: `${Math.min(percent, 100)}%` }}
                 />
             </div>
         </div>
-    )
+    );
 }
 
 function BillingContent() {
-    const { user, isLoaded } = useUser()
-    const searchParams = useSearchParams()
-    const success = searchParams.get('success')
+    const { user, isLoaded } = useUser();
+    const searchParams = useSearchParams();
+    const success = searchParams.get('success');
 
-    const [billing, setBilling] = useState<BillingData | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const [billing, setBilling] = useState<BillingData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isLoaded && user) {
             fetch('/api/billing')
-                .then(res => {
-                    if (!res.ok) throw new Error('Failed to load billing')
-                    return res.json()
+                .then((res) => {
+                    if (!res.ok) throw new Error('Failed to load billing');
+                    return res.json();
                 })
-                .then(data => {
-                    setBilling(data)
-                    setLoading(false)
+                .then((data) => {
+                    setBilling(data);
+                    setLoading(false);
                 })
-                .catch(err => {
-                    setError(err.message)
-                    setLoading(false)
-                })
+                .catch((err) => {
+                    setError(err.message);
+                    setLoading(false);
+                });
         }
-    }, [isLoaded, user])
+    }, [isLoaded, user]);
 
     if (!isLoaded || loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
                 <div className="animate-pulse text-zinc-500">Loading billing...</div>
             </div>
-        )
+        );
     }
 
     if (!user) {
@@ -78,7 +92,7 @@ function BillingContent() {
             <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
                 <p className="text-zinc-600 dark:text-zinc-400">Please sign in to view billing.</p>
             </div>
-        )
+        );
     }
 
     if (error || !billing) {
@@ -93,15 +107,15 @@ function BillingContent() {
                     </a>
                 </div>
             </div>
-        )
+        );
     }
 
-    const planDisplayName = billing.plan.charAt(0).toUpperCase() + billing.plan.slice(1)
+    const planDisplayName = billing.plan.charAt(0).toUpperCase() + billing.plan.slice(1);
     const renewalDate = new Date(billing.renewal.date).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
-    })
+        day: 'numeric',
+    });
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
@@ -129,18 +143,24 @@ function BillingContent() {
                 <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Current Plan</p>
+                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">
+                                Current Plan
+                            </p>
                             <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
                                 {planDisplayName}
                             </p>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${billing.status === 'active'
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
-                                : billing.status === 'past_due'
-                                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
-                                    : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
-                            }`}>
-                            {billing.status.charAt(0).toUpperCase() + billing.status.slice(1).replace('_', ' ')}
+                        <span
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                billing.status === 'active'
+                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                                    : billing.status === 'past_due'
+                                      ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
+                                      : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
+                            }`}
+                        >
+                            {billing.status.charAt(0).toUpperCase() +
+                                billing.status.slice(1).replace('_', ' ')}
                         </span>
                     </div>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
@@ -180,7 +200,7 @@ function BillingContent() {
                         />
                         <UsageBar
                             label="Voice"
-                            percent={100 - (billing.usage.voice.remaining / 300 * 100)}
+                            percent={100 - (billing.usage.voice.remaining / 300) * 100}
                             usedLabel={`${billing.usage.voice.remaining} min remaining`}
                         />
                     </div>
@@ -213,13 +233,19 @@ function BillingContent() {
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
 export default function BillingPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">Loading...</div>}>
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+                    Loading...
+                </div>
+            }
+        >
             <BillingContent />
         </Suspense>
-    )
+    );
 }

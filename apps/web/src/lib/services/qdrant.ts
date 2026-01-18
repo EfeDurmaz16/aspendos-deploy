@@ -1,16 +1,16 @@
-import { QdrantClient } from '@qdrant/js-client-rest'
+import { QdrantClient } from '@qdrant/js-client-rest';
 
 // ============================================
 // QDRANT CLIENT
 // ============================================
 
-const qdrantUrl = process.env.QDRANT_URL || 'http://localhost:6333'
-const qdrantApiKey = process.env.QDRANT_API_KEY
+const qdrantUrl = process.env.QDRANT_URL || 'http://localhost:6333';
+const qdrantApiKey = process.env.QDRANT_API_KEY;
 
 export const qdrant = new QdrantClient({
     url: qdrantUrl,
     apiKey: qdrantApiKey,
-})
+});
 
 // ============================================
 // COLLECTION NAMES
@@ -19,13 +19,13 @@ export const qdrant = new QdrantClient({
 export const COLLECTIONS = {
     USER_MEMORIES: 'user_memories',
     CONVERSATION_EMBEDDINGS: 'conversation_embeddings',
-} as const
+} as const;
 
 // ============================================
 // VECTOR DIMENSIONS (OpenAI text-embedding-3-small)
 // ============================================
 
-export const VECTOR_SIZE = 1536
+export const VECTOR_SIZE = 1536;
 
 // ============================================
 // SETUP FUNCTIONS
@@ -37,27 +37,29 @@ export const VECTOR_SIZE = 1536
 export async function setupQdrantCollections() {
     try {
         // User memories collection
-        const memoriesExists = await qdrant.collectionExists(COLLECTIONS.USER_MEMORIES)
+        const memoriesExists = await qdrant.collectionExists(COLLECTIONS.USER_MEMORIES);
         if (!memoriesExists.exists) {
             await qdrant.createCollection(COLLECTIONS.USER_MEMORIES, {
                 vectors: { size: VECTOR_SIZE, distance: 'Cosine' },
-            })
-            console.log(`[Qdrant] Created collection: ${COLLECTIONS.USER_MEMORIES}`)
+            });
+            console.log(`[Qdrant] Created collection: ${COLLECTIONS.USER_MEMORIES}`);
         }
 
         // Conversation embeddings collection
-        const conversationsExists = await qdrant.collectionExists(COLLECTIONS.CONVERSATION_EMBEDDINGS)
+        const conversationsExists = await qdrant.collectionExists(
+            COLLECTIONS.CONVERSATION_EMBEDDINGS
+        );
         if (!conversationsExists.exists) {
             await qdrant.createCollection(COLLECTIONS.CONVERSATION_EMBEDDINGS, {
                 vectors: { size: VECTOR_SIZE, distance: 'Cosine' },
-            })
-            console.log(`[Qdrant] Created collection: ${COLLECTIONS.CONVERSATION_EMBEDDINGS}`)
+            });
+            console.log(`[Qdrant] Created collection: ${COLLECTIONS.CONVERSATION_EMBEDDINGS}`);
         }
 
-        console.log('[Qdrant] Collections ready')
+        console.log('[Qdrant] Collections ready');
     } catch (error) {
-        console.error('[Qdrant] Failed to setup collections:', error)
-        throw error
+        console.error('[Qdrant] Failed to setup collections:', error);
+        throw error;
     }
 }
 
@@ -66,13 +68,13 @@ export async function setupQdrantCollections() {
 // ============================================
 
 interface MemoryPoint {
-    id: string
-    vector: number[]
-    userId: string
-    content: string
-    type: 'context' | 'preference' | 'insight'
-    conversationId?: string
-    metadata?: Record<string, unknown>
+    id: string;
+    vector: number[];
+    userId: string;
+    content: string;
+    type: 'context' | 'preference' | 'insight';
+    conversationId?: string;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -94,7 +96,7 @@ export async function storeMemory(memory: MemoryPoint) {
                 },
             },
         ],
-    })
+    });
 }
 
 /**
@@ -111,13 +113,13 @@ export async function searchMemories(
             key: 'user_id',
             match: { value: userId },
         },
-    ]
+    ];
 
     if (type) {
         mustFilters.push({
             key: 'type',
             match: { value: type },
-        })
+        });
     }
 
     const results = await qdrant.search(COLLECTIONS.USER_MEMORIES, {
@@ -125,16 +127,18 @@ export async function searchMemories(
         limit,
         filter: { must: mustFilters },
         with_payload: true,
-    })
+    });
 
     return results.map((result) => ({
         id: result.id,
         score: result.score,
         content: (result.payload as Record<string, unknown>)?.content as string,
         type: (result.payload as Record<string, unknown>)?.type as string,
-        conversationId: (result.payload as Record<string, unknown>)?.conversation_id as string | undefined,
+        conversationId: (result.payload as Record<string, unknown>)?.conversation_id as
+            | string
+            | undefined,
         createdAt: (result.payload as Record<string, unknown>)?.created_at as string,
-    }))
+    }));
 }
 
 /**
@@ -145,7 +149,7 @@ export async function deleteUserMemories(userId: string) {
         filter: {
             must: [{ key: 'user_id', match: { value: userId } }],
         },
-    })
+    });
 }
 
 // ============================================
@@ -153,13 +157,13 @@ export async function deleteUserMemories(userId: string) {
 // ============================================
 
 interface ConversationEmbedding {
-    id: string
-    vector: number[]
-    userId: string
-    conversationId: string
-    messageId: string
-    content: string
-    role: 'user' | 'assistant' | 'exchange'
+    id: string;
+    vector: number[];
+    userId: string;
+    conversationId: string;
+    messageId: string;
+    content: string;
+    role: 'user' | 'assistant' | 'exchange';
 }
 
 /**
@@ -181,7 +185,7 @@ export async function storeConversationEmbedding(embedding: ConversationEmbeddin
                 },
             },
         ],
-    })
+    });
 }
 
 /**
@@ -199,7 +203,7 @@ export async function searchConversations(
             must: [{ key: 'user_id', match: { value: userId } }],
         },
         with_payload: true,
-    })
+    });
 
     return results.map((result) => ({
         id: result.id,
@@ -208,7 +212,7 @@ export async function searchConversations(
         messageId: (result.payload as Record<string, unknown>)?.message_id as string,
         content: (result.payload as Record<string, unknown>)?.content as string,
         role: (result.payload as Record<string, unknown>)?.role as string,
-    }))
+    }));
 }
 
-export default qdrant
+export default qdrant;

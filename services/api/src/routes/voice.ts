@@ -3,18 +3,25 @@
  * Handles speech-to-text (Whisper) and text-to-speech
  */
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
 import OpenAI from 'openai';
+import { requireAuth } from '../middleware/auth';
 
 const app = new Hono();
 
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazily initialize OpenAI client (don't crash on startup if key missing)
+let openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+    if (!openai) {
+        if (!process.env.OPENAI_API_KEY) {
+            throw new Error('OPENAI_API_KEY is not configured');
+        }
+        openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    }
+    return openai;
+}
 
 // POST /api/voice/transcribe - Transcribe audio to text
 app.post('/transcribe', async (c) => {
@@ -27,7 +34,7 @@ app.post('/transcribe', async (c) => {
         }
 
         // Convert to Blob for OpenAI API
-        const transcription = await openai.audio.transcriptions.create({
+        const transcription = await getOpenAI().audio.transcriptions.create({
             file: audioFile,
             model: 'whisper-1',
             language: 'en', // Auto-detect if not specified
@@ -40,10 +47,13 @@ app.post('/transcribe', async (c) => {
         });
     } catch (error) {
         console.error('[Voice] Transcription error:', error);
-        return c.json({
-            error: 'Failed to transcribe audio',
-            details: error instanceof Error ? error.message : 'Unknown error',
-        }, 500);
+        return c.json(
+            {
+                error: 'Failed to transcribe audio',
+                details: error instanceof Error ? error.message : 'Unknown error',
+            },
+            500
+        );
     }
 });
 
@@ -57,7 +67,7 @@ app.post('/synthesize', async (c) => {
     }
 
     try {
-        const mp3 = await openai.audio.speech.create({
+        const mp3 = await getOpenAI().audio.speech.create({
             model: 'tts-1',
             voice: voice, // alloy, echo, fable, onyx, nova, shimmer
             input: text,
@@ -76,10 +86,13 @@ app.post('/synthesize', async (c) => {
         });
     } catch (error) {
         console.error('[Voice] Synthesis error:', error);
-        return c.json({
-            error: 'Failed to synthesize speech',
-            details: error instanceof Error ? error.message : 'Unknown error',
-        }, 500);
+        return c.json(
+            {
+                error: 'Failed to synthesize speech',
+                details: error instanceof Error ? error.message : 'Unknown error',
+            },
+            500
+        );
     }
 });
 
@@ -93,7 +106,7 @@ app.post('/synthesize/stream', async (c) => {
     }
 
     try {
-        const response = await openai.audio.speech.create({
+        const response = await getOpenAI().audio.speech.create({
             model: 'tts-1',
             voice: voice,
             input: text,
@@ -113,10 +126,13 @@ app.post('/synthesize/stream', async (c) => {
         });
     } catch (error) {
         console.error('[Voice] Streaming synthesis error:', error);
-        return c.json({
-            error: 'Failed to stream speech',
-            details: error instanceof Error ? error.message : 'Unknown error',
-        }, 500);
+        return c.json(
+            {
+                error: 'Failed to stream speech',
+                details: error instanceof Error ? error.message : 'Unknown error',
+            },
+            500
+        );
     }
 });
 

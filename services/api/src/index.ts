@@ -1,19 +1,23 @@
-import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { clerkAuth } from './middleware/auth';
+import { getModelsForTier, SUPPORTED_MODELS } from './lib/ai-providers';
 import { auth } from './lib/auth';
-import { rateLimit, getRateLimitStatus } from './middleware/rate-limit';
-import { initializeMCPClients, closeMCPClients, getConnectedMCPServers, getMCPStatus } from './lib/mcp-clients';
-import { SUPPORTED_MODELS, getModelsForTier } from './lib/ai-providers';
-
+import {
+    closeMCPClients,
+    getConnectedMCPServers,
+    getMCPStatus,
+    initializeMCPClients,
+} from './lib/mcp-clients';
+import { clerkAuth } from './middleware/auth';
+import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
+import billingRoutes from './routes/billing';
 // Routes
 import chatRoutes from './routes/chat';
 import memoryRoutes from './routes/memory';
-import billingRoutes from './routes/billing';
-import voiceRoutes from './routes/voice';
 import schedulerRoutes from './routes/scheduler';
+import voiceRoutes from './routes/voice';
 
 type Variables = {
     user: typeof auth.$Infer.Session.user | null;
@@ -24,10 +28,13 @@ const app = new Hono<{ Variables: Variables }>();
 
 // Middleware
 app.use('*', logger());
-app.use('*', cors({
-    origin: ['http://localhost:3000', 'https://aspendos.net'],
-    credentials: true,
-}));
+app.use(
+    '*',
+    cors({
+        origin: ['http://localhost:3000', 'https://aspendos.net'],
+        credentials: true,
+    })
+);
 
 // Better Auth session middleware
 app.use('*', async (c, next) => {
@@ -52,22 +59,24 @@ app.use('*', clerkAuth);
 app.use('*', rateLimit());
 
 // Health check
-app.get('/health', (c) => c.json({
-    status: 'ok',
-    service: 'api',
-    version: '0.3.0',
-    timestamp: new Date().toISOString(),
-    mcp: {
-        initialized: getConnectedMCPServers().length > 0,
-        servers: getConnectedMCPServers(),
-        status: getMCPStatus(),
-    },
-}));
+app.get('/health', (c) =>
+    c.json({
+        status: 'ok',
+        service: 'api',
+        version: '0.3.0',
+        timestamp: new Date().toISOString(),
+        mcp: {
+            initialized: getConnectedMCPServers().length > 0,
+            servers: getConnectedMCPServers(),
+            status: getMCPStatus(),
+        },
+    })
+);
 
 // Models endpoint - now uses local configuration
 app.get('/api/models', (c) => {
     return c.json({
-        models: SUPPORTED_MODELS.map(m => ({
+        models: SUPPORTED_MODELS.map((m) => ({
             id: m.id,
             name: m.name,
             provider: m.provider,
@@ -82,7 +91,7 @@ app.get('/api/models/tier/:tier', (c) => {
     const models = getModelsForTier(tier);
     return c.json({
         tier,
-        models: models.map(m => ({
+        models: models.map((m) => ({
             id: m.id,
             name: m.name,
             provider: m.provider,
@@ -98,7 +107,8 @@ app.get('/api/rate-limit', (c) => {
     }
 
     const user = c.get('user');
-    const tier = ((user as Record<string, unknown>)?.tier as 'STARTER' | 'PRO' | 'ULTRA') || 'STARTER';
+    const tier =
+        ((user as Record<string, unknown>)?.tier as 'STARTER' | 'PRO' | 'ULTRA') || 'STARTER';
 
     return c.json(getRateLimitStatus(userId, tier));
 });
@@ -106,13 +116,13 @@ app.get('/api/rate-limit', (c) => {
 // Pinned/recommended models
 app.get('/api/models/pinned', (c) => {
     const pinnedModels = [
-        SUPPORTED_MODELS.find(m => m.id === 'openai/gpt-4o-mini'),
-        SUPPORTED_MODELS.find(m => m.id === 'anthropic/claude-3-5-haiku-20241022'),
-        SUPPORTED_MODELS.find(m => m.id === 'google/gemini-2.0-flash'),
+        SUPPORTED_MODELS.find((m) => m.id === 'openai/gpt-4o-mini'),
+        SUPPORTED_MODELS.find((m) => m.id === 'anthropic/claude-3-5-haiku-20241022'),
+        SUPPORTED_MODELS.find((m) => m.id === 'google/gemini-2.0-flash'),
     ].filter(Boolean);
 
     return c.json({
-        pinned: pinnedModels.map(m => ({
+        pinned: pinnedModels.map((m) => ({
             id: m!.id,
             name: m!.name,
             provider: m!.provider,

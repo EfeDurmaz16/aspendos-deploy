@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Microphone, Stop, CircleNotch } from '@phosphor-icons/react';
+import { CircleNotch, Microphone, Stop } from '@phosphor-icons/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -136,10 +136,27 @@ export function VoiceButton({ onTranscription, disabled = false, className }: Vo
 
     return (
         <div className="relative">
-            <Button type="button" variant="ghost" size="icon" onClick={handleClick} disabled={disabled || isProcessing}
-                className={cn('h-8 w-8 transition-all', isRecording && 'bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-500', className)}
-                title={isRecording ? 'Stop recording' : 'Start voice input'}>
-                {isProcessing ? <CircleNotch className="w-4 h-4 animate-spin" /> : isRecording ? <Stop weight="fill" className="w-4 h-4" /> : <Microphone weight="duotone" className="w-4 h-4" />}
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={handleClick}
+                disabled={disabled || isProcessing}
+                className={cn(
+                    'h-8 w-8 transition-all',
+                    isRecording &&
+                        'bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-500',
+                    className
+                )}
+                title={isRecording ? 'Stop recording' : 'Start voice input'}
+            >
+                {isProcessing ? (
+                    <CircleNotch className="w-4 h-4 animate-spin" />
+                ) : isRecording ? (
+                    <Stop weight="fill" className="w-4 h-4" />
+                ) : (
+                    <Microphone weight="duotone" className="w-4 h-4" />
+                )}
             </Button>
             {isRecording && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -147,7 +164,11 @@ export function VoiceButton({ onTranscription, disabled = false, className }: Vo
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
                 </span>
             )}
-            {error && <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-red-500 bg-red-50 dark:bg-red-950/50 rounded whitespace-nowrap">{error}</div>}
+            {error && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-red-500 bg-red-50 dark:bg-red-950/50 rounded whitespace-nowrap">
+                    {error}
+                </div>
+            )}
         </div>
     );
 }

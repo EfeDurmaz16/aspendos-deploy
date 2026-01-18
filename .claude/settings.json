@@ -1,5 +1,5 @@
 {
-  "enabledPlugins": {
-    "example-skills@anthropic-agent-skills": true
-  }
+    "enabledPlugins": {
+        "example-skills@anthropic-agent-skills": true
+    }
 }

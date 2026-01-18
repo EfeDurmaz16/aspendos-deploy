@@ -7,12 +7,12 @@ export const TIER_CONFIG = {
     STARTER: {
         // Pricing
         monthlyPrice: 19.99,
-        weeklyPrice: 7.50,
-        annualPrice: 191.88,  // ~$16/mo (20% discount)
+        weeklyPrice: 7.5,
+        annualPrice: 191.88, // ~$16/mo (20% discount)
 
         // Chat & Token Limits
-        monthlyChats: 300,          // ~10/day
-        monthlyTokens: 1_000_000,   // 1M tokens
+        monthlyChats: 300, // ~10/day
+        monthlyTokens: 1_000_000, // 1M tokens
 
         // Models
         supportedModels: ['gpt-4o-mini', 'claude-3-haiku', 'gemini-flash'],
@@ -27,7 +27,7 @@ export const TIER_CONFIG = {
         monthlyVideoMinutes: 0,
 
         // Memory
-        memoryLevel: 'basic',       // basic auto-save
+        memoryLevel: 'basic', // basic auto-save
         memoryInspector: false,
 
         // Agents
@@ -42,23 +42,24 @@ export const TIER_CONFIG = {
 
         // Description
         tagline: 'Try the AI OS, risk-free',
-        description: 'Get a powerful multi-model AI workspace for your personal workflows and experiments. Ideal for light daily use, quick research, and trying Aspendos without committing to heavy limits.',
+        description:
+            'Get a powerful multi-model AI workspace for your personal workflows and experiments. Ideal for light daily use, quick research, and trying Aspendos without committing to heavy limits.',
     },
 
     PRO: {
         // Pricing
-        monthlyPrice: 49.00,
-        weeklyPrice: 15.00,
-        annualPrice: 468.00,  // ~$39/mo (20% discount)
+        monthlyPrice: 49.0,
+        weeklyPrice: 15.0,
+        annualPrice: 468.0, // ~$39/mo (20% discount)
 
         // Chat & Token Limits
-        monthlyChats: 1500,         // ~50/day
-        monthlyTokens: 5_000_000,   // 5M tokens
+        monthlyChats: 1500, // ~50/day
+        monthlyTokens: 5_000_000, // 5M tokens
 
         // Models
-        supportedModels: 'all',     // All GPT-4o / Claude / Gemini
+        supportedModels: 'all', // All GPT-4o / Claude / Gemini
         multiModel: true,
-        multiModelLimit: 2,         // 2 models side-by-side
+        multiModelLimit: 2, // 2 models side-by-side
 
         // Voice
         dailyVoiceMinutes: 60,
@@ -68,7 +69,7 @@ export const TIER_CONFIG = {
         monthlyVideoMinutes: 10,
 
         // Memory
-        memoryLevel: 'advanced',    // Advanced search & tagging
+        memoryLevel: 'advanced', // Advanced search & tagging
         memoryInspector: false,
 
         // Agents
@@ -83,26 +84,27 @@ export const TIER_CONFIG = {
 
         // Description
         tagline: 'Your daily AI copilot',
-        description: 'Built for founders, developers, and researchers who work with AI every day. Higher limits, faster routing, voice, memory, and multi-model comparison make Pro the default plan for serious work.',
+        description:
+            'Built for founders, developers, and researchers who work with AI every day. Higher limits, faster routing, voice, memory, and multi-model comparison make Pro the default plan for serious work.',
     },
 
     ULTRA: {
         // Pricing
-        monthlyPrice: 99.00,
-        weeklyPrice: 30.00,
-        annualPrice: 948.00,  // ~$79/mo (20% discount)
+        monthlyPrice: 99.0,
+        weeklyPrice: 30.0,
+        annualPrice: 948.0, // ~$79/mo (20% discount)
 
         // Chat & Token Limits
-        monthlyChats: 5000,         // ~166/day (practically unlimited)
-        monthlyTokens: 20_000_000,  // 20M tokens
+        monthlyChats: 5000, // ~166/day (practically unlimited)
+        monthlyTokens: 20_000_000, // 20M tokens
 
         // Models
         supportedModels: 'all_plus', // All + experimental models
         multiModel: true,
-        multiModelLimit: 4,          // 3-4 models parallel
+        multiModelLimit: 4, // 3-4 models parallel
 
         // Voice
-        dailyVoiceMinutes: 180,      // 3 hours/day
+        dailyVoiceMinutes: 180, // 3 hours/day
 
         // Media
         monthlyImageGenerations: 1000,
@@ -110,7 +112,7 @@ export const TIER_CONFIG = {
         priorityMediaQueue: true,
 
         // Memory
-        memoryLevel: 'full',         // Full Memory Inspector
+        memoryLevel: 'full', // Full Memory Inspector
         memoryInspector: true,
 
         // Agents
@@ -119,19 +121,20 @@ export const TIER_CONFIG = {
         betaFeatures: true,
 
         // Priority
-        routingPriority: 'highest',  // Lowest latency
+        routingPriority: 'highest', // Lowest latency
 
         // Support
         supportLevel: 'priority_chat',
 
         // Description
         tagline: 'For power users and teams',
-        description: 'Designed for heavy usage, production workloads, and small teams that live inside Aspendos. Unlock the highest limits, full multi-model streaming, advanced memory tools, and priority performance across the stack.',
+        description:
+            'Designed for heavy usage, production workloads, and small teams that live inside Aspendos. Unlock the highest limits, full multi-model streaming, advanced memory tools, and priority performance across the stack.',
     },
 } as const;
 
 export type TierName = keyof typeof TIER_CONFIG;
-export type TierConfig = typeof TIER_CONFIG[TierName];
+export type TierConfig = (typeof TIER_CONFIG)[TierName];
 
 /**
  * Get tier configuration by name

@@ -1,7 +1,7 @@
 'use client';
 
+import { Check, Clock, Edit2, X } from 'lucide-react';
 import { useState } from 'react';
-import { Clock, X, Edit2, Check } from 'lucide-react';
 
 interface ScheduledTask {
     id: string;
@@ -153,11 +153,7 @@ interface ScheduledTasksListProps {
     onReschedule?: (taskId: string, newTime: string) => Promise<void>;
 }
 
-export function ScheduledTasksList({
-    tasks,
-    onCancel,
-    onReschedule,
-}: ScheduledTasksListProps) {
+export function ScheduledTasksList({ tasks, onCancel, onReschedule }: ScheduledTasksListProps) {
     const pendingTasks = tasks.filter((t) => t.status === 'PENDING');
 
     if (pendingTasks.length === 0) {
@@ -203,9 +199,7 @@ export function ScheduledToast({ task, onDismiss, onCancel }: ScheduledToastProp
                     <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                         Follow-up scheduled for {task.triggerAtFormatted}
                     </p>
-                    {task.topic && (
-                        <p className="text-xs text-zinc-500 mt-0.5">{task.topic}</p>
-                    )}
+                    {task.topic && <p className="text-xs text-zinc-500 mt-0.5">{task.topic}</p>}
                 </div>
                 <div className="flex items-center gap-1">
                     {onCancel && (
@@ -216,10 +210,7 @@ export function ScheduledToast({ task, onDismiss, onCancel }: ScheduledToastProp
                             Cancel
                         </button>
                     )}
-                    <button
-                        onClick={onDismiss}
-                        className="p-1 text-zinc-400 hover:text-zinc-600"
-                    >
+                    <button onClick={onDismiss} className="p-1 text-zinc-400 hover:text-zinc-600">
                         <X className="w-4 h-4" />
                     </button>
                 </div>

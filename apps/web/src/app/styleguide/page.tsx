@@ -1,12 +1,12 @@
 import {
-    colors,
-    typography,
-    spacing,
-    borderRadius,
-    shadows,
-    breakpoints,
     animation,
+    borderRadius,
+    breakpoints,
+    colors,
     iconSize,
+    shadows,
+    spacing,
+    typography,
 } from '@/styles/design-tokens';
 
 export const metadata = {
@@ -30,15 +30,11 @@ function ColorSwatch({
                 className="h-16 w-full rounded-lg border border-zinc-200 dark:border-zinc-700 flex items-end p-2"
                 style={{ backgroundColor: value }}
             >
-                <span
-                    className={`font-mono text-xs ${textDark ? 'text-zinc-900' : 'text-white'}`}
-                >
+                <span className={`font-mono text-xs ${textDark ? 'text-zinc-900' : 'text-white'}`}>
                     {value}
                 </span>
             </div>
-            <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
-                {name}
-            </span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">{name}</span>
         </div>
     );
 }
@@ -59,9 +55,7 @@ function Section({
                 {title}
             </h2>
             {description && (
-                <p className="text-zinc-600 dark:text-zinc-400 mb-8 max-w-2xl">
-                    {description}
-                </p>
+                <p className="text-zinc-600 dark:text-zinc-400 mb-8 max-w-2xl">{description}</p>
             )}
             {children}
         </section>
@@ -190,7 +184,10 @@ export default function StyleguidePage() {
                         </h3>
                         <div className="grid gap-4">
                             {Object.entries(typography.fontFamily).map(([name, value]) => (
-                                <div key={name} className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4">
+                                <div
+                                    key={name}
+                                    className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4"
+                                >
                                     <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400 w-20 shrink-0 uppercase">
                                         {name}
                                     </span>
@@ -230,8 +227,12 @@ export default function StyleguidePage() {
                                             fontFamily: style.fontFamily,
                                             fontSize: style.fontSize,
                                             fontWeight: style.fontWeight,
-                                            lineHeight: 'lineHeight' in style ? style.lineHeight : 1.5,
-                                            letterSpacing: 'letterSpacing' in style ? style.letterSpacing : undefined,
+                                            lineHeight:
+                                                'lineHeight' in style ? style.lineHeight : 1.5,
+                                            letterSpacing:
+                                                'letterSpacing' in style
+                                                    ? style.letterSpacing
+                                                    : undefined,
                                         }}
                                     >
                                         {name.includes('code')
@@ -275,7 +276,9 @@ export default function StyleguidePage() {
                 >
                     <div className="flex flex-wrap gap-4 items-end">
                         {Object.entries(spacing)
-                            .filter(([key]) => [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24].includes(Number(key)))
+                            .filter(([key]) =>
+                                [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24].includes(Number(key))
+                            )
                             .map(([name, value]) => (
                                 <div key={name} className="flex flex-col items-center gap-2">
                                     <div
@@ -415,12 +418,12 @@ export default function StyleguidePage() {
                                             {name}
                                         </span>
                                         <span className="text-sm text-zinc-500">{value}</span>
-                                        <div
-                                            className="h-2 bg-zinc-300 dark:bg-zinc-600 rounded-full flex-1 max-w-[200px]"
-                                        >
+                                        <div className="h-2 bg-zinc-300 dark:bg-zinc-600 rounded-full flex-1 max-w-[200px]">
                                             <div
                                                 className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
-                                                style={{ width: `${(parseInt(value) / 500) * 100}%` }}
+                                                style={{
+                                                    width: `${(parseInt(value) / 500) * 100}%`,
+                                                }}
                                             />
                                         </div>
                                     </div>
@@ -452,10 +455,7 @@ export default function StyleguidePage() {
                 {/* =================================================================== */}
                 {/* ICON SIZES SECTION */}
                 {/* =================================================================== */}
-                <Section
-                    title="Icon Sizes"
-                    description="Consistent icon sizing for UI elements."
-                >
+                <Section title="Icon Sizes" description="Consistent icon sizing for UI elements.">
                     <div className="flex flex-wrap gap-8 items-end">
                         {Object.entries(iconSize).map(([name, size]) => (
                             <div key={name} className="flex flex-col items-center gap-2">
@@ -489,7 +489,8 @@ export default function StyleguidePage() {
                 {/* Footer */}
                 <footer className="py-12 text-center">
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        Aspendos Design System v1.0 • Built with Instrument Serif, Inter, and Berkeley Mono
+                        Aspendos Design System v1.0 • Built with Instrument Serif, Inter, and
+                        Berkeley Mono
                     </p>
                 </footer>
             </div>

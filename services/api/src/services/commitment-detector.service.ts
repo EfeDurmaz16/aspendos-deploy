@@ -4,8 +4,8 @@
  * Detects temporal commitments in AI responses and generates
  * re-engagement messages when scheduled tasks are executed.
  */
-import { ScheduledTask } from '@aspendos/db';
-import { parseTimeExpression, CommitmentDetectionResult } from './scheduler.service';
+import type { ScheduledTask } from '@aspendos/db';
+import { type CommitmentDetectionResult, parseTimeExpression } from './scheduler.service';
 
 // Use a lightweight model for commitment detection to minimize costs
 const DETECTION_MODEL = process.env.COMMITMENT_DETECTION_MODEL || 'gpt-4o-mini';
@@ -58,7 +58,7 @@ export async function detectCommitment(
         const response = await fetch(OPENAI_API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                Authorization: `Bearer ${OPENAI_API_KEY}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -82,7 +82,7 @@ export async function detectCommitment(
             return { hasCommitment: false };
         }
 
-        const data = await response.json() as {
+        const data = (await response.json()) as {
             choices: Array<{ message: { content: string } }>;
         };
 
@@ -102,9 +102,7 @@ export async function detectCommitment(
         }
 
         // Parse the time frame to get an absolute date
-        const absoluteTime = result.time_frame
-            ? parseTimeExpression(result.time_frame)
-            : null;
+        const absoluteTime = result.time_frame ? parseTimeExpression(result.time_frame) : null;
 
         return {
             hasCommitment: true,
@@ -159,15 +157,17 @@ export async function generateReengagementMessage(task: ScheduledTask): Promise<
     }
 
     try {
-        const prompt = REENGAGEMENT_PROMPT_TEMPLATE
-            .replace('{{CURRENT_TIME}}', new Date().toLocaleString('en-US', {
+        const prompt = REENGAGEMENT_PROMPT_TEMPLATE.replace(
+            '{{CURRENT_TIME}}',
+            new Date().toLocaleString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
                 hour: 'numeric',
                 minute: '2-digit',
-            }))
+            })
+        )
             .replace('{{INTENT}}', task.intent || 'Follow up with the user')
             .replace('{{TOPIC}}', task.topic || 'Previous conversation')
             .replace('{{TONE}}', task.tone || 'friendly')
@@ -176,7 +176,7 @@ export async function generateReengagementMessage(task: ScheduledTask): Promise<
         const response = await fetch(OPENAI_API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                Authorization: `Bearer ${OPENAI_API_KEY}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -195,7 +195,7 @@ export async function generateReengagementMessage(task: ScheduledTask): Promise<
             throw new Error('Failed to generate re-engagement message');
         }
 
-        const data = await response.json() as {
+        const data = (await response.json()) as {
             choices: Array<{ message: { content: string } }>;
         };
 
@@ -246,14 +246,12 @@ export async function generateContextSummary(conversationHistory: string): Promi
         const response = await fetch(OPENAI_API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                Authorization: `Bearer ${OPENAI_API_KEY}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 model: DETECTION_MODEL, // Use lightweight model
-                messages: [
-                    { role: 'user', content: prompt },
-                ],
+                messages: [{ role: 'user', content: prompt }],
                 temperature: 0.3,
                 max_tokens: 200,
             }),
@@ -263,7 +261,7 @@ export async function generateContextSummary(conversationHistory: string): Promi
             return '';
         }
 
-        const data = await response.json() as {
+        const data = (await response.json()) as {
             choices: Array<{ message: { content: string } }>;
         };
 

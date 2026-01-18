@@ -1,26 +1,38 @@
-'use client'
+'use client';
 
-import { memo, useState, useCallback } from 'react'
-import { MessageRenderer } from './MessageRenderer'
-import { AudioPlayer } from './audio-player'
-import type { ChatMessage } from '@/hooks/useStreamingChat'
-import { ChevronDown, ChevronUp, Brain, Clock, Lightbulb, Heart, Sparkles, Copy, Check, ThumbsUp, ThumbsDown } from 'lucide-react'
+import {
+    Brain,
+    Check,
+    ChevronDown,
+    ChevronUp,
+    Clock,
+    Copy,
+    Heart,
+    Lightbulb,
+    Sparkles,
+    ThumbsDown,
+    ThumbsUp,
+} from 'lucide-react';
+import { memo, useCallback, useState } from 'react';
+import type { ChatMessage } from '@/hooks/useStreamingChat';
+import { AudioPlayer } from './audio-player';
+import { MessageRenderer } from './MessageRenderer';
 
 // ============================================
 // TYPES
 // ============================================
 
 interface MemoryUsed {
-    id: string
-    content: string
-    sector: string
-    confidence: number
+    id: string;
+    content: string;
+    sector: string;
+    confidence: number;
 }
 
 interface StreamingMessageProps {
-    message: ChatMessage & { memoriesUsed?: MemoryUsed[] }
-    isCurrentUser?: boolean
-    onFeedback?: (messageId: string, feedback: 'up' | 'down') => void
+    message: ChatMessage & { memoriesUsed?: MemoryUsed[] };
+    isCurrentUser?: boolean;
+    onFeedback?: (messageId: string, feedback: 'up' | 'down') => void;
 }
 
 // ============================================
@@ -32,27 +44,30 @@ function MessageActions({
     messageId,
     onFeedback,
 }: {
-    content: string
-    messageId: string
-    onFeedback?: (messageId: string, feedback: 'up' | 'down') => void
+    content: string;
+    messageId: string;
+    onFeedback?: (messageId: string, feedback: 'up' | 'down') => void;
 }) {
-    const [copied, setCopied] = useState(false)
-    const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
+    const [copied, setCopied] = useState(false);
+    const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
 
     const handleCopy = useCallback(async () => {
         try {
-            await navigator.clipboard.writeText(content)
-            setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
+            await navigator.clipboard.writeText(content);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         } catch (err) {
-            console.error('Failed to copy:', err)
+            console.error('Failed to copy:', err);
         }
-    }, [content])
+    }, [content]);
 
-    const handleFeedback = useCallback((type: 'up' | 'down') => {
-        setFeedback(type)
-        onFeedback?.(messageId, type)
-    }, [messageId, onFeedback])
+    const handleFeedback = useCallback(
+        (type: 'up' | 'down') => {
+            setFeedback(type);
+            onFeedback?.(messageId, type);
+        },
+        [messageId, onFeedback]
+    );
 
     return (
         <div className="flex items-center gap-1 mt-2 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50">
@@ -98,7 +113,7 @@ function MessageActions({
                 </button>
             </div>
         </div>
-    )
+    );
 }
 
 // Sector icon map
@@ -108,7 +123,7 @@ const SECTOR_ICONS: Record<string, React.ElementType> = {
     procedural: Brain,
     emotional: Heart,
     reflective: Sparkles,
-}
+};
 
 const SECTOR_COLORS: Record<string, string> = {
     episodic: 'text-blue-500',
@@ -116,16 +131,16 @@ const SECTOR_COLORS: Record<string, string> = {
     procedural: 'text-purple-500',
     emotional: 'text-rose-500',
     reflective: 'text-amber-500',
-}
+};
 
 // ============================================
 // MEMORIES USED COMPONENT
 // ============================================
 
 function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
-    const [isExpanded, setIsExpanded] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(false);
 
-    if (!memories || memories.length === 0) return null
+    if (!memories || memories.length === 0) return null;
 
     return (
         <div className="mt-3 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50">
@@ -135,14 +150,18 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
             >
                 <Brain className="w-3.5 h-3.5" />
                 <span>{memories.length} memories used</span>
-                {isExpanded ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+                {isExpanded ? (
+                    <ChevronUp className="w-3.5 h-3.5 ml-auto" />
+                ) : (
+                    <ChevronDown className="w-3.5 h-3.5 ml-auto" />
+                )}
             </button>
 
             {isExpanded && (
                 <div className="mt-2 space-y-2">
                     {memories.map((memory) => {
-                        const SectorIcon = SECTOR_ICONS[memory.sector] || Brain
-                        const sectorColor = SECTOR_COLORS[memory.sector] || 'text-zinc-500'
+                        const SectorIcon = SECTOR_ICONS[memory.sector] || Brain;
+                        const sectorColor = SECTOR_COLORS[memory.sector] || 'text-zinc-500';
 
                         return (
                             <div
@@ -162,12 +181,12 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
                                     {memory.content}
                                 </p>
                             </div>
-                        )
+                        );
                     })}
                 </div>
             )}
         </div>
-    )
+    );
 }
 
 // ============================================
@@ -175,14 +194,14 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
 // ============================================
 
 interface MemoryDecision {
-    queryType: string
-    useMemory: boolean
-    sectors: string[]
-    reasoning: string
+    queryType: string;
+    useMemory: boolean;
+    sectors: string[];
+    reasoning: string;
 }
 
 function DecisionSection({ decision }: { decision: MemoryDecision }) {
-    const [isExpanded, setIsExpanded] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(false);
 
     return (
         <div className="mt-3 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50">
@@ -197,33 +216,37 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
                         Memory
                     </span>
                 )}
-                {isExpanded ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+                {isExpanded ? (
+                    <ChevronUp className="w-3.5 h-3.5 ml-auto" />
+                ) : (
+                    <ChevronDown className="w-3.5 h-3.5 ml-auto" />
+                )}
             </button>
 
             {isExpanded && (
                 <div className="mt-2 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg p-2 text-xs space-y-1">
-                    <p className="text-zinc-700 dark:text-zinc-300">
-                        {decision.reasoning}
-                    </p>
+                    <p className="text-zinc-700 dark:text-zinc-300">{decision.reasoning}</p>
                     {decision.sectors.length > 0 && (
                         <div className="flex items-center gap-1.5 mt-2">
                             <span className="text-zinc-500">Searched:</span>
                             {decision.sectors.map((sector) => {
-                                const SectorIcon = SECTOR_ICONS[sector] || Brain
-                                const sectorColor = SECTOR_COLORS[sector] || 'text-zinc-500'
+                                const SectorIcon = SECTOR_ICONS[sector] || Brain;
+                                const sectorColor = SECTOR_COLORS[sector] || 'text-zinc-500';
                                 return (
                                     <span key={sector} className="flex items-center gap-0.5">
                                         <SectorIcon className={`w-3 h-3 ${sectorColor}`} />
-                                        <span className="text-zinc-600 dark:text-zinc-400">{sector}</span>
+                                        <span className="text-zinc-600 dark:text-zinc-400">
+                                            {sector}
+                                        </span>
                                     </span>
-                                )
+                                );
                             })}
                         </div>
                     )}
                 </div>
             )}
         </div>
-    )
+    );
 }
 
 // ============================================
@@ -232,7 +255,7 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
 
 /**
  * StreamingMessage - Displays a single chat message with streaming support
- * 
+ *
  * Features:
  * - User/Assistant differentiation
  * - Streaming indicator
@@ -240,22 +263,37 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
  * - Metadata display (model, tokens, cost)
  * - Memories used display (collapsible)
  */
-function StreamingMessageComponent({ message, isCurrentUser = false, onFeedback }: StreamingMessageProps) {
-    const isUser = message.role === 'user'
+function StreamingMessageComponent({
+    message,
+    isCurrentUser = false,
+    onFeedback,
+}: StreamingMessageProps) {
+    const isUser = message.role === 'user';
 
     return (
         <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
             <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser
-                    ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900'
-                    : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
-                    }`}
+                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                    isUser
+                        ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900'
+                        : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                }`}
             >
                 {/* Error display */}
                 {message.error && (
                     <div className="flex items-center gap-2 text-red-500 dark:text-red-400 mb-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
                         </svg>
                         <span className="text-sm">{message.error}</span>
                     </div>
@@ -272,9 +310,10 @@ function StreamingMessageComponent({ message, isCurrentUser = false, onFeedback 
                 )}
 
                 {/* Memories Used */}
-                {!isUser && message.memoriesUsed && message.memoriesUsed.length > 0 && !message.streaming && (
-                    <MemoriesUsedSection memories={message.memoriesUsed} />
-                )}
+                {!isUser &&
+                    message.memoriesUsed &&
+                    message.memoriesUsed.length > 0 &&
+                    !message.streaming && <MemoriesUsedSection memories={message.memoriesUsed} />}
 
                 {/* AI Decision (Agentic Transparency) */}
                 {!isUser && message.decision && !message.streaming && (
@@ -287,11 +326,13 @@ function StreamingMessageComponent({ message, isCurrentUser = false, onFeedback 
                         {message.metadata.model && (
                             <span className="font-mono">{message.metadata.model}</span>
                         )}
-                        {message.metadata.tokensIn !== undefined && message.metadata.tokensOut !== undefined && (
-                            <span>
-                                {message.metadata.tokensIn} → {message.metadata.tokensOut} tokens
-                            </span>
-                        )}
+                        {message.metadata.tokensIn !== undefined &&
+                            message.metadata.tokensOut !== undefined && (
+                                <span>
+                                    {message.metadata.tokensIn} → {message.metadata.tokensOut}{' '}
+                                    tokens
+                                </span>
+                            )}
                         {message.metadata.costUsd !== undefined && message.metadata.costUsd > 0 && (
                             <span>${message.metadata.costUsd.toFixed(4)}</span>
                         )}
@@ -310,17 +351,25 @@ function StreamingMessageComponent({ message, isCurrentUser = false, onFeedback 
                 {/* Streaming indicator */}
                 {message.streaming && !message.content && (
                     <div className="flex items-center gap-1">
-                        <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <span
+                            className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
+                            style={{ animationDelay: '0ms' }}
+                        />
+                        <span
+                            className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
+                            style={{ animationDelay: '150ms' }}
+                        />
+                        <span
+                            className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
+                            style={{ animationDelay: '300ms' }}
+                        />
                     </div>
                 )}
             </div>
         </div>
-    )
+    );
 }
 
 // Memoize to prevent unnecessary re-renders during streaming
-export const StreamingMessage = memo(StreamingMessageComponent)
-export default StreamingMessage
-
+export const StreamingMessage = memo(StreamingMessageComponent);
+export default StreamingMessage;

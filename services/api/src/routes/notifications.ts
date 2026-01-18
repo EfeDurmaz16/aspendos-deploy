@@ -53,17 +53,23 @@ app.post('/subscribe', requireAuth, async (c) => {
             osVersion,
         });
 
-        return c.json({
-            success: true,
-            subscriptionId: subscription.id,
-            platform: subscription.platform,
-        }, 201);
+        return c.json(
+            {
+                success: true,
+                subscriptionId: subscription.id,
+                platform: subscription.platform,
+            },
+            201
+        );
     } catch (error) {
         console.error('Push subscription failed:', error);
-        return c.json({
-            error: 'Failed to register subscription',
-            details: error instanceof Error ? error.message : 'Unknown error',
-        }, 500);
+        return c.json(
+            {
+                error: 'Failed to register subscription',
+                details: error instanceof Error ? error.message : 'Unknown error',
+            },
+            500
+        );
     }
 });
 
@@ -116,7 +122,10 @@ app.patch('/preferences', requireAuth, async (c) => {
         }
     }
 
-    const preferences = await notificationService.updateNotificationPreferences(userId, sanitizedUpdates);
+    const preferences = await notificationService.updateNotificationPreferences(
+        userId,
+        sanitizedUpdates
+    );
 
     return c.json({
         success: true,
@@ -206,7 +215,7 @@ app.post('/test', requireAuth, async (c) => {
     });
 
     return c.json({
-        success: results.some(r => r.success),
+        success: results.some((r) => r.success),
         results,
     });
 });
