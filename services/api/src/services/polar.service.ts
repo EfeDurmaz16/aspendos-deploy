@@ -25,6 +25,63 @@ const ANNUAL_PRODUCT_IDS = {
 };
 
 // ============================================
+// CUSTOMER MANAGEMENT
+// ============================================
+
+/**
+ * Create a Polar customer for an existing user
+ */
+export async function createCustomer(options: {
+    userId: string;
+    email: string;
+    name?: string;
+}): Promise<{ id: string; email: string }> {
+    const response = await fetch(`${POLAR_API_URL}/customers/`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${POLAR_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: options.email,
+            name: options.name,
+            external_id: options.userId, // Links to our user ID
+        }),
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        // Check if customer already exists
+        if (response.status === 409 || error.includes('already exists')) {
+            // Try to get existing customer
+            return getCustomerByExternalId(options.userId);
+        }
+        throw new Error(`Polar customer creation failed: ${error}`);
+    }
+
+    const customer = (await response.json()) as { id: string; email: string };
+    return customer;
+}
+
+/**
+ * Get a Polar customer by external ID (our user ID)
+ */
+export async function getCustomerByExternalId(userId: string): Promise<{ id: string; email: string }> {
+    const response = await fetch(`${POLAR_API_URL}/customers/external/${userId}`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${POLAR_ACCESS_TOKEN}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Customer not found for user: ${userId}`);
+    }
+
+    return response.json();
+}
+
+// ============================================
 // CHECKOUT
 // ============================================
 

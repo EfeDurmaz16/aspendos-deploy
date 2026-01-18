@@ -22,6 +22,33 @@ app.get('/', requireAuth, async (c) => {
     return c.json(status);
 });
 
+// POST /api/billing/sync - Sync user with Polar (create customer if needed)
+app.post('/sync', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const user = c.get('user')!;
+
+    try {
+        // Create or get existing Polar customer
+        const customer = await polarService.createCustomer({
+            userId,
+            email: user.email,
+            name: user.name,
+        });
+
+        // Update billing account with Polar customer ID
+        await billingService.getOrCreateBillingAccount(userId);
+
+        return c.json({
+            success: true,
+            customerId: customer.id,
+            message: 'Customer synced with Polar',
+        });
+    } catch (error) {
+        console.error('Customer sync failed:', error);
+        return c.json({ error: 'Failed to sync customer with Polar' }, 500);
+    }
+});
+
 // GET /api/billing/usage - Get usage history
 app.get('/usage', requireAuth, async (c) => {
     const userId = c.get('userId')!;
