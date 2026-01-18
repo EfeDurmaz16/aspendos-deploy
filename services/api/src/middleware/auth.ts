@@ -1,64 +1,50 @@
 /**
- * Clerk Authentication Middleware for Hono
- * Verifies JWT tokens and attaches user info to context.
+ * Better Auth Middleware for Hono
+ * Verifies sessions via HTTP-only cookies.
  */
 
-import { createClerkClient, verifyToken } from '@clerk/backend';
 import type { Context, Next } from 'hono';
+import { auth } from '../lib/auth';
 
-// Initialize Clerk client
-const clerkClient = createClerkClient({
-    secretKey: process.env.CLERK_SECRET_KEY || '',
-});
-
-export interface ClerkUser {
+export interface AuthUser {
     userId: string;
     email: string;
-    firstName?: string;
-    lastName?: string;
-    imageUrl?: string;
+    name?: string;
+    image?: string;
 }
 
 declare module 'hono' {
     interface ContextVariableMap {
-        user: ClerkUser | null;
+        user: AuthUser | null;
         userId: string | null;
     }
 }
 
 /**
- * Middleware to verify Clerk JWT and attach user to context.
+ * Middleware to verify Better Auth session and attach user to context.
  * Does not block requests - sets user to null if not authenticated.
  */
-export async function clerkAuth(c: Context, next: Next) {
-    const authHeader = c.req.header('Authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        c.set('user', null);
-        c.set('userId', null);
-        return next();
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-
+export async function authMiddleware(c: Context, next: Next) {
     try {
-        const payload = await verifyToken(token, {
-            secretKey: process.env.CLERK_SECRET_KEY || '',
+        // Get session from Better Auth using the request
+        const session = await auth.api.getSession({
+            headers: c.req.raw.headers,
         });
 
-        // Get full user details from Clerk
-        const user = await clerkClient.users.getUser(payload.sub);
-
-        c.set('user', {
-            userId: user.id,
-            email: user.emailAddresses[0]?.emailAddress || '',
-            firstName: user.firstName || undefined,
-            lastName: user.lastName || undefined,
-            imageUrl: user.imageUrl || undefined,
-        });
-        c.set('userId', user.id);
+        if (session?.user) {
+            c.set('user', {
+                userId: session.user.id,
+                email: session.user.email,
+                name: session.user.name || undefined,
+                image: session.user.image || undefined,
+            });
+            c.set('userId', session.user.id);
+        } else {
+            c.set('user', null);
+            c.set('userId', null);
+        }
     } catch (error) {
-        console.error('Clerk auth error:', error);
+        console.error('Auth middleware error:', error);
         c.set('user', null);
         c.set('userId', null);
     }
@@ -71,7 +57,7 @@ export async function clerkAuth(c: Context, next: Next) {
  * Returns 401 if user is not authenticated.
  */
 export async function requireAuth(c: Context, next: Next) {
-    await clerkAuth(c, async () => {});
+    await authMiddleware(c, async () => { });
 
     if (!c.get('userId')) {
         return c.json({ error: 'Unauthorized' }, 401);

@@ -9,34 +9,38 @@ import { type Chat, type Message, type Prisma, prisma, type User } from '@aspend
 // ============================================
 
 /**
- * Get or create user from Clerk ID
+ * Get or create user from Better Auth user ID
+ * Better Auth already creates the user in the database via Prisma adapter.
  */
 export async function getOrCreateUser(
-    clerkId: string,
+    userId: string,
     email: string,
-    name?: string
+    _name?: string
 ): Promise<User> {
+    // Better Auth stores users directly with their ID
     const existing = await prisma.user.findUnique({
-        where: { clerkId },
+        where: { id: userId },
     });
 
     if (existing) return existing;
 
-    return prisma.user.create({
-        data: {
-            clerkId,
-            email,
-            name,
-        },
+    // Fallback: try to find by email (in case ID mismatch from Better Auth)
+    const byEmail = await prisma.user.findUnique({
+        where: { email },
     });
+
+    if (byEmail) return byEmail;
+
+    // User should exist if session is valid - this is an error case
+    throw new Error(`User not found: ${userId} / ${email}`);
 }
 
 /**
- * Get user by Clerk ID
+ * Get user by ID
  */
-export async function getUserByClerkId(clerkId: string): Promise<User | null> {
+export async function getUserById(userId: string): Promise<User | null> {
     return prisma.user.findUnique({
-        where: { clerkId },
+        where: { id: userId },
     });
 }
 
@@ -367,7 +371,7 @@ export async function getSharedChat(token: string) {
                     sharedAt: meta.sharedAt,
                 };
             }
-        } catch {}
+        } catch { }
     }
 
     return null;

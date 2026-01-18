@@ -10,7 +10,6 @@ import {
     getMCPStatus,
     initializeMCPClients,
 } from './lib/mcp-clients';
-import { clerkAuth } from './middleware/auth';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
 import billingRoutes from './routes/billing';
 // Routes
@@ -51,9 +50,6 @@ app.use('*', async (c, next) => {
     c.set('session', session.session);
     await next();
 });
-
-// Apply Clerk auth to all routes (optional - doesn't block)
-app.use('*', clerkAuth);
 
 // Apply rate limiting
 app.use('*', rateLimit());
