@@ -28,6 +28,7 @@ const PRICING_TIERS = [
             'Email support',
         ],
         cta: 'Get Started',
+        slug: 'starter',
         popular: false,
     },
     {
@@ -43,7 +44,7 @@ const PRICING_TIERS = [
             'Email + chat support',
         ],
         cta: 'Upgrade to Pro',
-        productId: process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID,
+        slug: 'pro',
         popular: true,
     },
     {
@@ -59,7 +60,7 @@ const PRICING_TIERS = [
             'Priority support',
         ],
         cta: 'Go Ultra',
-        productId: process.env.NEXT_PUBLIC_POLAR_ULTRA_PRODUCT_ID,
+        slug: 'ultra',
         popular: false,
     },
 ];
@@ -136,11 +137,10 @@ function PricingContent() {
                             <button
                                 key={period}
                                 onClick={() => setBillingPeriod(period)}
-                                className={`px-5 py-2 rounded-full text-sm font-medium transition-all relative ${
-                                    billingPeriod === period
+                                className={`px-5 py-2 rounded-full text-sm font-medium transition-all relative ${billingPeriod === period
                                         ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 shadow-sm'
                                         : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                                }`}
+                                    }`}
                             >
                                 {period.charAt(0).toUpperCase() + period.slice(1)}
                                 {period === 'annual' && (
@@ -158,11 +158,10 @@ function PricingContent() {
                     {PRICING_TIERS.map((tier, index) => (
                         <div
                             key={tier.name}
-                            className={`relative bg-white dark:bg-zinc-900 rounded-2xl border p-8 flex flex-col hover-lift ${
-                                tier.popular
+                            className={`relative bg-white dark:bg-zinc-900 rounded-2xl border p-8 flex flex-col hover-lift ${tier.popular
                                     ? 'border-zinc-900 dark:border-zinc-50 ring-2 ring-zinc-900/10 dark:ring-zinc-50/10 md:-translate-y-4 shadow-xl glow'
                                     : 'border-zinc-200 dark:border-zinc-800 shadow-sm'
-                            }`}
+                                }`}
                             style={{ animationDelay: `${(index + 3) * 100}ms` }}
                         >
                             {tier.popular && (
@@ -218,25 +217,27 @@ function PricingContent() {
                                 ))}
                             </ul>
 
-                            {tier.name === 'Starter' ? (
-                                <Button
-                                    variant={tier.popular ? 'default' : 'outline'}
-                                    className="w-full rounded-full"
-                                    asChild
-                                >
-                                    <Link href={isSignedIn ? '/chat' : '/signup'}>{tier.cta}</Link>
-                                </Button>
-                            ) : (
-                                <Button
-                                    variant={tier.popular ? 'default' : 'outline'}
-                                    className="w-full rounded-full"
-                                    asChild
-                                >
-                                    <Link href={`/checkout?productId=${tier.productId}`}>
+                            <Button
+                                variant={tier.popular ? 'default' : 'outline'}
+                                className="w-full rounded-full"
+                                asChild
+                            >
+                                {tier.name === 'Starter' && !isSignedIn ? (
+                                    <Link href="/signup">{tier.cta}</Link>
+                                ) : tier.name === 'Starter' && isSignedIn ? (
+                                    <Link href="/chat">{tier.cta}</Link>
+                                ) : isSignedIn ? (
+                                    <Link
+                                        href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/checkout/${tier.slug}`}
+                                    >
                                         {tier.cta}
                                     </Link>
-                                </Button>
-                            )}
+                                ) : (
+                                    <Link href={`/signup?redirect=pricing&tier=${tier.slug}`}>
+                                        {tier.cta}
+                                    </Link>
+                                )}
+                            </Button>
                         </div>
                     ))}
                 </div>
