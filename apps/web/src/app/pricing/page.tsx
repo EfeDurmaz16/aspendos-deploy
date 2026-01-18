@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, CheckCircle, Sparkle, Trend, Zap } from '@phosphor-icons/react';
+import { ArrowLeft, CheckCircle, Sparkle, TrendUp, Lightning } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
@@ -184,7 +184,7 @@ function PricingContent() {
                         <div className="flex items-start justify-between mb-6">
                             <div>
                                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-                                    <Trend className="w-5 h-5 text-emerald-500" weight="fill" />
+                                    <TrendUp className="w-5 h-5 text-emerald-500" weight="fill" />
                                     Your Usage This Month
                                 </h3>
                                 <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
@@ -446,7 +446,7 @@ function PricingContent() {
                     <div className="space-y-4">
                         <details className="group p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
                             <summary className="flex items-center gap-3 font-medium text-zinc-900 dark:text-zinc-50">
-                                <Zap className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                                 What happens if I exceed my plan limits?
                             </summary>
                             <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
@@ -455,7 +455,7 @@ function PricingContent() {
                         </details>
                         <details className="group p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
                             <summary className="flex items-center gap-3 font-medium text-zinc-900 dark:text-zinc-50">
-                                <Zap className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                                 Can I change plans anytime?
                             </summary>
                             <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
@@ -464,7 +464,7 @@ function PricingContent() {
                         </details>
                         <details className="group p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
                             <summary className="flex items-center gap-3 font-medium text-zinc-900 dark:text-zinc-50">
-                                <Zap className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                                 What is your refund policy?
                             </summary>
                             <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
@@ -473,7 +473,7 @@ function PricingContent() {
                         </details>
                         <details className="group p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
                             <summary className="flex items-center gap-3 font-medium text-zinc-900 dark:text-zinc-50">
-                                <Zap className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                                 Do you offer a free trial?
                             </summary>
                             <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
