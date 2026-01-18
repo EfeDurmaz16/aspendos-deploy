@@ -1,44 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { Checkout } from '@polar-sh/nextjs'
 
 /**
- * Checkout API Route
- * Handles checkout redirects and Polar integration
+ * Polar Checkout Route
+ * 
+ * This route creates a checkout session and redirects to Polar's hosted checkout.
+ * Usage: /checkout?productId=<polar_product_id>
+ * 
+ * Configure products in Polar Dashboard → Products
  */
-
-export async function GET(request: NextRequest) {
-    const { searchParams } = new URL(request.url);
-    const tier = searchParams.get('tier') || 'pro';
-    const cycle = searchParams.get('cycle') || 'monthly';
-
-    // Redirect to pricing page with tier parameter
-    return NextResponse.redirect(
-        new URL(`/pricing?tier=${tier}&cycle=${cycle}`, request.url)
-    );
-}
-
-export async function POST(request: NextRequest) {
-    try {
-        const body = await request.json();
-
-        // Forward to billing API
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-        const response = await fetch(`${apiUrl}/api/billing/checkout`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Cookie: request.headers.get('cookie') || '',
-            },
-            body: JSON.stringify(body),
-        });
-
-        const data = await response.json();
-
-        return NextResponse.json(data, { status: response.status });
-    } catch (error) {
-        console.error('Checkout error:', error);
-        return NextResponse.json(
-            { error: 'Checkout processing failed' },
-            { status: 500 }
-        );
-    }
-}
+export const GET = Checkout({
+    accessToken: process.env.POLAR_ACCESS_TOKEN!,
+    successUrl: '/billing?success=true&checkout_id={CHECKOUT_ID}',
+    server: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+})
