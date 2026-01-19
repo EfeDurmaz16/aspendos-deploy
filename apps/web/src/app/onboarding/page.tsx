@@ -52,11 +52,18 @@ export default function OnboardingPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-950 font-sans">
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white dark:bg-zinc-950 font-sans relative overflow-hidden">
+            {/* Gradient mesh background */}
+            <div className="absolute inset-0 pointer-events-none -z-10">
+                <div className="absolute top-1/4 right-1/3 w-[500px] h-[500px] bg-gradient-to-br from-purple-100/20 to-transparent dark:from-purple-900/15 rounded-full blur-3xl" />
+                <div className="absolute bottom-1/4 left-1/3 w-[600px] h-[600px] bg-gradient-to-bl from-emerald-100/20 to-transparent dark:from-emerald-900/15 rounded-full blur-3xl" />
+                <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-gradient-to-tr from-blue-100/15 to-transparent dark:from-blue-900/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+            </div>
+
             {/* Progress Bar */}
-            <div className="fixed top-0 left-0 w-full h-1 bg-zinc-200 dark:bg-zinc-900">
+            <div className="fixed top-0 left-0 w-full h-1.5 bg-zinc-200/60 dark:bg-zinc-900/60 backdrop-blur z-50">
                 <motion.div
-                    className="h-full bg-zinc-900 dark:bg-zinc-50"
+                    className="h-full bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-lg shadow-emerald-500/30"
                     initial={{ width: '0%' }}
                     animate={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
                     transition={{ duration: 0.5, ease: 'easeInOut' }}
@@ -92,23 +99,30 @@ export default function OnboardingPage() {
                 {/* Navigation Footer */}
                 <div className="mt-12 flex justify-between items-center px-4">
                     {step > 1 && step < 5 ? (
-                        <Button variant="ghost" onClick={prevStep} className="text-zinc-500">
-                            <ArrowLeft className="mr-2 w-4 h-4" /> Back
+                        <Button
+                            variant="ghost"
+                            onClick={prevStep}
+                            className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"
+                        >
+                            <ArrowLeft className="mr-2 w-4 h-4" weight="bold" /> Back
                         </Button>
                     ) : (
                         <div /> /* Spacer */
                     )}
 
                     {step < 5 && (
-                        <Button onClick={nextStep} className="px-8 min-w-[140px]">
-                            Continue <ArrowRight className="ml-2 w-4 h-4" />
+                        <Button
+                            onClick={nextStep}
+                            className="px-8 min-w-[140px] bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
+                        >
+                            Continue <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
                         </Button>
                     )}
 
                     {step === 5 && (
-                        <Button className="px-8 min-w-[140px]" asChild>
+                        <Button className="px-8 min-w-[140px] bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all" asChild>
                             <Link href="/chat">
-                                Enter OS <ArrowRight className="ml-2 w-4 h-4" />
+                                Enter OS <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
                             </Link>
                         </Button>
                     )}
@@ -123,30 +137,35 @@ export default function OnboardingPage() {
 function Step1_Identity() {
     return (
         <div className="space-y-6 text-center">
-            <div className="inline-flex justify-center items-center w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-900 mb-4">
-                <span className="text-xl">👋</span>
+            <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl bg-white/60 dark:bg-zinc-900/60 backdrop-blur border border-zinc-200 dark:border-zinc-800 shadow-lg mb-4">
+                <span className="text-2xl">👋</span>
             </div>
             <div>
-                <h2 className="font-serif text-3xl mb-2">Welcome to the OS.</h2>
-                <p className="text-zinc-500">Let's set up your profile.</p>
+                <h2 className="font-serif text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
+                    Welcome to the OS.
+                </h2>
+                <p className="text-lg text-zinc-600 dark:text-zinc-400">Let's set up your profile.</p>
             </div>
 
-            <Card className="text-left border-zinc-200 dark:border-zinc-800 shadow-sm max-w-md mx-auto">
+            <Card className="text-left bg-white/60 dark:bg-zinc-900/60 backdrop-blur border-zinc-200 dark:border-zinc-800 shadow-lg max-w-md mx-auto">
                 <CardContent className="pt-6 space-y-4">
                     <div className="space-y-2">
-                        <Label>Full Name</Label>
-                        <Input defaultValue="Efe Baran Durmaz" />
+                        <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Full Name</Label>
+                        <Input
+                            defaultValue="Efe Baran Durmaz"
+                            className="rounded-xl border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label>Role</Label>
-                        <select className="flex h-11 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                        <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Role</Label>
+                        <select className="flex h-11 w-full items-center justify-between rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all">
                             <option>Select a role...</option>
                             <option>Founder</option>
                             <option>Developer</option>
                             <option>Researcher</option>
                             <option>Creative</option>
                         </select>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-zinc-500">
                             This helps us choose default models for you.
                         </p>
                     </div>

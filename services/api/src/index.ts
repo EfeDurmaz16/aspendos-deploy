@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -18,6 +19,22 @@ import memoryRoutes from './routes/memory';
 import schedulerRoutes from './routes/scheduler';
 import voiceRoutes from './routes/voice';
 
+// Initialize Sentry
+if (process.env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        environment: process.env.NODE_ENV || 'development',
+        tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+        integrations: [
+            Sentry.httpIntegration(),
+            Sentry.captureConsoleIntegration({ levels: ['error'] }),
+        ],
+    });
+    console.log('[Sentry] Initialized for API service');
+} else {
+    console.log('[Sentry] DSN not configured, error tracking disabled');
+}
+
 type Variables = {
     user: typeof auth.$Infer.Session.user | null;
     session: typeof auth.$Infer.Session.session | null;
@@ -34,6 +51,24 @@ app.use(
         credentials: true,
     })
 );
+
+// Sentry error handling middleware
+app.use('*', async (c, next) => {
+    try {
+        await next();
+    } catch (err) {
+        // Capture error in Sentry
+        Sentry.captureException(err, {
+            extra: {
+                path: c.req.path,
+                method: c.req.method,
+                headers: Object.fromEntries(c.req.raw.headers.entries()),
+            },
+        });
+        // Re-throw to let Hono handle the error response
+        throw err;
+    }
+});
 
 // Better Auth session middleware
 app.use('*', async (c, next) => {

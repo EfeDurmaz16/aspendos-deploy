@@ -6,7 +6,9 @@ import {
     CheckCircle,
     CircleNotch,
     CreditCard,
+    Gear,
     Lightning,
+    Microphone,
     User,
     WarningCircle,
 } from '@phosphor-icons/react';
@@ -252,52 +254,69 @@ function BillingContent() {
                 </div>
 
                 {/* Usage Stats */}
-                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+                <div className="bg-white/60 dark:bg-zinc-900/60 backdrop-blur rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-lg animate-fade-up animation-delay-200">
                     <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-6">
                         Usage This Period
                     </h2>
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         <UsageBar
                             label="Tokens"
                             percent={billing.usage.tokens.percent}
                             usedLabel={`${billing.usage.tokens.formatted.used} / ${billing.usage.tokens.formatted.limit} tokens`}
+                            icon={<Lightning className="w-4 h-4" weight="duotone" />}
                         />
                         <UsageBar
                             label="Chats"
                             percent={100 - billing.usage.chats.percent}
                             usedLabel={`${billing.usage.chats.remaining} chats remaining`}
+                            icon={<ChatCircle className="w-4 h-4" weight="duotone" />}
                         />
                         <UsageBar
                             label="Voice"
                             percent={100 - (billing.usage.voice.remaining / 300) * 100}
                             usedLabel={`${billing.usage.voice.remaining} min remaining`}
+                            icon={<Microphone className="w-4 h-4" weight="duotone" />}
                         />
                     </div>
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-4 animate-fade-up animation-delay-300">
                     <a
                         href="/chat"
-                        className="block p-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition"
+                        className="group block p-6 bg-white/50 dark:bg-zinc-900/50 backdrop-blur rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:bg-white/70 dark:hover:bg-zinc-900/70 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg transition-all"
                     >
-                        <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
-                            Start Chatting
-                        </h3>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                            Continue where you left off
-                        </p>
+                        <div className="flex items-start gap-3">
+                            <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50 transition-colors">
+                                <ChatCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" weight="duotone" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
+                                    Start Chatting
+                                </h3>
+                                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                    Continue where you left off
+                                </p>
+                            </div>
+                        </div>
                     </a>
                     <a
                         href="/settings"
-                        className="block p-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition"
+                        className="group block p-6 bg-white/50 dark:bg-zinc-900/50 backdrop-blur rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:bg-white/70 dark:hover:bg-zinc-900/70 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg transition-all"
                     >
-                        <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
-                            Account Settings
-                        </h3>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                            Manage your profile and preferences
-                        </p>
+                        <div className="flex items-start gap-3">
+                            <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                                <Gear className="w-5 h-5 text-blue-600 dark:text-blue-400" weight="duotone" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
+                                    Account Settings
+                                </h3>
+                                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                    Manage your profile and preferences
+                                </p>
+                            </div>
+                        </div>
                     </a>
                 </div>
             </div>
