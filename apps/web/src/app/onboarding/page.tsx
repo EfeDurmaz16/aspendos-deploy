@@ -313,17 +313,22 @@ function Step4_Safety() {
 
 function Step5_Ready() {
     return (
-        <div className="space-y-6 text-center">
+        <div className="space-y-8 text-center">
             <div className="mb-8">
-                <h2 className="font-serif text-4xl mb-4">All Systems Go.</h2>
-                <p className="text-zinc-500 text-lg">We've indexed 0 memories. Your OS is ready.</p>
+                <h2 className="font-serif text-4xl md:text-5xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
+                    All Systems Go.
+                </h2>
+                <p className="text-lg text-zinc-600 dark:text-zinc-400">
+                    We've indexed 0 memories. Your OS is ready.
+                </p>
             </div>
 
-            {/* Abstract Visualization */}
+            {/* Enhanced Visualization */}
             <div className="w-64 h-64 mx-auto mb-8 relative flex items-center justify-center">
-                <div className="absolute inset-0 bg-zinc-200 rounded-full animate-ping opacity-20 duration-1000"></div>
-                <div className="w-48 h-48 bg-zinc-900 dark:bg-white rounded-full flex items-center justify-center shadow-2xl relative z-10">
-                    <span className="font-serif text-4xl text-white dark:text-black">Ready</span>
+                <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping opacity-30 duration-1000"></div>
+                <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-ping opacity-20 duration-1500"></div>
+                <div className="w-48 h-48 bg-gradient-to-br from-emerald-600 to-emerald-500 rounded-full flex items-center justify-center shadow-2xl relative z-10">
+                    <span className="font-serif text-4xl font-bold text-white">Ready</span>
                 </div>
             </div>
         </div>

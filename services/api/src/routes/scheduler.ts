@@ -7,22 +7,39 @@
 import { ScheduledTaskStatus } from '@aspendos/db';
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateQuery } from '../middleware/validate';
 import * as commitmentService from '../services/commitment-detector.service';
 import * as schedulerService from '../services/scheduler.service';
 import { sendNotification } from '../services/notification.service';
+import {
+    createScheduledTaskSchema,
+    executeTaskSchema,
+    getTasksQuerySchema,
+    rescheduleTaskSchema,
+} from '../validation/scheduler.schema';
 
-const app = new Hono();
+type Variables = {
+    validatedBody?: unknown;
+    validatedQuery?: unknown;
+    validatedParams?: unknown;
+};
+
+const app = new Hono<{ Variables: Variables }>();
 
 // ============================================
 // AUTHENTICATED ROUTES
 // ============================================
 
 // GET /api/scheduler/tasks - Get user's scheduled tasks
-app.get('/tasks', requireAuth, async (c) => {
+app.get('/tasks', requireAuth, validateQuery(getTasksQuerySchema), async (c) => {
     const userId = c.get('userId')!;
-    const status = c.req.query('status') as ScheduledTaskStatus | undefined;
-    const chatId = c.req.query('chatId');
-    const limit = parseInt(c.req.query('limit') || '50', 10);
+    const validated = c.get('validatedQuery') as {
+        status?: ScheduledTaskStatus;
+        chatId?: string;
+        limit: number;
+    };
+
+    const { status, chatId, limit } = validated;
 
     const tasks = await schedulerService.getUserScheduledTasks(userId, {
         status,
@@ -47,22 +64,27 @@ app.get('/tasks', requireAuth, async (c) => {
 });
 
 // POST /api/scheduler/tasks - Create a scheduled task
-app.post('/tasks', requireAuth, async (c) => {
+app.post('/tasks', requireAuth, validateBody(createScheduledTaskSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const validated = c.get('validatedBody') as {
+        chatId: string;
+        triggerAt: string;
+        intent: string;
+        contextSummary?: string;
+        topic?: string;
+        tone?: 'friendly' | 'professional' | 'encouraging';
+        channelPref?: 'auto' | 'push' | 'email' | 'in_app';
+        metadata?: Record<string, unknown>;
+    };
 
-    const { chatId, triggerAt, intent, contextSummary, topic, tone, channelPref, metadata } = body;
-
-    if (!chatId || !triggerAt || !intent) {
-        return c.json({ error: 'chatId, triggerAt, and intent are required' }, 400);
-    }
+    const { chatId, triggerAt, intent, contextSummary, topic, tone, channelPref, metadata } = validated;
 
     // Parse triggerAt (can be ISO string or relative expression)
     let triggerDate: Date | null;
-    if (body.triggerAt.includes('T') || body.triggerAt.match(/^\d{4}-\d{2}-\d{2}/)) {
-        triggerDate = new Date(body.triggerAt);
+    if (triggerAt.includes('T') || triggerAt.match(/^\d{4}-\d{2}-\d{2}/)) {
+        triggerDate = new Date(triggerAt);
     } else {
-        triggerDate = schedulerService.parseTimeExpression(body.triggerAt);
+        triggerDate = schedulerService.parseTimeExpression(triggerAt);
     }
 
     if (!triggerDate || Number.isNaN(triggerDate.getTime())) {
@@ -143,21 +165,17 @@ app.delete('/tasks/:id', requireAuth, async (c) => {
 });
 
 // PATCH /api/scheduler/tasks/:id - Reschedule a task
-app.patch('/tasks/:id', requireAuth, async (c) => {
+app.patch('/tasks/:id', requireAuth, validateBody(rescheduleTaskSchema), async (c) => {
     const userId = c.get('userId')!;
     const taskId = c.req.param('id');
-    const body = await c.req.json();
-
-    if (!body.triggerAt) {
-        return c.json({ error: 'triggerAt is required' }, 400);
-    }
+    const validated = c.get('validatedBody') as { triggerAt: string };
 
     // Parse new triggerAt
     let triggerDate: Date | null;
-    if (body.triggerAt.includes('T') || body.triggerAt.match(/^\d{4}-\d{2}-\d{2}/)) {
-        triggerDate = new Date(body.triggerAt);
+    if (validated.triggerAt.includes('T') || validated.triggerAt.match(/^\d{4}-\d{2}-\d{2}/)) {
+        triggerDate = new Date(validated.triggerAt);
     } else {
-        triggerDate = schedulerService.parseTimeExpression(body.triggerAt);
+        triggerDate = schedulerService.parseTimeExpression(validated.triggerAt);
     }
 
     if (!triggerDate || Number.isNaN(triggerDate.getTime())) {
@@ -187,7 +205,7 @@ app.patch('/tasks/:id', requireAuth, async (c) => {
 // ============================================
 
 // POST /api/scheduler/execute - Execute a scheduled task (called by QStash/cron)
-app.post('/execute', async (c) => {
+app.post('/execute', validateBody(executeTaskSchema), async (c) => {
     // Verify QStash signature if configured
     const qstashSignature = c.req.header('upstash-signature');
     if (process.env.QSTASH_CURRENT_SIGNING_KEY && qstashSignature) {
@@ -195,12 +213,8 @@ app.post('/execute', async (c) => {
         // For now, we'll trust the internal network
     }
 
-    const body = await c.req.json();
-    const { taskId } = body;
-
-    if (!taskId) {
-        return c.json({ error: 'taskId is required' }, 400);
-    }
+    const validated = c.get('validatedBody') as { taskId: string };
+    const { taskId } = validated;
 
     const task = await schedulerService.getTaskById(taskId);
 
