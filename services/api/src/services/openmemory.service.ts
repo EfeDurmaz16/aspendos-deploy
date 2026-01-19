@@ -105,7 +105,7 @@ export async function listMemories(
         offset?: number;
     }
 ): Promise<MemoryResult[]> {
-    const results = await mem.list({
+    const results = await mem.search('', {
         user_id: userId,
         limit: options?.limit || 50,
     });

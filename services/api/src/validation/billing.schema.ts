@@ -4,31 +4,37 @@
 import { z } from 'zod';
 
 /**
- * Subscription tier enum
+ * Query schema for usage history
  */
-export const subscriptionTierSchema = z.enum(['STARTER', 'PRO', 'ULTRA']);
+export const getUsageQuerySchema = z.object({
+    limit: z.coerce
+        .number()
+        .int('limit must be an integer')
+        .min(1, 'limit must be at least 1')
+        .max(1000, 'limit must be at most 1000')
+        .default(50),
+});
 
 /**
- * Update subscription tier schema
+ * Plan enum (lowercase to match Polar API)
  */
-export const updateSubscriptionTierSchema = z.object({
-    tier: subscriptionTierSchema,
+export const planSchema = z.enum(['starter', 'pro', 'ultra'], {
+    errorMap: () => ({ message: 'plan must be one of: starter, pro, ultra' }),
+});
+
+/**
+ * Billing cycle enum
+ */
+export const billingCycleSchema = z.enum(['monthly', 'annual'], {
+    errorMap: () => ({ message: 'cycle must be one of: monthly, annual' }),
 });
 
 /**
  * Create checkout session schema
  */
-export const createCheckoutSessionSchema = z.object({
-    tier: subscriptionTierSchema,
-    interval: z.enum(['month', 'year']),
-    successUrl: z.string().url('successUrl must be a valid URL').optional(),
-    cancelUrl: z.string().url('cancelUrl must be a valid URL').optional(),
-});
-
-/**
- * Webhook signature verification schema
- */
-export const webhookEventSchema = z.object({
-    type: z.string(),
-    data: z.record(z.unknown()),
+export const createCheckoutSchema = z.object({
+    plan: planSchema,
+    cycle: billingCycleSchema.default('monthly'),
+    success_url: z.string().url('success_url must be a valid URL').optional(),
+    cancel_url: z.string().url('cancel_url must be a valid URL').optional(),
 });
