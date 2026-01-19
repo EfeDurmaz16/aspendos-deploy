@@ -34,21 +34,27 @@ export function ChatSidebar({
     const groupedChats = groupChatsByDate(chats);
 
     return (
-        <div className="h-full flex flex-col bg-zinc-50 dark:bg-black border-r border-zinc-200 dark:border-zinc-900">
+        <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-900 relative">
+            {/* Gradient mesh background */}
+            <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+                <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-blue-100/10 to-transparent dark:from-blue-900/5 rounded-full blur-3xl" />
+                <div className="absolute bottom-1/3 left-0 w-[250px] h-[250px] bg-gradient-to-tr from-emerald-100/10 to-transparent dark:from-emerald-900/5 rounded-full blur-3xl" />
+            </div>
+
             {/* Header */}
-            <div className="h-14 flex items-center px-4 border-b border-zinc-200 dark:border-zinc-900">
-                <span className="font-serif text-lg font-bold">ASPENDOS</span>
+            <div className="h-14 flex items-center px-4 border-b border-zinc-200 dark:border-zinc-900 backdrop-blur">
+                <span className="font-serif text-lg font-bold text-zinc-900 dark:text-white">ASPENDOS</span>
             </div>
 
             {/* New Chat */}
             <div className="p-3">
                 <Button
                     variant="secondary"
-                    className="w-full justify-start gap-2 bg-white dark:bg-zinc-900 shadow-sm border-zinc-200 dark:border-zinc-800 hover:dark:bg-zinc-800"
+                    className="w-full justify-start gap-2 bg-white/60 dark:bg-zinc-900/60 shadow-sm border-zinc-200 dark:border-zinc-800 hover:bg-white dark:hover:bg-zinc-900 backdrop-blur transition-all"
                     size="sm"
                     onClick={onNewChat}
                 >
-                    <Plus /> New Thread
+                    <Plus weight="bold" /> New Thread
                 </Button>
             </div>
 
@@ -121,18 +127,26 @@ function SidebarItem({
         <button
             onClick={onClick}
             className={cn(
-                'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[13px] text-left transition-colors',
+                'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-left transition-all group',
                 active
-                    ? 'bg-zinc-200/60 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/50'
+                    ? 'bg-white/60 dark:bg-zinc-800/60 backdrop-blur text-zinc-900 dark:text-zinc-50 font-medium shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-white/40 dark:hover:bg-zinc-900/40 hover:backdrop-blur'
             )}
         >
             <ChatCircle
-                size={14}
-                className={active ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-400'}
+                size={16}
+                weight={active ? 'fill' : 'duotone'}
+                className={cn(
+                    'flex-shrink-0 transition-colors',
+                    active
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-zinc-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
+                )}
             />
             <span className="truncate flex-1">{label}</span>
-            {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+            {active && (
+                <span className="ml-auto w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 ring-1 ring-emerald-300 dark:ring-emerald-600 flex-shrink-0" />
+            )}
         </button>
     );
 }

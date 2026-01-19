@@ -2,17 +2,17 @@
 
 import {
     Brain,
+    CaretDown,
+    CaretUp,
     Check,
-    ChevronDown,
-    ChevronUp,
     Clock,
     Copy,
     Heart,
     Lightbulb,
-    Sparkles,
+    Sparkle,
     ThumbsDown,
     ThumbsUp,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import { memo, useCallback, useState } from 'react';
 import type { ChatMessage } from '@/hooks/useStreamingChat';
 import { AudioPlayer } from './audio-player';
@@ -70,17 +70,17 @@ function MessageActions({
     );
 
     return (
-        <div className="flex items-center gap-1 mt-2 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50">
+        <div className="flex items-center gap-1 mt-2 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50 opacity-0 group-hover:opacity-100 transition-opacity">
             {/* Copy button */}
             <button
                 onClick={handleCopy}
-                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                 title="Copy message"
             >
                 {copied ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" />
                 ) : (
-                    <Copy className="w-3.5 h-3.5" />
+                    <Copy className="w-3.5 h-3.5" weight="duotone" />
                 )}
             </button>
 
@@ -91,25 +91,25 @@ function MessageActions({
             <div className="flex items-center gap-0.5 ml-auto">
                 <button
                     onClick={() => handleFeedback('up')}
-                    className={`p-1.5 rounded-md transition-colors ${
+                    className={`p-1.5 rounded-lg transition-all ${
                         feedback === 'up'
-                            ? 'text-emerald-500 bg-emerald-500/10'
-                            : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                            ? 'text-emerald-500 bg-emerald-500/15 ring-1 ring-emerald-500/30'
+                            : 'text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
                     }`}
                     title="Good response"
                 >
-                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <ThumbsUp className="w-3.5 h-3.5" weight={feedback === 'up' ? 'fill' : 'duotone'} />
                 </button>
                 <button
                     onClick={() => handleFeedback('down')}
-                    className={`p-1.5 rounded-md transition-colors ${
+                    className={`p-1.5 rounded-lg transition-all ${
                         feedback === 'down'
-                            ? 'text-rose-500 bg-rose-500/10'
-                            : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                            ? 'text-rose-500 bg-rose-500/15 ring-1 ring-rose-500/30'
+                            : 'text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'
                     }`}
                     title="Bad response"
                 >
-                    <ThumbsDown className="w-3.5 h-3.5" />
+                    <ThumbsDown className="w-3.5 h-3.5" weight={feedback === 'down' ? 'fill' : 'duotone'} />
                 </button>
             </div>
         </div>
@@ -122,7 +122,7 @@ const SECTOR_ICONS: Record<string, React.ElementType> = {
     semantic: Lightbulb,
     procedural: Brain,
     emotional: Heart,
-    reflective: Sparkles,
+    reflective: Sparkle,
 };
 
 const SECTOR_COLORS: Record<string, string> = {
@@ -151,33 +151,34 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
                 <Brain className="w-3.5 h-3.5" />
                 <span>{memories.length} memories used</span>
                 {isExpanded ? (
-                    <ChevronUp className="w-3.5 h-3.5 ml-auto" />
+                    <CaretUp className="w-3.5 h-3.5 ml-auto" />
                 ) : (
-                    <ChevronDown className="w-3.5 h-3.5 ml-auto" />
+                    <CaretDown className="w-3.5 h-3.5 ml-auto" />
                 )}
             </button>
 
             {isExpanded && (
-                <div className="mt-2 space-y-2">
-                    {memories.map((memory) => {
+                <div className="mt-2 space-y-2 animate-fade-up">
+                    {memories.map((memory, idx) => {
                         const SectorIcon = SECTOR_ICONS[memory.sector] || Brain;
                         const sectorColor = SECTOR_COLORS[memory.sector] || 'text-zinc-500';
 
                         return (
                             <div
                                 key={memory.id}
-                                className="bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg p-2 text-xs"
+                                className="bg-white/40 dark:bg-zinc-800/60 backdrop-blur rounded-lg p-3 text-xs border border-zinc-200/50 dark:border-zinc-700/50 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+                                style={{ animationDelay: `${idx * 50}ms` }}
                             >
-                                <div className="flex items-center gap-2 mb-1">
-                                    <SectorIcon className={`w-3 h-3 ${sectorColor}`} />
-                                    <span className="uppercase tracking-wide font-medium text-zinc-600 dark:text-zinc-400">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <SectorIcon className={`w-3.5 h-3.5 ${sectorColor}`} weight="duotone" />
+                                    <span className="uppercase tracking-wide font-medium text-zinc-700 dark:text-zinc-300">
                                         {memory.sector}
                                     </span>
-                                    <span className="ml-auto font-mono text-zinc-500">
+                                    <span className="ml-auto font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                                         {Math.round(memory.confidence * 100)}%
                                     </span>
                                 </div>
-                                <p className="text-zinc-700 dark:text-zinc-300 line-clamp-2">
+                                <p className="text-zinc-700 dark:text-zinc-300 line-clamp-2 text-[11px]">
                                     {memory.content}
                                 </p>
                             </div>
@@ -209,7 +210,7 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors w-full"
             >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <Sparkle className="w-3.5 h-3.5 text-amber-500" weight="fill" />
                 <span>AI Decision: {decision.queryType.replace('_', ' ')}</span>
                 {decision.useMemory && (
                     <span className="ml-1 px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[10px] uppercase">
@@ -217,30 +218,32 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
                     </span>
                 )}
                 {isExpanded ? (
-                    <ChevronUp className="w-3.5 h-3.5 ml-auto" />
+                    <CaretUp className="w-3.5 h-3.5 ml-auto" />
                 ) : (
-                    <ChevronDown className="w-3.5 h-3.5 ml-auto" />
+                    <CaretDown className="w-3.5 h-3.5 ml-auto" />
                 )}
             </button>
 
             {isExpanded && (
-                <div className="mt-2 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg p-2 text-xs space-y-1">
-                    <p className="text-zinc-700 dark:text-zinc-300">{decision.reasoning}</p>
+                <div className="mt-2 bg-white/40 dark:bg-zinc-800/60 backdrop-blur rounded-lg p-3 text-xs space-y-2 border border-amber-200/30 dark:border-amber-700/30 animate-fade-up">
+                    <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed">{decision.reasoning}</p>
                     {decision.sectors.length > 0 && (
-                        <div className="flex items-center gap-1.5 mt-2">
-                            <span className="text-zinc-500">Searched:</span>
-                            {decision.sectors.map((sector) => {
-                                const SectorIcon = SECTOR_ICONS[sector] || Brain;
-                                const sectorColor = SECTOR_COLORS[sector] || 'text-zinc-500';
-                                return (
-                                    <span key={sector} className="flex items-center gap-0.5">
-                                        <SectorIcon className={`w-3 h-3 ${sectorColor}`} />
-                                        <span className="text-zinc-600 dark:text-zinc-400">
-                                            {sector}
+                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-amber-200/20 dark:border-amber-700/20">
+                            <span className="text-zinc-600 dark:text-zinc-400 font-semibold">Sectors:</span>
+                            <div className="flex flex-wrap gap-1">
+                                {decision.sectors.map((sector) => {
+                                    const SectorIcon = SECTOR_ICONS[sector] || Brain;
+                                    const sectorColor = SECTOR_COLORS[sector] || 'text-zinc-500';
+                                    return (
+                                        <span key={sector} className="flex items-center gap-1 bg-zinc-100/60 dark:bg-zinc-700/40 px-1.5 py-0.5 rounded text-[10px]">
+                                            <SectorIcon className={`w-3 h-3 ${sectorColor}`} weight="duotone" />
+                                            <span className="text-zinc-700 dark:text-zinc-300 font-medium">
+                                                {sector}
+                                            </span>
                                         </span>
-                                    </span>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -271,12 +274,12 @@ function StreamingMessageComponent({
     const isUser = message.role === 'user';
 
     return (
-        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}>
             <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                className={`max-w-[85%] rounded-2xl px-4 py-3 transition-all ${
                     isUser
-                        ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900'
-                        : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                        ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-50 dark:to-zinc-100 text-white dark:text-zinc-900 shadow-md'
+                        : 'bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all'
                 }`}
             >
                 {/* Error display */}
@@ -322,19 +325,23 @@ function StreamingMessageComponent({
 
                 {/* Metadata */}
                 {message.metadata && !message.streaming && (
-                    <div className="flex items-center gap-3 mt-3 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50 text-xs text-zinc-500 dark:text-zinc-500">
+                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50 text-xs text-zinc-600 dark:text-zinc-400 flex-wrap">
                         {message.metadata.model && (
-                            <span className="font-mono">{message.metadata.model}</span>
+                            <span className="font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded text-zinc-700 dark:text-zinc-300">
+                                {message.metadata.model}
+                            </span>
                         )}
                         {message.metadata.tokensIn !== undefined &&
                             message.metadata.tokensOut !== undefined && (
-                                <span>
-                                    {message.metadata.tokensIn} → {message.metadata.tokensOut}{' '}
-                                    tokens
+                                <span className="flex items-center gap-1">
+                                    <span className="text-zinc-500">|</span>
+                                    <span className="font-mono">{message.metadata.tokensIn}→{message.metadata.tokensOut}</span>
                                 </span>
                             )}
                         {message.metadata.costUsd !== undefined && message.metadata.costUsd > 0 && (
-                            <span>${message.metadata.costUsd.toFixed(4)}</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                ${message.metadata.costUsd.toFixed(5)}
+                            </span>
                         )}
                     </div>
                 )}

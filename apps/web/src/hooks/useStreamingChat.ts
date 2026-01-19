@@ -80,16 +80,19 @@ export function useStreamingChat(chatId: string) {
     const [currentMemories, setCurrentMemories] = useState<MemoryUsed[]>([]);
     const [_selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
 
+    // Track the actual chat ID (might be different from param if param is "new")
+    const [actualChatId, setActualChatId] = useState<string>(chatId);
+
     // Create transport with memoization
     const transport = useMemo(
         () =>
             new DefaultChatTransport({
-                api: `${API_BASE}/api/chat/${chatId}/message`,
+                api: `${API_BASE}/api/chat/${actualChatId}/message`,
                 headers: {
                     'Content-Type': 'application/json',
                 },
             }),
-        [chatId]
+        [actualChatId]
     );
 
     const {
@@ -99,7 +102,7 @@ export function useStreamingChat(chatId: string) {
         status,
         error,
     } = useChat({
-        id: chatId,
+        id: actualChatId,
         transport,
         onError: (err: Error) => {
             console.error('[useStreamingChat] Error:', err);
@@ -146,6 +149,42 @@ export function useStreamingChat(chatId: string) {
                 setCurrentMemories([]);
                 setSelectedModel(model);
 
+                // If chatId is "new", create the chat first
+                if (chatId === 'new' && actualChatId === 'new') {
+                    try {
+                        const res = await fetch(`${API_BASE}/api/chat`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title: 'New Chat' }),
+                        });
+
+                        if (!res.ok) {
+                            throw new Error('Failed to create chat');
+                        }
+
+                        const newChat = await res.json();
+                        const newChatId = newChat.id;
+
+                        // Update the actual chat ID
+                        setActualChatId(newChatId);
+
+                        // Update the URL without page reload
+                        if (typeof window !== 'undefined') {
+                            window.history.replaceState(null, '', `/chat/${newChatId}`);
+                        }
+
+                        // Wait for transport to update with new chat ID
+                        // The transport will be recreated due to actualChatId change
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    } catch (err) {
+                        const errorMessage =
+                            err instanceof Error ? err.message : 'Failed to create chat';
+                        onError?.(errorMessage);
+                        return null;
+                    }
+                }
+
                 // Use sendMessage with text parameter (AI SDK v5.0)
                 // Custom data goes in body, not data
                 await aiSendMessage(
@@ -170,7 +209,7 @@ export function useStreamingChat(chatId: string) {
                 return null;
             }
         },
-        [aiSendMessage]
+        [aiSendMessage, chatId, actualChatId]
     );
 
     // Stop streaming

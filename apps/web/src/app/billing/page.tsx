@@ -1,5 +1,15 @@
 'use client';
 
+import {
+    ArrowRight,
+    ChatCircle,
+    CheckCircle,
+    CircleNotch,
+    CreditCard,
+    Lightning,
+    User,
+    WarningCircle,
+} from '@phosphor-icons/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { useUser } from '@/hooks/use-auth';

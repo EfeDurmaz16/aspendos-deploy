@@ -1,7 +1,7 @@
 'use client';
 
 import { Brain, CircleNotch, List, PaperPlaneRight, SidebarSimple } from '@phosphor-icons/react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { MemoryPanel } from '@/components/chat/memory-panel';
@@ -24,84 +24,20 @@ interface Chat {
     updatedAt: string;
 }
 
-export default function ChatPage() {
-    const params = useParams();
+export default function NewChatPage() {
     const router = useRouter();
     const { isLoaded, isSignedIn } = useAuth();
-    const chatId = params.id as string;
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [memoryOpen, setMemoryOpen] = useState(true);
-    const [chat, setChat] = useState<Chat | null>(null);
     const [chats, setChats] = useState<Chat[]>([]);
-    const [initialMessages, setInitialMessages] = useState<ChatMessage[]>([]);
-    const [isLoadingChat, setIsLoadingChat] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
     const [inputValue, setInputValue] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const { messages, isStreaming, sendMessage, error: streamError } = useStreamingChat(chatId);
-
-    // Load chat and messages
-    useEffect(() => {
-        if (!isLoaded || !isSignedIn || !chatId) return;
-
-        const loadChat = async () => {
-            try {
-                setIsLoadingChat(true);
-                const res = await fetch(`${API_BASE}/api/chat/${chatId}`, {
-                    credentials: 'include',
-                });
-
-                if (!res.ok) {
-                    if (res.status === 404) {
-                        router.push('/chat');
-                        return;
-                    }
-                    throw new Error('Failed to load chat');
-                }
-
-                const data = await res.json();
-                setChat(data);
-
-                if (data.messages) {
-                    const converted: ChatMessage[] = data.messages.map(
-                        (m: {
-                            id: string;
-                            role: string;
-                            content: string;
-                            createdAt: string;
-                            modelUsed?: string;
-                            tokensIn?: number;
-                            tokensOut?: number;
-                            costUsd?: number;
-                        }) => ({
-                            id: m.id,
-                            role: m.role as 'user' | 'assistant',
-                            content: m.content,
-                            timestamp: new Date(m.createdAt),
-                            metadata: m.modelUsed
-                                ? {
-                                      model: m.modelUsed,
-                                      tokensIn: m.tokensIn,
-                                      tokensOut: m.tokensOut,
-                                      costUsd: m.costUsd,
-                                  }
-                                : undefined,
-                        })
-                    );
-                    setInitialMessages(converted);
-                }
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load chat');
-            } finally {
-                setIsLoadingChat(false);
-            }
-        };
-
-        loadChat();
-    }, [chatId, isLoaded, isSignedIn, router]);
+    // Use "new" as a placeholder chatId - will be replaced on first message
+    const { messages, isStreaming, sendMessage, error: streamError } = useStreamingChat('new');
 
     // Load chat list for sidebar
     useEffect(() => {
@@ -125,7 +61,7 @@ export default function ChatPage() {
     // Auto-scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, []);
+    }, [messages]);
 
     const handleSend = useCallback(async () => {
         const content = inputValue.trim();
@@ -134,8 +70,9 @@ export default function ChatPage() {
         setInputValue('');
         if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
-        await sendMessage(content, { model: chat?.modelPreference || 'openai/gpt-4o-mini' });
-    }, [inputValue, isStreaming, sendMessage, chat?.modelPreference]);
+        // Send message - the hook will handle creating the chat on first message
+        await sendMessage(content, { model: selectedModel });
+    }, [inputValue, isStreaming, sendMessage, selectedModel]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -168,24 +105,9 @@ export default function ChatPage() {
         }
     };
 
-    const handleModelChange = useCallback(
-        async (modelId: string) => {
-            try {
-                await fetch(`${API_BASE}/api/chat/${chatId}`, {
-                    method: 'PATCH',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model_id: modelId }),
-                });
-                setChat((prev) => (prev ? { ...prev, modelPreference: modelId } : prev));
-            } catch {
-                /* Handle error silently */
-            }
-        },
-        [chatId]
-    );
-
-    const allMessages = [...initialMessages, ...messages];
+    const handleModelChange = useCallback(async (modelId: string) => {
+        setSelectedModel(modelId);
+    }, []);
 
     if (!isLoaded) {
         return (
@@ -211,7 +133,7 @@ export default function ChatPage() {
             >
                 <ChatSidebar
                     chats={chats}
-                    currentChatId={chatId}
+                    currentChatId="new"
                     onNewChat={handleNewChat}
                     onSelectChat={(id) => router.push(`/chat/${id}`)}
                 />
@@ -237,7 +159,7 @@ export default function ChatPage() {
                     </Button>
                     <div className="flex-1 flex justify-center">
                         <ModelSelector
-                            selectedModel={chat?.modelPreference || 'openai/gpt-4o-mini'}
+                            selectedModel={selectedModel}
                             onModelChange={handleModelChange}
                             disabled={isStreaming}
                         />
@@ -256,15 +178,7 @@ export default function ChatPage() {
                 {/* Messages */}
                 <ScrollArea className="flex-1 p-6">
                     <div className="max-w-3xl mx-auto space-y-4 pb-32">
-                        {isLoadingChat ? (
-                            <div className="flex justify-center py-8">
-                                <CircleNotch className="w-6 h-6 animate-spin text-zinc-400" />
-                            </div>
-                        ) : error ? (
-                            <div className="text-center py-8 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800 px-4">
-                                {error}
-                            </div>
-                        ) : allMessages.length === 0 ? (
+                        {messages.length === 0 ? (
                             <div className="text-center py-20 animate-fade-up">
                                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900 mb-6 shadow-lg">
                                     <Brain className="w-8 h-8 text-zinc-600 dark:text-zinc-400" weight="duotone" />
@@ -277,7 +191,7 @@ export default function ChatPage() {
                                 </p>
                             </div>
                         ) : (
-                            allMessages.map((msg) => (
+                            messages.map((msg) => (
                                 <StreamingMessage
                                     key={msg.id}
                                     message={{
