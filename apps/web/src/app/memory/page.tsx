@@ -311,8 +311,8 @@ export default function MemoryDashboardPage() {
 
     const handlePin = async (memory: Memory) => {
         try {
-            await fetchWithAuth(`/api/memory/dashboard/edit/${memory.id}`, {
-                method: 'POST',
+            await fetchWithAuth(`/api/memory/dashboard/${memory.id}`, {
+                method: 'PATCH',
                 body: JSON.stringify({ isPinned: !memory.isPinned }),
             });
             fetchMemories();
@@ -335,8 +335,8 @@ export default function MemoryDashboardPage() {
     const handleEditSave = async (updates: { content?: string; sector?: string }) => {
         if (!editingMemory) return;
         try {
-            await fetchWithAuth(`/api/memory/dashboard/edit/${editingMemory.id}`, {
-                method: 'POST',
+            await fetchWithAuth(`/api/memory/dashboard/${editingMemory.id}`, {
+                method: 'PATCH',
                 body: JSON.stringify(updates),
             });
             setEditingMemory(null);

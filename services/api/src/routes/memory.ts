@@ -61,20 +61,33 @@ app.patch('/dashboard/:id', async (c) => {
     const memoryId = c.req.param('id');
     const body = await c.req.json();
 
-    // Delete old memory
+    // Update memory
     try {
-        await openMemory.deleteMemory(memoryId);
-    } catch {
-        // Ignore if not found
+        const metadata = { ...body.metadata };
+        if (typeof body.isPinned === 'boolean') {
+            metadata.isPinned = body.isPinned;
+        }
+
+        await openMemory.updateMemory(memoryId, body.content, {
+            sector: body.sector,
+            metadata: metadata,
+        });
+
+        return c.json({
+            success: true,
+            memory: {
+                id: memoryId,
+                content: body.content,
+                sector: body.sector,
+                metadata: metadata,
+                isPinned: metadata.isPinned
+            }
+        });
+    } catch (error) {
+        return c.json({ error: 'Failed to update memory' }, 500);
     }
 
-    // Add updated memory
-    const newMemory = await openMemory.addMemory(body.content, userId, {
-        sector: body.sector,
-        metadata: body.metadata,
-    });
 
-    return c.json({ success: true, memory: newMemory });
 });
 
 /**

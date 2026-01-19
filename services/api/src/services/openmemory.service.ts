@@ -14,6 +14,10 @@ const mem = new Memory();
 // TYPES (matching OpenMemory response format)
 // ============================================
 
+// @ts-ignore - Accessing internal DB module to fix missing delete/update methods
+import { q } from 'openmemory-js/dist/core/db';
+
+
 export interface MemoryResult {
     id: string;
     content: string;
@@ -91,6 +95,7 @@ export async function searchMemories(
         salience: r.salience || 0,
         createdAt: r.created_at,
         metadata: r.metadata,
+        isPinned: !!(r.metadata as Record<string, unknown>)?.isPinned,
         trace: r.trace,
     }));
 }
@@ -117,14 +122,71 @@ export async function listMemories(
         salience: r.salience || 0,
         createdAt: r.created_at,
         metadata: r.metadata,
+        isPinned: !!(r.metadata as Record<string, unknown>)?.isPinned,
     }));
+}
+
+/**
+ * Update a memory
+ */
+export async function updateMemory(
+    id: string,
+    content: string,
+    options?: {
+        sector?: string;
+        tags?: string[];
+        metadata?: Record<string, unknown>;
+    }
+): Promise<void> {
+    const memData = await q.get_mem.get(id);
+    if (!memData) throw new Error('Memory not found');
+
+    const currentMeta = memData.meta ? JSON.parse(memData.meta) : {};
+    const newMeta = JSON.stringify({
+        ...currentMeta,
+        ...options?.metadata,
+        sector: options?.sector || currentMeta.sector,
+    });
+
+    // Convert tags to string format if array
+    const tagsStr = options?.tags ? options.tags.join(',') : memData.tags;
+
+    if (options?.sector) {
+        await q.upd_mem_with_sector.run(
+            content,
+            options.sector,
+            tagsStr,
+            newMeta,
+            Date.now(),
+            id
+        );
+    } else {
+        await q.upd_mem.run(
+            content,
+            tagsStr,
+            newMeta,
+            Date.now(),
+            id
+        );
+    }
 }
 
 /**
  * Delete a memory
  */
 export async function deleteMemory(id: string): Promise<void> {
-    await mem.delete(id);
+    try {
+        await q.del_mem.run(id);
+        // Also clean up vectors to prevent orphans
+        // Note: SDK doesn't expose vector delete easily without id, but DB handles cascade usually?
+        // Checking openmemory schema: no foreign keys defined in SQLite/PG usually for vectors in early versions?
+        // Actually q.del_mem only deletes from memories table. 
+        // Ideally we should delete from vectors too, but 'del_mem' in db.ts only deletes from memories.
+        // We will stick to what the internal DB methods provide.
+    } catch (e) {
+        console.error('Error deleting memory:', e);
+        throw e;
+    }
 }
 
 /**

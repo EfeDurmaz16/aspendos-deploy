@@ -25,6 +25,14 @@ export const auth = betterAuth({
         maxPasswordLength: 128,
         autoSignIn: true,
     },
+    session: {
+        expiresIn: 60 * 60 * 24 * 30, // 30 days
+        updateAge: 60 * 60 * 24, // Update every day
+        cookie: {
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+        },
+    },
     trustedOrigins: ['http://localhost:3000', 'https://aspendos.net'],
     plugins: [
         polar({
