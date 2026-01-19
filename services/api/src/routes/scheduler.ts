@@ -9,6 +9,7 @@ import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import * as commitmentService from '../services/commitment-detector.service';
 import * as schedulerService from '../services/scheduler.service';
+import { sendNotification } from '../services/notification.service';
 
 const app = new Hono();
 
@@ -221,13 +222,28 @@ app.post('/execute', async (c) => {
         // Mark as completed
         await schedulerService.markTaskCompleted(taskId, message, 'pending_delivery');
 
-        // TODO: Trigger notification delivery (push/email/SSE)
-        // This will be implemented in the notification service
+        // Trigger notification delivery (push/email/SSE)
+        const deliveryResults = await sendNotification({
+            userId: task.userId,
+            title: task.topic || 'Reminder',
+            body: message,
+            taskId: task.id,
+            chatId: task.chatId,
+            data: {
+                taskId: task.id,
+                chatId: task.chatId,
+                intent: task.intent,
+            },
+            channelPref: (task.channelPref as 'auto' | 'push' | 'email' | 'in_app') || 'auto',
+        });
+
+        console.log(`[Scheduler] Notification delivery results:`, deliveryResults);
 
         return c.json({
             success: true,
             taskId,
             message,
+            deliveryResults,
         });
     } catch (error) {
         console.error('Task execution failed:', error);
@@ -256,7 +272,23 @@ app.post('/poll', async (c) => {
             await schedulerService.markTaskProcessing(task.id);
             const message = await commitmentService.generateReengagementMessage(task);
             await schedulerService.markTaskCompleted(task.id, message, 'pending_delivery');
-            results.push({ taskId: task.id, success: true });
+
+            // Trigger notification delivery
+            const deliveryResults = await sendNotification({
+                userId: task.userId,
+                title: task.topic || 'Reminder',
+                body: message,
+                taskId: task.id,
+                chatId: task.chatId,
+                data: {
+                    taskId: task.id,
+                    chatId: task.chatId,
+                    intent: task.intent,
+                },
+                channelPref: (task.channelPref as 'auto' | 'push' | 'email' | 'in_app') || 'auto',
+            });
+
+            results.push({ taskId: task.id, success: true, deliveryResults });
         } catch (error) {
             await schedulerService.markTaskFailed(
                 task.id,
