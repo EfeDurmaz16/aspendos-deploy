@@ -28,7 +28,10 @@ const PLAN_TO_TIER: Record<string, Tier> = {
 };
 
 // Tier limits based on approved pricing strategy
-const TIER_LIMITS: Record<Tier, { monthlyCredit: number; chatsRemaining: number; voiceMinutesRemaining: number }> = {
+const TIER_LIMITS: Record<
+    Tier,
+    { monthlyCredit: number; chatsRemaining: number; voiceMinutesRemaining: number }
+> = {
     [Tier.STARTER]: {
         monthlyCredit: 1000, // 1M tokens
         chatsRemaining: 300, // ~10/day

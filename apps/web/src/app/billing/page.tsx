@@ -115,7 +115,10 @@ function BillingContent() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
                 <div className="text-center">
-                    <CircleNotch className="w-8 h-8 animate-spin text-zinc-400 mx-auto mb-3" weight="bold" />
+                    <CircleNotch
+                        className="w-8 h-8 animate-spin text-zinc-400 mx-auto mb-3"
+                        weight="bold"
+                    />
                     <p className="text-sm text-zinc-500">Loading billing...</p>
                 </div>
             </div>
@@ -127,7 +130,9 @@ function BillingContent() {
             <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
                 <div className="text-center p-8 bg-white/60 dark:bg-zinc-900/60 backdrop-blur rounded-2xl border border-zinc-200 dark:border-zinc-800">
                     <User className="w-12 h-12 text-zinc-400 mx-auto mb-4" weight="duotone" />
-                    <p className="text-zinc-600 dark:text-zinc-400 mb-4">Please sign in to view billing.</p>
+                    <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+                        Please sign in to view billing.
+                    </p>
                     <a
                         href="/login"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
@@ -144,7 +149,10 @@ function BillingContent() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
                 <div className="text-center p-8 bg-white/60 dark:bg-zinc-900/60 backdrop-blur rounded-2xl border border-zinc-200 dark:border-zinc-800 max-w-md">
-                    <WarningCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" weight="duotone" />
+                    <WarningCircle
+                        className="w-12 h-12 text-amber-500 mx-auto mb-4"
+                        weight="duotone"
+                    />
                     <p className="text-zinc-700 dark:text-zinc-300 mb-6 font-medium">
                         {error || 'Unable to load billing information'}
                     </p>
@@ -180,7 +188,10 @@ function BillingContent() {
                 {/* Success message */}
                 {success && (
                     <div className="p-5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl backdrop-blur animate-fade-up flex items-start gap-3">
-                        <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" weight="fill" />
+                        <CheckCircle
+                            className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5"
+                            weight="fill"
+                        />
                         <div>
                             <p className="text-emerald-900 dark:text-emerald-100 font-semibold mb-1">
                                 Payment successful!
@@ -288,7 +299,10 @@ function BillingContent() {
                     >
                         <div className="flex items-start gap-3">
                             <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50 transition-colors">
-                                <ChatCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" weight="duotone" />
+                                <ChatCircle
+                                    className="w-5 h-5 text-emerald-600 dark:text-emerald-400"
+                                    weight="duotone"
+                                />
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
@@ -306,7 +320,10 @@ function BillingContent() {
                     >
                         <div className="flex items-start gap-3">
                             <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                                <Gear className="w-5 h-5 text-blue-600 dark:text-blue-400" weight="duotone" />
+                                <Gear
+                                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                                    weight="duotone"
+                                />
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-1">

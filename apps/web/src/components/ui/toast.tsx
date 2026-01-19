@@ -1,8 +1,8 @@
 'use client';
 
-import * as React from 'react';
+import { Check, Info, Warning, X } from '@phosphor-icons/react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { X, Check, Warning, Info } from '@phosphor-icons/react';
+import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 }, toast.duration ?? 4000);
             }
         },
-        []
+        [removeToast]
     );
 
     const removeToast = React.useCallback((id: string) => {
@@ -102,12 +102,8 @@ function ToastMessage({ toast, onClose }: ToastProps) {
             <div className="flex items-start gap-3">
                 <IconComponent className="h-5 w-5 flex-shrink-0 mt-0.5" weight="bold" />
                 <div className="flex-1">
-                    {toast.title && (
-                        <p className="font-medium leading-none mb-1">{toast.title}</p>
-                    )}
-                    {toast.description && (
-                        <p className="text-sm opacity-90">{toast.description}</p>
-                    )}
+                    {toast.title && <p className="font-medium leading-none mb-1">{toast.title}</p>}
+                    {toast.description && <p className="text-sm opacity-90">{toast.description}</p>}
                 </div>
             </div>
             <button

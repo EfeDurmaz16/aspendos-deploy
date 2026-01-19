@@ -227,8 +227,10 @@ export default function StyleguidePage() {
                                             fontFamily: style.fontFamily,
                                             fontSize: style.fontSize,
                                             fontWeight: style.fontWeight,
-                                            lineHeight: (style as { lineHeight?: number }).lineHeight,
-                                            letterSpacing: (style as { letterSpacing?: string }).letterSpacing,
+                                            lineHeight: (style as { lineHeight?: number })
+                                                .lineHeight,
+                                            letterSpacing: (style as { letterSpacing?: string })
+                                                .letterSpacing,
                                         }}
                                     >
                                         {name.includes('code')

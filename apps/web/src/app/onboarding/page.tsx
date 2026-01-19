@@ -120,7 +120,10 @@ export default function OnboardingPage() {
                     )}
 
                     {step === 5 && (
-                        <Button className="px-8 min-w-[140px] bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all" asChild>
+                        <Button
+                            className="px-8 min-w-[140px] bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
+                            asChild
+                        >
                             <Link href="/chat">
                                 Enter OS <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
                             </Link>
@@ -144,20 +147,26 @@ function Step1_Identity() {
                 <h2 className="font-serif text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
                     Welcome to the OS.
                 </h2>
-                <p className="text-lg text-zinc-600 dark:text-zinc-400">Let's set up your profile.</p>
+                <p className="text-lg text-zinc-600 dark:text-zinc-400">
+                    Let's set up your profile.
+                </p>
             </div>
 
             <Card className="text-left bg-white/60 dark:bg-zinc-900/60 backdrop-blur border-zinc-200 dark:border-zinc-800 shadow-lg max-w-md mx-auto">
                 <CardContent className="pt-6 space-y-4">
                     <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Full Name</Label>
+                        <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                            Full Name
+                        </Label>
                         <Input
                             defaultValue="Efe Baran Durmaz"
                             className="rounded-xl border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Role</Label>
+                        <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                            Role
+                        </Label>
                         <select className="flex h-11 w-full items-center justify-between rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all">
                             <option>Select a role...</option>
                             <option>Founder</option>
@@ -179,7 +188,11 @@ function Step2_Import() {
     return (
         <div className="space-y-6 text-center">
             <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-900/30 backdrop-blur border border-blue-200 dark:border-blue-800 shadow-lg mb-4">
-                <CloudArrowUp size={28} weight="duotone" className="text-blue-600 dark:text-blue-400" />
+                <CloudArrowUp
+                    size={28}
+                    weight="duotone"
+                    className="text-blue-600 dark:text-blue-400"
+                />
             </div>
             <div>
                 <h2 className="font-serif text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
@@ -195,14 +208,18 @@ function Step2_Import() {
                     <div className="w-12 h-12 rounded-xl bg-[#74aa9c] group-hover:scale-110 flex items-center justify-center text-white font-bold text-lg shadow-md transition-transform">
                         O
                     </div>
-                    <div className="font-semibold text-zinc-900 dark:text-zinc-50">Import ChatGPT</div>
+                    <div className="font-semibold text-zinc-900 dark:text-zinc-50">
+                        Import ChatGPT
+                    </div>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400">Upload .zip export</p>
                 </button>
                 <button className="group flex flex-col items-center p-6 bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:bg-white/70 dark:hover:bg-zinc-900/70 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg transition-all text-center space-y-3">
                     <div className="w-12 h-12 rounded-xl bg-[#d97757] group-hover:scale-110 flex items-center justify-center text-white font-serif italic text-lg shadow-md transition-transform">
                         Cl
                     </div>
-                    <div className="font-semibold text-zinc-900 dark:text-zinc-50">Import Claude</div>
+                    <div className="font-semibold text-zinc-900 dark:text-zinc-50">
+                        Import Claude
+                    </div>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400">Connect via API</p>
                 </button>
             </div>
@@ -217,7 +234,11 @@ function Step3_Memory() {
     return (
         <div className="space-y-6 text-center">
             <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-900/30 backdrop-blur border border-purple-200 dark:border-purple-800 shadow-lg mb-4">
-                <Brain size={28} weight="duotone" className="text-purple-600 dark:text-purple-400" />
+                <Brain
+                    size={28}
+                    weight="duotone"
+                    className="text-purple-600 dark:text-purple-400"
+                />
             </div>
             <div>
                 <h2 className="font-serif text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
@@ -267,7 +288,11 @@ function Step4_Safety() {
     return (
         <div className="space-y-6 text-center">
             <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 backdrop-blur border border-emerald-200 dark:border-emerald-800 shadow-lg mb-4">
-                <ShieldCheck size={28} weight="duotone" className="text-emerald-600 dark:text-emerald-400" />
+                <ShieldCheck
+                    size={28}
+                    weight="duotone"
+                    className="text-emerald-600 dark:text-emerald-400"
+                />
             </div>
             <div>
                 <h2 className="font-serif text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">

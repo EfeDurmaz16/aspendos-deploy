@@ -11,19 +11,19 @@
  */
 
 import {
+    ArrowClockwise,
     Brain,
     Clock,
     Database,
     Heart,
     Lightbulb,
+    MagnifyingGlass,
+    PencilSimple,
     PushPin,
     Sparkle,
     ThumbsDown,
     ThumbsUp,
     Trash,
-    PencilSimple,
-    MagnifyingGlass,
-    ArrowClockwise,
 } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -105,7 +105,9 @@ function StatsCard({
                 <Icon className="w-5 h-5 text-white" weight="fill" />
             </div>
             <div>
-                <p className="text-2xl font-semibold font-mono text-zinc-900 dark:text-zinc-50">{value}</p>
+                <p className="text-2xl font-semibold font-mono text-zinc-900 dark:text-zinc-50">
+                    {value}
+                </p>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">{label}</p>
             </div>
         </div>
@@ -143,13 +145,17 @@ function MemoryCard({
                     <span className="text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
                         {memory.sector}
                     </span>
-                    {memory.isPinned && <PushPin className="w-4 h-4 text-amber-500 fill-amber-500" weight="fill" />}
+                    {memory.isPinned && (
+                        <PushPin className="w-4 h-4 text-amber-500 fill-amber-500" weight="fill" />
+                    )}
                 </div>
                 <span className="text-xs font-mono bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-lg text-zinc-700 dark:text-zinc-300">
                     {Math.round(memory.confidence * 100)}%
                 </span>
             </div>
-            <p className="text-sm leading-relaxed line-clamp-3 text-zinc-900 dark:text-zinc-100">{memory.content}</p>
+            <p className="text-sm leading-relaxed line-clamp-3 text-zinc-900 dark:text-zinc-100">
+                {memory.content}
+            </p>
             {memory.summary && (
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 italic line-clamp-2">
                     {memory.summary}
@@ -158,7 +164,10 @@ function MemoryCard({
             {memory.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                     {memory.tags.slice(0, 3).map((tag, i) => (
-                        <span key={i} className="text-xs px-2 py-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg text-zinc-700 dark:text-zinc-300">
+                        <span
+                            key={i}
+                            className="text-xs px-2 py-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg text-zinc-700 dark:text-zinc-300"
+                        >
                             {tag}
                         </span>
                     ))}
@@ -348,8 +357,12 @@ export default function MemoryDashboardPage() {
             <div className="max-w-6xl mx-auto p-6 space-y-8 relative z-10">
                 <div className="flex items-center justify-between">
                     <div className="animate-fade-up opacity-0 animation-delay-100">
-                        <h1 className="text-4xl md:text-5xl font-bold text-zinc-900 dark:text-zinc-50">Memory Bank</h1>
-                        <p className="text-zinc-600 dark:text-zinc-400 mt-2">Organize and refine your memories with Aspendos</p>
+                        <h1 className="text-4xl md:text-5xl font-bold text-zinc-900 dark:text-zinc-50">
+                            Memory Bank
+                        </h1>
+                        <p className="text-zinc-600 dark:text-zinc-400 mt-2">
+                            Organize and refine your memories with Aspendos
+                        </p>
                     </div>
                     <Button
                         variant="secondary"
@@ -395,7 +408,9 @@ export default function MemoryDashboardPage() {
 
                 {stats && (
                     <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 animate-fade-up opacity-0 animation-delay-300">
-                        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">Memory Distribution</h3>
+                        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
+                            Memory Distribution
+                        </h3>
                         <div className="grid grid-cols-5 gap-4">
                             {SECTORS.slice(1).map((sector) => {
                                 const count = stats.bySector[sector.key] || 0;
@@ -409,7 +424,10 @@ export default function MemoryDashboardPage() {
                                                 sector.color
                                             )}
                                         >
-                                            <sector.icon className="w-6 h-6 text-white" weight="fill" />
+                                            <sector.icon
+                                                className="w-6 h-6 text-white"
+                                                weight="fill"
+                                            />
                                         </div>
                                         <p className="text-lg font-semibold font-mono text-zinc-900 dark:text-zinc-50">
                                             {count}
@@ -436,14 +454,20 @@ export default function MemoryDashboardPage() {
                                 size="sm"
                                 onClick={() => handleSectorChange(sector.key)}
                             >
-                                <sector.icon className="w-4 h-4 mr-1.5" weight={activeSector === sector.key ? 'fill' : 'regular'} />
+                                <sector.icon
+                                    className="w-4 h-4 mr-1.5"
+                                    weight={activeSector === sector.key ? 'fill' : 'regular'}
+                                />
                                 {sector.label}
                             </Button>
                         ))}
                     </div>
                     <div className="flex-1 min-w-[200px]">
                         <div className="relative">
-                            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 dark:text-zinc-400" weight="bold" />
+                            <MagnifyingGlass
+                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 dark:text-zinc-400"
+                                weight="bold"
+                            />
                             <input
                                 type="text"
                                 placeholder="Search memories..."
@@ -464,13 +488,17 @@ export default function MemoryDashboardPage() {
                 {isLoading && (
                     <div className="text-center py-16 animate-fade-up opacity-0 animation-delay-300">
                         <ArrowClockwise className="w-8 h-8 mx-auto animate-spin text-zinc-400" />
-                        <p className="mt-3 text-zinc-600 dark:text-zinc-400 font-medium">Loading memories...</p>
+                        <p className="mt-3 text-zinc-600 dark:text-zinc-400 font-medium">
+                            Loading memories...
+                        </p>
                     </div>
                 )}
                 {!isLoading && memories.length === 0 && (
                     <div className="text-center py-16 bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl animate-fade-up opacity-0 animation-delay-300">
                         <Brain className="w-12 h-12 mx-auto text-zinc-400" weight="thin" />
-                        <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">No memories yet</h3>
+                        <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                            No memories yet
+                        </h3>
                         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
                             Start chatting to build your memory bank
                         </p>
@@ -480,7 +508,11 @@ export default function MemoryDashboardPage() {
                 {!isLoading && memories.length > 0 && (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 animate-fade-up opacity-0 animation-delay-400">
                         {memories.map((memory, idx) => (
-                            <div key={memory.id} className="opacity-0 animate-fade-up" style={{ animationDelay: `${150 + idx * 50}ms` }}>
+                            <div
+                                key={memory.id}
+                                className="opacity-0 animate-fade-up"
+                                style={{ animationDelay: `${150 + idx * 50}ms` }}
+                            >
                                 <MemoryCard
                                     memory={memory}
                                     onEdit={() => setEditingMemory(memory)}
@@ -520,10 +552,14 @@ export default function MemoryDashboardPage() {
                 {editingMemory && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur flex items-center justify-center z-50 p-4 animate-fade-up">
                         <div className="bg-white/95 dark:bg-zinc-950/95 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
-                            <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Edit Memory</h3>
+                            <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+                                Edit Memory
+                            </h3>
                             <div className="space-y-3">
                                 <div>
-                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Content</label>
+                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                                        Content
+                                    </label>
                                     <textarea
                                         className="w-full mt-1 p-3 text-sm bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-500"
                                         rows={4}
@@ -532,7 +568,9 @@ export default function MemoryDashboardPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Sector</label>
+                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                                        Sector
+                                    </label>
                                     <select
                                         className="w-full mt-1 p-3 text-sm bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-zinc-900 dark:text-zinc-50"
                                         defaultValue={editingMemory.sector}

@@ -9,10 +9,21 @@ import { Hono } from 'hono';
 import { getModel, isModelAvailableForTier } from '../lib/ai-providers';
 import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateParams } from '../middleware/validate';
 import * as chatService from '../services/chat.service';
 import { getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
 import { getToolsForTier, type UserTier } from '../tools';
+import {
+    chatIdParamSchema,
+    createChatSchema,
+    forkChatSchema,
+    messageFeedbackSchema,
+    messageIdParamSchema,
+    multiModelSchema,
+    sendMessageSchema,
+    updateChatSchema,
+} from '../validation/chat.schema';
 
 // Message type for AI SDK
 interface Message {
@@ -39,27 +50,31 @@ app.get('/', async (c) => {
 });
 
 // POST /api/chat - Create a new chat
-app.post('/', async (c) => {
+app.post('/', validateBody(createChatSchema), async (c) => {
     const userId = c.get('userId')!;
     const user = c.get('user')!;
-    const body = await c.req.json();
+    const validatedBody = c.get('validatedBody') as {
+        title?: string;
+        model_id?: string;
+    };
 
     // Ensure user exists
     await chatService.getOrCreateUser(userId, user.email, user.name);
 
     const chat = await chatService.createChat({
         userId,
-        title: body.title,
-        modelPreference: body.model_id,
+        title: validatedBody.title,
+        modelPreference: validatedBody.model_id,
     });
 
     return c.json(chat, 201);
 });
 
 // GET /api/chat/:id - Get chat by ID with messages
-app.get('/:id', async (c) => {
+app.get('/:id', validateParams(chatIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const validatedParams = c.get('validatedParams') as { id: string };
+    const chatId = validatedParams.id;
 
     const chat = await chatService.getChatWithMessages(chatId, userId);
 
@@ -71,24 +86,30 @@ app.get('/:id', async (c) => {
 });
 
 // PATCH /api/chat/:id - Update chat
-app.patch('/:id', async (c) => {
+app.patch('/:id', validateParams(chatIdParamSchema), validateBody(updateChatSchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
-    const body = await c.req.json();
+    const validatedParams = c.get('validatedParams') as { id: string };
+    const validatedBody = c.get('validatedBody') as {
+        title?: string;
+        model_id?: string;
+        is_archived?: boolean;
+    };
+    const chatId = validatedParams.id;
 
     await chatService.updateChat(chatId, userId, {
-        title: body.title,
-        modelPreference: body.model_id,
-        isArchived: body.is_archived,
+        title: validatedBody.title,
+        modelPreference: validatedBody.model_id,
+        isArchived: validatedBody.is_archived,
     });
 
     return c.json({ success: true });
 });
 
 // DELETE /api/chat/:id - Delete chat
-app.delete('/:id', async (c) => {
+app.delete('/:id', validateParams(chatIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const validatedParams = c.get('validatedParams') as { id: string };
+    const chatId = validatedParams.id;
 
     await chatService.deleteChat(chatId, userId);
 
@@ -96,12 +117,22 @@ app.delete('/:id', async (c) => {
 });
 
 // POST /api/chat/:id/message - Send a message (streaming)
-app.post('/:id/message', async (c) => {
-    const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
-    const body = await c.req.json();
+app.post(
+    '/:id/message',
+    validateParams(chatIdParamSchema),
+    validateBody(sendMessageSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const validatedParams = c.get('validatedParams') as { id: string };
+        const validatedBody = c.get('validatedBody') as {
+            content: string;
+            model_id?: string;
+            enable_thinking?: boolean;
+            stream: boolean;
+        };
+        const chatId = validatedParams.id;
 
-    const { content, model_id, enable_thinking, stream: shouldStream = true } = body;
+        const { content, model_id, enable_thinking, stream: shouldStream } = validatedBody;
 
     // Get user tier (default to STARTER if not available)
     const user = c.get('user');
@@ -295,29 +326,34 @@ app.post('/:id/message', async (c) => {
 });
 
 // POST /api/chat/:id/multi - Multi-model comparison (ULTRA only)
-app.post('/:id/multi', async (c) => {
-    const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
-    const body = await c.req.json();
-    const user = c.get('user');
-    const userTier: UserTier =
-        ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+app.post(
+    '/:id/multi',
+    validateParams(chatIdParamSchema),
+    validateBody(multiModelSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const validatedParams = c.get('validatedParams') as { id: string };
+        const validatedBody = c.get('validatedBody') as {
+            content: string;
+            models: string[];
+        };
+        const chatId = validatedParams.id;
+        const user = c.get('user');
+        const userTier: UserTier =
+            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
 
-    // Check ULTRA tier
-    if (userTier !== 'ULTRA') {
-        return c.json({ error: 'Multi-model comparison requires ULTRA tier' }, 403);
-    }
+        // Check ULTRA tier
+        if (userTier !== 'ULTRA') {
+            return c.json({ error: 'Multi-model comparison requires ULTRA tier' }, 403);
+        }
 
-    // Verify chat exists
-    const chat = await chatService.getChat(chatId, userId);
-    if (!chat) {
-        return c.json({ error: 'Chat not found' }, 404);
-    }
+        // Verify chat exists
+        const chat = await chatService.getChat(chatId, userId);
+        if (!chat) {
+            return c.json({ error: 'Chat not found' }, 404);
+        }
 
-    const {
-        content,
-        models = ['openai/gpt-4o', 'anthropic/claude-sonnet-4-20250514', 'google/gemini-2.0-flash'],
-    } = body;
+        const { content, models } = validatedBody;
 
     // Save user message
     await chatService.createMessage({
@@ -407,51 +443,60 @@ Use this context to personalize your response when appropriate. Don't mention th
 // ============================================
 
 // POST /api/chat/message/:messageId/feedback - Add feedback to a message
-app.post('/message/:messageId/feedback', async (c) => {
-    const userId = c.get('userId')!;
-    const messageId = c.req.param('messageId');
-    const body = await c.req.json();
+app.post(
+    '/message/:messageId/feedback',
+    validateParams(messageIdParamSchema),
+    validateBody(messageFeedbackSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const validatedParams = c.get('validatedParams') as { messageId: string };
+        const validatedBody = c.get('validatedBody') as { feedback: 'up' | 'down' };
+        const messageId = validatedParams.messageId;
+        const { feedback } = validatedBody;
 
-    const { feedback } = body;
-    if (!feedback || !['up', 'down'].includes(feedback)) {
-        return c.json({ error: 'Invalid feedback. Must be "up" or "down".' }, 400);
+        const updatedMessage = await chatService.addMessageFeedback(messageId, userId, feedback);
+
+        if (!updatedMessage) {
+            return c.json({ error: 'Message not found' }, 404);
+        }
+
+        return c.json({ success: true });
     }
-
-    const updatedMessage = await chatService.addMessageFeedback(messageId, userId, feedback);
-
-    if (!updatedMessage) {
-        return c.json({ error: 'Message not found' }, 404);
-    }
-
-    return c.json({ success: true });
-});
+);
 
 // ============================================
 // FORK & SHARE ENDPOINTS
 // ============================================
 
 // POST /api/chat/:id/fork - Fork a chat from a specific message
-app.post('/:id/fork', async (c) => {
-    const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
-    const body = await c.req.json().catch(() => ({}));
+app.post(
+    '/:id/fork',
+    validateParams(chatIdParamSchema),
+    validateBody(forkChatSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const validatedParams = c.get('validatedParams') as { id: string };
+        const validatedBody = c.get('validatedBody') as { fromMessageId?: string };
+        const chatId = validatedParams.id;
 
-    try {
-        const newChat = await chatService.forkChat(chatId, userId, body.fromMessageId);
-        return c.json(newChat, 201);
-    } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to fork chat';
-        if (message.includes('not found')) {
-            return c.json({ error: message }, 404);
+        try {
+            const newChat = await chatService.forkChat(chatId, userId, validatedBody.fromMessageId);
+            return c.json(newChat, 201);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to fork chat';
+            if (message.includes('not found')) {
+                return c.json({ error: message }, 404);
+            }
+            return c.json({ error: message }, 500);
         }
-        return c.json({ error: message }, 500);
     }
-});
+);
 
 // POST /api/chat/:id/share - Create or get share token for a chat
-app.post('/:id/share', async (c) => {
+app.post('/:id/share', validateParams(chatIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const validatedParams = c.get('validatedParams') as { id: string };
+    const chatId = validatedParams.id;
 
     try {
         const token = await chatService.createShareToken(chatId, userId);
@@ -466,9 +511,10 @@ app.post('/:id/share', async (c) => {
 });
 
 // DELETE /api/chat/:id/share - Revoke share token for a chat
-app.delete('/:id/share', async (c) => {
+app.delete('/:id/share', validateParams(chatIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const validatedParams = c.get('validatedParams') as { id: string };
+    const chatId = validatedParams.id;
 
     try {
         await chatService.revokeShareToken(chatId, userId);

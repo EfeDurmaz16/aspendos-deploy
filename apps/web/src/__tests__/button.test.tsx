@@ -4,8 +4,8 @@
  * Simple tests to verify Vitest and React Testing Library setup.
  */
 
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { Button } from '@/components/ui/button';
 
 describe('Button Component', () => {

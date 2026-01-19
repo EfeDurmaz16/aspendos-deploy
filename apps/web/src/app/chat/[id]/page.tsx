@@ -267,7 +267,10 @@ export default function ChatPage() {
                         ) : allMessages.length === 0 ? (
                             <div className="text-center py-20 animate-fade-up">
                                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900 mb-6 shadow-lg">
-                                    <Brain className="w-8 h-8 text-zinc-600 dark:text-zinc-400" weight="duotone" />
+                                    <Brain
+                                        className="w-8 h-8 text-zinc-600 dark:text-zinc-400"
+                                        weight="duotone"
+                                    />
                                 </div>
                                 <p className="text-xl font-serif font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
                                     Start a conversation
@@ -327,7 +330,10 @@ export default function ChatPage() {
                                     className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-md transition-all"
                                 >
                                     {isStreaming ? (
-                                        <CircleNotch className="w-4 h-4 animate-spin" weight="bold" />
+                                        <CircleNotch
+                                            className="w-4 h-4 animate-spin"
+                                            weight="bold"
+                                        />
                                     ) : (
                                         <PaperPlaneRight weight="bold" className="w-4 h-4" />
                                     )}

@@ -98,7 +98,10 @@ function MessageActions({
                     }`}
                     title="Good response"
                 >
-                    <ThumbsUp className="w-3.5 h-3.5" weight={feedback === 'up' ? 'fill' : 'duotone'} />
+                    <ThumbsUp
+                        className="w-3.5 h-3.5"
+                        weight={feedback === 'up' ? 'fill' : 'duotone'}
+                    />
                 </button>
                 <button
                     onClick={() => handleFeedback('down')}
@@ -109,7 +112,10 @@ function MessageActions({
                     }`}
                     title="Bad response"
                 >
-                    <ThumbsDown className="w-3.5 h-3.5" weight={feedback === 'down' ? 'fill' : 'duotone'} />
+                    <ThumbsDown
+                        className="w-3.5 h-3.5"
+                        weight={feedback === 'down' ? 'fill' : 'duotone'}
+                    />
                 </button>
             </div>
         </div>
@@ -170,7 +176,10 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
                                 style={{ animationDelay: `${idx * 50}ms` }}
                             >
                                 <div className="flex items-center gap-2 mb-1.5">
-                                    <SectorIcon className={`w-3.5 h-3.5 ${sectorColor}`} weight="duotone" />
+                                    <SectorIcon
+                                        className={`w-3.5 h-3.5 ${sectorColor}`}
+                                        weight="duotone"
+                                    />
                                     <span className="uppercase tracking-wide font-medium text-zinc-700 dark:text-zinc-300">
                                         {memory.sector}
                                     </span>
@@ -226,17 +235,27 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
 
             {isExpanded && (
                 <div className="mt-2 bg-white/40 dark:bg-zinc-800/60 backdrop-blur rounded-lg p-3 text-xs space-y-2 border border-amber-200/30 dark:border-amber-700/30 animate-fade-up">
-                    <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed">{decision.reasoning}</p>
+                    <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                        {decision.reasoning}
+                    </p>
                     {decision.sectors.length > 0 && (
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-amber-200/20 dark:border-amber-700/20">
-                            <span className="text-zinc-600 dark:text-zinc-400 font-semibold">Sectors:</span>
+                            <span className="text-zinc-600 dark:text-zinc-400 font-semibold">
+                                Sectors:
+                            </span>
                             <div className="flex flex-wrap gap-1">
                                 {decision.sectors.map((sector) => {
                                     const SectorIcon = SECTOR_ICONS[sector] || Brain;
                                     const sectorColor = SECTOR_COLORS[sector] || 'text-zinc-500';
                                     return (
-                                        <span key={sector} className="flex items-center gap-1 bg-zinc-100/60 dark:bg-zinc-700/40 px-1.5 py-0.5 rounded text-[10px]">
-                                            <SectorIcon className={`w-3 h-3 ${sectorColor}`} weight="duotone" />
+                                        <span
+                                            key={sector}
+                                            className="flex items-center gap-1 bg-zinc-100/60 dark:bg-zinc-700/40 px-1.5 py-0.5 rounded text-[10px]"
+                                        >
+                                            <SectorIcon
+                                                className={`w-3 h-3 ${sectorColor}`}
+                                                weight="duotone"
+                                            />
                                             <span className="text-zinc-700 dark:text-zinc-300 font-medium">
                                                 {sector}
                                             </span>
@@ -335,7 +354,9 @@ function StreamingMessageComponent({
                             message.metadata.tokensOut !== undefined && (
                                 <span className="flex items-center gap-1">
                                     <span className="text-zinc-500">|</span>
-                                    <span className="font-mono">{message.metadata.tokensIn}→{message.metadata.tokensOut}</span>
+                                    <span className="font-mono">
+                                        {message.metadata.tokensIn}→{message.metadata.tokensOut}
+                                    </span>
                                 </span>
                             )}
                         {message.metadata.costUsd !== undefined && message.metadata.costUsd > 0 && (

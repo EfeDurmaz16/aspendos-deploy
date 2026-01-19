@@ -43,7 +43,9 @@ export function ChatSidebar({
 
             {/* Header */}
             <div className="h-14 flex items-center px-4 border-b border-zinc-200 dark:border-zinc-900 backdrop-blur">
-                <span className="font-serif text-lg font-bold text-zinc-900 dark:text-white">ASPENDOS</span>
+                <span className="font-serif text-lg font-bold text-zinc-900 dark:text-white">
+                    ASPENDOS
+                </span>
             </div>
 
             {/* New Chat */}

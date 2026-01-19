@@ -1,6 +1,13 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, CheckCircle, Sparkle, TrendUp, Lightning } from '@phosphor-icons/react';
+import {
+    ArrowLeft,
+    ArrowRight,
+    CheckCircle,
+    Lightning,
+    Sparkle,
+    TrendUp,
+} from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
@@ -95,7 +102,9 @@ function UsageBar({ current, limit, label }: { current: number; limit: number; l
     return (
         <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{label}</span>
+                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    {label}
+                </span>
                 <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">
                     {current} / {limit}
                 </span>
@@ -194,7 +203,8 @@ function PricingContent() {
                                     Your Usage This Month
                                 </h3>
                                 <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-                                    Forecasted to reach {MOCK_USAGE.forecastedChatsEOM} chats by end of month
+                                    Forecasted to reach {MOCK_USAGE.forecastedChatsEOM} chats by end
+                                    of month
                                 </p>
                             </div>
                             <Link
@@ -225,7 +235,8 @@ function PricingContent() {
                         Transparent pricing
                     </h1>
                     <p className="text-lg md:text-xl text-zinc-600 dark:text-zinc-400 max-w-3xl mx-auto leading-relaxed">
-                        One unified subscription for all models, voice, memory, and autonomous capabilities. Choose the plan that fits your workflow.
+                        One unified subscription for all models, voice, memory, and autonomous
+                        capabilities. Choose the plan that fits your workflow.
                     </p>
                 </div>
 
@@ -279,30 +290,46 @@ function PricingContent() {
                             )}
 
                             <div className="mb-8">
-                                <h2 className={`text-2xl font-semibold mb-3 ${tier.popular ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}>
+                                <h2
+                                    className={`text-2xl font-semibold mb-3 ${tier.popular ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}
+                                >
                                     {tier.name}
                                 </h2>
-                                <p className={`text-sm leading-relaxed ${tier.popular ? 'text-white/80 dark:text-zinc-700' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                                <p
+                                    className={`text-sm leading-relaxed ${tier.popular ? 'text-white/80 dark:text-zinc-700' : 'text-zinc-600 dark:text-zinc-400'}`}
+                                >
                                     {tier.description}
                                 </p>
                             </div>
 
                             <div className="mb-2 flex items-baseline gap-2">
-                                <span className={`text-5xl font-bold ${tier.popular ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}>
+                                <span
+                                    className={`text-5xl font-bold ${tier.popular ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}
+                                >
                                     ${getPrice(tier.name)}
                                 </span>
-                                <span className={tier.popular ? 'text-white/70 dark:text-zinc-700' : 'text-zinc-600 dark:text-zinc-400'}>
+                                <span
+                                    className={
+                                        tier.popular
+                                            ? 'text-white/70 dark:text-zinc-700'
+                                            : 'text-zinc-600 dark:text-zinc-400'
+                                    }
+                                >
                                     /{getPeriodLabel()}
                                 </span>
                             </div>
 
                             {billingPeriod === 'annual' && (
-                                <p className={`text-sm mb-6 font-medium ${tier.popular ? 'text-emerald-300 dark:text-emerald-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                <p
+                                    className={`text-sm mb-6 font-medium ${tier.popular ? 'text-emerald-300 dark:text-emerald-600' : 'text-emerald-600 dark:text-emerald-400'}`}
+                                >
                                     ✓ Save ${getAnnualSavings(tier.name)}/year — 2 months free
                                 </p>
                             )}
                             {billingPeriod === 'weekly' && (
-                                <p className={`text-xs mb-6 ${tier.popular ? 'text-white/60 dark:text-zinc-600' : 'text-zinc-500 dark:text-zinc-500'}`}>
+                                <p
+                                    className={`text-xs mb-6 ${tier.popular ? 'text-white/60 dark:text-zinc-600' : 'text-zinc-500 dark:text-zinc-500'}`}
+                                >
                                     or $
                                     {PRICING_DATA[tier.name as keyof typeof PRICING_DATA].monthly}
                                     /month (save more)
@@ -412,7 +439,10 @@ function PricingContent() {
                                         Monthly Chats
                                     </td>
                                     {PRICING_TIERS.map((tier) => (
-                                        <td key={tier.name} className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50">
+                                        <td
+                                            key={tier.name}
+                                            className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50"
+                                        >
                                             {tier.limits.chats.toLocaleString()}
                                         </td>
                                     ))}
@@ -422,7 +452,10 @@ function PricingContent() {
                                         Voice Minutes/Day
                                     </td>
                                     {PRICING_TIERS.map((tier) => (
-                                        <td key={tier.name} className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50">
+                                        <td
+                                            key={tier.name}
+                                            className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50"
+                                        >
                                             {tier.limits.voiceMinutes}
                                         </td>
                                     ))}
@@ -432,7 +465,10 @@ function PricingContent() {
                                         AI Models Available
                                     </td>
                                     {PRICING_TIERS.map((tier) => (
-                                        <td key={tier.name} className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50">
+                                        <td
+                                            key={tier.name}
+                                            className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50"
+                                        >
                                             {tier.limits.models}+ models
                                         </td>
                                     ))}
@@ -442,13 +478,22 @@ function PricingContent() {
                                         Memory & Search
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto" weight="fill" />
+                                        <CheckCircle
+                                            className="w-5 h-5 text-emerald-500 mx-auto"
+                                            weight="fill"
+                                        />
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto" weight="fill" />
+                                        <CheckCircle
+                                            className="w-5 h-5 text-emerald-500 mx-auto"
+                                            weight="fill"
+                                        />
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto" weight="fill" />
+                                        <CheckCircle
+                                            className="w-5 h-5 text-emerald-500 mx-auto"
+                                            weight="fill"
+                                        />
                                     </td>
                                 </tr>
                             </tbody>
@@ -468,10 +513,15 @@ function PricingContent() {
                                     <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                                     What happens if I exceed my plan limits?
                                 </span>
-                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">▼</span>
+                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">
+                                    ▼
+                                </span>
                             </summary>
                             <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                You'll receive notifications at 75%, 90%, and 100% of your monthly limit. Once exceeded, you cannot create new chats until your usage resets on the first of next month. Consider upgrading for more capacity.
+                                You'll receive notifications at 75%, 90%, and 100% of your monthly
+                                limit. Once exceeded, you cannot create new chats until your usage
+                                resets on the first of next month. Consider upgrading for more
+                                capacity.
                             </p>
                         </details>
                         <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
@@ -480,10 +530,14 @@ function PricingContent() {
                                     <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                                     Can I change plans anytime?
                                 </span>
-                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">▼</span>
+                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">
+                                    ▼
+                                </span>
                             </summary>
                             <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately. If you downgrade, your current billing cycle remains unchanged.
+                                Yes! You can upgrade or downgrade your plan at any time. Changes
+                                take effect immediately. If you downgrade, your current billing
+                                cycle remains unchanged.
                             </p>
                         </details>
                         <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
@@ -492,10 +546,13 @@ function PricingContent() {
                                     <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                                     What is your refund policy?
                                 </span>
-                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">▼</span>
+                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">
+                                    ▼
+                                </span>
                             </summary>
                             <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                We do not offer refunds for subscriptions. However, you can cancel anytime and will not be charged for the next billing period.
+                                We do not offer refunds for subscriptions. However, you can cancel
+                                anytime and will not be charged for the next billing period.
                             </p>
                         </details>
                         <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
@@ -504,10 +561,13 @@ function PricingContent() {
                                     <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                                     Do you offer a free trial?
                                 </span>
-                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">▼</span>
+                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">
+                                    ▼
+                                </span>
                             </summary>
                             <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                Yes! Start with the Starter plan to explore Aspendos free for your first 100 chats. No credit card required.
+                                Yes! Start with the Starter plan to explore Aspendos free for your
+                                first 100 chats. No credit card required.
                             </p>
                         </details>
                     </div>

@@ -11,7 +11,8 @@ const buttonVariants = cva(
             variant: {
                 // Semantic variants (HeroUI v3 principles)
                 primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
-                secondary: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+                secondary:
+                    'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
                 tertiary: 'hover:bg-muted hover:text-muted-foreground',
                 danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
                 ghost: 'hover:bg-accent hover:text-accent-foreground',

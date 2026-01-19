@@ -88,7 +88,9 @@ export default function AnalyticsPage() {
                     fetch(`${API_BASE}/api/analytics/usage?interval=${interval}&limit=30`, {
                         credentials: 'include',
                     }),
-                    fetch(`${API_BASE}/api/analytics/messages?limit=30`, { credentials: 'include' }),
+                    fetch(`${API_BASE}/api/analytics/messages?limit=30`, {
+                        credentials: 'include',
+                    }),
                     fetch(`${API_BASE}/api/analytics/models?days=30`, { credentials: 'include' }),
                 ]);
 
@@ -153,11 +155,18 @@ export default function AnalyticsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                                 <Card>
                                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Messages</CardTitle>
-                                        <ChatCircle className="w-4 h-4 text-zinc-500" weight="duotone" />
+                                        <CardTitle className="text-sm font-medium">
+                                            Total Messages
+                                        </CardTitle>
+                                        <ChatCircle
+                                            className="w-4 h-4 text-zinc-500"
+                                            weight="duotone"
+                                        />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{summary.totalMessages.toLocaleString()}</div>
+                                        <div className="text-2xl font-bold">
+                                            {summary.totalMessages.toLocaleString()}
+                                        </div>
                                         <p className="text-xs text-zinc-500 mt-1">
                                             {summary.messagesThisMonth.toLocaleString()} this month
                                         </p>
@@ -166,8 +175,13 @@ export default function AnalyticsPage() {
 
                                 <Card>
                                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Tokens</CardTitle>
-                                        <Sparkle className="w-4 h-4 text-zinc-500" weight="duotone" />
+                                        <CardTitle className="text-sm font-medium">
+                                            Total Tokens
+                                        </CardTitle>
+                                        <Sparkle
+                                            className="w-4 h-4 text-zinc-500"
+                                            weight="duotone"
+                                        />
                                     </CardHeader>
                                     <CardContent>
                                         <div className="text-2xl font-bold">
@@ -182,8 +196,13 @@ export default function AnalyticsPage() {
 
                                 <Card>
                                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
-                                        <ChartLine className="w-4 h-4 text-zinc-500" weight="duotone" />
+                                        <CardTitle className="text-sm font-medium">
+                                            Total Cost
+                                        </CardTitle>
+                                        <ChartLine
+                                            className="w-4 h-4 text-zinc-500"
+                                            weight="duotone"
+                                        />
                                     </CardHeader>
                                     <CardContent>
                                         <div className="text-2xl font-bold">
@@ -195,12 +214,21 @@ export default function AnalyticsPage() {
 
                                 <Card>
                                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Chats</CardTitle>
-                                        <ChatCircle className="w-4 h-4 text-zinc-500" weight="duotone" />
+                                        <CardTitle className="text-sm font-medium">
+                                            Total Chats
+                                        </CardTitle>
+                                        <ChatCircle
+                                            className="w-4 h-4 text-zinc-500"
+                                            weight="duotone"
+                                        />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{summary.totalChats}</div>
-                                        <p className="text-xs text-zinc-500 mt-1">Conversations created</p>
+                                        <div className="text-2xl font-bold">
+                                            {summary.totalChats}
+                                        </div>
+                                        <p className="text-xs text-zinc-500 mt-1">
+                                            Conversations created
+                                        </p>
                                     </CardContent>
                                 </Card>
                             </div>
@@ -212,7 +240,9 @@ export default function AnalyticsPage() {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <CardTitle>Token Usage Over Time</CardTitle>
-                                        <CardDescription>Track your AI token consumption</CardDescription>
+                                        <CardDescription>
+                                            Track your AI token consumption
+                                        </CardDescription>
                                     </div>
                                     <div className="flex gap-2">
                                         <button
@@ -256,15 +286,34 @@ export default function AnalyticsPage() {
                                     <ResponsiveContainer width="100%" height={300}>
                                         <AreaChart data={usageData}>
                                             <defs>
-                                                <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                                <linearGradient
+                                                    id="colorTokens"
+                                                    x1="0"
+                                                    y1="0"
+                                                    x2="0"
+                                                    y2="1"
+                                                >
+                                                    <stop
+                                                        offset="5%"
+                                                        stopColor="#10b981"
+                                                        stopOpacity={0.3}
+                                                    />
+                                                    <stop
+                                                        offset="95%"
+                                                        stopColor="#10b981"
+                                                        stopOpacity={0}
+                                                    />
                                                 </linearGradient>
                                             </defs>
                                             <XAxis
                                                 dataKey="date"
                                                 tick={{ fontSize: 12 }}
-                                                tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                tickFormatter={(date) =>
+                                                    new Date(date).toLocaleDateString('en-US', {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                    })
+                                                }
                                             />
                                             <YAxis tick={{ fontSize: 12 }} />
                                             <Tooltip
@@ -273,7 +322,11 @@ export default function AnalyticsPage() {
                                                     border: '1px solid #e5e7eb',
                                                     borderRadius: '8px',
                                                 }}
-                                                formatter={(value) => (value !== undefined ? value.toLocaleString() : '0')}
+                                                formatter={(value) =>
+                                                    value !== undefined
+                                                        ? value.toLocaleString()
+                                                        : '0'
+                                                }
                                             />
                                             <Area
                                                 type="monotone"
@@ -298,7 +351,9 @@ export default function AnalyticsPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Messages Per Day</CardTitle>
-                                    <CardDescription>User and assistant message breakdown</CardDescription>
+                                    <CardDescription>
+                                        User and assistant message breakdown
+                                    </CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     {messageData.length > 0 ? (
@@ -307,18 +362,32 @@ export default function AnalyticsPage() {
                                                 <XAxis
                                                     dataKey="date"
                                                     tick={{ fontSize: 12 }}
-                                                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                    tickFormatter={(date) =>
+                                                        new Date(date).toLocaleDateString('en-US', {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                        })
+                                                    }
                                                 />
                                                 <YAxis tick={{ fontSize: 12 }} />
                                                 <Tooltip
                                                     contentStyle={{
-                                                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                                        backgroundColor:
+                                                            'rgba(255, 255, 255, 0.95)',
                                                         border: '1px solid #e5e7eb',
                                                         borderRadius: '8px',
                                                     }}
                                                 />
-                                                <Bar dataKey="userMessages" fill="#3b82f6" stackId="a" />
-                                                <Bar dataKey="assistantMessages" fill="#10b981" stackId="a" />
+                                                <Bar
+                                                    dataKey="userMessages"
+                                                    fill="#3b82f6"
+                                                    stackId="a"
+                                                />
+                                                <Bar
+                                                    dataKey="assistantMessages"
+                                                    fill="#10b981"
+                                                    stackId="a"
+                                                />
                                             </BarChart>
                                         </ResponsiveContainer>
                                     ) : (
@@ -347,18 +416,25 @@ export default function AnalyticsPage() {
                                                     cy="50%"
                                                     outerRadius={100}
                                                     label={(entry: any) => {
-                                                        const model = entry.model?.split('/')[1] || entry.model || '';
+                                                        const model =
+                                                            entry.model?.split('/')[1] ||
+                                                            entry.model ||
+                                                            '';
                                                         const percentage = entry.percentage || 0;
                                                         return `${model}: ${percentage.toFixed(1)}%`;
                                                     }}
                                                 >
                                                     {modelData.map((_, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        <Cell
+                                                            key={`cell-${index}`}
+                                                            fill={COLORS[index % COLORS.length]}
+                                                        />
                                                     ))}
                                                 </Pie>
                                                 <Tooltip
                                                     contentStyle={{
-                                                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                                        backgroundColor:
+                                                            'rgba(255, 255, 255, 0.95)',
                                                         border: '1px solid #e5e7eb',
                                                         borderRadius: '8px',
                                                     }}

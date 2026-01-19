@@ -1,8 +1,8 @@
 'use client';
 
-import * as React from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -29,16 +29,15 @@ interface TabsListProps
     extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>,
         VariantProps<typeof tabsListVariants> {}
 
-const TabsList = React.forwardRef<
-    React.ElementRef<typeof TabsPrimitive.List>,
-    TabsListProps
->(({ className, variant, ...props }, ref) => (
-    <TabsPrimitive.List
-        ref={ref}
-        className={cn(tabsListVariants({ variant }), className)}
-        {...props}
-    />
-));
+const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, TabsListProps>(
+    ({ className, variant, ...props }, ref) => (
+        <TabsPrimitive.List
+            ref={ref}
+            className={cn(tabsListVariants({ variant }), className)}
+            {...props}
+        />
+    )
+);
 TabsList.displayName = TabsPrimitive.List.displayName;
 
 const tabsTriggerVariants = cva(
@@ -48,7 +47,8 @@ const tabsTriggerVariants = cva(
             variant: {
                 default: '',
                 line: 'border-b-2 border-b-transparent rounded-none bg-transparent px-0 py-2 data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none',
-                enclosed: 'bg-transparent data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-950 data-[state=active]:text-foreground',
+                enclosed:
+                    'bg-transparent data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-950 data-[state=active]:text-foreground',
                 solid: '',
             },
         },
@@ -89,11 +89,4 @@ const TabsContent = React.forwardRef<
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export {
-    Tabs,
-    TabsList,
-    TabsTrigger,
-    TabsContent,
-    tabsListVariants,
-    tabsTriggerVariants,
-};
+export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants, tabsTriggerVariants };

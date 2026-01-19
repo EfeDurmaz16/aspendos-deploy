@@ -35,7 +35,9 @@ const nextConfig: NextConfig = {
                             // Frame ancestors: none (prevent clickjacking)
                             "frame-ancestors 'none'",
                             // Upgrade insecure requests in production
-                            ...(process.env.NODE_ENV === 'production' ? ['upgrade-insecure-requests'] : []),
+                            ...(process.env.NODE_ENV === 'production'
+                                ? ['upgrade-insecure-requests']
+                                : []),
                         ]
                             .filter(Boolean)
                             .join('; '),
