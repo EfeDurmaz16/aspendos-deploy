@@ -12,10 +12,12 @@ import {
     initializeMCPClients,
 } from './lib/mcp-clients';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
+import analyticsRoutes from './routes/analytics';
 import billingRoutes from './routes/billing';
 // Routes
 import chatRoutes from './routes/chat';
 import memoryRoutes from './routes/memory';
+import notificationsRoutes from './routes/notifications';
 import schedulerRoutes from './routes/scheduler';
 import voiceRoutes from './routes/voice';
 
@@ -210,6 +212,8 @@ app.route('/api/memory', memoryRoutes);
 app.route('/api/billing', billingRoutes);
 app.route('/api/voice', voiceRoutes);
 app.route('/api/scheduler', schedulerRoutes);
+app.route('/api/notifications', notificationsRoutes);
+app.route('/api/analytics', analyticsRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);
