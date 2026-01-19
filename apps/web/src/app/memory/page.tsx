@@ -29,6 +29,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuSeparator,
+    ContextMenuTrigger,
+    ContextMenuShortcut,
+} from "@/components/ui/context-menu";
 
 interface Memory {
     id: string;
@@ -131,115 +139,146 @@ function MemoryCard({
     const SectorIcon = sector.icon;
 
     return (
-        <div
-            className={cn(
-                'bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg hover:bg-white/70 dark:hover:bg-zinc-900/70',
-                memory.isPinned && 'ring-2 ring-amber-500/30 bg-amber-50/20 dark:bg-amber-950/10'
-            )}
-        >
-            <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                    <div className={cn('p-1.5 rounded-lg', sector.color)}>
-                        <SectorIcon className="w-4 h-4 text-white" weight="fill" />
-                    </div>
-                    <span className="text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
-                        {memory.sector}
-                    </span>
-                    {memory.isPinned && (
-                        <PushPin className="w-4 h-4 text-amber-500 fill-amber-500" weight="fill" />
+        <ContextMenu>
+            <ContextMenuTrigger>
+                <div
+                    className={cn(
+                        'bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg hover:bg-white/70 dark:hover:bg-zinc-900/70',
+                        memory.isPinned && 'ring-2 ring-amber-500/30 bg-amber-50/20 dark:bg-amber-950/10'
                     )}
-                </div>
-                <span className="text-xs font-mono bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-lg text-zinc-700 dark:text-zinc-300">
-                    {Math.round(memory.confidence * 100)}%
-                </span>
-            </div>
-            <p className="text-sm leading-relaxed line-clamp-3 text-zinc-900 dark:text-zinc-100">
-                {memory.content}
-            </p>
-            {memory.summary && (
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 italic line-clamp-2">
-                    {memory.summary}
-                </p>
-            )}
-            {memory.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                    {memory.tags.slice(0, 3).map((tag, i) => (
-                        <span
-                            key={i}
-                            className="text-xs px-2 py-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg text-zinc-700 dark:text-zinc-300"
-                        >
-                            {tag}
-                        </span>
-                    ))}
-                    {memory.tags.length > 3 && (
-                        <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                            +{memory.tags.length - 3} more
-                        </span>
-                    )}
-                </div>
-            )}
-            <div className="flex items-center justify-between pt-3 border-t border-zinc-200 dark:border-zinc-700">
-                <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                    {new Date(memory.createdAt).toLocaleDateString()} • {memory.accessCount}{' '}
-                    accesses
-                </div>
-                <div className="flex items-center gap-1">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
-                        onClick={() => onFeedback(true)}
-                        title="Helpful"
-                    >
-                        <ThumbsUp className="w-3.5 h-3.5 text-emerald-500" weight="fill" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 hover:bg-rose-100 dark:hover:bg-rose-900/30"
-                        onClick={() => onFeedback(false)}
-                        title="Not helpful"
-                    >
-                        <ThumbsDown className="w-3.5 h-3.5 text-rose-500" weight="fill" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-                        onClick={onPin}
-                        title={memory.isPinned ? 'Unpin' : 'Pin'}
-                    >
-                        <PushPin
-                            className={cn(
-                                'w-3.5 h-3.5',
-                                memory.isPinned
-                                    ? 'text-amber-500 fill-amber-500'
-                                    : 'text-zinc-600 dark:text-zinc-400'
+                >
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <div className={cn('p-1.5 rounded-lg', sector.color)}>
+                                <SectorIcon className="w-4 h-4 text-white" weight="fill" />
+                            </div>
+                            <span className="text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+                                {memory.sector}
+                            </span>
+                            {memory.isPinned && (
+                                <PushPin className="w-4 h-4 text-amber-500 fill-amber-500" weight="fill" />
                             )}
-                            weight={memory.isPinned ? 'fill' : 'regular'}
-                        />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                        onClick={onEdit}
-                        title="Edit"
-                    >
-                        <PencilSimple className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 hover:bg-rose-100 dark:hover:bg-rose-900/30"
-                        onClick={onDelete}
-                        title="Delete"
-                    >
-                        <Trash className="w-3.5 h-3.5 text-rose-500" />
-                    </Button>
+                        </div>
+                        <span className="text-xs font-mono bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-lg text-zinc-700 dark:text-zinc-300">
+                            {Math.round(memory.confidence * 100)}%
+                        </span>
+                    </div>
+                    <p className="text-sm leading-relaxed line-clamp-3 text-zinc-900 dark:text-zinc-100">
+                        {memory.content}
+                    </p>
+                    {memory.summary && (
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 italic line-clamp-2">
+                            {memory.summary}
+                        </p>
+                    )}
+                    {memory.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {memory.tags.slice(0, 3).map((tag, i) => (
+                                <span
+                                    key={i}
+                                    className="text-xs px-2 py-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg text-zinc-700 dark:text-zinc-300"
+                                >
+                                    {tag}
+                                </span>
+                            ))}
+                            {memory.tags.length > 3 && (
+                                <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                                    +{memory.tags.length - 3} more
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                        <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                            {new Date(memory.createdAt).toLocaleDateString()} • {memory.accessCount}{' '}
+                            accesses
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                                onClick={() => onFeedback(true)}
+                                title="Helpful"
+                            >
+                                <ThumbsUp className="w-3.5 h-3.5 text-emerald-500" weight="fill" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-rose-100 dark:hover:bg-rose-900/30"
+                                onClick={() => onFeedback(false)}
+                                title="Not helpful"
+                            >
+                                <ThumbsDown className="w-3.5 h-3.5 text-rose-500" weight="fill" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                                onClick={onPin}
+                                title={memory.isPinned ? 'Unpin' : 'Pin'}
+                            >
+                                <PushPin
+                                    className={cn(
+                                        'w-3.5 h-3.5',
+                                        memory.isPinned
+                                            ? 'text-amber-500 fill-amber-500'
+                                            : 'text-zinc-600 dark:text-zinc-400'
+                                    )}
+                                    weight={memory.isPinned ? 'fill' : 'regular'}
+                                />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                                onClick={onEdit}
+                                title="Edit"
+                            >
+                                <PencilSimple className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-rose-100 dark:hover:bg-rose-900/30"
+                                onClick={onDelete}
+                                title="Delete"
+                            >
+                                <Trash className="w-3.5 h-3.5 text-rose-500" />
+                            </Button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent className="w-64">
+                <ContextMenuItem onClick={onEdit}>
+                    <PencilSimple className="mr-2 h-4 w-4" />
+                    Edit Memory
+                    <ContextMenuShortcut>⌘E</ContextMenuShortcut>
+                </ContextMenuItem>
+                <ContextMenuItem onClick={onPin}>
+                    <PushPin className={cn("mr-2 h-4 w-4", memory.isPinned ? "text-amber-500 fill-amber-500" : "")} weight={memory.isPinned ? "fill" : "regular"} />
+                    {memory.isPinned ? "Unpin Memory" : "Pin Memory"}
+                    <ContextMenuShortcut>⌘P</ContextMenuShortcut>
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem onClick={() => onFeedback(true)}>
+                    <ThumbsUp className="mr-2 h-4 w-4 text-emerald-500" />
+                    Mark as Helpful
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => onFeedback(false)}>
+                    <ThumbsDown className="mr-2 h-4 w-4 text-rose-500" />
+                    Mark as Not Helpful
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem onClick={onDelete} className="text-rose-500 focus:text-rose-500">
+                    <Trash className="mr-2 h-4 w-4" />
+                    Archive Memory
+                    <ContextMenuShortcut>⌫</ContextMenuShortcut>
+                </ContextMenuItem>
+            </ContextMenuContent>
+        </ContextMenu>
     );
 }
 

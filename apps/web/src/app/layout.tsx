@@ -3,6 +3,7 @@ import { Figtree, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
+import { GlobalCommand } from '@/components/global-command';
 
 const figtree = Figtree({
     subsets: ['latin'],
@@ -36,6 +37,7 @@ export default function RootLayout({
                 )}
             >
                 <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem>
+                    <GlobalCommand />
                     {children}
                 </ThemeProvider>
             </body>
