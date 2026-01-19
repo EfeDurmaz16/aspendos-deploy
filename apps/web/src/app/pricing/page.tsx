@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, CheckCircle, Sparkle, TrendUp, Lightning } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowRight, CheckCircle, Sparkle, TrendUp, Lightning } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
@@ -139,7 +139,13 @@ function PricingContent() {
     };
 
     return (
-        <div className="min-h-screen bg-background gradient-mesh">
+        <div className="min-h-screen bg-background relative overflow-hidden">
+            {/* Ambient gradient meshes */}
+            <div className="absolute inset-0 pointer-events-none -z-10">
+                <div className="absolute top-20 right-1/3 w-[400px] h-[400px] bg-gradient-to-bl from-blue-100/20 to-transparent dark:from-blue-900/15 rounded-full blur-3xl" />
+                <div className="absolute bottom-1/3 left-1/4 w-[500px] h-[500px] bg-gradient-to-tr from-emerald-100/15 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl" />
+            </div>
+
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
                 <div className="container max-w-7xl mx-auto flex h-16 items-center justify-between px-6 lg:px-8">
@@ -155,11 +161,11 @@ function PricingContent() {
                     <nav className="flex gap-4 items-center">
                         <ModeToggle />
                         {isSignedIn ? (
-                            <Button size="sm" className="rounded-full" asChild>
+                            <Button size="sm" variant="primary" className="rounded-full" asChild>
                                 <Link href="/chat">Go to Chat</Link>
                             </Button>
                         ) : (
-                            <Button size="sm" className="rounded-full" asChild>
+                            <Button size="sm" variant="secondary" className="rounded-full" asChild>
                                 <Link href="/login">Log in</Link>
                             </Button>
                         )}
@@ -167,7 +173,7 @@ function PricingContent() {
                 </div>
             </header>
 
-            <div className="max-w-6xl mx-auto py-16 px-6">
+            <div className="max-w-6xl mx-auto py-16 px-6 relative z-10">
                 {/* Success message */}
                 {success && (
                     <div className="mb-8 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-center animate-fade-up">
@@ -214,18 +220,18 @@ function PricingContent() {
                 )}
 
                 {/* Header */}
-                <div className="text-center mb-12 animate-fade-up opacity-0">
-                    <h1 className="font-serif text-4xl md:text-5xl font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
-                        Simple, transparent pricing
+                <div className="text-center mb-16 animate-fade-up opacity-0">
+                    <h1 className="text-5xl md:text-6xl font-semibold text-zinc-900 dark:text-zinc-50 mb-6 tracking-tight">
+                        Transparent pricing
                     </h1>
-                    <p className="text-zinc-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">
-                        Your AI operating system. Choose the plan that fits your workflow.
+                    <p className="text-lg md:text-xl text-zinc-600 dark:text-zinc-400 max-w-3xl mx-auto leading-relaxed">
+                        One unified subscription for all models, voice, memory, and autonomous capabilities. Choose the plan that fits your workflow.
                     </p>
                 </div>
 
                 {/* Billing period toggle */}
-                <div className="flex justify-center gap-1 mb-12 animate-fade-up opacity-0 animation-delay-100">
-                    <div className="inline-flex p-1 rounded-full glass border border-zinc-200/50 dark:border-zinc-700/50">
+                <div className="flex justify-center gap-1 mb-16 animate-fade-up opacity-0 animation-delay-100">
+                    <div className="inline-flex p-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 backdrop-blur-sm">
                         {(['weekly', 'monthly', 'annual'] as const).map((period) => (
                             <button
                                 key={period}
@@ -248,48 +254,55 @@ function PricingContent() {
                 </div>
 
                 {/* Pricing cards */}
-                <div className="grid md:grid-cols-3 gap-8 animate-fade-up opacity-0 animation-delay-200">
+                <div className="grid md:grid-cols-3 gap-6 animate-fade-up opacity-0 animation-delay-200">
                     {PRICING_TIERS.map((tier, index) => (
                         <div
                             key={tier.name}
-                            className={`relative bg-white dark:bg-zinc-900 rounded-2xl border p-8 flex flex-col hover-lift ${
+                            className={`relative rounded-3xl border p-10 flex flex-col transition-all hover-lift ${
                                 tier.popular
-                                    ? 'border-zinc-900 dark:border-zinc-50 ring-2 ring-zinc-900/10 dark:ring-zinc-50/10 md:-translate-y-4 shadow-xl glow'
-                                    : 'border-zinc-200 dark:border-zinc-800 shadow-sm'
+                                    ? 'bg-gradient-to-br from-zinc-900 to-zinc-950 dark:from-zinc-50 dark:to-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-300 md:-translate-y-6 shadow-2xl'
+                                    : 'bg-white/80 dark:bg-zinc-900/80 backdrop-blur border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white shadow-lg'
                             }`}
                             style={{ animationDelay: `${(index + 3) * 100}ms` }}
                         >
+                            {/* Subtle glow effect for popular card */}
                             {tier.popular && (
-                                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-xs font-medium px-3 py-1 rounded-full flex items-center gap-1">
-                                    <Sparkle className="w-3 h-3" weight="fill" /> Most Popular
-                                </span>
+                                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -z-10" />
                             )}
 
-                            <div className="mb-6">
-                                <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
+                            {tier.popular && (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                    <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500 text-white text-xs font-bold uppercase tracking-wide shadow-lg">
+                                        <Sparkle className="w-4 h-4" weight="fill" /> Most Popular
+                                    </span>
+                                </div>
+                            )}
+
+                            <div className="mb-8">
+                                <h2 className={`text-2xl font-semibold mb-3 ${tier.popular ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}>
                                     {tier.name}
                                 </h2>
-                                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+                                <p className={`text-sm leading-relaxed ${tier.popular ? 'text-white/80 dark:text-zinc-700' : 'text-zinc-600 dark:text-zinc-400'}`}>
                                     {tier.description}
                                 </p>
                             </div>
 
-                            <div className="mb-2">
-                                <span className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
+                            <div className="mb-2 flex items-baseline gap-2">
+                                <span className={`text-5xl font-bold ${tier.popular ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}>
                                     ${getPrice(tier.name)}
                                 </span>
-                                <span className="text-zinc-600 dark:text-zinc-400">
+                                <span className={tier.popular ? 'text-white/70 dark:text-zinc-700' : 'text-zinc-600 dark:text-zinc-400'}>
                                     /{getPeriodLabel()}
                                 </span>
                             </div>
 
                             {billingPeriod === 'annual' && (
-                                <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-4">
-                                    Save ${getAnnualSavings(tier.name)}/year — 2 months free
+                                <p className={`text-sm mb-6 font-medium ${tier.popular ? 'text-emerald-300 dark:text-emerald-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                    ✓ Save ${getAnnualSavings(tier.name)}/year — 2 months free
                                 </p>
                             )}
                             {billingPeriod === 'weekly' && (
-                                <p className="text-xs text-zinc-500 mb-4">
+                                <p className={`text-xs mb-6 ${tier.popular ? 'text-white/60 dark:text-zinc-600' : 'text-zinc-500 dark:text-zinc-500'}`}>
                                     or $
                                     {PRICING_DATA[tier.name as keyof typeof PRICING_DATA].monthly}
                                     /month (save more)
@@ -297,24 +310,24 @@ function PricingContent() {
                             )}
                             {billingPeriod === 'monthly' && <div className="h-6 mb-4" />}
 
-                            <ul className="space-y-3 mb-8 flex-grow">
+                            <ul className="space-y-3 mb-10 flex-grow">
                                 {tier.features.map((feature) => (
                                     <li
                                         key={feature}
-                                        className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400"
+                                        className={`flex items-start gap-3 text-sm ${tier.popular ? 'text-white/90 dark:text-zinc-800' : 'text-zinc-700 dark:text-zinc-300'}`}
                                     >
                                         <CheckCircle
-                                            className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"
+                                            className={`w-5 h-5 flex-shrink-0 mt-0.5 ${tier.popular ? 'text-emerald-400 dark:text-emerald-600' : 'text-emerald-500 dark:text-emerald-400'}`}
                                             weight="fill"
                                         />
-                                        {feature}
+                                        <span>{feature}</span>
                                     </li>
                                 ))}
                             </ul>
 
                             {tier.name === 'Starter' ? (
                                 <Button
-                                    variant={tier.popular ? 'default' : 'outline'}
+                                    variant={tier.popular ? 'primary' : 'secondary'}
                                     className="w-full rounded-full"
                                     asChild
                                 >
@@ -322,7 +335,7 @@ function PricingContent() {
                                 </Button>
                             ) : isSignedIn ? (
                                 <Button
-                                    variant={tier.popular ? 'default' : 'outline'}
+                                    variant={tier.popular ? 'primary' : 'secondary'}
                                     className="w-full rounded-full"
                                     onClick={() => handleCheckout(tier.slug)}
                                     disabled={checkoutLoading === tier.slug}
@@ -331,7 +344,7 @@ function PricingContent() {
                                 </Button>
                             ) : (
                                 <Button
-                                    variant={tier.popular ? 'default' : 'outline'}
+                                    variant={tier.popular ? 'primary' : 'secondary'}
                                     className="w-full rounded-full"
                                     asChild
                                 >
@@ -346,12 +359,13 @@ function PricingContent() {
 
                 {/* Manage subscription link */}
                 {isSignedIn && (
-                    <div className="text-center mt-12">
+                    <div className="text-center mt-12 animate-fade-up opacity-0 animation-delay-200">
                         <Link
                             href="/portal"
-                            className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 underline underline-offset-4"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-50 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 font-medium"
                         >
-                            Manage your subscription →
+                            Manage your subscription
+                            <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>
                 )}
@@ -371,17 +385,21 @@ function PricingContent() {
                     <h2 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mb-8 text-center">
                         Detailed Plan Comparison
                     </h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                    <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                        <table className="w-full text-sm bg-white dark:bg-zinc-900/50 backdrop-blur">
                             <thead>
-                                <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                                    <th className="px-4 py-3 text-left font-semibold text-zinc-900 dark:text-zinc-50">
+                                <tr className="bg-zinc-50/50 dark:bg-zinc-800/30 border-b border-zinc-200 dark:border-zinc-700">
+                                    <th className="px-6 py-4 text-left font-semibold text-zinc-900 dark:text-zinc-50">
                                         Feature
                                     </th>
                                     {PRICING_TIERS.map((tier) => (
                                         <th
                                             key={tier.name}
-                                            className="px-4 py-3 text-center font-semibold text-zinc-900 dark:text-zinc-50"
+                                            className={`px-6 py-4 text-center font-semibold ${
+                                                tier.popular
+                                                    ? 'bg-gradient-to-b from-emerald-500/10 to-blue-500/10 text-emerald-900 dark:text-emerald-100'
+                                                    : 'text-zinc-900 dark:text-zinc-50'
+                                            }`}
                                         >
                                             {tier.name}
                                         </th>
@@ -389,47 +407,47 @@ function PricingContent() {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                                <tr className="border-b border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50/30 dark:hover:bg-zinc-800/20 transition-colors">
+                                    <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 font-medium">
                                         Monthly Chats
                                     </td>
                                     {PRICING_TIERS.map((tier) => (
-                                        <td key={tier.name} className="px-4 py-3 text-center font-medium text-zinc-900 dark:text-zinc-50">
+                                        <td key={tier.name} className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50">
                                             {tier.limits.chats.toLocaleString()}
                                         </td>
                                     ))}
                                 </tr>
-                                <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                                <tr className="border-b border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50/30 dark:hover:bg-zinc-800/20 transition-colors">
+                                    <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 font-medium">
                                         Voice Minutes/Day
                                     </td>
                                     {PRICING_TIERS.map((tier) => (
-                                        <td key={tier.name} className="px-4 py-3 text-center font-medium text-zinc-900 dark:text-zinc-50">
+                                        <td key={tier.name} className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50">
                                             {tier.limits.voiceMinutes}
                                         </td>
                                     ))}
                                 </tr>
-                                <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                                <tr className="border-b border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50/30 dark:hover:bg-zinc-800/20 transition-colors">
+                                    <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 font-medium">
                                         AI Models Available
                                     </td>
                                     {PRICING_TIERS.map((tier) => (
-                                        <td key={tier.name} className="px-4 py-3 text-center font-medium text-zinc-900 dark:text-zinc-50">
+                                        <td key={tier.name} className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50">
                                             {tier.limits.models}+ models
                                         </td>
                                     ))}
                                 </tr>
-                                <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                                <tr className="hover:bg-zinc-50/30 dark:hover:bg-zinc-800/20 transition-colors">
+                                    <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 font-medium">
                                         Memory & Search
                                     </td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-6 py-4 text-center">
                                         <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto" weight="fill" />
                                     </td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-6 py-4 text-center">
                                         <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto" weight="fill" />
                                     </td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-6 py-4 text-center">
                                         <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto" weight="fill" />
                                     </td>
                                 </tr>
@@ -443,40 +461,52 @@ function PricingContent() {
                     <h2 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mb-8 text-center">
                         Frequently Asked Questions
                     </h2>
-                    <div className="space-y-4">
-                        <details className="group p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
-                            <summary className="flex items-center gap-3 font-medium text-zinc-900 dark:text-zinc-50">
-                                <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                What happens if I exceed my plan limits?
+                    <div className="space-y-3">
+                        <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
+                            <summary className="flex items-center justify-between font-medium text-zinc-900 dark:text-zinc-50 select-none">
+                                <span className="flex items-center gap-3">
+                                    <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                    What happens if I exceed my plan limits?
+                                </span>
+                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">▼</span>
                             </summary>
-                            <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                            <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                                 You'll receive notifications at 75%, 90%, and 100% of your monthly limit. Once exceeded, you cannot create new chats until your usage resets on the first of next month. Consider upgrading for more capacity.
                             </p>
                         </details>
-                        <details className="group p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
-                            <summary className="flex items-center gap-3 font-medium text-zinc-900 dark:text-zinc-50">
-                                <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                Can I change plans anytime?
+                        <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
+                            <summary className="flex items-center justify-between font-medium text-zinc-900 dark:text-zinc-50 select-none">
+                                <span className="flex items-center gap-3">
+                                    <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                    Can I change plans anytime?
+                                </span>
+                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">▼</span>
                             </summary>
-                            <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                            <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                                 Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately. If you downgrade, your current billing cycle remains unchanged.
                             </p>
                         </details>
-                        <details className="group p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
-                            <summary className="flex items-center gap-3 font-medium text-zinc-900 dark:text-zinc-50">
-                                <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                What is your refund policy?
+                        <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
+                            <summary className="flex items-center justify-between font-medium text-zinc-900 dark:text-zinc-50 select-none">
+                                <span className="flex items-center gap-3">
+                                    <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                    What is your refund policy?
+                                </span>
+                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">▼</span>
                             </summary>
-                            <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                            <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                                 We do not offer refunds for subscriptions. However, you can cancel anytime and will not be charged for the next billing period.
                             </p>
                         </details>
-                        <details className="group p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
-                            <summary className="flex items-center gap-3 font-medium text-zinc-900 dark:text-zinc-50">
-                                <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                Do you offer a free trial?
+                        <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
+                            <summary className="flex items-center justify-between font-medium text-zinc-900 dark:text-zinc-50 select-none">
+                                <span className="flex items-center gap-3">
+                                    <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                    Do you offer a free trial?
+                                </span>
+                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">▼</span>
                             </summary>
-                            <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                            <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                                 Yes! Start with the Starter plan to explore Aspendos free for your first 100 chats. No credit card required.
                             </p>
                         </details>

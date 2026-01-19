@@ -1,4 +1,4 @@
-import { ActionSheetProvider, HeroUINativeProvider } from "heroui-native";
+import { HeroUINativeProvider } from "heroui-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";

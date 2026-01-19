@@ -1,5 +1,5 @@
 const { getDefaultConfig } = require("expo/metro-config");
-const { withUniwindConfig } = require("uniwind/metro");
+const { withNativeWind } = require("nativewind/metro");
 const { wrapWithReanimatedMetroConfig } = require("react-native-reanimated/metro-config");
 const path = require("path");
 
@@ -17,11 +17,6 @@ config.resolver.nodeModulesPaths = [
     path.resolve(workspaceRoot, "node_modules"),
 ];
 
-// 3. Force Metro to resolve (sub)dependencies only from the `nodeModulesPaths`
-// config.resolver.disableHierarchicalLookup = true;
-
-// Wrap with Reanimated and then Uniwind
+// Wrap with Reanimated and then NativeWind
 const reanimatedConfig = wrapWithReanimatedMetroConfig(config);
-module.exports = withUniwindConfig(reanimatedConfig, {
-    cssEntryFile: "./global.css"
-});
+module.exports = withNativeWind(reanimatedConfig, { input: "./global.css" });

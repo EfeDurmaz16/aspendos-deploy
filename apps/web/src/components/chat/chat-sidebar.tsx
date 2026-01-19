@@ -43,7 +43,7 @@ export function ChatSidebar({
             {/* New Chat */}
             <div className="p-3">
                 <Button
-                    variant="outline"
+                    variant="secondary"
                     className="w-full justify-start gap-2 bg-white dark:bg-zinc-900 shadow-sm border-zinc-200 dark:border-zinc-800 hover:dark:bg-zinc-800"
                     size="sm"
                     onClick={onNewChat}

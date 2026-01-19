@@ -1,11 +1,22 @@
+const { heroui } = require("heroui-native");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    content: ["./App.{js,jsx,ts,tsx}", "./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}", "./node_modules/heroui-native/**/*.{js,jsx,ts,tsx}"],
+    content: [
+        "./App.{js,jsx,ts,tsx}",
+        "./app/**/*.{js,jsx,ts,tsx}",
+        "./components/**/*.{js,jsx,ts,tsx}",
+        "./node_modules/heroui-native/**/*.{js,jsx,ts,tsx}", // Check if this path is correct for your node_modules structure
+    ],
     theme: {
         extend: {
             colors: {
                 background: "#ffffff",
                 foreground: "#0a0a0a",
+                card: "#ffffff",
+                "card-foreground": "#0a0a0a",
+                popover: "#ffffff",
+                "popover-foreground": "#0a0a0a",
                 primary: "#171717",
                 "primary-foreground": "#fafafa",
                 secondary: "#f5f5f5",
@@ -19,12 +30,13 @@ module.exports = {
                 border: "#e5e5e5",
                 input: "#e5e5e5",
                 ring: "#0a0a0a",
+                // Custom
             },
             fontFamily: {
-                sans: ["Figtree_400Regular", "System"],
-                mono: ["JetBrainsMono_400Regular", "System"],
-            }
+                sans: ["Figtree"],
+                mono: ["JetBrains Mono"],
+            },
         },
     },
-    plugins: [],
+    plugins: [heroui()],
 };
