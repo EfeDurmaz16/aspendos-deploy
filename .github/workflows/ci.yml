@@ -44,6 +44,9 @@ jobs:
       - name: Lint
         run: bun run lint 2>/dev/null || true
 
+      - name: Biome check
+        run: bun biome check .
+
   # ============================================
   # BUILD
   # ============================================
@@ -107,10 +110,18 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run tests
-        run: bun test 2>/dev/null || echo "No tests configured"
+      - name: Run API tests
+        run: cd services/api && bun run test
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/aspendos_test
+          NODE_ENV: test
+          JWT_SECRET: test-secret-key-for-testing-only
+          BETTER_AUTH_SECRET: test-better-auth-secret-key
+
+      - name: Run Web tests
+        run: cd apps/web && bun run test
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
 
   # ============================================
   # DOCKER BUILD & PUSH

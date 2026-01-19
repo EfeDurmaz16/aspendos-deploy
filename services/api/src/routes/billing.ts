@@ -4,8 +4,10 @@
  */
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateQuery } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
 import * as polarService from '../services/polar.service';
+import { createCheckoutSchema, getUsageQuerySchema } from '../validation/billing.schema';
 
 const app = new Hono();
 
@@ -50,9 +52,10 @@ app.post('/sync', requireAuth, async (c) => {
 });
 
 // GET /api/billing/usage - Get usage history
-app.get('/usage', requireAuth, async (c) => {
+app.get('/usage', requireAuth, validateQuery(getUsageQuerySchema), async (c) => {
     const userId = c.get('userId')!;
-    const limit = parseInt(c.req.query('limit') || '50', 10);
+    const validatedQuery = c.get('validatedQuery') as { limit: number };
+    const limit = validatedQuery.limit;
 
     const history = await billingService.getUsageHistory(userId, limit);
 
@@ -66,21 +69,17 @@ app.get('/tiers', async (c) => {
 });
 
 // POST /api/billing/checkout - Create checkout session
-app.post('/checkout', requireAuth, async (c) => {
+app.post('/checkout', requireAuth, validateBody(createCheckoutSchema), async (c) => {
     const userId = c.get('userId')!;
     const user = c.get('user')!;
-    const body = await c.req.json();
+    const validatedBody = c.get('validatedBody') as {
+        plan: 'starter' | 'pro' | 'ultra';
+        cycle: 'monthly' | 'annual';
+        success_url?: string;
+        cancel_url?: string;
+    };
 
-    const plan = body.plan as 'starter' | 'pro' | 'ultra';
-    const cycle = (body.cycle as 'monthly' | 'annual') || 'monthly';
-
-    if (!['starter', 'pro', 'ultra'].includes(plan)) {
-        return c.json({ error: 'Invalid plan. Must be "starter", "pro", or "ultra"' }, 400);
-    }
-
-    if (!['monthly', 'annual'].includes(cycle)) {
-        return c.json({ error: 'Invalid cycle. Must be "monthly" or "annual"' }, 400);
-    }
+    const { plan, cycle, success_url, cancel_url } = validatedBody;
 
     try {
         const { checkoutUrl, checkoutId } = await polarService.createCheckout({
@@ -88,8 +87,8 @@ app.post('/checkout', requireAuth, async (c) => {
             email: user.email,
             plan,
             cycle,
-            successUrl: body.success_url || `${process.env.FRONTEND_URL}/billing/success`,
-            cancelUrl: body.cancel_url,
+            successUrl: success_url || `${process.env.FRONTEND_URL}/billing/success`,
+            cancelUrl: cancel_url,
         });
 
         return c.json({
