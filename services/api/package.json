@@ -7,7 +7,11 @@
         "dev": "bun run --hot src/index.ts",
         "build": "bun build src/index.ts --outdir dist --target bun",
         "start": "bun run dist/index.js",
-        "lint": "eslint src"
+        "lint": "eslint src",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:ui": "vitest --ui",
+        "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
         "@ai-sdk/anthropic": "^3.0.15",
@@ -30,6 +34,8 @@
     },
     "devDependencies": {
         "@types/node": "^22.0.0",
-        "typescript": "^5.0.0"
+        "@vitest/ui": "^4.0.17",
+        "typescript": "^5.0.0",
+        "vitest": "^4.0.17"
     }
 }
