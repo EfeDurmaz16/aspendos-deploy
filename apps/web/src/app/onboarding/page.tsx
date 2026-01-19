@@ -1,361 +1,182 @@
 'use client';
 
-import {
-    ArrowLeft,
-    ArrowRight,
-    Brain,
-    CheckCircle,
-    CloudArrowUp,
-    ShieldCheck,
-} from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import Link from 'next/link';
+import { ArrowRight, Brain, Check, SlackLogo, NotionLogo } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-
-const TOTAL_STEPS = 5;
+import { useRouter } from 'next/navigation';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 export default function OnboardingPage() {
-    const [step, setStep] = useState(1);
-    const [direction, setDirection] = useState(1);
+    const [step, setStep] = useState(0);
+    const router = useRouter();
 
-    const nextStep = () => {
-        if (step < TOTAL_STEPS) {
-            setDirection(1);
+    const handleNext = () => {
+        if (step < 2) {
             setStep(step + 1);
+        } else {
+            router.push('/chat');
         }
-    };
-
-    const prevStep = () => {
-        if (step > 1) {
-            setDirection(-1);
-            setStep(step - 1);
-        }
-    };
-
-    const variants = {
-        enter: (direction: number) => ({
-            x: direction > 0 ? 50 : -50,
-            opacity: 0,
-        }),
-        center: {
-            x: 0,
-            opacity: 1,
-        },
-        exit: (direction: number) => ({
-            x: direction < 0 ? 50 : -50,
-            opacity: 0,
-        }),
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white dark:bg-zinc-950 font-sans relative overflow-hidden">
-            {/* Gradient mesh background */}
-            <div className="absolute inset-0 pointer-events-none -z-10">
-                <div className="absolute top-1/4 right-1/3 w-[500px] h-[500px] bg-gradient-to-br from-purple-100/20 to-transparent dark:from-purple-900/15 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 left-1/3 w-[600px] h-[600px] bg-gradient-to-bl from-emerald-100/20 to-transparent dark:from-emerald-900/15 rounded-full blur-3xl" />
-                <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-gradient-to-tr from-blue-100/15 to-transparent dark:from-blue-900/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+            {/* Background Effects */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-zinc-200/20 dark:bg-zinc-800/10 rounded-full blur-[100px]" />
+                <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-zinc-200/20 dark:bg-zinc-800/10 rounded-full blur-[100px]" />
             </div>
 
-            {/* Progress Bar */}
-            <div className="fixed top-0 left-0 w-full h-1.5 bg-zinc-200/60 dark:bg-zinc-900/60 backdrop-blur z-50">
-                <motion.div
-                    className="h-full bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-lg shadow-emerald-500/30"
-                    initial={{ width: '0%' }}
-                    animate={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
-                    transition={{ duration: 0.5, ease: 'easeInOut' }}
-                />
-            </div>
+            <div className="max-w-xl w-full relative z-10">
+                <AnimatePresence mode="wait">
+                    {step === 0 && (
+                        <motion.div
+                            key="step0"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="text-center space-y-6"
+                        >
+                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-foreground text-background mb-4 shadow-2xl">
+                                <Brain weight="duotone" className="w-10 h-10" />
+                            </div>
+                            <h1 className="text-4xl md:text-5xl font-serif font-medium tracking-tight text-foreground">
+                                Free your memory.
+                            </h1>
+                            <p className="text-xl text-muted-foreground leading-relaxed max-w-md mx-auto">
+                                Aspendos allows you to offload your thoughts, specialized knowledge, and tasks to a cognitive engine that never forgets.
+                            </p>
+                            <div className="pt-8">
+                                <Button size="lg" onClick={handleNext} className="h-12 px-8 text-base rounded-full shadow-lg hover:shadow-xl transition-all">
+                                    Get Started <ArrowRight className="ml-2 w-4 h-4" />
+                                </Button>
+                            </div>
+                        </motion.div>
+                    )}
 
-            <div className="w-full max-w-2xl">
-                <div className="mb-12 text-center">
-                    <span className="font-serif text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                        ASPENDOS
-                    </span>
-                </div>
+                    {step === 1 && (
+                        <motion.div
+                            key="step1"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="space-y-8"
+                        >
+                            <div className="text-center space-y-2">
+                                <h2 className="text-2xl font-serif font-medium">Connect your brain context</h2>
+                                <p className="text-muted-foreground">Import your existing knowledge base to jumpstart your memory.</p>
+                            </div>
 
-                <AnimatePresence mode="wait" custom={direction}>
-                    <motion.div
-                        key={step}
-                        custom={direction}
-                        variants={variants}
-                        initial="enter"
-                        animate="center"
-                        exit="exit"
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        className="w-full"
-                    >
-                        {step === 1 && <Step1_Identity />}
-                        {step === 2 && <Step2_Import />}
-                        {step === 3 && <Step3_Memory />}
-                        {step === 4 && <Step4_Safety />}
-                        {step === 5 && <Step5_Ready />}
-                    </motion.div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <IntegrationCard
+                                    icon={<NotionLogo className="w-8 h-8" />}
+                                    title="Notion"
+                                    desc="Sync pages & databases"
+                                />
+                                <IntegrationCard
+                                    icon={<SlackLogo className="w-8 h-8" />}
+                                    title="Slack"
+                                    desc="Import team conversations"
+                                />
+                                <IntegrationCard
+                                    icon={<div className="w-8 h-8 rounded bg-blue-500 flex items-center justify-center text-white font-bold">G</div>}
+                                    title="Google Drive"
+                                    desc="Index documents & sheets"
+                                />
+                                <IntegrationCard
+                                    icon={<div className="w-8 h-8 rounded bg-zinc-800 dark:bg-zinc-200" />}
+                                    title="Local Files"
+                                    desc="Upload PDFs and MDs"
+                                />
+                            </div>
+
+                            <div className="flex justify-end pt-4">
+                                <Button variant="ghost" onClick={handleNext} className="text-muted-foreground hover:text-foreground">
+                                    Skip for now
+                                </Button>
+                                <Button onClick={handleNext} className="ml-2 rounded-full px-6">
+                                    Continue
+                                </Button>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {step === 2 && (
+                        <motion.div
+                            key="step2"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="text-center space-y-8"
+                        >
+                            <div className="space-y-4">
+                                <h2 className="text-3xl font-serif font-medium">You're all set.</h2>
+                                <p className="text-muted-foreground max-w-md mx-auto">
+                                    Your personal cognitive engine is ready. Start by asking a question or importing your first document.
+                                </p>
+                            </div>
+
+                            <div className="glass-card p-1 rounded-2xl bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900 border border-border/50 shadow-inner">
+                                <div className="bg-background rounded-xl p-8 space-y-4">
+                                    <div className="flex items-start gap-4 text-left">
+                                        <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-none">
+                                            <Brain className="w-4 h-4 text-muted-foreground" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-medium">Aspendos</p>
+                                            <p className="text-sm text-muted-foreground">Example: "Review the quarterly report I uploaded and summarize the key risks."</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-4">
+                                <Button size="lg" onClick={handleNext} className="h-12 px-10 text-base rounded-full shadow-lg bg-foreground text-background hover:bg-foreground/90">
+                                    Enter Aspendos
+                                </Button>
+                            </div>
+                        </motion.div>
+                    )}
                 </AnimatePresence>
+            </div>
 
-                {/* Navigation Footer */}
-                <div className="mt-12 flex justify-between items-center px-4">
-                    {step > 1 && step < 5 ? (
-                        <Button
-                            variant="ghost"
-                            onClick={prevStep}
-                            className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"
-                        >
-                            <ArrowLeft className="mr-2 w-4 h-4" weight="bold" /> Back
-                        </Button>
-                    ) : (
-                        <div /> /* Spacer */
-                    )}
-
-                    {step < 5 && (
-                        <Button
-                            onClick={nextStep}
-                            className="px-8 min-w-[140px] bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
-                        >
-                            Continue <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
-                        </Button>
-                    )}
-
-                    {step === 5 && (
-                        <Button
-                            className="px-8 min-w-[140px] bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
-                            asChild
-                        >
-                            <Link href="/chat">
-                                Enter OS <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
-                            </Link>
-                        </Button>
-                    )}
-                </div>
+            {/* Progress Dots */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2">
+                {[0, 1, 2].map((i) => (
+                    <div
+                        key={i}
+                        className={cn(
+                            "w-2 h-2 rounded-full transition-all duration-300",
+                            step === i ? "bg-foreground w-6" : "bg-border"
+                        )}
+                    />
+                ))}
             </div>
         </div>
     );
 }
 
-// -- STEPS --
-
-function Step1_Identity() {
+function IntegrationCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
+    const [selected, setSelected] = useState(false);
     return (
-        <div className="space-y-6 text-center">
-            <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl bg-white/60 dark:bg-zinc-900/60 backdrop-blur border border-zinc-200 dark:border-zinc-800 shadow-lg mb-4">
-                <span className="text-2xl">👋</span>
-            </div>
-            <div>
-                <h2 className="font-serif text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-                    Welcome to the OS.
-                </h2>
-                <p className="text-lg text-zinc-600 dark:text-zinc-400">
-                    Let's set up your profile.
-                </p>
-            </div>
-
-            <Card className="text-left bg-white/60 dark:bg-zinc-900/60 backdrop-blur border-zinc-200 dark:border-zinc-800 shadow-lg max-w-md mx-auto">
-                <CardContent className="pt-6 space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                            Full Name
-                        </Label>
-                        <Input
-                            defaultValue="Efe Baran Durmaz"
-                            className="rounded-xl border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                        />
+        <Card
+            className={cn(
+                "p-4 cursor-pointer transition-all border-border/60 hover:border-foreground/20 hover:shadow-md",
+                selected && "ring-2 ring-primary border-transparent bg-primary/5"
+            )}
+            onClick={() => setSelected(!selected)}
+        >
+            <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                    {icon}
+                    <div className="text-left">
+                        <h3 className="font-medium text-sm">{title}</h3>
+                        <p className="text-xs text-muted-foreground">{desc}</p>
                     </div>
-                    <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                            Role
-                        </Label>
-                        <select className="flex h-11 w-full items-center justify-between rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all">
-                            <option>Select a role...</option>
-                            <option>Founder</option>
-                            <option>Developer</option>
-                            <option>Researcher</option>
-                            <option>Creative</option>
-                        </select>
-                        <p className="text-xs text-zinc-500">
-                            This helps us choose default models for you.
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
-}
-
-function Step2_Import() {
-    return (
-        <div className="space-y-6 text-center">
-            <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-900/30 backdrop-blur border border-blue-200 dark:border-blue-800 shadow-lg mb-4">
-                <CloudArrowUp
-                    size={28}
-                    weight="duotone"
-                    className="text-blue-600 dark:text-blue-400"
-                />
-            </div>
-            <div>
-                <h2 className="font-serif text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-                    Don't start from zero.
-                </h2>
-                <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-                    Import your history from ChatGPT or Claude to jumpstart your memory graph.
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
-                <button className="group flex flex-col items-center p-6 bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:bg-white/70 dark:hover:bg-zinc-900/70 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg transition-all text-center space-y-3">
-                    <div className="w-12 h-12 rounded-xl bg-[#74aa9c] group-hover:scale-110 flex items-center justify-center text-white font-bold text-lg shadow-md transition-transform">
-                        O
-                    </div>
-                    <div className="font-semibold text-zinc-900 dark:text-zinc-50">
-                        Import ChatGPT
-                    </div>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">Upload .zip export</p>
-                </button>
-                <button className="group flex flex-col items-center p-6 bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:bg-white/70 dark:hover:bg-zinc-900/70 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg transition-all text-center space-y-3">
-                    <div className="w-12 h-12 rounded-xl bg-[#d97757] group-hover:scale-110 flex items-center justify-center text-white font-serif italic text-lg shadow-md transition-transform">
-                        Cl
-                    </div>
-                    <div className="font-semibold text-zinc-900 dark:text-zinc-50">
-                        Import Claude
-                    </div>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">Connect via API</p>
-                </button>
-            </div>
-            <p className="text-sm text-zinc-500 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 underline underline-offset-4 transition-colors">
-                Skip for now
-            </p>
-        </div>
-    );
-}
-
-function Step3_Memory() {
-    return (
-        <div className="space-y-6 text-center">
-            <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-900/30 backdrop-blur border border-purple-200 dark:border-purple-800 shadow-lg mb-4">
-                <Brain
-                    size={28}
-                    weight="duotone"
-                    className="text-purple-600 dark:text-purple-400"
-                />
-            </div>
-            <div>
-                <h2 className="font-serif text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-                    Seed your memory.
-                </h2>
-                <p className="text-lg text-zinc-600 dark:text-zinc-400">
-                    Tell Aspendos 3 facts about you that it should never forget.
-                </p>
-            </div>
-
-            <Card className="text-left bg-white/60 dark:bg-zinc-900/60 backdrop-blur border-zinc-200 dark:border-zinc-800 shadow-lg max-w-md mx-auto">
-                <CardContent className="pt-6 space-y-4">
-                    <Input
-                        placeholder="e.g. I code in Python and Rust"
-                        className="rounded-xl border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                    />
-                    <Input
-                        placeholder="e.g. My startup creates AI tools"
-                        className="rounded-xl border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                    />
-                    <Input
-                        placeholder="e.g. I prefer concise, technical answers"
-                        className="rounded-xl border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                    />
-
-                    <div className="flex flex-wrap gap-2 pt-2">
-                        <span className="text-[11px] uppercase font-semibold tracking-wide text-zinc-500">
-                            Quick Add:
-                        </span>
-                        <button className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 transition-colors">
-                            I use Next.js
-                        </button>
-                        <button className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 transition-colors">
-                            Concise Mode
-                        </button>
-                        <button className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 transition-colors">
-                            No emojis
-                        </button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
-}
-
-function Step4_Safety() {
-    return (
-        <div className="space-y-6 text-center">
-            <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 backdrop-blur border border-emerald-200 dark:border-emerald-800 shadow-lg mb-4">
-                <ShieldCheck
-                    size={28}
-                    weight="duotone"
-                    className="text-emerald-600 dark:text-emerald-400"
-                />
-            </div>
-            <div>
-                <h2 className="font-serif text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-                    Your Data Rights.
-                </h2>
-                <p className="text-lg text-zinc-600 dark:text-zinc-400">
-                    Aspendos is a private OS. You own your memory.
-                </p>
-            </div>
-
-            <div className="max-w-md mx-auto space-y-4 text-left bg-white/60 dark:bg-zinc-900/60 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-lg">
-                <div className="flex gap-3">
-                    <CheckCircle
-                        className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
-                        weight="fill"
-                    />
-                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                        We <strong>do not</strong> train our models on your data.
-                    </p>
                 </div>
-                <div className="flex gap-3">
-                    <CheckCircle
-                        className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
-                        weight="fill"
-                    />
-                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                        Your memory graph is encrypted and isolated.
-                    </p>
-                </div>
-                <div className="flex gap-3">
-                    <CheckCircle
-                        className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
-                        weight="fill"
-                    />
-                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                        You can export or delete your memories at any time.
-                    </p>
-                </div>
+                {selected && <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center"><Check size={12} weight="bold" /></div>}
             </div>
-        </div>
-    );
-}
-
-function Step5_Ready() {
-    return (
-        <div className="space-y-8 text-center">
-            <div className="mb-8">
-                <h2 className="font-serif text-4xl md:text-5xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
-                    All Systems Go.
-                </h2>
-                <p className="text-lg text-zinc-600 dark:text-zinc-400">
-                    We've indexed 0 memories. Your OS is ready.
-                </p>
-            </div>
-
-            {/* Enhanced Visualization */}
-            <div className="w-64 h-64 mx-auto mb-8 relative flex items-center justify-center">
-                <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping opacity-30 duration-1000"></div>
-                <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-ping opacity-20 duration-1500"></div>
-                <div className="w-48 h-48 bg-gradient-to-br from-emerald-600 to-emerald-500 rounded-full flex items-center justify-center shadow-2xl relative z-10">
-                    <span className="font-serif text-4xl font-bold text-white">Ready</span>
-                </div>
-            </div>
-        </div>
+        </Card>
     );
 }

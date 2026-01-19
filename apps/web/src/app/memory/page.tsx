@@ -171,9 +171,9 @@ function MemoryCard({
                             {memory.summary}
                         </p>
                     )}
-                    {memory.tags.length > 0 && (
+                    {memory.tags?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
-                            {memory.tags.slice(0, 3).map((tag, i) => (
+                            {(memory.tags || []).slice(0, 3).map((tag, i) => (
                                 <span
                                     key={i}
                                     className="text-xs px-2 py-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg text-zinc-700 dark:text-zinc-300"
@@ -181,9 +181,9 @@ function MemoryCard({
                                     {tag}
                                 </span>
                             ))}
-                            {memory.tags.length > 3 && (
+                            {(memory.tags || []).length > 3 && (
                                 <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                                    +{memory.tags.length - 3} more
+                                    +{(memory.tags || []).length - 3} more
                                 </span>
                             )}
                         </div>

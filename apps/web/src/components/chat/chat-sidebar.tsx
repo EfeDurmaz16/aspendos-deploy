@@ -34,25 +34,20 @@ export function ChatSidebar({
     const groupedChats = groupChatsByDate(chats);
 
     return (
-        <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-900 relative">
-            {/* Gradient mesh background */}
-            <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-                <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-blue-100/10 to-transparent dark:from-blue-900/5 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/3 left-0 w-[250px] h-[250px] bg-gradient-to-tr from-emerald-100/10 to-transparent dark:from-emerald-900/5 rounded-full blur-3xl" />
-            </div>
 
+        <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950/50 border-r border-border/40 relative">
             {/* Header */}
-            <div className="h-14 flex items-center px-4 border-b border-zinc-200 dark:border-zinc-900 backdrop-blur">
-                <span className="font-serif text-lg font-bold text-zinc-900 dark:text-white">
-                    ASPENDOS
+            <div className="h-14 flex items-center px-4 border-b border-border/40">
+                <span className="font-serif text-lg font-semibold tracking-tight text-foreground/90">
+                    Aspendos
                 </span>
             </div>
 
             {/* New Chat */}
             <div className="p-3">
                 <Button
-                    variant="secondary"
-                    className="w-full justify-start gap-2 bg-white/60 dark:bg-zinc-900/60 shadow-sm border-zinc-200 dark:border-zinc-800 hover:bg-white dark:hover:bg-zinc-900 backdrop-blur transition-all"
+                    variant="ghost"
+                    className="w-full justify-start gap-2 bg-background border border-border/50 shadow-sm hover:bg-muted/50 transition-all text-muted-foreground hover:text-foreground"
                     size="sm"
                     onClick={onNewChat}
                 >
@@ -61,20 +56,19 @@ export function ChatSidebar({
             </div>
 
             {/* Chat List */}
-            <div className="flex-1 overflow-y-auto py-2 px-3 space-y-4">
+            <div className="flex-1 overflow-y-auto py-2 px-3 space-y-4 scrollbar-hide">
                 {isLoading ? (
                     <div className="flex justify-center py-8">
-                        <CircleNotch className="w-5 h-5 animate-spin text-zinc-400" />
+                        <CircleNotch className="w-4 h-4 animate-spin text-muted-foreground" />
                     </div>
                 ) : chats.length === 0 ? (
-                    <div className="text-center py-8 text-zinc-400 text-sm">
-                        <p>No chats yet</p>
-                        <p className="text-xs mt-1">Start a new thread</p>
+                    <div className="text-center py-8 text-muted-foreground/50 text-xs">
+                        <p>No history</p>
                     </div>
                 ) : (
                     Object.entries(groupedChats).map(([dateGroup, groupChats]) => (
                         <div key={dateGroup}>
-                            <h4 className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-2 px-2">
+                            <h4 className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-2">
                                 {dateGroup}
                             </h4>
                             <div className="space-y-0.5">
@@ -93,23 +87,23 @@ export function ChatSidebar({
             </div>
 
             {/* User Footer */}
-            <div className="h-14 border-t border-zinc-200 dark:border-zinc-800 flex items-center px-4 justify-between">
+            <div className="h-14 border-t border-border/40 flex items-center px-4 justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
                 <div className="flex items-center gap-2">
                     {user?.imageUrl ? (
                         <img
                             src={user.imageUrl}
                             alt={user.firstName || 'User'}
-                            className="w-8 h-8 rounded-full"
+                            className="w-7 h-7 rounded-full ring-1 ring-border/50"
                         />
                     ) : (
-                        <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                        <div className="w-7 h-7 rounded-full bg-muted" />
                     )}
-                    <div className="text-[13px] font-medium truncate max-w-[120px]">
+                    <div className="text-[13px] font-medium truncate max-w-[120px] text-foreground/80">
                         {user?.firstName || user?.emailAddresses?.[0]?.emailAddress || 'User'}
                     </div>
                 </div>
-                <button className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
-                    <DotsThree weight="bold" className="w-5 h-5" />
+                <button className="text-muted-foreground hover:text-foreground transition-colors">
+                    <DotsThree weight="bold" className="w-4 h-4" />
                 </button>
             </div>
         </div>
@@ -131,24 +125,21 @@ function SidebarItem({
             className={cn(
                 'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-left transition-all group',
                 active
-                    ? 'bg-white/60 dark:bg-zinc-800/60 backdrop-blur text-zinc-900 dark:text-zinc-50 font-medium shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-white/40 dark:hover:bg-zinc-900/40 hover:backdrop-blur'
+                    ? 'bg-zinc-100 dark:bg-zinc-800 text-foreground font-medium'
+                    : 'text-muted-foreground hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 hover:text-foreground'
             )}
         >
             <ChatCircle
                 size={16}
-                weight={active ? 'fill' : 'duotone'}
+                weight={active ? 'fill' : 'regular'}
                 className={cn(
                     'flex-shrink-0 transition-colors',
                     active
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-zinc-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
+                        ? 'text-foreground'
+                        : 'text-muted-foreground/70 group-hover:text-foreground'
                 )}
             />
             <span className="truncate flex-1">{label}</span>
-            {active && (
-                <span className="ml-auto w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 ring-1 ring-emerald-300 dark:ring-emerald-600 flex-shrink-0" />
-            )}
         </button>
     );
 }

@@ -83,11 +83,11 @@ export default function ChatPage() {
                             timestamp: new Date(m.createdAt),
                             metadata: m.modelUsed
                                 ? {
-                                      model: m.modelUsed,
-                                      tokensIn: m.tokensIn,
-                                      tokensOut: m.tokensOut,
-                                      costUsd: m.costUsd,
-                                  }
+                                    model: m.modelUsed,
+                                    tokensIn: m.tokensIn,
+                                    tokensOut: m.tokensOut,
+                                    costUsd: m.costUsd,
+                                }
                                 : undefined,
                         })
                     );
@@ -218,38 +218,35 @@ export default function ChatPage() {
             </div>
 
             {/* Main Chat */}
-            <div className="flex-1 h-full flex flex-col relative bg-white dark:bg-zinc-950 dark:text-zinc-100">
-                {/* Gradient mesh background */}
-                <div className="absolute inset-0 pointer-events-none -z-10">
-                    <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-purple-100/15 to-transparent dark:from-purple-900/10 rounded-full blur-3xl" />
-                    <div className="absolute bottom-1/3 left-1/3 w-[600px] h-[600px] bg-gradient-to-bl from-blue-100/15 to-transparent dark:from-blue-900/10 rounded-full blur-3xl" />
-                </div>
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-md z-10 relative">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="h-9 w-9 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-all"
-                        title="Toggle Sidebar"
-                    >
-                        <SidebarSimple weight="duotone" className="w-5 h-5" />
-                    </Button>
-                    <div className="flex-1 flex justify-center">
-                        <ModelSelector
-                            selectedModel={chat?.modelPreference || 'openai/gpt-4o-mini'}
-                            onModelChange={handleModelChange}
-                            disabled={isStreaming}
-                        />
+            <div className="flex-1 h-full flex flex-col relative bg-background">
+                {/* Header (Minimal) */}
+                <div className="flex items-center justify-between p-3 border-b flex-none bg-background/95 backdrop-blur z-10 w-full">
+                    <div className="flex items-center">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        >
+                            <SidebarSimple className="w-4 h-4" />
+                        </Button>
+                        <div className="ml-2 hidden sm:block">
+                            <ModelSelector
+                                selectedModel={chat?.modelPreference || 'openai/gpt-4o-mini'}
+                                onModelChange={handleModelChange}
+                                disabled={isStreaming}
+                            />
+                        </div>
                     </div>
+                    {/* Centered Model Selector for mobile could go here or keep in right */}
+
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setMemoryOpen(!memoryOpen)}
-                        className="h-9 w-9 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-all"
-                        title="Toggle Memory"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     >
-                        <List weight="duotone" className="w-5 h-5" />
+                        <List className="w-4 h-4" />
                     </Button>
                 </div>
 
@@ -303,22 +300,30 @@ export default function ChatPage() {
                 </ScrollArea>
 
                 {/* Input */}
-                <div className="max-w-3xl mx-auto w-full px-4 mb-6 relative z-10">
-                    <div className="relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-lg border border-zinc-200 dark:border-zinc-800 shadow-lg rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500/30 dark:focus-within:ring-emerald-500/20 focus-within:border-emerald-500/50 dark:focus-within:border-emerald-500/30 transition-all">
+                <div className="max-w-3xl mx-auto w-full px-4 mb-8 flex-none">
+                    <div className="relative flex flex-col bg-background border border-input shadow-xl shadow-zinc-200/50 dark:shadow-black/50 rounded-2xl overflow-hidden focus-within:ring-1 focus-within:ring-ring transition-all">
                         <textarea
                             ref={textareaRef}
                             value={inputValue}
                             onChange={handleInputChange}
                             onKeyDown={handleKeyDown}
-                            className="w-full min-h-[60px] max-h-[200px] p-4 bg-transparent resize-none outline-none text-[15px] placeholder:text-zinc-400 text-zinc-900 dark:text-zinc-50"
+                            className="w-full min-h-[50px] max-h-[200px] p-4 bg-transparent resize-none outline-none text-[15px] placeholder:text-muted-foreground/60"
                             placeholder="Ask anything..."
                             disabled={isStreaming}
                         />
-                        <div className="flex items-center justify-between px-4 pb-3 pt-1">
-                            <span className="text-xs font-mono text-zinc-500">
-                                {inputValue.length} / 4000
-                            </span>
+                        <div className="flex items-center justify-between px-3 pb-3 pt-1">
                             <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted/50 rounded-lg">
+                                    <Plus className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted/50 rounded-lg">
+                                    <Brain className="w-4 h-4" />
+                                </Button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-mono text-muted-foreground/50 mr-2">
+                                    {inputValue.length} / 4000
+                                </span>
                                 <VoiceButton
                                     onTranscription={(text) => setInputValue((prev) => prev + text)}
                                     disabled={isStreaming}
@@ -327,7 +332,7 @@ export default function ChatPage() {
                                     size="icon"
                                     onClick={handleSend}
                                     disabled={!inputValue.trim() || isStreaming}
-                                    className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-md transition-all"
+                                    className="h-8 w-8 rounded-lg bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all"
                                 >
                                     {isStreaming ? (
                                         <CircleNotch
@@ -335,14 +340,14 @@ export default function ChatPage() {
                                             weight="bold"
                                         />
                                     ) : (
-                                        <PaperPlaneRight weight="bold" className="w-4 h-4" />
+                                        <PaperPlaneRight weight="fill" className="w-4 h-4" />
                                     )}
                                 </Button>
                             </div>
                         </div>
                     </div>
-                    <p className="text-center text-[11px] text-zinc-500 mt-3">
-                        Aspendos memories are private. AI-generated content may be inaccurate.
+                    <p className="text-center text-[11px] text-muted-foreground/60 mt-4">
+                        Aspendos can make mistakes. Please verify important information.
                     </p>
                 </div>
             </div>

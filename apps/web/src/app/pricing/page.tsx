@@ -5,7 +5,6 @@ import {
     ArrowRight,
     CheckCircle,
     Lightning,
-    Sparkle,
     TrendUp,
 } from '@phosphor-icons/react';
 import Link from 'next/link';
@@ -13,8 +12,12 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/hooks/use-auth';
 import { checkout } from '@/lib/auth-client';
+import { cn } from '@/lib/utils';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type BillingPeriod = 'weekly' | 'monthly' | 'annual';
 
@@ -102,18 +105,19 @@ function UsageBar({ current, limit, label }: { current: number; limit: number; l
     return (
         <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                <span className="text-xs font-medium text-muted-foreground">
                     {label}
                 </span>
-                <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">
+                <span className="text-xs font-semibold text-foreground">
                     {current} / {limit}
                 </span>
             </div>
-            <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-2 bg-secondary rounded-full overflow-hidden">
                 <div
-                    className={`h-full transition-all rounded-full ${
-                        isWarning ? 'bg-orange-500' : 'bg-emerald-500'
-                    }`}
+                    className={cn(
+                        "h-full transition-all rounded-full",
+                        isWarning ? "bg-orange-500" : "bg-primary"
+                    )}
                     style={{ width: `${percentage}%` }}
                 />
             </div>
@@ -148,33 +152,27 @@ function PricingContent() {
     };
 
     return (
-        <div className="min-h-screen bg-background relative overflow-hidden">
-            {/* Ambient gradient meshes */}
-            <div className="absolute inset-0 pointer-events-none -z-10">
-                <div className="absolute top-20 right-1/3 w-[400px] h-[400px] bg-gradient-to-bl from-blue-100/20 to-transparent dark:from-blue-900/15 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/3 left-1/4 w-[500px] h-[500px] bg-gradient-to-tr from-emerald-100/15 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl" />
-            </div>
-
+        <div className="min-h-screen bg-background text-foreground">
             {/* Header */}
-            <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
-                <div className="container max-w-7xl mx-auto flex h-16 items-center justify-between px-6 lg:px-8">
+            <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
+                <div className="container max-w-7xl mx-auto flex h-16 items-center justify-between px-6">
                     <Link
                         href="/"
-                        className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="font-serif text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+                        <span className="font-semibold tracking-tight text-foreground">
                             ASPENDOS
                         </span>
                     </Link>
                     <nav className="flex gap-4 items-center">
                         <ModeToggle />
                         {isSignedIn ? (
-                            <Button size="sm" variant="primary" className="rounded-full" asChild>
+                            <Button size="sm" asChild>
                                 <Link href="/chat">Go to Chat</Link>
                             </Button>
                         ) : (
-                            <Button size="sm" variant="secondary" className="rounded-full" asChild>
+                            <Button size="sm" variant="secondary" asChild>
                                 <Link href="/login">Log in</Link>
                             </Button>
                         )}
@@ -182,80 +180,82 @@ function PricingContent() {
                 </div>
             </header>
 
-            <div className="max-w-6xl mx-auto py-16 px-6 relative z-10">
+            <div className="container max-w-6xl mx-auto py-12 px-6">
                 {/* Success message */}
                 {success && (
-                    <div className="mb-8 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-center animate-fade-up">
-                        <p className="text-emerald-800 dark:text-emerald-200 font-medium flex items-center justify-center gap-2">
-                            <Sparkle className="w-5 h-5" weight="fill" />
+                    <Card className="mb-8 border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/20">
+                        <CardContent className="p-4 flex items-center justify-center gap-2 text-emerald-800 dark:text-emerald-200 font-medium">
+                            <CheckCircle className="w-5 h-5" weight="fill" />
                             Payment successful! Your subscription is now active.
-                        </p>
-                    </div>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Usage dashboard for signed-in users */}
                 {isSignedIn && (
-                    <div className="mb-12 p-6 bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 animate-fade-up opacity-0 animation-delay-50">
-                        <div className="flex items-start justify-between mb-6">
-                            <div>
-                                <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-                                    <TrendUp className="w-5 h-5 text-emerald-500" weight="fill" />
-                                    Your Usage This Month
-                                </h3>
-                                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-                                    Forecasted to reach {MOCK_USAGE.forecastedChatsEOM} chats by end
-                                    of month
-                                </p>
+                    <Card className="mb-12 bg-muted/30">
+                        <CardContent className="p-6">
+                            <div className="flex items-start justify-between mb-6">
+                                <div>
+                                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                                        <TrendUp className="w-5 h-5 text-primary" weight="fill" />
+                                        Your Usage This Month
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Forecasted to reach {MOCK_USAGE.forecastedChatsEOM} chats by end
+                                        of month
+                                    </p>
+                                </div>
+                                <Button variant="link" size="sm" asChild className="text-primary p-0 h-auto">
+                                    <Link href="/dashboard/usage">
+                                        View details →
+                                    </Link>
+                                </Button>
                             </div>
-                            <Link
-                                href="/dashboard/usage"
-                                className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 underline underline-offset-2"
-                            >
-                                View details →
-                            </Link>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <UsageBar
-                                current={MOCK_USAGE.chatsThisMonth}
-                                limit={1500}
-                                label="Chats This Month"
-                            />
-                            <UsageBar
-                                current={MOCK_USAGE.voiceMinutesThisMonth}
-                                limit={60}
-                                label="Voice Minutes This Month"
-                            />
-                        </div>
-                    </div>
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <UsageBar
+                                    current={MOCK_USAGE.chatsThisMonth}
+                                    limit={1500}
+                                    label="Chats This Month"
+                                />
+                                <UsageBar
+                                    current={MOCK_USAGE.voiceMinutesThisMonth}
+                                    limit={60}
+                                    label="Voice Minutes This Month"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Header */}
-                <div className="text-center mb-16 animate-fade-up opacity-0">
-                    <h1 className="text-5xl md:text-6xl font-semibold text-zinc-900 dark:text-zinc-50 mb-6 tracking-tight">
-                        Transparent pricing
+                <div className="text-center mb-12 space-y-4">
+                    <h1 className="text-4xl font-bold tracking-tight">
+                        Simple, transparent pricing
                     </h1>
-                    <p className="text-lg md:text-xl text-zinc-600 dark:text-zinc-400 max-w-3xl mx-auto leading-relaxed">
+                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                         One unified subscription for all models, voice, memory, and autonomous
                         capabilities. Choose the plan that fits your workflow.
                     </p>
                 </div>
 
                 {/* Billing period toggle */}
-                <div className="flex justify-center gap-1 mb-16 animate-fade-up opacity-0 animation-delay-100">
-                    <div className="inline-flex p-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 backdrop-blur-sm">
+                <div className="flex justify-center mb-12">
+                    <div className="inline-flex p-1 rounded-lg border bg-muted">
                         {(['weekly', 'monthly', 'annual'] as const).map((period) => (
                             <button
                                 key={period}
                                 onClick={() => setBillingPeriod(period)}
-                                className={`px-5 py-2 rounded-full text-sm font-medium transition-all relative ${
+                                className={cn(
+                                    "px-4 py-2 rounded-md text-sm font-medium transition-all",
                                     billingPeriod === period
-                                        ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 shadow-sm'
-                                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                                }`}
+                                        ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
                             >
                                 {period.charAt(0).toUpperCase() + period.slice(1)}
                                 {period === 'annual' && (
-                                    <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                                    <span className="ml-2 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
                                         -17%
                                     </span>
                                 )}
@@ -265,236 +265,147 @@ function PricingContent() {
                 </div>
 
                 {/* Pricing cards */}
-                <div className="grid md:grid-cols-3 gap-6 animate-fade-up opacity-0 animation-delay-200">
-                    {PRICING_TIERS.map((tier, index) => (
-                        <div
+                <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+                    {PRICING_TIERS.map((tier) => (
+                        <Card
                             key={tier.name}
-                            className={`relative rounded-3xl border p-10 flex flex-col transition-all hover-lift ${
+                            className={cn(
+                                "flex flex-col relative",
                                 tier.popular
-                                    ? 'bg-gradient-to-br from-zinc-900 to-zinc-950 dark:from-zinc-50 dark:to-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-300 md:-translate-y-6 shadow-2xl'
-                                    : 'bg-white/80 dark:bg-zinc-900/80 backdrop-blur border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white shadow-lg'
-                            }`}
-                            style={{ animationDelay: `${(index + 3) * 100}ms` }}
-                        >
-                            {/* Subtle glow effect for popular card */}
-                            {tier.popular && (
-                                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -z-10" />
+                                    ? "border-primary shadow-lg scale-105 z-10"
+                                    : "border-border shadow-sm hover:border-primary/50 transition-colors"
                             )}
-
+                        >
                             {tier.popular && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                    <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500 text-white text-xs font-bold uppercase tracking-wide shadow-lg">
-                                        <Sparkle className="w-4 h-4" weight="fill" /> Most Popular
+                                <div className="absolute -top-3 left-0 right-0 mx-auto w-fit">
+                                    <span className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                                        MOST POPULAR
                                     </span>
                                 </div>
                             )}
 
-                            <div className="mb-8">
-                                <h2
-                                    className={`text-2xl font-semibold mb-3 ${tier.popular ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}
-                                >
-                                    {tier.name}
-                                </h2>
-                                <p
-                                    className={`text-sm leading-relaxed ${tier.popular ? 'text-white/80 dark:text-zinc-700' : 'text-zinc-600 dark:text-zinc-400'}`}
-                                >
-                                    {tier.description}
-                                </p>
-                            </div>
+                            <CardHeader>
+                                <CardTitle className="text-2xl">{tier.name}</CardTitle>
+                                <CardDescription>{tier.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-grow space-y-6">
+                                <div>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-4xl font-bold">${getPrice(tier.name)}</span>
+                                        <span className="text-muted-foreground">/{getPeriodLabel()}</span>
+                                    </div>
+                                    {billingPeriod === 'annual' && (
+                                        <p className="text-sm font-medium text-emerald-600 mt-2">
+                                            Save ${getAnnualSavings(tier.name)}/year
+                                        </p>
+                                    )}
+                                </div>
 
-                            <div className="mb-2 flex items-baseline gap-2">
-                                <span
-                                    className={`text-5xl font-bold ${tier.popular ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}
-                                >
-                                    ${getPrice(tier.name)}
-                                </span>
-                                <span
-                                    className={
-                                        tier.popular
-                                            ? 'text-white/70 dark:text-zinc-700'
-                                            : 'text-zinc-600 dark:text-zinc-400'
-                                    }
-                                >
-                                    /{getPeriodLabel()}
-                                </span>
-                            </div>
-
-                            {billingPeriod === 'annual' && (
-                                <p
-                                    className={`text-sm mb-6 font-medium ${tier.popular ? 'text-emerald-300 dark:text-emerald-600' : 'text-emerald-600 dark:text-emerald-400'}`}
-                                >
-                                    ✓ Save ${getAnnualSavings(tier.name)}/year — 2 months free
-                                </p>
-                            )}
-                            {billingPeriod === 'weekly' && (
-                                <p
-                                    className={`text-xs mb-6 ${tier.popular ? 'text-white/60 dark:text-zinc-600' : 'text-zinc-500 dark:text-zinc-500'}`}
-                                >
-                                    or $
-                                    {PRICING_DATA[tier.name as keyof typeof PRICING_DATA].monthly}
-                                    /month (save more)
-                                </p>
-                            )}
-                            {billingPeriod === 'monthly' && <div className="h-6 mb-4" />}
-
-                            <ul className="space-y-3 mb-10 flex-grow">
-                                {tier.features.map((feature) => (
-                                    <li
-                                        key={feature}
-                                        className={`flex items-start gap-3 text-sm ${tier.popular ? 'text-white/90 dark:text-zinc-800' : 'text-zinc-700 dark:text-zinc-300'}`}
+                                <ul className="space-y-3">
+                                    {tier.features.map((feature) => (
+                                        <li key={feature} className="flex items-start gap-3 text-sm">
+                                            <CheckCircle
+                                                className="w-5 h-5 flex-shrink-0 text-primary"
+                                                weight="fill"
+                                            />
+                                            <span className="text-muted-foreground">{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                            <CardFooter>
+                                {tier.name === 'Starter' ? (
+                                    <Button
+                                        variant={tier.popular ? 'default' : 'outline'}
+                                        className="w-full"
+                                        asChild
                                     >
-                                        <CheckCircle
-                                            className={`w-5 h-5 flex-shrink-0 mt-0.5 ${tier.popular ? 'text-emerald-400 dark:text-emerald-600' : 'text-emerald-500 dark:text-emerald-400'}`}
-                                            weight="fill"
-                                        />
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            {tier.name === 'Starter' ? (
-                                <Button
-                                    variant={tier.popular ? 'primary' : 'secondary'}
-                                    className="w-full rounded-full"
-                                    asChild
-                                >
-                                    <Link href={isSignedIn ? '/chat' : '/signup'}>{tier.cta}</Link>
-                                </Button>
-                            ) : isSignedIn ? (
-                                <Button
-                                    variant={tier.popular ? 'primary' : 'secondary'}
-                                    className="w-full rounded-full"
-                                    onClick={() => handleCheckout(tier.slug)}
-                                    disabled={checkoutLoading === tier.slug}
-                                >
-                                    {checkoutLoading === tier.slug ? 'Loading...' : tier.cta}
-                                </Button>
-                            ) : (
-                                <Button
-                                    variant={tier.popular ? 'primary' : 'secondary'}
-                                    className="w-full rounded-full"
-                                    asChild
-                                >
-                                    <Link href={`/signup?redirect=pricing&tier=${tier.slug}`}>
-                                        {tier.cta}
-                                    </Link>
-                                </Button>
-                            )}
-                        </div>
+                                        <Link href={isSignedIn ? '/chat' : '/signup'}>{tier.cta}</Link>
+                                    </Button>
+                                ) : isSignedIn ? (
+                                    <Button
+                                        variant={tier.popular ? 'default' : 'outline'}
+                                        className="w-full"
+                                        onClick={() => handleCheckout(tier.slug)}
+                                        disabled={checkoutLoading === tier.slug}
+                                    >
+                                        {checkoutLoading === tier.slug ? 'Loading...' : tier.cta}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant={tier.popular ? 'default' : 'outline'}
+                                        className="w-full"
+                                        asChild
+                                    >
+                                        <Link href={`/signup?redirect=pricing&tier=${tier.slug}`}>
+                                            {tier.cta}
+                                        </Link>
+                                    </Button>
+                                )}
+                            </CardFooter>
+                        </Card>
                     ))}
                 </div>
 
                 {/* Manage subscription link */}
                 {isSignedIn && (
-                    <div className="text-center mt-12 animate-fade-up opacity-0 animation-delay-200">
-                        <Link
-                            href="/portal"
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-50 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 font-medium"
-                        >
-                            Manage your subscription
-                            <ArrowRight className="w-4 h-4" />
-                        </Link>
+                    <div className="text-center mt-12">
+                        <Button variant="outline" asChild>
+                            <Link href="/portal" className="gap-2">
+                                Manage your subscription
+                                <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </Button>
                     </div>
                 )}
 
-                {/* Comparison note */}
-                <div className="text-center mt-16 max-w-2xl mx-auto mb-16">
-                    <p className="text-sm text-zinc-500">
-                        Compare: ChatGPT Plus $20/mo (1 model) vs Aspendos Pro $50/mo (all models,
-                        memory, voice).
-                        <br />
-                        Cancel anytime. All prices in USD.
-                    </p>
-                </div>
-
-                {/* Feature comparison table */}
-                <div className="mb-16 animate-fade-up opacity-0 animation-delay-300">
-                    <h2 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mb-8 text-center">
+                {/* Comparison table */}
+                <div className="mt-20 space-y-8">
+                    <h2 className="text-2xl font-semibold text-center">
                         Detailed Plan Comparison
                     </h2>
-                    <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                        <table className="w-full text-sm bg-white dark:bg-zinc-900/50 backdrop-blur">
-                            <thead>
-                                <tr className="bg-zinc-50/50 dark:bg-zinc-800/30 border-b border-zinc-200 dark:border-zinc-700">
-                                    <th className="px-6 py-4 text-left font-semibold text-zinc-900 dark:text-zinc-50">
-                                        Feature
-                                    </th>
+                    <div className="rounded-xl border overflow-hidden">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-muted/50">
+                                <tr>
+                                    <th className="px-6 py-4 font-semibold">Feature</th>
                                     {PRICING_TIERS.map((tier) => (
-                                        <th
-                                            key={tier.name}
-                                            className={`px-6 py-4 text-center font-semibold ${
-                                                tier.popular
-                                                    ? 'bg-gradient-to-b from-emerald-500/10 to-blue-500/10 text-emerald-900 dark:text-emerald-100'
-                                                    : 'text-zinc-900 dark:text-zinc-50'
-                                            }`}
-                                        >
+                                        <th key={tier.name} className="px-6 py-4 text-center font-semibold">
                                             {tier.name}
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr className="border-b border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50/30 dark:hover:bg-zinc-800/20 transition-colors">
-                                    <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 font-medium">
-                                        Monthly Chats
-                                    </td>
+                            <tbody className="divide-y divide-border">
+                                <tr>
+                                    <td className="px-6 py-4 font-medium">Monthly Chats</td>
                                     {PRICING_TIERS.map((tier) => (
-                                        <td
-                                            key={tier.name}
-                                            className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50"
-                                        >
+                                        <td key={tier.name} className="px-6 py-4 text-center text-muted-foreground">
                                             {tier.limits.chats.toLocaleString()}
                                         </td>
                                     ))}
                                 </tr>
-                                <tr className="border-b border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50/30 dark:hover:bg-zinc-800/20 transition-colors">
-                                    <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 font-medium">
-                                        Voice Minutes/Day
-                                    </td>
+                                <tr>
+                                    <td className="px-6 py-4 font-medium">Voice Minutes/Day</td>
                                     {PRICING_TIERS.map((tier) => (
-                                        <td
-                                            key={tier.name}
-                                            className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50"
-                                        >
+                                        <td key={tier.name} className="px-6 py-4 text-center text-muted-foreground">
                                             {tier.limits.voiceMinutes}
                                         </td>
                                     ))}
                                 </tr>
-                                <tr className="border-b border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50/30 dark:hover:bg-zinc-800/20 transition-colors">
-                                    <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 font-medium">
-                                        AI Models Available
-                                    </td>
+                                <tr>
+                                    <td className="px-6 py-4 font-medium">AI Models</td>
                                     {PRICING_TIERS.map((tier) => (
-                                        <td
-                                            key={tier.name}
-                                            className="px-6 py-4 text-center font-semibold text-zinc-900 dark:text-zinc-50"
-                                        >
+                                        <td key={tier.name} className="px-6 py-4 text-center text-muted-foreground">
                                             {tier.limits.models}+ models
                                         </td>
                                     ))}
                                 </tr>
-                                <tr className="hover:bg-zinc-50/30 dark:hover:bg-zinc-800/20 transition-colors">
-                                    <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 font-medium">
-                                        Memory & Search
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <CheckCircle
-                                            className="w-5 h-5 text-emerald-500 mx-auto"
-                                            weight="fill"
-                                        />
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <CheckCircle
-                                            className="w-5 h-5 text-emerald-500 mx-auto"
-                                            weight="fill"
-                                        />
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <CheckCircle
-                                            className="w-5 h-5 text-emerald-500 mx-auto"
-                                            weight="fill"
-                                        />
-                                    </td>
+                                <tr>
+                                    <td className="px-6 py-4 font-medium">Memory & Search</td>
+                                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-primary mx-auto" weight="fill" /></td>
+                                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-primary mx-auto" weight="fill" /></td>
+                                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-primary mx-auto" weight="fill" /></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -502,75 +413,36 @@ function PricingContent() {
                 </div>
 
                 {/* FAQ Section */}
-                <div className="mb-16 max-w-3xl mx-auto animate-fade-up opacity-0 animation-delay-400">
-                    <h2 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mb-8 text-center">
+                <div className="mt-20 max-w-3xl mx-auto space-y-8">
+                    <h2 className="text-2xl font-semibold text-center">
                         Frequently Asked Questions
                     </h2>
-                    <div className="space-y-3">
-                        <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
-                            <summary className="flex items-center justify-between font-medium text-zinc-900 dark:text-zinc-50 select-none">
-                                <span className="flex items-center gap-3">
-                                    <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                    What happens if I exceed my plan limits?
-                                </span>
-                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">
-                                    ▼
-                                </span>
-                            </summary>
-                            <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                You'll receive notifications at 75%, 90%, and 100% of your monthly
-                                limit. Once exceeded, you cannot create new chats until your usage
-                                resets on the first of next month. Consider upgrading for more
-                                capacity.
-                            </p>
-                        </details>
-                        <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
-                            <summary className="flex items-center justify-between font-medium text-zinc-900 dark:text-zinc-50 select-none">
-                                <span className="flex items-center gap-3">
-                                    <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                    Can I change plans anytime?
-                                </span>
-                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">
-                                    ▼
-                                </span>
-                            </summary>
-                            <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                Yes! You can upgrade or downgrade your plan at any time. Changes
-                                take effect immediately. If you downgrade, your current billing
-                                cycle remains unchanged.
-                            </p>
-                        </details>
-                        <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
-                            <summary className="flex items-center justify-between font-medium text-zinc-900 dark:text-zinc-50 select-none">
-                                <span className="flex items-center gap-3">
-                                    <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                    What is your refund policy?
-                                </span>
-                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">
-                                    ▼
-                                </span>
-                            </summary>
-                            <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                We do not offer refunds for subscriptions. However, you can cancel
-                                anytime and will not be charged for the next billing period.
-                            </p>
-                        </details>
-                        <details className="group p-5 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900/70 transition-all backdrop-blur">
-                            <summary className="flex items-center justify-between font-medium text-zinc-900 dark:text-zinc-50 select-none">
-                                <span className="flex items-center gap-3">
-                                    <Lightning className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                    Do you offer a free trial?
-                                </span>
-                                <span className="text-zinc-400 group-open:text-zinc-600 dark:group-open:text-zinc-300 transition-colors">
-                                    ▼
-                                </span>
-                            </summary>
-                            <p className="mt-4 ml-7 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                Yes! Start with the Starter plan to explore Aspendos free for your
-                                first 100 chats. No credit card required.
-                            </p>
-                        </details>
-                    </div>
+                    <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="item-1">
+                            <AccordionTrigger>What happens if I exceed my plan limits?</AccordionTrigger>
+                            <AccordionContent>
+                                You'll receive notifications at 75%, 90%, and 100% of your monthly limit. Once exceeded, you cannot create new chats until your usage resets on the first of next month.
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="item-2">
+                            <AccordionTrigger>Can I change plans anytime?</AccordionTrigger>
+                            <AccordionContent>
+                                Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="item-3">
+                            <AccordionTrigger>What is your refund policy?</AccordionTrigger>
+                            <AccordionContent>
+                                We do not offer refunds for subscriptions. However, you can cancel anytime and will not be charged for the next billing period.
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="item-4">
+                            <AccordionTrigger>Do you offer a free trial?</AccordionTrigger>
+                            <AccordionContent>
+                                Yes! Start with the Starter plan to explore Aspendos free for your first 100 chats. No credit card required.
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
                 </div>
             </div>
         </div>

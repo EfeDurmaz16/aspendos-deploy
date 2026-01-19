@@ -3,38 +3,38 @@
 import {
     Brain,
     CircleNotch,
-    Clock,
-    Heart,
-    Lightbulb,
     MagnifyingGlass,
-    PencilSimple,
-    Plus,
-    Sparkle,
-    Trash,
+    Tag,
     X,
 } from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-
-const SECTOR_CONFIG: Record<string, { icon: typeof Brain; color: string }> = {
-    episodic: { icon: Clock, color: 'text-blue-500' },
-    semantic: { icon: Lightbulb, color: 'text-emerald-500' },
-    procedural: { icon: Brain, color: 'text-purple-500' },
-    emotional: { icon: Heart, color: 'text-rose-500' },
-    reflective: { icon: Sparkle, color: 'text-amber-500' },
-};
 
 interface Memory {
     id: string;
     content: string;
     sector: string;
     confidence: number;
-    createdAt?: string;
+    createdAt: string;
     isPinned?: boolean;
+    metrics?: {
+        relevance: number;
+        recency: number;
+        importance: number;
+    };
+    tags?: string[];
 }
 
 interface MemoryPanelProps {
@@ -45,11 +45,6 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
     const [memories, setMemories] = useState<Memory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
-    const [isCreating, setIsCreating] = useState(false);
-    const [newMemoryContent, setNewMemoryContent] = useState('');
-    const [newMemorySector, setNewMemorySector] = useState('semantic');
 
     const fetchMemories = useCallback(async () => {
         try {
@@ -75,330 +70,111 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
         return () => clearTimeout(timer);
     }, [fetchMemories]);
 
-    const handleCreate = async () => {
-        if (!newMemoryContent.trim()) return;
-        try {
-            const res = await fetch(`${API_BASE}/api/memory`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: newMemoryContent, sector: newMemorySector }),
-            });
-            if (res.ok) {
-                setNewMemoryContent('');
-                setIsCreating(false);
-                fetchMemories();
-            }
-        } catch (err) {
-            console.error('Failed to create memory:', err);
-        }
-    };
-
-    const handleUpdate = async () => {
-        if (!editingMemory) return;
-        try {
-            await fetch(`${API_BASE}/api/memory/dashboard/${editingMemory.id}`, {
-                method: 'PATCH',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    content: editingMemory.content,
-                    sector: editingMemory.sector,
-                }),
-            });
-            setEditingMemory(null);
-            fetchMemories();
-        } catch (err) {
-            console.error('Failed to update memory:', err);
-        }
-    };
-
-    const handleDelete = async (id: string) => {
-        try {
-            await fetch(`${API_BASE}/api/memory/dashboard/${id}`, {
-                method: 'DELETE',
-                credentials: 'include',
-            });
-            fetchMemories();
-        } catch (err) {
-            console.error('Failed to delete memory:', err);
-        }
-    };
-
-    const handleBulkDelete = async () => {
-        if (selectedIds.size === 0) return;
-        try {
-            await fetch(`${API_BASE}/api/memory/dashboard/bulk-delete`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: Array.from(selectedIds) }),
-            });
-            setSelectedIds(new Set());
-            fetchMemories();
-        } catch (err) {
-            console.error('Failed to bulk delete:', err);
-        }
-    };
-
-    const toggleSelection = (id: string) => {
-        const newSelected = new Set(selectedIds);
-        if (newSelected.has(id)) newSelected.delete(id);
-        else newSelected.add(id);
-        setSelectedIds(newSelected);
-    };
-
-    const groupedMemories = useMemo(() => {
-        const groups: Record<string, Memory[]> = {};
-        for (const memory of memories) {
-            const sector = memory.sector || 'semantic';
-            if (!groups[sector]) groups[sector] = [];
-            groups[sector].push(memory);
-        }
-        return groups;
-    }, [memories]);
-
     return (
-        <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950">
-            <div className="h-14 flex items-center justify-between px-4 border-b border-zinc-200 dark:border-zinc-800">
-                <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                    <Brain size={18} weight="duotone" />
-                    <span className="font-serif font-medium">Memory</span>
-                    <span className="text-xs bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                        {memories.length}
-                    </span>
+        <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950/50 relative border-l border-border/40">
+            {/* Header */}
+            <div className="h-14 flex items-center justify-between px-4 border-b border-border/40 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur z-10 sticky top-0">
+                <div className="flex items-center gap-2 text-foreground/80">
+                    <Brain className="w-4 h-4" weight="regular" />
+                    <span className="font-semibold text-sm tracking-tight">Memory Context</span>
                 </div>
-                <div className="flex items-center gap-1">
+                {onClose && (
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setIsCreating(true)}
-                        title="Add memory"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={onClose}
                     >
-                        <Plus size={16} />
+                        <X className="w-4 h-4" />
                     </Button>
-                    {selectedIds.size > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-500"
-                            onClick={handleBulkDelete}
-                            title={`Delete ${selectedIds.size} selected`}
-                        >
-                            <Trash size={16} />
-                        </Button>
-                    )}
-                    {onClose && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-zinc-400"
-                            onClick={onClose}
-                        >
-                            <X size={16} />
-                        </Button>
-                    )}
-                </div>
-            </div>
-
-            <div className="p-3 border-b border-zinc-200 dark:border-zinc-800">
-                <div className="relative">
-                    <MagnifyingGlass
-                        size={14}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-                    />
-                    <Input
-                        type="text"
-                        placeholder="Search memories..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 h-8 text-sm"
-                    />
-                </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                {isLoading ? (
-                    <div className="flex justify-center py-8">
-                        <CircleNotch className="w-6 h-6 animate-spin text-zinc-400" />
-                    </div>
-                ) : memories.length === 0 ? (
-                    <div className="text-center py-8 text-zinc-400 text-sm">
-                        <Brain size={32} className="mx-auto mb-2 opacity-50" />
-                        <p>No memories yet</p>
-                        <p className="text-xs mt-1">Chat to build your memory context</p>
-                    </div>
-                ) : (
-                    Object.entries(groupedMemories).map(([sector, sectorMemories]) => {
-                        const config = SECTOR_CONFIG[sector] || SECTOR_CONFIG.semantic;
-                        const SectorIcon = config.icon;
-                        return (
-                            <div key={sector}>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <SectorIcon
-                                        size={14}
-                                        className={config.color}
-                                        weight="duotone"
-                                    />
-                                    <h4 className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">
-                                        {sector}
-                                    </h4>
-                                    <span className="text-[10px] text-zinc-400">
-                                        ({sectorMemories.length})
-                                    </span>
-                                </div>
-                                <div className="space-y-2">
-                                    {sectorMemories.map((memory) => (
-                                        <MemoryItem
-                                            key={memory.id}
-                                            memory={memory}
-                                            isSelected={selectedIds.has(memory.id)}
-                                            onSelect={() => toggleSelection(memory.id)}
-                                            onEdit={() => setEditingMemory(memory)}
-                                            onDelete={() => handleDelete(memory.id)}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })
                 )}
             </div>
 
-            {isCreating && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg w-full max-w-sm p-4">
-                        <h3 className="font-medium mb-3">Add Memory</h3>
-                        <textarea
-                            value={newMemoryContent}
-                            onChange={(e) => setNewMemoryContent(e.target.value)}
-                            placeholder="What should I remember?"
-                            className="w-full h-24 p-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:bg-zinc-800 dark:border-zinc-700"
+            <ScrollArea className="flex-1">
+                <div className="p-4 space-y-6">
+                    {/* Search - simplified */}
+                    <div className="relative">
+                        <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                            placeholder="Filter memories..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-background/50 border-border/50 h-9 pl-8 text-sm placeholder:text-muted-foreground/50"
                         />
-                        <select
-                            value={newMemorySector}
-                            onChange={(e) => setNewMemorySector(e.target.value)}
-                            className="w-full mt-2 p-2 text-sm border rounded-lg dark:bg-zinc-800 dark:border-zinc-700"
-                        >
-                            <option value="semantic">Semantic (Facts)</option>
-                            <option value="episodic">Episodic (Events)</option>
-                            <option value="procedural">Procedural (How-to)</option>
-                            <option value="emotional">Emotional (Feelings)</option>
-                            <option value="reflective">Reflective (Insights)</option>
-                        </select>
-                        <div className="flex justify-end gap-2 mt-4">
-                            <Button variant="ghost" size="sm" onClick={() => setIsCreating(false)}>
-                                Cancel
-                            </Button>
-                            <Button size="sm" onClick={handleCreate}>
-                                Save
-                            </Button>
-                        </div>
                     </div>
-                </div>
-            )}
 
-            {editingMemory && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg w-full max-w-sm p-4">
-                        <h3 className="font-medium mb-3">Edit Memory</h3>
-                        <textarea
-                            value={editingMemory.content}
-                            onChange={(e) =>
-                                setEditingMemory({ ...editingMemory, content: e.target.value })
-                            }
-                            className="w-full h-24 p-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:bg-zinc-800 dark:border-zinc-700"
-                        />
-                        <select
-                            value={editingMemory.sector}
-                            onChange={(e) =>
-                                setEditingMemory({ ...editingMemory, sector: e.target.value })
-                            }
-                            className="w-full mt-2 p-2 text-sm border rounded-lg dark:bg-zinc-800 dark:border-zinc-700"
-                        >
-                            <option value="semantic">Semantic</option>
-                            <option value="episodic">Episodic</option>
-                            <option value="procedural">Procedural</option>
-                            <option value="emotional">Emotional</option>
-                            <option value="reflective">Reflective</option>
-                        </select>
-                        <div className="flex justify-end gap-2 mt-4">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditingMemory(null)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button size="sm" onClick={handleUpdate}>
-                                Save
-                            </Button>
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-background border border-border/50 rounded-lg shadow-sm">
+                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Total Memories</div>
+                            <div className="text-xl font-serif font-medium">{memories.length}</div>
+                        </div>
+                        <div className="p-3 bg-background border border-border/50 rounded-lg shadow-sm">
+                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Graph Nodes</div>
+                            <div className="text-xl font-serif font-medium">124</div>
+                        </div>
+                    </div>
+
+                    {/* Recent Memories */}
+                    <div>
+                        <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+                            Active Context
+                        </h3>
+                        <div className="space-y-2">
+                            {isLoading ? (
+                                <div className="flex justify-center py-8">
+                                    <CircleNotch className="w-4 h-4 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : memories.length === 0 ? (
+                                <div className="text-center py-8 border border-dashed border-border/60 rounded-lg">
+                                    <p className="text-xs text-muted-foreground">No relevant memories found</p>
+                                </div>
+                            ) : (
+                                memories.map((memory) => (
+                                    <MemoryCard key={memory.id} memory={memory} />
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>
-            )}
+            </ScrollArea>
         </div>
     );
 }
 
-function MemoryItem({
-    memory,
-    isSelected,
-    onSelect,
-    onEdit,
-    onDelete,
-}: {
-    memory: Memory;
-    isSelected: boolean;
-    onSelect: () => void;
-    onEdit: () => void;
-    onDelete: () => void;
-}) {
+function MemoryCard({ memory }: { memory: Memory }) {
     return (
-        <div
-            className={cn(
-                'p-3 rounded-lg border text-left transition-all group',
-                isSelected
-                    ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
-                    : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
-            )}
-        >
-            <div className="flex items-start gap-2">
-                <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={onSelect}
-                    className="mt-1 rounded"
-                />
-                <div className="flex-1 min-w-0">
-                    <p className="text-[13px] text-zinc-700 dark:text-zinc-300 line-clamp-3">
-                        {memory.content}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] text-zinc-400">
-                            {Math.round(memory.confidence * 100)}% confidence
-                        </span>
+        <Card className="group hover:border-foreground/20 transition-all cursor-pointer bg-background border-border/60 shadow-sm">
+            <CardHeader className="p-3 pb-1 space-y-0">
+                <div className="flex items-start justify-between">
+                    <div className="flex gap-2">
+                        <div className="mt-0.5 p-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-muted-foreground group-hover:text-foreground transition-colors">
+                            <Tag className="w-3 h-3" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xs font-medium leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+                                {memory.content.substring(0, 40)}...
+                            </CardTitle>
+                            <CardDescription className="text-[10px] mt-0.5">
+                                {new Date(memory.createdAt).toLocaleDateString()}
+                            </CardDescription>
+                        </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                        onClick={onEdit}
-                        className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-                        title="Edit"
-                    >
-                        <PencilSimple size={14} />
-                    </button>
-                    <button
-                        onClick={onDelete}
-                        className="p-1 text-zinc-400 hover:text-red-500"
-                        title="Delete"
-                    >
-                        <Trash size={14} />
-                    </button>
+            </CardHeader>
+            <CardContent className="p-3 pt-2">
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                    {memory.content}
+                </p>
+                <div className="flex gap-1.5 mt-2 flex-wrap">
+                    {memory.metrics && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-muted-foreground">
+                            rel: {memory.metrics.relevance.toFixed(2)}
+                        </span>
+                    )}
                 </div>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }
 
