@@ -1,19 +1,12 @@
 import type { Metadata } from 'next';
-import { Instrument_Serif, Inter, JetBrains_Mono } from 'next/font/google';
+import { Figtree, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 
-const inter = Inter({
+const figtree = Figtree({
     subsets: ['latin'],
-    variable: '--font-inter',
-    display: 'swap',
-});
-
-const instrumentSerif = Instrument_Serif({
-    weight: '400',
-    subsets: ['latin'],
-    variable: '--font-instrument-serif',
+    variable: '--font-figtree',
     display: 'swap',
 });
 
@@ -37,10 +30,9 @@ export default function RootLayout({
         <html lang="en" suppressHydrationWarning>
             <body
                 className={cn(
-                    inter.variable,
-                    instrumentSerif.variable,
+                    figtree.variable,
                     jetbrainsMono.variable,
-                    'antialiased min-h-screen bg-background font-mono'
+                    'antialiased min-h-screen bg-background font-sans'
                 )}
             >
                 <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem>
