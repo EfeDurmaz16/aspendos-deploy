@@ -11,6 +11,15 @@ import { Webhooks } from '@polar-sh/nextjs';
  * Events: order.created, subscription.created/updated/canceled
  */
 
+// Helper to safely extract clerkId from metadata
+function getClerkIdFromMetadata(metadata: unknown): string | undefined {
+    if (metadata && typeof metadata === 'object' && 'clerkId' in metadata) {
+        const clerkId = (metadata as { clerkId: unknown }).clerkId;
+        return typeof clerkId === 'string' ? clerkId : undefined;
+    }
+    return undefined;
+}
+
 // Map Polar product names/IDs to our tiers
 const PLAN_TO_TIER: Record<string, Tier> = {
     starter: Tier.STARTER,
@@ -19,18 +28,18 @@ const PLAN_TO_TIER: Record<string, Tier> = {
 };
 
 // Tier limits based on approved pricing strategy
-const TIER_LIMITS = {
-    STARTER: {
+const TIER_LIMITS: Record<Tier, { monthlyCredit: number; chatsRemaining: number; voiceMinutesRemaining: number }> = {
+    [Tier.STARTER]: {
         monthlyCredit: 1000, // 1M tokens
         chatsRemaining: 300, // ~10/day
         voiceMinutesRemaining: 300, // 10 min/day
     },
-    PRO: {
+    [Tier.PRO]: {
         monthlyCredit: 10000, // 10M tokens
         chatsRemaining: 1500, // ~50/day
         voiceMinutesRemaining: 1800, // 60 min/day
     },
-    ULTRA: {
+    [Tier.ULTRA]: {
         monthlyCredit: 100000, // Effectively unlimited
         chatsRemaining: 5000, // ~166/day
         voiceMinutesRemaining: 5400, // 180 min/day
@@ -52,8 +61,8 @@ export const POST = Webhooks({
 
         // Get the Clerk user ID from metadata (try order metadata first, then customer metadata)
         const clerkId =
-            (order.metadata as { clerkId?: string })?.clerkId ||
-            (order.customer?.metadata as { clerkId?: string })?.clerkId;
+            getClerkIdFromMetadata(order.metadata) ||
+            getClerkIdFromMetadata(order.customer?.metadata);
         if (!clerkId) {
             console.log('[Polar Webhook] No clerkId in metadata, skipping');
             return;
@@ -76,8 +85,8 @@ export const POST = Webhooks({
 
         // Get the Clerk user ID from metadata (try subscription metadata first, then customer metadata)
         const clerkId =
-            (subscription.metadata as { clerkId?: string })?.clerkId ||
-            (subscription.customer?.metadata as { clerkId?: string })?.clerkId;
+            getClerkIdFromMetadata(subscription.metadata) ||
+            getClerkIdFromMetadata(subscription.customer?.metadata);
         if (!clerkId) {
             console.log('[Polar Webhook] No clerkId in metadata');
             return;

@@ -227,12 +227,8 @@ export default function StyleguidePage() {
                                             fontFamily: style.fontFamily,
                                             fontSize: style.fontSize,
                                             fontWeight: style.fontWeight,
-                                            lineHeight:
-                                                'lineHeight' in style ? style.lineHeight : 1.5,
-                                            letterSpacing:
-                                                'letterSpacing' in style
-                                                    ? style.letterSpacing
-                                                    : undefined,
+                                            lineHeight: (style as { lineHeight?: number }).lineHeight,
+                                            letterSpacing: (style as { letterSpacing?: string }).letterSpacing,
                                         }}
                                     >
                                         {name.includes('code')
@@ -370,14 +366,16 @@ export default function StyleguidePage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {[
-                                    { name: 'xs', target: 'Mobile portrait' },
-                                    { name: 'sm', target: 'Mobile landscape' },
-                                    { name: 'md', target: 'Tablet' },
-                                    { name: 'lg', target: 'Small desktop' },
-                                    { name: 'xl', target: 'Desktop' },
-                                    { name: '2xl', target: 'Large desktop' },
-                                ].map((bp) => (
+                                {(
+                                    [
+                                        { name: 'xs', target: 'Mobile portrait' },
+                                        { name: 'sm', target: 'Mobile landscape' },
+                                        { name: 'md', target: 'Tablet' },
+                                        { name: 'lg', target: 'Small desktop' },
+                                        { name: 'xl', target: 'Desktop' },
+                                        { name: '2xl', target: 'Large desktop' },
+                                    ] as const
+                                ).map((bp) => (
                                     <tr
                                         key={bp.name}
                                         className="border-b border-zinc-100 dark:border-zinc-800"
@@ -386,7 +384,7 @@ export default function StyleguidePage() {
                                             {bp.name}
                                         </td>
                                         <td className="py-3 px-4 font-mono text-sm text-zinc-600 dark:text-zinc-400">
-                                            {breakpoints[bp.name as keyof typeof breakpoints]}
+                                            {breakpoints[bp.name]}
                                         </td>
                                         <td className="py-3 px-4 text-sm text-zinc-500 dark:text-zinc-400">
                                             {bp.target}

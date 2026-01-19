@@ -25,13 +25,16 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  chats          Chat[]
-  messages       Message[]
-  memories       Memory[]
-  agents         Agent[]
-  billingAccount BillingAccount?
-  apiKeys        ApiKey[]
-  scheduledTasks ScheduledTask[]
+  chats                    Chat[]
+  messages                 Message[]
+  memories                 Memory[]
+  agents                   Agent[]
+  billingAccount           BillingAccount?
+  apiKeys                  ApiKey[]
+  scheduledTasks           ScheduledTask[]
+  pushSubscriptions        PushSubscription[]
+  notificationPreferences  NotificationPreferences?
+  notificationLogs         NotificationLog[]
 
   emailVerified Boolean   @default(false)
   image         String?
@@ -316,4 +319,63 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// ============================================
+// NOTIFICATIONS (Phase 3: Proactive Agent Callbacks)
+// ============================================
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  endpoint   String   @db.Text // Push notification endpoint URL
+  p256dh     String   @db.Text // Public key for encryption
+  auth       String   @db.Text // Authentication secret
+  deviceType String? // "web", "mobile", "desktop"
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscription")
+}
+
+model NotificationPreferences {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  pushEnabled     Boolean   @default(true)
+  emailEnabled    Boolean   @default(true)
+  inAppEnabled    Boolean   @default(true)
+  quietHoursStart String? // "22:00" format
+  quietHoursEnd   String? // "08:00" format
+  timezone        String    @default("UTC")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+model NotificationLog {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String // "PROACTIVE_FOLLOWUP", "REMINDER", "ALERT"
+  title       String
+  message     String    @db.Text
+  channel     String // "push", "email", "in_app"
+  status      String    @default("pending") // "pending", "delivered", "opened", "dismissed", "failed"
+  taskId      String? // Reference to ScheduledTask if applicable
+  metadata    Json?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("notification_log")
 }
