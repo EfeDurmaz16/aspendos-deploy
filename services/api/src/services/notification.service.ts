@@ -278,25 +278,102 @@ export async function getUserNotificationPreferences(
 }
 
 /**
- * Register push subscription
- * Stub - requires PushSubscription table
+ * Register push subscription for a user's device
  */
 export async function registerPushSubscription(
-    _userId: string,
-    _subscription: Record<string, unknown>
+    userId: string,
+    subscription: {
+        endpoint: string;
+        keys: {
+            p256dh: string;
+            auth: string;
+        };
+        deviceType?: string;
+    }
 ): Promise<void> {
-    console.log('Push subscription registration (stub implementation)');
+    try {
+        // Check if subscription already exists
+        const existing = await prisma.pushSubscription.findFirst({
+            where: {
+                userId,
+                endpoint: subscription.endpoint,
+            },
+        });
+
+        if (existing) {
+            console.log(`[Notification] Push subscription already exists for user ${userId}`);
+            return;
+        }
+
+        // Create new subscription
+        await prisma.pushSubscription.create({
+            data: {
+                userId,
+                endpoint: subscription.endpoint,
+                p256dh: subscription.keys.p256dh,
+                auth: subscription.keys.auth,
+                deviceType: subscription.deviceType || 'web',
+            },
+        });
+
+        console.log(`[Notification] Push subscription registered for user ${userId}`);
+    } catch (error) {
+        console.error('[Notification] Error registering push subscription:', error);
+        throw error;
+    }
 }
 
 /**
- * Update notification preferences
- * Stub - requires NotificationPreferences table
+ * Update notification preferences for a user
  */
 export async function updateNotificationPreferences(
-    _userId: string,
-    _preferences: Partial<NotificationPreferences>
+    userId: string,
+    preferences: Partial<NotificationPreferences>
 ): Promise<void> {
-    console.log('Preferences update (stub implementation)');
+    try {
+        const data: {
+            pushEnabled?: boolean;
+            emailEnabled?: boolean;
+            inAppEnabled?: boolean;
+            quietHoursStart?: string | null;
+            quietHoursEnd?: string | null;
+            timezone?: string;
+        } = {};
+
+        if (preferences.pushEnabled !== undefined) {
+            data.pushEnabled = preferences.pushEnabled;
+        }
+        if (preferences.emailEnabled !== undefined) {
+            data.emailEnabled = preferences.emailEnabled;
+        }
+        if (preferences.inAppEnabled !== undefined) {
+            data.inAppEnabled = preferences.inAppEnabled;
+        }
+        if (preferences.quietHoursStart !== undefined) {
+            data.quietHoursStart = preferences.quietHoursStart || null;
+        }
+        if (preferences.quietHoursEnd !== undefined) {
+            data.quietHoursEnd = preferences.quietHoursEnd || null;
+        }
+        if (preferences.quietHoursTimezone) {
+            data.timezone = preferences.quietHoursTimezone;
+        }
+
+        // Upsert preferences
+        await prisma.notificationPreferences.upsert({
+            where: { userId },
+            update: data,
+            create: {
+                userId,
+                ...data,
+            },
+        });
+
+        console.log(`[Notification] Preferences updated for user ${userId}`);
+    } catch (error) {
+        console.error('[Notification] Error updating preferences:', error);
+        throw error;
+    }
 }
 
 /**
