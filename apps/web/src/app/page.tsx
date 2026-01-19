@@ -98,7 +98,7 @@ export default function LandingPage() {
                             </Link>
                         </Button>
                         <Button
-                            variant="outline"
+                            variant="secondary"
                             size="lg"
                             className="h-12 px-8 text-base"
                             asChild

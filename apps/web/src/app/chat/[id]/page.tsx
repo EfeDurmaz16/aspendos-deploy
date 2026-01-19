@@ -1,6 +1,6 @@
 'use client';
 
-import { Brain, CircleNotch, List, PaperPlaneRight, SidebarSimple } from '@phosphor-icons/react';
+import { Brain, CircleNotch, List, PaperPlaneRight, SidebarSimple, Plus } from '@phosphor-icons/react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
@@ -8,6 +8,7 @@ import { MemoryPanel } from '@/components/chat/memory-panel';
 import { ModelSelector } from '@/components/chat/model-selector';
 import { StreamingMessage } from '@/components/chat/StreamingMessage';
 import { VoiceButton } from '@/components/chat/voice-button';
+import { LiveButton } from '@/components/chat/live-button';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/use-auth';
@@ -240,14 +241,17 @@ export default function ChatPage() {
                     </div>
                     {/* Centered Model Selector for mobile could go here or keep in right */}
 
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setMemoryOpen(!memoryOpen)}
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    >
-                        <List className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <LiveButton />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setMemoryOpen(!memoryOpen)}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        >
+                            <List className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Messages */}

@@ -28,6 +28,10 @@ const ToastContext = React.createContext<ToastContextType | undefined>(undefined
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = React.useState<Toast[]>([]);
 
+    const removeToast = React.useCallback((id: string) => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, []);
+
     const addToast = React.useCallback(
         (toast: Omit<Toast, 'id' | 'open'>) => {
             const id = Math.random().toString(36).substr(2, 9);
@@ -42,10 +46,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         },
         [removeToast]
     );
-
-    const removeToast = React.useCallback((id: string) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, []);
 
     return (
         <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
