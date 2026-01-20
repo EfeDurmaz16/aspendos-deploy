@@ -40,6 +40,7 @@ model User {
   image         String?
   sessions      Session[]
   accounts      Account[]
+  passkeys      Passkey[]
 
   @@index([email])
   @@map("user")
@@ -319,6 +320,29 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// ============================================
+// PASSKEY (WebAuthn/FIDO2 for passwordless auth)
+// ============================================
+
+model Passkey {
+  id           String   @id @default(cuid())
+  name         String?
+  publicKey    String   @db.Text
+  userId       String
+  credentialID String   @unique
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  aaguid       String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("passkey")
 }
 
 // ============================================

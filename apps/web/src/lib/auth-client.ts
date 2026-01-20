@@ -10,5 +10,10 @@ export const {
     signIn,
     signOut,
     signUp,
-    useSession
+    useSession,
+    passkey, // For passkey registration: passkey.addPasskey(), passkey.listUserPasskeys(), etc.
 } = authClient;
+
+export const checkout = async ({ slug }: { slug: string }) => {
+    window.location.href = `/checkout?productId=${slug}`;
+};

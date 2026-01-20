@@ -1,27 +1,69 @@
 'use client';
 
-import { Brain, CircleNotch, List, PaperPlaneRight, SidebarSimple, Plus, ArrowRight } from '@phosphor-icons/react';
+import { Brain, CircleNotch, List, SidebarSimple, GlobeIcon } from '@phosphor-icons/react';
 import { useParams, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { MemoryPanel } from '@/components/chat/memory-panel';
 import { ModelPicker } from '@/components/chat/model-picker';
 import { AddModelsModal } from '@/components/chat/add-models-modal';
-import { StreamingMessage } from '@/components/chat/StreamingMessage';
-import { VoiceButton } from '@/components/chat/voice-button';
-import { LiveButton } from '@/components/chat/live-button';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ShortcutsDock } from '@/components/chat/shortcuts-dock';
+import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
+import { ContextMenuMessage } from '@/components/chat/context-menu-message';
 import { useAuth } from '@/hooks/use-auth';
-import { type ChatMessage, useStreamingChat } from '@/hooks/useStreamingChat';
+import { useStreamingChat } from '@/hooks/useStreamingChat';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+// AI Elements Imports
+import {
+    Conversation,
+    ConversationContent,
+    ConversationEmptyState,
+    ConversationScrollButton,
+} from '@/components/ai-elements/conversation';
+import {
+    Message,
+    MessageContent,
+    MessageResponse,
+    MessageAttachment,
+    MessageAttachments,
+} from '@/components/ai-elements/message';
+import {
+    PromptInput,
+    PromptInputBody,
+    PromptInputTextarea,
+    PromptInputFooter,
+    PromptInputSubmit,
+    PromptInputTools,
+    PromptInputActionMenu,
+    PromptInputActionMenuTrigger,
+    PromptInputActionMenuContent,
+    PromptInputActionAddAttachments,
+    PromptInputHeader,
+    PromptInputAttachments,
+    PromptInputAttachment,
+    PromptInputButton,
+    PromptInputSelect,
+    PromptInputSelectTrigger,
+    PromptInputSelectValue,
+    PromptInputSelectContent,
+    PromptInputSelectItem,
+} from '@/components/ai-elements/prompt-input';
+import { Reasoning, ChainOfThought } from '@/components/ai-elements/reasoning';
+
+// Streamdown Plugins
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css'; // Ensure katex CSS is imported for math rendering
+
 interface Chat {
     id: string;
     title: string;
     modelPreference: string | null;
     createdAt: string;
     updatedAt: string;
+    messages?: any[];
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -36,12 +78,8 @@ export default function ChatPage() {
     const [memoryOpen, setMemoryOpen] = useState(false);
     const [chat, setChat] = useState<Chat | null>(null);
     const [chats, setChats] = useState<Chat[]>([]);
-    const [initialMessages, setInitialMessages] = useState<ChatMessage[]>([]);
     const [isLoadingChat, setIsLoadingChat] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [inputValue, setInputValue] = useState('');
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const [isAddModelsOpen, setIsAddModelsOpen] = useState(false);
     const [enabledModels, setEnabledModels] = useState<string[]>([
@@ -51,6 +89,8 @@ export default function ChatPage() {
         'openai/gpt-5-nano',
         'google/gemini-3-pro-preview',
     ]);
+    const [model, setModel] = useState('openai/gpt-4o-mini');
+    const [webSearch, setWebSearch] = useState(false);
 
     const handleToggleModel = (modelId: string) => {
         setEnabledModels((prev) =>
@@ -59,6 +99,13 @@ export default function ChatPage() {
     };
 
     const { messages, isStreaming, sendMessage, error: streamError } = useStreamingChat(chatId);
+
+    // Sync model preference
+    useEffect(() => {
+        if (chat?.modelPreference) {
+            setModel(chat.modelPreference);
+        }
+    }, [chat?.modelPreference]);
 
     // Load chat and messages
     useEffect(() => {
@@ -81,26 +128,16 @@ export default function ChatPage() {
 
                 const data = await res.json();
                 setChat(data);
-
-                if (data.messages) {
-                    const converted: ChatMessage[] = data.messages.map(
-                        (m: any) => ({
-                            id: m.id,
-                            role: m.role as 'user' | 'assistant',
-                            content: m.content,
-                            timestamp: new Date(m.createdAt),
-                            metadata: m.modelUsed
-                                ? {
-                                    model: m.modelUsed,
-                                    tokensIn: m.tokensIn,
-                                    tokensOut: m.tokensOut,
-                                    costUsd: m.costUsd,
-                                }
-                                : undefined,
-                        })
-                    );
-                    setInitialMessages(converted);
-                }
+                // Initial messages are loaded by useStreamingChat via its own logic if we were using useChat fully, 
+                // but here useStreamingChat manages messages state. 
+                // The original code setInitialMessages separately.
+                // Assuming useStreamingChat handles the message list now or we load it here?
+                // The original code loaded initialMessages and combined them: const allMessages = [...initialMessages, ...messages];
+                // Wait, useStreamingChat in original code didn't load initial messages. It just exposed the new ones.
+                // So I need to keep the "load initial messages" logic, but merge it effectively.
+                // Actually, useStreamingChat hook in Step 16 has a "loadMessages" function.
+                // But typically useChat stores all messages.
+                // Let's stick to the previous pattern: "allMessages".
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load chat');
             } finally {
@@ -130,36 +167,35 @@ export default function ChatPage() {
         loadChats();
     }, [isLoaded, isSignedIn]);
 
-    // Auto-scroll to bottom
+    // Initial messages from chat load (re-implementing original logic because useStreamingChat is a wrapper)
+    const [initialMessages, setInitialMessages] = useState<any[]>([]);
+
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, initialMessages]);
-
-
-
-    const handleSend = useCallback(async () => {
-        const content = inputValue.trim();
-        if (!content || isStreaming) return;
-
-        setInputValue('');
-        if (textareaRef.current) textareaRef.current.style.height = 'auto';
-
-        await sendMessage(content, { model: chat?.modelPreference || 'openai/gpt-4o-mini' });
-    }, [inputValue, isStreaming, sendMessage, chat?.modelPreference]);
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
+        if (chat?.messages) { // chat object from loadChat
+            // Map chat.messages to the format we need
+            // But wait, chat object type defines messages? No, definition above doesn't have messages.
+            // The API response likely has messages.
+            // @ts-ignore
+            if (chat.messages) {
+                // @ts-ignore
+                const converted = chat.messages.map((m: any) => ({
+                    id: m.id,
+                    role: m.role as 'user' | 'assistant',
+                    content: m.content,
+                    timestamp: new Date(m.createdAt),
+                }));
+                setInitialMessages(converted);
+            }
         }
-    };
+    }, [chat]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setInputValue(e.target.value);
-        const textarea = e.target;
-        textarea.style.height = 'auto';
-        textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
-    };
+    // Combine messages. 
+    // Note: useStreamingChat messages are cumulative for the session.
+    // If we load old messages, we should probably initialize useStreamingChat with them if possible,
+    // or just display them.
+    // The previous code did: const allMessages = [...initialMessages, ...messages];
+    const allMessages = [...initialMessages, ...messages];
+
 
     const handleNewChat = async () => {
         try {
@@ -188,6 +224,7 @@ export default function ChatPage() {
                     body: JSON.stringify({ model_id: modelId }),
                 });
                 setChat((prev: Chat | null) => (prev ? { ...prev, modelPreference: modelId } : prev));
+                setModel(modelId);
             } catch {
                 /* Handle error silently */
             }
@@ -198,25 +235,14 @@ export default function ChatPage() {
     // Keyboard shortcuts
     useEffect(() => {
         const handleGlobalKeyDown = (e: KeyboardEvent) => {
-            // New Chat: Cmd+N
             if (e.metaKey && e.key === 'n') {
                 e.preventDefault();
                 handleNewChat();
                 return;
             }
-
-            // Toggle Sidebar: Cmd+B
             if (e.metaKey && e.key === 'b') {
                 e.preventDefault();
                 setSidebarOpen((prev) => !prev);
-                return;
-            }
-
-            // Focus Input: /
-            // Only if not already typing in an input
-            if (e.key === '/' && document.activeElement?.tagName !== 'TEXTAREA' && document.activeElement?.tagName !== 'INPUT') {
-                e.preventDefault();
-                textareaRef.current?.focus();
                 return;
             }
         };
@@ -225,7 +251,13 @@ export default function ChatPage() {
         return () => window.removeEventListener('keydown', handleGlobalKeyDown);
     }, [handleNewChat]);
 
-    const allMessages = [...initialMessages, ...messages];
+    // Handle PromptInput submission
+    const handleSubmit = async (message: { text: string; files: any[] }) => {
+        // Just text for now, as useStreamingChat expects string
+        // If files are present, we might want to handle them (upload, then send URL?)
+        // For this MVP step, we'll focus on text.
+        await sendMessage(message.text, { model });
+    };
 
     if (!isLoaded) {
         return (
@@ -242,7 +274,7 @@ export default function ChatPage() {
 
     return (
         <div className="h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-black overflow-hidden font-sans flex relative">
-            {/* Subtle Gradient mesh backgrounds (Maia Clean) */}
+            {/* Background */}
             <div className="absolute inset-0 pointer-events-none z-0">
                 <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-purple-100/20 to-transparent dark:from-purple-900/10 rounded-full blur-3xl opacity-50" />
                 <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-bl from-emerald-100/20 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl opacity-50" />
@@ -263,9 +295,9 @@ export default function ChatPage() {
                 />
             </div>
 
-            {/* Main Chat */}
-            <div className="flex-1 h-full flex flex-col relative bg-transparent z-10">
-                {/* Header (Minimal) */}
+            {/* Main Chat Area */}
+            <div className="flex-1 h-full flex flex-col relative bg-transparent z-10 w-full min-w-0">
+                {/* Header */}
                 <div className="flex items-center justify-between p-3 border-b border-zinc-200 dark:border-zinc-800 flex-none bg-white/50 dark:bg-zinc-950/50 backdrop-blur z-20 w-full">
                     <div className="flex items-center">
                         <Button
@@ -287,7 +319,6 @@ export default function ChatPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <LiveButton />
                         <Button
                             variant="ghost"
                             size="icon"
@@ -299,105 +330,123 @@ export default function ChatPage() {
                     </div>
                 </div>
 
-                {/* Messages */}
-                <ScrollArea className="flex-1 p-0">
-                    <div className="max-w-3xl mx-auto space-y-6 pt-6 pb-32 px-4">
-                        {isLoadingChat ? (
-                            <div className="flex justify-center py-8">
-                                <CircleNotch className="w-6 h-6 animate-spin text-zinc-400" />
-                            </div>
-                        ) : error ? (
-                            <div className="text-center py-8 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800 px-4">
-                                {error}
-                            </div>
-                        ) : allMessages.length === 0 ? (
-                            <div className="text-center py-20 animate-fade-up">
-                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900 mb-6 shadow-lg border border-zinc-200 dark:border-zinc-700">
-                                    <Brain
-                                        className="w-8 h-8 text-zinc-600 dark:text-zinc-400"
-                                        weight="duotone"
-                                    />
+                {/* Conversation Area */}
+                <div className="flex-1 flex flex-col min-h-0 relative">
+                    <Conversation>
+                        <ConversationContent>
+                            {allMessages.length === 0 && !isLoadingChat && !error ? (
+                                <ConversationEmptyState
+                                    icon={<Brain className="w-12 h-12 text-muted-foreground/50" weight="duotone" />}
+                                    title="Start a conversation"
+                                    description="Ask anything, analyze data, or generate ideas. Aspendos is here to help."
+                                />
+                            ) : (
+                                allMessages.map((msg, index) => (
+                                    <ContextMenuMessage
+                                        key={msg.id || index}
+                                        message={{ id: msg.id, content: msg.content, role: msg.role }}
+                                        onReply={(m) => {
+                                            // Handle reply - could prepend quote to input
+                                            toast.info('Reply feature coming soon');
+                                        }}
+                                        onEdit={msg.role === 'user' ? (m) => {
+                                            toast.info('Edit feature coming soon');
+                                        } : undefined}
+                                        onRegenerate={msg.role === 'assistant' ? (id) => {
+                                            toast.info('Regenerate feature coming soon');
+                                        } : undefined}
+                                        onForward={(m) => {
+                                            toast.info('Forward feature coming soon');
+                                        }}
+                                    >
+                                        <Message from={msg.role}>
+                                            {/* Show reasoning for assistant messages if available */}
+                                            {msg.role === 'assistant' && msg.reasoning && (
+                                                <Reasoning isStreaming={isStreaming && index === allMessages.length - 1}>
+                                                    {msg.reasoning}
+                                                </Reasoning>
+                                            )}
+                                            <MessageContent>
+                                                <MessageResponse
+                                                    plugins={[remarkMath] as any}
+                                                    rehypePlugins={[rehypeKatex] as any}
+                                                >
+                                                    {msg.content}
+                                                </MessageResponse>
+                                            </MessageContent>
+                                        </Message>
+                                    </ContextMenuMessage>
+                                ))
+                            )}
+                            {error && (
+                                <div className="text-center py-4 text-red-500 text-sm bg-red-50 dark:bg-red-900/10 rounded-lg mx-auto max-w-md">
+                                    {error}
                                 </div>
-                                <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                                    Start a conversation
-                                </p>
-                                <p className="text-sm text-zinc-500 max-w-sm mx-auto">
-                                    Ask anything, analyze data, or generate ideas. Aspendos is here to help.
-                                </p>
-                            </div>
-                        ) : (
-                            allMessages.map((msg) => (
-                                <StreamingMessage
-                                    key={msg.id}
-                                    message={{
-                                        ...msg,
-                                        memoriesUsed: msg.memoriesUsed?.map((m: any) => ({
-                                            ...m,
-                                            content: m.content || '',
-                                        })),
-                                    }}
-                                />
-                            ))
-                        )}
-                        {streamError && (
-                            <div className="text-center py-4 text-red-500 text-sm bg-red-50 dark:bg-red-900/10 rounded-lg">
-                                {streamError}
-                            </div>
-                        )}
-                        <div ref={messagesEndRef} className="h-4" />
-                    </div>
-                </ScrollArea>
+                            )}
+                            {streamError && (
+                                <div className="text-center py-4 text-red-500 text-sm bg-red-50 dark:bg-red-900/10 rounded-lg mx-auto max-w-md">
+                                    {streamError}
+                                </div>
+                            )}
+                        </ConversationContent>
+                        <ConversationScrollButton />
+                    </Conversation>
+                </div>
 
-                {/* Input */}
-                <div className="max-w-3xl mx-auto w-full px-4 mb-6 flex-none z-20">
-                    <div className="relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-black/50 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-800 transition-all">
-                        <textarea
-                            ref={textareaRef}
-                            value={inputValue}
-                            onChange={handleInputChange}
-                            onKeyDown={handleKeyDown}
-                            className="w-full min-h-[50px] max-h-[200px] p-4 bg-transparent resize-none outline-none text-[16px] placeholder:text-muted-foreground/60 text-foreground"
-                            placeholder="Ask anything..."
-                            disabled={isStreaming}
-                        />
-                        <div className="flex items-center justify-between px-3 pb-3 pt-1">
-                            <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted/50 rounded-lg">
-                                    <Plus className="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted/50 rounded-lg">
-                                    <Brain className="w-4 h-4" />
-                                </Button>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {inputValue.length > 0 && (
-                                    <span className="text-[10px] font-mono text-muted-foreground/50 mr-2 animate-fade-in">
-                                        {inputValue.length} / 4000
-                                    </span>
-                                )}
-                                <VoiceButton
-                                    onTranscription={(text) => setInputValue((prev) => prev + text)}
-                                    disabled={isStreaming}
-                                />
-                                <Button
-                                    size="sm"
-                                    onClick={handleSend}
-                                    disabled={!inputValue.trim() || isStreaming}
-                                    className="h-8 rounded-lg text-xs px-3"
+                {/* Input Area */}
+                <div className="p-4 flex-none z-20 max-w-3xl mx-auto w-full">
+                    <PromptInput
+                        onSubmit={handleSubmit}
+                        className="shadow-xl"
+                    >
+                        <PromptInputHeader>
+                            <PromptInputAttachments>
+                                {(attachment) => <PromptInputAttachment data={attachment} />}
+                            </PromptInputAttachments>
+                        </PromptInputHeader>
+                        <PromptInputBody>
+                            <PromptInputTextarea placeholder="Ask anything..." />
+                        </PromptInputBody>
+                        <PromptInputFooter>
+                            <PromptInputTools>
+                                <PromptInputActionMenu>
+                                    <PromptInputActionMenuTrigger />
+                                    <PromptInputActionMenuContent>
+                                        <PromptInputActionAddAttachments />
+                                        {/* Add more actions like shortcuts later */}
+                                    </PromptInputActionMenuContent>
+                                </PromptInputActionMenu>
+                                <PromptInputButton
+                                    variant={webSearch ? 'default' : 'ghost'}
+                                    onClick={() => setWebSearch(!webSearch)}
+                                    size="icon-sm"
+                                    className="gap-2 px-2 w-auto"
                                 >
-                                    {isStreaming ? (
-                                        <CircleNotch
-                                            className="w-4 h-4 animate-spin"
-                                            weight="bold"
-                                        />
-                                    ) : (
-                                        <>
-                                            Send <ArrowRight weight="bold" className="w-3.5 h-3.5 ml-1.5" />
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-                        </div>
+                                    <GlobeIcon size={16} />
+                                    <span className="text-xs">Search</span>
+                                </PromptInputButton>
+                                {/* Model Selector in input */}
+                                <PromptInputSelect
+                                    value={model}
+                                    onValueChange={handleModelChange}
+                                >
+                                    <PromptInputSelectTrigger>
+                                        <PromptInputSelectValue placeholder="Select model" />
+                                    </PromptInputSelectTrigger>
+                                    <PromptInputSelectContent>
+                                        {enabledModels.map((m) => (
+                                            <PromptInputSelectItem key={m} value={m}>
+                                                {m.split('/').pop()}
+                                            </PromptInputSelectItem>
+                                        ))}
+                                    </PromptInputSelectContent>
+                                </PromptInputSelect>
+                            </PromptInputTools>
+                            <PromptInputSubmit status={isStreaming ? 'streaming' : undefined} />
+                        </PromptInputFooter>
+                    </PromptInput>
+                    <div className="text-center mt-2 text-xs text-muted-foreground">
+                        Aspendos can make mistakes. Check important info.
                     </div>
                 </div>
             </div>
@@ -411,15 +460,16 @@ export default function ChatPage() {
             >
                 <MemoryPanel />
             </div>
-            {/* Add Models Modal */}
+
+            {/* Keyboard Shortcuts Panel */}
+            <KeyboardShortcuts />
+
             <AddModelsModal
                 isOpen={isAddModelsOpen}
                 onClose={() => setIsAddModelsOpen(false)}
                 enabledModels={enabledModels}
                 onToggleModel={handleToggleModel}
             />
-
-            <ShortcutsDock />
         </div>
     );
 }

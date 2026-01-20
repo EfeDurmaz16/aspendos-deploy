@@ -4,6 +4,8 @@ import { ChatCircle, CircleNotch, DotsThree, Plus } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
+import { ContextMenuChat } from '@/components/chat/context-menu-chat';
+import { toast } from 'sonner';
 
 interface Chat {
     id: string;
@@ -18,6 +20,8 @@ interface ChatSidebarProps {
     currentChatId?: string;
     onNewChat?: () => void;
     onSelectChat?: (chatId: string) => void;
+    onEditChatTitle?: (chatId: string, title: string) => void;
+    onDeleteChat?: (chatId: string) => void;
     isLoading?: boolean;
 }
 
@@ -26,6 +30,8 @@ export function ChatSidebar({
     currentChatId,
     onNewChat,
     onSelectChat,
+    onEditChatTitle,
+    onDeleteChat,
     isLoading = false,
 }: ChatSidebarProps) {
     const { user } = useUser();
@@ -73,12 +79,25 @@ export function ChatSidebar({
                             </h4>
                             <div className="space-y-0.5">
                                 {groupChats.map((chat) => (
-                                    <SidebarItem
+                                    <ContextMenuChat
                                         key={chat.id}
-                                        label={chat.title || 'Untitled'}
-                                        active={chat.id === currentChatId}
-                                        onClick={() => onSelectChat?.(chat.id)}
-                                    />
+                                        chat={{ id: chat.id, title: chat.title || 'Untitled' }}
+                                        onEditTitle={onEditChatTitle || ((id, title) => {
+                                            toast.info('Edit title feature coming soon');
+                                        })}
+                                        onDelete={onDeleteChat || ((id) => {
+                                            toast.info('Delete feature coming soon');
+                                        })}
+                                        onOpenInNewTab={(id) => {
+                                            window.open(`/chat/${id}`, '_blank');
+                                        }}
+                                    >
+                                        <SidebarItem
+                                            label={chat.title || 'Untitled'}
+                                            active={chat.id === currentChatId}
+                                            onClick={() => onSelectChat?.(chat.id)}
+                                        />
+                                    </ContextMenuChat>
                                 ))}
                             </div>
                         </div>

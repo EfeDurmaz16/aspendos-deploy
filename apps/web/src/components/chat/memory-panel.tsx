@@ -19,6 +19,8 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { ContextMenuMemory } from '@/components/chat/context-menu-memory';
+import { toast } from 'sonner';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -131,7 +133,21 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                                 </div>
                             ) : (
                                 memories.map((memory) => (
-                                    <MemoryCard key={memory.id} memory={memory} />
+                                    <ContextMenuMemory
+                                        key={memory.id}
+                                        memory={{ id: memory.id, content: memory.content, type: memory.sector, tags: memory.tags }}
+                                        onView={(m) => {
+                                            toast.info('View memory details coming soon');
+                                        }}
+                                        onEdit={(m) => {
+                                            toast.info('Edit memory coming soon');
+                                        }}
+                                        onDelete={(id) => {
+                                            toast.info('Delete memory coming soon');
+                                        }}
+                                    >
+                                        <MemoryCard memory={memory} />
+                                    </ContextMenuMemory>
                                 ))
                             )}
                         </div>
