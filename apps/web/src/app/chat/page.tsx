@@ -1,11 +1,12 @@
 'use client';
 
-import { Brain, CircleNotch, Plus, ChatCircle, Cpu, Lightning } from '@phosphor-icons/react';
+import { Brain, CircleNotch, Plus, ChatCircle, Cpu, Lightning, ArrowRight } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -84,28 +85,33 @@ export default function ChatIndexPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-            <div className="max-w-2xl w-full text-center space-y-10">
+        <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-black relative overflow-hidden flex flex-col items-center justify-center p-4">
+            {/* Subtle Gradient mesh backgrounds (Maia Clean) */}
+            <div className="absolute inset-0 pointer-events-none -z-10">
+                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-purple-100/20 to-transparent dark:from-purple-900/10 rounded-full blur-3xl opacity-50" />
+                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-bl from-emerald-100/20 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl opacity-50" />
+            </div>
+
+            <div className="max-w-2xl w-full text-center space-y-10 relative z-10">
                 {/* Header */}
-                <div className="space-y-4">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 mb-2 shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700">
+                <div className="space-y-4 animate-fade-up opacity-0 animation-delay-100">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 mb-2 shadow-sm border border-zinc-200 dark:border-zinc-800">
                         <Brain
                             className="w-8 h-8 text-zinc-900 dark:text-zinc-100"
                             weight="regular"
                         />
                     </div>
-                    <h1 className="text-2xl font-semibold tracking-tight text-foreground font-serif">
+                    <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                         Good morning, Efe
                     </h1>
                 </div>
 
                 {/* Main Action */}
-                <div className="relative group max-w-xl mx-auto w-full">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                    <div className="relative flex flex-col bg-background/80 backdrop-blur-xl border border-border/50 shadow-2xl shadow-zinc-200/50 dark:shadow-black/50 rounded-xl overflow-hidden">
+                <div className="max-w-xl mx-auto w-full animate-fade-up opacity-0 animation-delay-200">
+                    <div className="relative flex flex-col bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800 shadow-lg rounded-xl overflow-hidden transition-shadow hover:shadow-xl focus-within:ring-2 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-800">
                         <textarea
-                            placeholder="What would you like to know?"
-                            className="w-full min-h-[50px] p-4 bg-transparent resize-none outline-none text-[15px] placeholder:text-muted-foreground/60"
+                            placeholder="What's on your mind?"
+                            className="w-full min-h-[60px] p-5 bg-transparent resize-none outline-none text-[16px] placeholder:text-muted-foreground/60 text-foreground"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -121,22 +127,23 @@ export default function ChatIndexPage() {
                             </div>
                             <Button
                                 onClick={handleNewChat}
-                                className="h-8 rounded-lg bg-foreground text-background hover:bg-foreground/90 text-xs px-4"
+                                size="sm"
+                                className="h-8 rounded-lg text-xs px-4"
                             >
-                                <ChatCircle weight="fill" className="w-3.5 h-3.5 mr-2" />
                                 Start Chat
+                                <ArrowRight className="w-3.5 h-3.5 ml-2" />
                             </Button>
                         </div>
                     </div>
                 </div>
 
                 {/* Capability Hints */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto pt-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto pt-8 animate-fade-up opacity-0 animation-delay-300">
                     {['Analyze a complex PDF', 'Plan a weekend trip', 'Debug a React component'].map((hint) => (
                         <button
                             key={hint}
                             onClick={handleNewChat}
-                            className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 py-2 px-3 rounded-lg transition-colors text-center border border-transparent hover:border-border/50"
+                            className="text-sm text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-zinc-800/50 py-3 px-4 rounded-xl transition-all text-center border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 hover:shadow-sm"
                         >
                             "{hint}"
                         </button>
@@ -147,34 +154,3 @@ export default function ChatIndexPage() {
     );
 }
 
-function FeatureCard({
-    icon,
-    title,
-    description,
-}: {
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-}) {
-    return (
-        <Card className="border-border/50 shadow-none hover:border-border/80 transition-colors bg-card/50">
-            <CardHeader className="p-4 space-y-0 pb-2">
-                <div className="mb-2 w-fit rounded-lg bg-background p-2 ring-1 ring-border/50">
-                    {icon}
-                </div>
-                <CardTitle className="text-sm font-medium leading-none">{title}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-                <CardDescription className="text-xs">{description}</CardDescription>
-            </CardContent>
-        </Card>
-    );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-    return (
-        <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-            {children}
-        </kbd>
-    );
-}

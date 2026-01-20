@@ -9,7 +9,13 @@ import * as billingService from '../services/billing.service';
 import * as polarService from '../services/polar.service';
 import { createCheckoutSchema, getUsageQuerySchema } from '../validation/billing.schema';
 
-const app = new Hono();
+type Variables = {
+    validatedBody?: unknown;
+    validatedQuery?: unknown;
+    validatedParams?: unknown;
+};
+
+const app = new Hono<{ Variables: Variables }>();
 
 // ============================================
 // AUTHENTICATED ROUTES

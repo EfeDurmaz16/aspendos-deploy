@@ -31,7 +31,13 @@ interface Message {
     content: string;
 }
 
-const app = new Hono();
+type Variables = {
+    validatedBody?: unknown;
+    validatedQuery?: unknown;
+    validatedParams?: unknown;
+};
+
+const app = new Hono<{ Variables: Variables }>();
 
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
