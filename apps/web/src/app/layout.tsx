@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 import { GlobalCommand } from '@/components/global-command';
+import { SiteDock } from '@/components/layout/site-dock';
 
 const figtree = Figtree({
     subsets: ['latin'],
@@ -39,6 +40,7 @@ export default function RootLayout({
                 <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem>
                     <GlobalCommand />
                     {children}
+                    <SiteDock />
                 </ThemeProvider>
             </body>
         </html>

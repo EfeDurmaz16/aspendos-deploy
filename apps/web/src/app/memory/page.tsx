@@ -25,6 +25,7 @@ import {
     ThumbsUp,
     Trash,
 } from '@phosphor-icons/react';
+import { NativeDelete } from '@/components/ui/delete-button';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -238,15 +239,14 @@ function MemoryCard({
                             >
                                 <PencilSimple className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
                             </Button>
-                            <Button
-                                variant="ghost"
+                            <NativeDelete
+                                onConfirm={() => { }} // No-op for initial click
+                                onDelete={onDelete}
+                                buttonText=""
+                                confirmText="Confirm"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-rose-100 dark:hover:bg-rose-900/30"
-                                onClick={onDelete}
-                                title="Delete"
-                            >
-                                <Trash className="w-3.5 h-3.5 text-rose-500" />
-                            </Button>
+                                className="h-7"
+                            />
                         </div>
                     </div>
                 </div>
@@ -278,7 +278,7 @@ function MemoryCard({
                     <ContextMenuShortcut>⌫</ContextMenuShortcut>
                 </ContextMenuItem>
             </ContextMenuContent>
-        </ContextMenu>
+        </ContextMenu >
     );
 }
 

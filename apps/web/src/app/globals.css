@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @plugin "tailwindcss-animate";
 
 @theme {
@@ -84,6 +86,25 @@
   --ring: #0a0a0a;
 
   --radius: 0.5rem;
+
+  /* Aceternity Colors */
+  --black: #000000;
+  --white: #ffffff;
+  --slate-950: #020617;
+  --indigo-300: #a5b4fc;
+  --violet-200: #ddd6fe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --transparent: transparent;
+  --bg-0: #09090b;
+  --bg-100: #18181b;
+  --bg-200: #27272a;
+  --bg-300: #3f3f46;
+  --text-100: #fafafa;
+  --text-200: #e4e4e7;
+  --text-300: #a1a1aa;
+  --text-400: #71717a;
 }
 
 [data-theme="light"] {
@@ -146,6 +167,17 @@
   --border: #404040;
   --input: #404040;
   --ring: #d4d4d4;
+
+  /* Aceternity Colors (Dark) */
+  --black: #000000;
+  --white: #ffffff;
+  --slate-950: #020617;
+  --indigo-300: #a5b4fc;
+  --violet-200: #ddd6fe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --transparent: transparent;
 }
 
 @layer base {
@@ -500,6 +532,7 @@
 
 /* Focus visible default (respects prefers-reduced-motion) */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -510,5 +543,31 @@
 
   html {
     scroll-behavior: auto;
+  }
+}
+
+@theme inline {
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --color-background: var(--bg-0);
+  --color-foreground: var(--text-100);
+  --radius: var(----radius);
+  --color-text-400: var(----text-400);
+  --color-text-300: var(----text-300);
+  --color-text-200: var(----text-200);
+  --color-text-100: var(----text-100);
+  --color-bg-300: var(----bg-300);
+  --color-bg-200: var(----bg-200);
+  --color-bg-100: var(----bg-100);
+  --color-bg-0: var(----bg-0);
+  @keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    }
   }
 }

@@ -1,19 +1,19 @@
 'use client';
 
 import {
-    ArrowRight,
+    CheckCircle,
     Bell,
     Brain,
-    CheckCircle,
-    Clock,
-    Cpu,
     Database,
-    GithubLogo,
+    Cpu,
     Headphones,
-    Shapes,
-    Sparkle,
+    GithubLogo,
     XLogo,
 } from '@phosphor-icons/react';
+import { Home, Zap, CreditCard, LayoutDashboard } from 'lucide-react';
+import { NavBar } from "@/components/ui/tubelight-navbar";
+import ResponsiveHeroBanner from "@/components/ui/responsive-hero-banner";
+import { BentoGrid, BentoCard } from "@/components/ui/bento-grid";
 import Link from 'next/link';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Button } from '@/components/ui/button';
@@ -26,139 +26,80 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AuroraBackground } from '@/components/ui/aurora-background';
+import { GoogleGeminiEffect } from '@/components/ui/google-gemini-effect';
+import { useScroll, useTransform } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion } from 'framer-motion';
 
 export default function LandingPage() {
+    const ref = useRef(null);
+    const { scrollYProgress } = useScroll({
+        target: ref,
+        offset: ['start start', 'end start'],
+    });
+
+    const pathLengthFirst = useTransform(scrollYProgress, [0, 0.8], [0.2, 1.2]);
+    const pathLengthSecond = useTransform(scrollYProgress, [0, 0.8], [0.15, 1.2]);
+    const pathLengthThird = useTransform(scrollYProgress, [0, 0.8], [0.1, 1.2]);
+    const pathLengthFourth = useTransform(scrollYProgress, [0, 0.8], [0.05, 1.2]);
+    const pathLengthFifth = useTransform(scrollYProgress, [0, 0.8], [0, 1.2]);
+
     return (
         <div className="flex flex-col min-h-screen font-sans bg-background text-foreground">
             {/* Navigation */}
-            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container flex h-14 max-w-7xl mx-auto items-center justify-between px-4 md:px-6">
-                    <div className="flex items-center gap-2">
-                        <span className="font-semibold tracking-tight">ASPENDOS</span>
-                    </div>
-                    <nav className="hidden md:flex gap-6 items-center text-sm font-medium text-muted-foreground">
-                        <Link
-                            href="#features"
-                            className="hover:text-foreground transition-colors"
-                        >
-                            Method
-                        </Link>
-                        <Link
-                            href="#pricing"
-                            className="hover:text-foreground transition-colors"
-                        >
-                            Pricing
-                        </Link>
-                        <Link
-                            href="/login"
-                            className="hover:text-foreground transition-colors"
-                        >
-                            Log in
-                        </Link>
-                    </nav>
-                    <div className="flex items-center gap-3">
-                        <ModeToggle />
-                        <Button
-                            size="sm"
-                            asChild
-                        >
-                            <Link href="/signup">Get Started</Link>
-                        </Button>
-                    </div>
-                </div>
-            </header>
+            {/* Navigation */}
+            <NavBar
+                items={[
+                    { name: 'Home', url: '/', icon: Home },
+                    { name: 'Features', url: '#features', icon: Zap },
+                    { name: 'Pricing', url: '#pricing', icon: CreditCard },
+                    { name: 'Dashboard', url: '/memory', icon: LayoutDashboard }
+                ]}
+            />
 
             <main className="flex-1">
-                {/* Hero Section */}
-                <section className="px-4 md:px-6 py-24 md:py-32 bg-background flex flex-col items-center text-center">
-                    <Badge variant="outline" className="mb-6 px-3 py-1 text-sm bg-muted/50">
-                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                        Now with voice & proactive scheduling
-                    </Badge>
-
-                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tighter text-foreground mb-6 max-w-4xl">
-                        Meet your <br className="hidden md:block" />
-                        <span className="text-muted-foreground">autonomous AI assistant</span>
-                    </h1>
-
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-                        Aspendos doesn't just respond—it anticipates. Proactive notifications,
-                        autonomous scheduling, and persistent memory across every conversation.
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Button
-                            size="lg"
-                            className="h-12 px-8 text-base"
-                            asChild
-                        >
-                            <Link href="/signup">
-                                Start using Aspendos
-                                <ArrowRight className="ml-2 w-4 h-4" />
-                            </Link>
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="lg"
-                            className="h-12 px-8 text-base"
-                            asChild
-                        >
-                            <Link href="#demo">Watch the demo</Link>
-                        </Button>
+                {/* Hero Section with Aurora Background */}
+                <AuroraBackground>
+                    <div className="w-full h-full">
+                        <ResponsiveHeroBanner
+                            title="Meet your autonomous AI assistant"
+                            titleLine2=""
+                            description="Aspendos doesn't just respond—it anticipates. Proactive notifications, autonomous scheduling, and persistent memory across every conversation."
+                            primaryButtonText="Start using Aspendos"
+                            primaryButtonHref="/signup"
+                            secondaryButtonText="Watch the demo"
+                            secondaryButtonHref="#demo"
+                            badgeLabel="New"
+                            badgeText="Voice & Proactive Scheduling"
+                            ctaButtonText="Login"
+                            ctaButtonHref="/login"
+                            backgroundImageUrl=""
+                            navLinks={[]} // We use the main NavBar
+                        />
                     </div>
-                </section>
+                </AuroraBackground>
 
-                {/* Hero Feature Card */}
-                <section className="px-4 md:px-6 pb-24 container max-w-6xl mx-auto">
-                    <Card className="overflow-hidden bg-card/50">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 min-h-[400px]">
-                            {/* Left Content */}
-                            <div className="p-8 lg:p-12 lg:col-span-2 flex flex-col justify-center border-b lg:border-b-0 lg:border-r">
-                                <h3 className="text-2xl font-semibold mb-4">
-                                    AI that acts before you ask
-                                </h3>
-                                <p className="text-muted-foreground mb-8 text-lg">
-                                    Autonomous scheduling, predictive notifications, and
-                                    proactive assistance. Your AI doesn't wait in the chat
-                                    box—it works ahead of your needs.
-                                </p>
+                {/* Content Removed - integrated into new flow */}
 
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <Bell className="w-6 h-6 text-blue-500" weight="bold" />
-                                        <div>
-                                            <p className="font-medium text-sm">Proactive</p>
-                                            <p className="text-xs text-muted-foreground">Anticipates needs</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Clock className="w-6 h-6 text-emerald-500" weight="bold" />
-                                        <div>
-                                            <p className="font-medium text-sm">Scheduled</p>
-                                            <p className="text-xs text-muted-foreground">Acts on time</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Brain className="w-6 h-6 text-purple-500" weight="bold" />
-                                        <div>
-                                            <p className="font-medium text-sm">Remembers</p>
-                                            <p className="text-xs text-muted-foreground">Learns context</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Visual */}
-                            <div className="p-8 lg:p-12 flex items-center justify-center bg-muted/30">
-                                <div className="relative w-32 h-32 flex items-center justify-center">
-                                    <div className="absolute inset-0 rounded-full border border-emerald-500/20 animate-pulse" />
-                                    <div className="absolute inset-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                                        <Sparkle className="w-10 h-10 text-emerald-500" weight="fill" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
+                {/* Google Gemini Effect Section */}
+                <section className="w-full relative pt-20 overflow-hidden">
+                    <div
+                        className="h-[400vh] bg-background w-full dark:border dark:border-white/[0.1] rounded-md relative overflow-clip"
+                        ref={ref}
+                    >
+                        <GoogleGeminiEffect
+                            pathLengths={[
+                                pathLengthFirst,
+                                pathLengthSecond,
+                                pathLengthThird,
+                                pathLengthFourth,
+                                pathLengthFifth,
+                            ]}
+                            title="Built for the future"
+                            description="Experience the next generation of AI interaction with fluid animations and seamless state management."
+                        />
+                    </div>
                 </section>
 
                 {/* Features Section */}
@@ -170,99 +111,48 @@ export default function LandingPage() {
                             </h2>
                             <p className="text-lg text-muted-foreground">
                                 Aspendos combines three essential capabilities into one unified
-                                platform. Proactivity, memory, and voice—everything you need for
-                                truly autonomous AI.
+                                platform. Use the cards below to explore.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {/* Feature 1 */}
-                            <Card className="lg:col-span-2">
-                                <CardHeader>
-                                    <div className="mb-4 w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                                        <Bell className="w-5 h-5 text-blue-500" weight="bold" />
-                                    </div>
-                                    <CardTitle>Proactive Agent</CardTitle>
-                                    <CardDescription>
-                                        Aspendos autonomously schedules tasks and takes action on your behalf.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                        <CheckCircle className="w-4 h-4 text-emerald-500" weight="fill" />
-                                        Predictive notifications
-                                    </div>
-                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                        <CheckCircle className="w-4 h-4 text-emerald-500" weight="fill" />
-                                        Autonomous task scheduling
-                                    </div>
-                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                        <CheckCircle className="w-4 h-4 text-emerald-500" weight="fill" />
-                                        Context-aware decisions
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Feature 2 */}
-                            <Card className="lg:col-span-1">
-                                <CardHeader>
-                                    <div className="mb-4 w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                                        <Database className="w-5 h-5 text-purple-500" weight="bold" />
-                                    </div>
-                                    <CardTitle>Memory</CardTitle>
-                                    <CardDescription>
-                                        Persistent knowledge graph of your preferences and projects.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-2">
-                                    <div className="bg-muted px-3 py-2 rounded-md text-xs font-mono text-muted-foreground">
-                                        <span className="text-emerald-500 mr-2">→</span>
-                                        Cross-conversation
-                                    </div>
-                                    <div className="bg-muted px-3 py-2 rounded-md text-xs font-mono text-muted-foreground">
-                                        <span className="text-emerald-500 mr-2">→</span>
-                                        Vector recall
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Feature 3 */}
-                            <Card className="lg:col-span-1">
-                                <CardHeader>
-                                    <div className="mb-4 w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                                        <Headphones className="w-5 h-5 text-emerald-500" weight="bold" />
-                                    </div>
-                                    <CardTitle>Voice I/O</CardTitle>
-                                    <CardDescription>
-                                        Whisper transcription and natural speech synthesis.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-2">
-                                    <div className="bg-muted px-3 py-2 rounded-md text-xs font-mono text-muted-foreground">
-                                        <span className="text-emerald-500 mr-2">→</span>
-                                        Whisper v3
-                                    </div>
-                                    <div className="bg-muted px-3 py-2 rounded-md text-xs font-mono text-muted-foreground">
-                                        <span className="text-emerald-500 mr-2">→</span>
-                                        Natural TTS
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Feature 4 */}
-                            <Card className="lg:col-span-2 bg-foreground text-background">
-                                <CardHeader>
-                                    <div className="mb-4 w-10 h-10 rounded-lg bg-background/20 flex items-center justify-center">
-                                        <Cpu className="w-5 h-5 text-background" weight="bold" />
-                                    </div>
-                                    <CardTitle className="text-background">Any Model. Any Time.</CardTitle>
-                                    <CardDescription className="text-background/70">
-                                        Switch seamlessly between Claude, GPT-4o, and Gemini.
-                                        Aspendos handles model selection and cost optimization.
-                                    </CardDescription>
-                                </CardHeader>
-                            </Card>
-                        </div>
+                        <BentoGrid>
+                            <BentoCard
+                                name="Proactive Agent"
+                                className="col-span-3 lg:col-span-1"
+                                background={<div className="absolute inset-0 bg-blue-500/5" />}
+                                Icon={Bell}
+                                description="Aspendos autonomously schedules tasks and takes action on your behalf."
+                                href="/signup"
+                                cta="Learn more"
+                            />
+                            <BentoCard
+                                name="Memory"
+                                className="col-span-3 lg:col-span-1"
+                                background={<div className="absolute inset-0 bg-purple-500/5" />}
+                                Icon={Database}
+                                description="Persistent knowledge graph of your preferences and projects."
+                                href="/signup"
+                                cta="Explore"
+                            />
+                            <BentoCard
+                                name="Voice I/O"
+                                className="col-span-3 lg:col-span-1"
+                                background={<div className="absolute inset-0 bg-emerald-500/5" />}
+                                Icon={Headphones}
+                                description="Whisper transcription and natural speech synthesis for real conversation."
+                                href="/signup"
+                                cta="Try Voice"
+                            />
+                            <BentoCard
+                                name="Any Model. Any Time."
+                                className="col-span-3"
+                                background={<div className="absolute inset-0 bg-zinc-900/5 dark:bg-zinc-100/5" />}
+                                Icon={Cpu}
+                                description="Switch seamlessly between Claude, GPT-4o, and Gemini. Aspendos handles model selection."
+                                href="/signup"
+                                cta="Start Access"
+                            />
+                        </BentoGrid>
                     </div>
                 </section>
 
