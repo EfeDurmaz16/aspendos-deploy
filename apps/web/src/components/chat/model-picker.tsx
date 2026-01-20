@@ -146,7 +146,20 @@ export function ModelPicker({
         };
     }, [isOpen]);
 
-    const getProviderIcon = (provider: string) => ``;
+    const getProviderIcon = (provider: string) => {
+        const iconName = provider === 'anthropic' ? 'claude'
+            : provider === 'meta' ? 'meta'
+                : provider === 'mistral' ? 'mistral'
+                    : provider === 'google' ? 'gemini'
+                        : provider === 'xai' ? 'grok'
+                            : provider === 'perplexity' ? 'perplexity'
+                                : provider === 'moonshot' ? 'moonshot'
+                                    : provider === 'qwen' ? 'openrouter' // Fallback for qwen if needed
+                                        : provider === 'deepseek' ? 'openrouter' // Fallback for deepseek if needed
+                                            : 'openai';
+
+        return `/icons/models/${iconName}.svg`;
+    };
 
     return (
         <div className="relative" ref={dropdownRef}>

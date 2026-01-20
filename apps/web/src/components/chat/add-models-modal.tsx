@@ -106,8 +106,20 @@ export function AddModelsModal({
     const regularModels = filteredModels.filter((m) => m.category !== "search");
     const searchModels = filteredModels.filter((m) => m.category === "search");
 
-    // TODO: Replace with real assets or proper provider icons
-    const getProviderIcon = (provider: string) => ``;
+    const getProviderIcon = (provider: string) => {
+        const iconName = provider === 'anthropic' ? 'claude'
+            : provider === 'meta' ? 'meta'
+                : provider === 'mistral' ? 'mistral'
+                    : provider === 'google' ? 'gemini'
+                        : provider === 'xai' ? 'grok'
+                            : provider === 'perplexity' ? 'perplexity'
+                                : provider === 'moonshot' ? 'moonshot'
+                                    : provider === 'qwen' ? 'openrouter'
+                                        : provider === 'deepseek' ? 'openrouter'
+                                            : 'openai';
+
+        return `/icons/models/${iconName}.svg`;
+    };
 
     return (
         <AnimatePresence>

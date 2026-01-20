@@ -13,6 +13,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { signUp } from '@/lib/auth-client';
+import { MaiaBackground } from '@/components/ui/maia-background';
+import { GlassCard } from '@/components/ui/glass-card';
 
 export default function SignupPage() {
     const router = useRouter();
@@ -51,8 +53,9 @@ export default function SignupPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-            <div className="w-full max-w-md space-y-8">
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
+            <MaiaBackground />
+            <div className="w-full max-w-md space-y-8 relative z-10">
                 <div className="text-center">
                     <h1 className="font-serif text-4xl font-normal tracking-tight text-foreground">
                         Create your account
@@ -60,7 +63,7 @@ export default function SignupPage() {
                     <p className="mt-2 text-muted-foreground">Start your journey with Aspendos</p>
                 </div>
 
-                <div className="bg-card border border-border rounded-xl p-8 shadow-sm">
+                <GlassCard className="p-8">
                     {error && (
                         <div className="mb-6 flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 p-3 rounded-lg border border-red-200 dark:border-red-900">
                             <Warning className="h-4 w-4 flex-shrink-0" />
@@ -88,9 +91,10 @@ export default function SignupPage() {
                                     placeholder="John Doe"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-background/50 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                     required
                                     disabled={isLoading || success}
+                                    autoComplete="name"
                                 />
                             </div>
                         </div>
@@ -107,9 +111,10 @@ export default function SignupPage() {
                                     placeholder="you@example.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-background/50 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                     required
                                     disabled={isLoading || success}
+                                    autoComplete="email"
                                 />
                             </div>
                         </div>
@@ -129,10 +134,11 @@ export default function SignupPage() {
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-background/50 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                     required
                                     disabled={isLoading || success}
                                     minLength={8}
+                                    autoComplete="new-password"
                                 />
                             </div>
                             <p className="text-xs text-muted-foreground">
@@ -155,10 +161,11 @@ export default function SignupPage() {
                                     placeholder="••••••••"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-background/50 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                     required
                                     disabled={isLoading || success}
                                     minLength={8}
+                                    autoComplete="new-password"
                                 />
                             </div>
                         </div>
@@ -186,7 +193,7 @@ export default function SignupPage() {
                             )}
                         </button>
                     </form>
-                </div>
+                </GlassCard>
 
                 <p className="text-center text-sm text-muted-foreground">
                     Already have an account?{' '}
