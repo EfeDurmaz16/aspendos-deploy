@@ -41,7 +41,7 @@ export function ContextMenuMemory({
 
     return (
         <ContextMenu>
-            <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+            <ContextMenuTrigger className="block w-full">{children}</ContextMenuTrigger>
             <ContextMenuContent className="w-48">
                 {onView && (
                     <ContextMenuItem onClick={() => onView(memory)}>

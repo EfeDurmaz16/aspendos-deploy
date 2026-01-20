@@ -32,7 +32,7 @@ export function ContextMenuChat({
 }: ContextMenuChatProps) {
     return (
         <ContextMenu>
-            <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+            <ContextMenuTrigger className="block w-full">{children}</ContextMenuTrigger>
             <ContextMenuContent className="w-48">
                 {onEditTitle && (
                     <ContextMenuItem onClick={() => onEditTitle(chat.id, chat.title)}>

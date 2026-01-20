@@ -47,7 +47,7 @@ export function ContextMenuMessage({
 
     return (
         <ContextMenu>
-            <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+            <ContextMenuTrigger className="block w-full">{children}</ContextMenuTrigger>
             <ContextMenuContent className="w-48">
                 <ContextMenuItem onClick={handleCopy}>
                     <Copy className="size-4 mr-2" />
