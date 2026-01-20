@@ -57,3 +57,7 @@ packages/db/prisma/*.db-journal
 
 
 *.md
+
+# Sensitive Data
+conversations.json
+conversations_gpt.json

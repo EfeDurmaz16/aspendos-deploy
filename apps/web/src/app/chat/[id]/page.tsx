@@ -5,7 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { MemoryPanel } from '@/components/chat/memory-panel';
-import { ModelSelector } from '@/components/chat/model-selector';
+import { ModelPicker } from '@/components/chat/model-picker';
+import { AddModelsModal } from '@/components/chat/add-models-modal';
 import { StreamingMessage } from '@/components/chat/StreamingMessage';
 import { VoiceButton } from '@/components/chat/voice-button';
 import { LiveButton } from '@/components/chat/live-button';
@@ -40,6 +41,21 @@ export default function ChatPage() {
     const [inputValue, setInputValue] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const [isAddModelsOpen, setIsAddModelsOpen] = useState(false);
+    const [enabledModels, setEnabledModels] = useState<string[]>([
+        'openai/gpt-5.2',
+        'anthropic/claude-opus-4.5',
+        'anthropic/claude-sonnet-4.5',
+        'openai/gpt-5-nano',
+        'google/gemini-3-pro-preview',
+    ]);
+
+    const handleToggleModel = (modelId: string) => {
+        setEnabledModels((prev) =>
+            prev.includes(modelId) ? prev.filter((id) => id !== modelId) : [...prev, modelId]
+        );
+    };
 
     const { messages, isStreaming, sendMessage, error: streamError } = useStreamingChat(chatId);
 
@@ -228,10 +244,11 @@ export default function ChatPage() {
                             <SidebarSimple className="w-4 h-4" />
                         </Button>
                         <div className="hidden sm:block">
-                            <ModelSelector
-                                selectedModel={chat?.modelPreference || 'openai/gpt-4o-mini'}
-                                onModelChange={handleModelChange}
-                                disabled={isStreaming}
+                            <ModelPicker
+                                selectedModel={chat?.modelPreference || 'openai/gpt-5.2'}
+                                onSelectModel={handleModelChange}
+                                onOpenAddModels={() => setIsAddModelsOpen(true)}
+                                enabledModels={enabledModels}
                             />
                         </div>
                     </div>
@@ -361,6 +378,13 @@ export default function ChatPage() {
             >
                 <MemoryPanel />
             </div>
+            {/* Add Models Modal */}
+            <AddModelsModal
+                isOpen={isAddModelsOpen}
+                onClose={() => setIsAddModelsOpen(false)}
+                enabledModels={enabledModels}
+                onToggleModel={handleToggleModel}
+            />
         </div>
     );
 }
