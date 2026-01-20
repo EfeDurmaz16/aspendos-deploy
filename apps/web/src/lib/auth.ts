@@ -1,49 +1,43 @@
-import { cookies, headers } from 'next/headers';
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { nextCookies } from "better-auth/next-js";
+import { passkey } from "@better-auth/passkey";
+import { prisma } from "@aspendos/db";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-
-interface Session {
-    userId: string;
-    user: { id: string; email: string; name: string | null; image: string | null };
-    session: { id: string; expiresAt: Date };
-}
-
-export async function auth(): Promise<Session | null> {
-    try {
-        const cookieStore = await cookies();
-        const headerStore = await headers();
-        const cookieHeader = cookieStore
-            .getAll()
-            .map((c) => `${c.name}=${c.value}`)
-            .join('; ');
-
-        const response = await fetch(`${API_URL}/api/auth/get-session`, {
-            method: 'GET',
-            headers: { Cookie: cookieHeader, 'User-Agent': headerStore.get('user-agent') || '' },
-            cache: 'no-store',
-        });
-
-        if (!response.ok) return null;
-        const data = await response.json();
-        if (!data.user) return null;
-
-        return {
-            userId: data.user.id,
-            user: {
-                id: data.user.id,
-                email: data.user.email,
-                name: data.user.name,
-                image: data.user.image,
-            },
-            session: { id: data.session.id, expiresAt: new Date(data.session.expiresAt) },
-        };
-    } catch (error) {
-        console.error('[Auth] Session check failed:', error);
-        return null;
-    }
-}
-
-export async function getAuth(): Promise<{ userId: string | null }> {
-    const session = await auth();
-    return { userId: session?.userId ?? null };
-}
+export const auth = betterAuth({
+    database: prismaAdapter(prisma, {
+        provider: "postgresql",
+    }),
+    emailAndPassword: {
+        enabled: true,
+        async sendResetPassword(data, request) {
+            // Send an email to the user with a link to reset their password
+            // data contains user object and token url
+            console.log("Reset password for", data.user.email);
+        },
+    },
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+        },
+        github: {
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!
+        },
+        facebook: {
+            clientId: process.env.FACEBOOK_CLIENT_ID!,
+            clientSecret: process.env.FACEBOOK_CLIENT_SECRET!
+        },
+        apple: {
+            clientId: process.env.APPLE_CLIENT_ID!,
+            clientSecret: process.env.APPLE_CLIENT_SECRET!
+        }
+    },
+    plugins: [
+        passkey(),
+        nextCookies(),
+    ],
+    /** if no database is provided, the user data will be stored in memory.
+     * Make sure to provide a database to persist user data **/
+});

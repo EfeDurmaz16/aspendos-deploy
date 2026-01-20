@@ -11,6 +11,8 @@ import {
 import { useRouter, usePathname } from 'next/navigation';
 import { Dock } from '@/components/ui/dock';
 
+import { SkyToggle } from '@/components/ui/sky-toggle';
+
 export function SiteDock() {
     const router = useRouter();
     const pathname = usePathname();
@@ -54,6 +56,10 @@ export function SiteDock() {
     ];
 
     return (
-        <Dock items={items} />
+        <Dock items={items}>
+            <div className="p-2">
+                <SkyToggle />
+            </div>
+        </Dock>
     );
 }

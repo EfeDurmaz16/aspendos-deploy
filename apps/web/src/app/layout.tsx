@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Figtree, JetBrains_Mono } from 'next/font/google';
+import { Figtree, JetBrains_Mono, Instrument_Serif } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
@@ -18,9 +18,16 @@ const jetbrainsMono = JetBrains_Mono({
     display: 'swap',
 });
 
+const instrumentSerif = Instrument_Serif({
+    subsets: ['latin'],
+    variable: '--font-serif',
+    display: 'swap',
+    weight: '400',
+});
+
 export const metadata: Metadata = {
-    title: 'Aspendos | The AI Operating System',
-    description: 'Memory-first AI OS tailored for builders and researchers.',
+    title: 'Aspendos | One Platform. Infinite Possibilities.',
+    description: 'Unified AI workspace with persistent shared memory. Connect Claude, GPT-4, and Gemini in a single interface.',
 };
 
 export default function RootLayout({
@@ -34,6 +41,7 @@ export default function RootLayout({
                 className={cn(
                     figtree.variable,
                     jetbrainsMono.variable,
+                    instrumentSerif.variable,
                     'antialiased min-h-screen bg-background font-sans'
                 )}
             >

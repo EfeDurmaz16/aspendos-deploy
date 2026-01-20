@@ -12,6 +12,7 @@ import { VoiceButton } from '@/components/chat/voice-button';
 import { LiveButton } from '@/components/chat/live-button';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ShortcutsDock } from '@/components/chat/shortcuts-dock';
 import { useAuth } from '@/hooks/use-auth';
 import { type ChatMessage, useStreamingChat } from '@/hooks/useStreamingChat';
 import { cn } from '@/lib/utils';
@@ -134,6 +135,8 @@ export default function ChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, initialMessages]);
 
+
+
     const handleSend = useCallback(async () => {
         const content = inputValue.trim();
         if (!content || isStreaming) return;
@@ -191,6 +194,36 @@ export default function ChatPage() {
         },
         [chatId]
     );
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            // New Chat: Cmd+N
+            if (e.metaKey && e.key === 'n') {
+                e.preventDefault();
+                handleNewChat();
+                return;
+            }
+
+            // Toggle Sidebar: Cmd+B
+            if (e.metaKey && e.key === 'b') {
+                e.preventDefault();
+                setSidebarOpen((prev) => !prev);
+                return;
+            }
+
+            // Focus Input: /
+            // Only if not already typing in an input
+            if (e.key === '/' && document.activeElement?.tagName !== 'TEXTAREA' && document.activeElement?.tagName !== 'INPUT') {
+                e.preventDefault();
+                textareaRef.current?.focus();
+                return;
+            }
+        };
+
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, [handleNewChat]);
 
     const allMessages = [...initialMessages, ...messages];
 
@@ -385,6 +418,8 @@ export default function ChatPage() {
                 enabledModels={enabledModels}
                 onToggleModel={handleToggleModel}
             />
+
+            <ShortcutsDock />
         </div>
     );
 }

@@ -26,6 +26,7 @@
   --color-card-foreground: var(--card-foreground);
   --font-sans: var(--font-figtree), sans-serif;
   --font-mono: var(--font-mono), monospace;
+  --font-serif: var(--font-serif), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -543,31 +544,5 @@
 
   html {
     scroll-behavior: auto;
-  }
-}
-
-@theme inline {
-  --font-serif: "Instrument Serif", Georgia, serif;
-  --font-sans: "Inter", system-ui, sans-serif;
-  --color-background: var(--bg-0);
-  --color-foreground: var(--text-100);
-  --radius: var(----radius);
-  --color-text-400: var(----text-400);
-  --color-text-300: var(----text-300);
-  --color-text-200: var(----text-200);
-  --color-text-100: var(----text-100);
-  --color-bg-300: var(----bg-300);
-  --color-bg-200: var(----bg-200);
-  --color-bg-100: var(----bg-100);
-  --color-bg-0: var(----bg-0);
-  @keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-    }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    }
   }
 }

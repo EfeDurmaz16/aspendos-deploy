@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { PromptInputBox } from '@/components/chat/prompt-input-box';
+import { ShortcutsDock } from '@/components/chat/shortcuts-dock';
+import { SkyToggle } from '@/components/ui/sky-toggle';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -64,6 +67,27 @@ export default function ChatIndexPage() {
         router.push('/chat/new');
     };
 
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // New Chat: Cmd+N
+            if (e.metaKey && e.key === 'n') {
+                e.preventDefault();
+                handleNewChat();
+            }
+
+            // Focus Input: /
+            if (e.key === '/' && document.activeElement?.tagName !== 'TEXTAREA' && document.activeElement?.tagName !== 'INPUT') {
+                e.preventDefault();
+                const input = document.querySelector('textarea, input') as HTMLTextAreaElement | HTMLInputElement;
+                input?.focus();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [router]);
+
     // Show loading while checking auth or redirecting
     if (!isLoaded || !isSignedIn) {
         return (
@@ -94,6 +118,10 @@ export default function ChatIndexPage() {
                 <div className="absolute bottom-0 left-1/2 w-[700px] h-[700px] bg-gradient-to-t from-emerald-100/10 to-transparent dark:from-emerald-900/5 rounded-full blur-3xl" />
             </div>
 
+            <div className="absolute top-6 right-6 z-50">
+                <SkyToggle />
+            </div>
+
             <div className="max-w-2xl w-full text-center space-y-10 relative z-10">
                 {/* Header */}
                 <div className="space-y-4 animate-fade-up opacity-0 animation-delay-100">
@@ -110,33 +138,13 @@ export default function ChatIndexPage() {
 
                 {/* Main Action */}
                 <div className="max-w-xl mx-auto w-full animate-fade-up opacity-0 animation-delay-200">
-                    <div className="relative flex flex-col bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800 shadow-lg rounded-xl overflow-hidden transition-shadow hover:shadow-xl focus-within:ring-2 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-800">
-                        <textarea
-                            placeholder="What's on your mind?"
-                            className="w-full min-h-[60px] p-5 bg-transparent resize-none outline-none text-[16px] placeholder:text-muted-foreground/60 text-foreground"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleNewChat();
-                                }
-                            }}
-                        />
-                        <div className="flex items-center justify-between px-3 pb-3">
-                            <div className="flex gap-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted/50 rounded-lg">
-                                    <Plus className="w-4 h-4" />
-                                </Button>
-                            </div>
-                            <Button
-                                onClick={handleNewChat}
-                                size="sm"
-                                className="h-8 rounded-lg text-xs px-4"
-                            >
-                                Start Chat
-                                <ArrowRight className="w-3.5 h-3.5 ml-2" />
-                            </Button>
-                        </div>
-                    </div>
+                    <PromptInputBox
+                        onSubmit={(text) => {
+                            // In a real app, this would start a chat with the initial message
+                            console.log("Starting chat with:", text);
+                            handleNewChat();
+                        }}
+                    />
                 </div>
 
                 {/* Capability Hints */}
@@ -152,7 +160,9 @@ export default function ChatIndexPage() {
                     ))}
                 </div>
             </div>
+            <ShortcutsDock />
         </div>
+
     );
 }
 

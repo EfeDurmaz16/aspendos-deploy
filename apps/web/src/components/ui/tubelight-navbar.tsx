@@ -3,13 +3,13 @@
 import React, { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
-import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { SkyToggle } from "@/components/ui/sky-toggle"
 
 interface NavItem {
   name: string
   url: string
-  icon: LucideIcon
+  icon: React.ElementType
 }
 
 interface NavBarProps {
@@ -56,7 +56,7 @@ export function NavBar({ items, className }: NavBarProps) {
             >
               <span className="hidden md:inline">{item.name}</span>
               <span className="md:hidden">
-                <Icon size={18} strokeWidth={2.5} />
+                <Icon size={18} weight="bold" />
               </span>
               {isActive && (
                 <motion.div
@@ -79,6 +79,8 @@ export function NavBar({ items, className }: NavBarProps) {
             </Link>
           )
         })}
+        <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block" />
+        <SkyToggle />
       </div>
     </div>
   )
