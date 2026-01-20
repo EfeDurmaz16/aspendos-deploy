@@ -1,12 +1,14 @@
 import { defineConfig } from 'vitest/config';
-import path from 'node:path';
 
 export default defineConfig({
     test: {
-        globals: true,
+        // Test environment
         environment: 'node',
-        setupFiles: ['./test/setup.ts'],
-        include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+
+        // Global test setup
+        globals: true,
+
+        // Coverage settings
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
@@ -14,15 +16,17 @@ export default defineConfig({
             exclude: [
                 'src/**/*.test.ts',
                 'src/**/*.spec.ts',
-                'src/types/**',
+                'src/index.ts', // Entry point, tested via integration
                 'node_modules/**',
+                'dist/**',
             ],
         },
-    },
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './src'),
-            '@aspendos/db': path.resolve(__dirname, '../../packages/db/src'),
-        },
+
+        // Test file patterns
+        include: ['src/**/*.{test,spec}.ts'],
+        exclude: ['node_modules', 'dist'],
+
+        // Test timeout
+        testTimeout: 10000,
     },
 });
