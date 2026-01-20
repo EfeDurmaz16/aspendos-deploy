@@ -57,7 +57,11 @@ export const multiModelSchema = z.object({
         .array(modelIdSchema)
         .min(1, 'At least one model is required')
         .max(5, 'Maximum 5 models allowed')
-        .default(['openai/gpt-4o', 'anthropic/claude-sonnet-4-20250514', 'google/gemini-2.0-flash']),
+        .default([
+            'openai/gpt-4o',
+            'anthropic/claude-sonnet-4-20250514',
+            'google/gemini-2.0-flash',
+        ]),
 });
 
 /**

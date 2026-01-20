@@ -57,7 +57,7 @@ app.get('/dashboard/list', async (c) => {
  * Note: OpenMemory doesn't support direct updates, so we delete and re-add
  */
 app.patch('/dashboard/:id', async (c) => {
-    const userId = c.get('userId')!;
+    const _userId = c.get('userId')!;
     const memoryId = c.req.param('id');
     const body = await c.req.json();
 
@@ -80,14 +80,12 @@ app.patch('/dashboard/:id', async (c) => {
                 content: body.content,
                 sector: body.sector,
                 metadata: metadata,
-                isPinned: metadata.isPinned
-            }
+                isPinned: metadata.isPinned,
+            },
         });
-    } catch (error) {
+    } catch (_error) {
         return c.json({ error: 'Failed to update memory' }, 500);
     }
-
-
 });
 
 /**

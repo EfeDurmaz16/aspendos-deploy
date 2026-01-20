@@ -4,8 +4,8 @@
  * This file runs before all tests to configure the test environment.
  */
 
-import { beforeAll, afterAll, afterEach } from 'vitest';
 import { prisma } from '@aspendos/db';
+import { afterAll, afterEach, beforeAll } from 'vitest';
 
 // Setup runs once before all tests
 beforeAll(async () => {

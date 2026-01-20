@@ -156,22 +156,22 @@ app.post('/token', async (c) => {
         // If strict types are an issue, might need adjustment.
         // Assuming module is available as per install.
 
-        // This is a hypothetical API based on search results. 
+        // This is a hypothetical API based on search results.
         // If the SDK doesn't expose auth_tokens on client directly, we might need a specific sub-client.
         // But the search said "client.auth_tokens.create()".
 
-        // However, typescript might complain if types aren't perfect. 
+        // However, typescript might complain if types aren't perfect.
         // I will use 'any' cast if needed or rely on the installed package types.
 
         // Let's try basic implementation.
         // We will need to check if response has the token.
 
-        // Actually, looking at the search, it says "client.auth_tokens.create()". 
+        // Actually, looking at the search, it says "client.auth_tokens.create()".
         // Let's assume this structure.
 
-        // @ts-ignore - SDK types might not be fully updated in our environment definition
+        // @ts-expect-error - SDK types might not be fully updated in our environment definition
         const response = await client.auth_tokens.create({
-            ttl: "3600s", // 1 hour
+            ttl: '3600s', // 1 hour
         });
 
         // The token is likely in response.token or similar.
@@ -179,7 +179,7 @@ app.post('/token', async (c) => {
 
         return c.json({
             token: response.token || response.accessToken || response, // Adjust based on actual return
-            url: 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent' // Standard Gemini Live endpoint
+            url: 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent', // Standard Gemini Live endpoint
         });
     } catch (error) {
         console.error('[Voice] Token generation error:', error);

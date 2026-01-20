@@ -19,8 +19,14 @@ export const toneSchema = z.enum(['friendly', 'professional', 'encouraging']);
 export const createScheduledTaskSchema = z.object({
     chatId: z.string().uuid('chatId must be a valid UUID'),
     triggerAt: z.string().min(1, 'triggerAt is required'),
-    intent: z.string().min(1, 'intent is required').max(500, 'intent must be at most 500 characters'),
-    contextSummary: z.string().max(2000, 'contextSummary must be at most 2000 characters').optional(),
+    intent: z
+        .string()
+        .min(1, 'intent is required')
+        .max(500, 'intent must be at most 500 characters'),
+    contextSummary: z
+        .string()
+        .max(2000, 'contextSummary must be at most 2000 characters')
+        .optional(),
     topic: z.string().max(200, 'topic must be at most 200 characters').optional(),
     tone: toneSchema.optional(),
     channelPref: channelPrefSchema.optional(),

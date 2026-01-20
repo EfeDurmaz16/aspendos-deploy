@@ -142,10 +142,8 @@ const CLASSIFICATION_PATTERNS: { pattern: RegExp; type: QueryType }[] = [
 // ============================================
 
 export class MemoryDecisionAgent {
-    private llmEndpoint: string;
-
-    constructor(llmEndpoint?: string) {
-        this.llmEndpoint = llmEndpoint || process.env.AGENTS_URL || 'http://localhost:8082';
+    constructor(_llmEndpoint?: string) {
+        // llmEndpoint parameter reserved for future LLM-based decision logic
     }
 
     /**

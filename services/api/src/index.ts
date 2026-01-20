@@ -1,5 +1,5 @@
-import * as Sentry from '@sentry/node';
 import { serve } from '@hono/node-server';
+import * as Sentry from '@sentry/node';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';

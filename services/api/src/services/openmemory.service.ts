@@ -14,9 +14,8 @@ const mem = new Memory();
 // TYPES (matching OpenMemory response format)
 // ============================================
 
-// @ts-ignore - Accessing internal DB module to fix missing delete/update methods
+// @ts-expect-error - Accessing internal DB module to fix missing delete/update methods
 import { q } from 'openmemory-js/dist/core/db';
-
 
 export interface MemoryResult {
     id: string;
@@ -152,22 +151,9 @@ export async function updateMemory(
     const tagsStr = options?.tags ? options.tags.join(',') : memData.tags;
 
     if (options?.sector) {
-        await q.upd_mem_with_sector.run(
-            content,
-            options.sector,
-            tagsStr,
-            newMeta,
-            Date.now(),
-            id
-        );
+        await q.upd_mem_with_sector.run(content, options.sector, tagsStr, newMeta, Date.now(), id);
     } else {
-        await q.upd_mem.run(
-            content,
-            tagsStr,
-            newMeta,
-            Date.now(),
-            id
-        );
+        await q.upd_mem.run(content, tagsStr, newMeta, Date.now(), id);
     }
 }
 
@@ -180,7 +166,7 @@ export async function deleteMemory(id: string): Promise<void> {
         // Also clean up vectors to prevent orphans
         // Note: SDK doesn't expose vector delete easily without id, but DB handles cascade usually?
         // Checking openmemory schema: no foreign keys defined in SQLite/PG usually for vectors in early versions?
-        // Actually q.del_mem only deletes from memories table. 
+        // Actually q.del_mem only deletes from memories table.
         // Ideally we should delete from vectors too, but 'del_mem' in db.ts only deletes from memories.
         // We will stick to what the internal DB methods provide.
     } catch (e) {

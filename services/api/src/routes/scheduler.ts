@@ -9,8 +9,8 @@ import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
 import * as commitmentService from '../services/commitment-detector.service';
-import * as schedulerService from '../services/scheduler.service';
 import { sendNotification } from '../services/notification.service';
+import * as schedulerService from '../services/scheduler.service';
 import {
     createScheduledTaskSchema,
     executeTaskSchema,
@@ -77,7 +77,8 @@ app.post('/tasks', requireAuth, validateBody(createScheduledTaskSchema), async (
         metadata?: Record<string, unknown>;
     };
 
-    const { chatId, triggerAt, intent, contextSummary, topic, tone, channelPref, metadata } = validated;
+    const { chatId, triggerAt, intent, contextSummary, topic, tone, channelPref, metadata } =
+        validated;
 
     // Parse triggerAt (can be ISO string or relative expression)
     let triggerDate: Date | null;

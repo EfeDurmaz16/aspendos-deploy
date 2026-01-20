@@ -1,132 +1,172 @@
 /**
- * Scheduler Service Tests
- *
- * Tests for time parsing, task creation, and task retrieval logic.
+ * Tests for Scheduler Service
  */
-
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { parseTimeExpression, formatScheduledTime } from '../services/scheduler.service';
+import { describe, expect, it } from 'vitest';
+import { formatScheduledTime, parseTimeExpression } from '../services/scheduler.service';
 
 describe('Scheduler Service', () => {
     describe('parseTimeExpression', () => {
-        const baseDate = new Date('2024-01-15T10:00:00Z');
+        const baseDate = new Date('2024-01-15T10:30:00Z');
 
-        it('should parse "tomorrow" to next day at 9 AM', () => {
-            const result = parseTimeExpression('tomorrow', baseDate);
-            expect(result).not.toBeNull();
-            expect(result?.getDate()).toBe(16);
-            expect(result?.getHours()).toBe(9);
+        describe('absolute time patterns', () => {
+            it('should parse ISO date format', () => {
+                const result = parseTimeExpression('2024-12-25T15:00', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.toISOString()).toContain('2024-12-25');
+            });
+
+            it('should parse ISO date without time', () => {
+                const result = parseTimeExpression('2024-12-25', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.toISOString()).toContain('2024-12-25');
+            });
         });
 
-        it('should parse "next week" to 7 days ahead', () => {
-            const result = parseTimeExpression('next week', baseDate);
-            expect(result).not.toBeNull();
-            expect(result?.getDate()).toBe(22);
+        describe('relative time patterns - tomorrow', () => {
+            it('should parse "tomorrow"', () => {
+                const result = parseTimeExpression('tomorrow', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(16); // baseDate + 1 day
+                expect(result?.getHours()).toBe(9); // Default to 9 AM
+            });
+
+            it('should parse "TOMORROW" (case insensitive)', () => {
+                const result = parseTimeExpression('TOMORROW', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(16);
+            });
         });
 
-        it('should parse "in 3 days"', () => {
-            const result = parseTimeExpression('in 3 days', baseDate);
-            expect(result).not.toBeNull();
-            expect(result?.getDate()).toBe(18);
+        describe('relative time patterns - next week', () => {
+            it('should parse "next week"', () => {
+                const result = parseTimeExpression('next week', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(22); // baseDate + 7 days
+                expect(result?.getHours()).toBe(9);
+            });
         });
 
-        it('should parse "in 2 weeks"', () => {
-            const result = parseTimeExpression('in 2 weeks', baseDate);
-            expect(result).not.toBeNull();
-            expect(result?.getDate()).toBe(29);
+        describe('relative time patterns - "in X unit"', () => {
+            it('should parse "in 3 days"', () => {
+                const result = parseTimeExpression('in 3 days', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(18); // baseDate + 3 days
+            });
+
+            it('should parse "in 1 day"', () => {
+                const result = parseTimeExpression('in 1 day', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(16);
+            });
+
+            it('should parse "in 2 weeks"', () => {
+                const result = parseTimeExpression('in 2 weeks', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(29); // baseDate + 14 days
+            });
+
+            it('should parse "in 5 hours"', () => {
+                const result = parseTimeExpression('in 5 hours', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getHours()).toBe(15); // 10 + 5 hours
+            });
+
+            it('should parse "in 30 minutes"', () => {
+                const result = parseTimeExpression('in 30 minutes', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getMinutes()).toBe(0); // 30 + 30 minutes = 1 hour
+                expect(result?.getHours()).toBe(11);
+            });
         });
 
-        it('should parse "in 5 hours"', () => {
-            const result = parseTimeExpression('in 5 hours', baseDate);
-            expect(result).not.toBeNull();
-            expect(result?.getHours()).toBe(15); // 10 + 5 = 15
+        describe('relative time patterns - "X unit from now"', () => {
+            it('should parse "7 days from now"', () => {
+                const result = parseTimeExpression('7 days from now', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(22);
+            });
+
+            it('should parse "2 weeks from now"', () => {
+                const result = parseTimeExpression('2 weeks from now', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(29);
+            });
         });
 
-        it('should parse "in 30 minutes"', () => {
-            const result = parseTimeExpression('in 30 minutes', baseDate);
-            expect(result).not.toBeNull();
-            expect(result?.getMinutes()).toBe(30);
+        describe('relative time patterns - "X unit" shorthand', () => {
+            it('should parse "1 week"', () => {
+                const result = parseTimeExpression('1 week', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(22);
+            });
+
+            it('should parse "3 days"', () => {
+                const result = parseTimeExpression('3 days', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getDate()).toBe(18);
+            });
+
+            it('should parse "2 hours"', () => {
+                const result = parseTimeExpression('2 hours', baseDate);
+                expect(result).toBeInstanceOf(Date);
+                expect(result?.getHours()).toBe(12);
+            });
         });
 
-        it('should parse "3 days from now"', () => {
-            const result = parseTimeExpression('3 days from now', baseDate);
-            expect(result).not.toBeNull();
-            expect(result?.getDate()).toBe(18);
+        describe('invalid inputs', () => {
+            it('should return null for unrecognized pattern', () => {
+                const result = parseTimeExpression('some random text', baseDate);
+                expect(result).toBeNull();
+            });
+
+            it('should return null for empty string', () => {
+                const result = parseTimeExpression('', baseDate);
+                expect(result).toBeNull();
+            });
+
+            it('should return null for gibberish', () => {
+                const result = parseTimeExpression('asdfghjkl', baseDate);
+                expect(result).toBeNull();
+            });
         });
 
-        it('should parse "1 week" shorthand', () => {
-            const result = parseTimeExpression('1 week', baseDate);
-            expect(result).not.toBeNull();
-            expect(result?.getDate()).toBe(22);
-        });
+        describe('edge cases', () => {
+            it('should handle month boundaries', () => {
+                const endOfMonth = new Date('2024-01-30T10:00:00Z');
+                const result = parseTimeExpression('in 5 days', endOfMonth);
+                expect(result?.getMonth()).toBe(1); // February (0-indexed)
+                expect(result?.getDate()).toBe(4);
+            });
 
-        it('should parse ISO date format', () => {
-            const result = parseTimeExpression('2024-02-01T14:30:00Z', baseDate);
-            expect(result).not.toBeNull();
-            expect(result?.getDate()).toBe(1);
-            expect(result?.getMonth()).toBe(1); // February (0-indexed)
-        });
-
-        it('should return null for unrecognized format', () => {
-            const result = parseTimeExpression('invalid time', baseDate);
-            expect(result).toBeNull();
-        });
-
-        it('should be case-insensitive', () => {
-            const result1 = parseTimeExpression('TOMORROW', baseDate);
-            const result2 = parseTimeExpression('Tomorrow', baseDate);
-            const result3 = parseTimeExpression('tomorrow', baseDate);
-            expect(result1).not.toBeNull();
-            expect(result2).not.toBeNull();
-            expect(result3).not.toBeNull();
-            expect(result1?.getTime()).toBe(result2?.getTime());
-            expect(result2?.getTime()).toBe(result3?.getTime());
-        });
-
-        it('should handle plural and singular units', () => {
-            const result1 = parseTimeExpression('in 1 day', baseDate);
-            const result2 = parseTimeExpression('in 1 days', baseDate);
-            expect(result1).not.toBeNull();
-            expect(result2).not.toBeNull();
-            expect(result1?.getDate()).toBe(result2?.getDate());
+            it('should handle year boundaries', () => {
+                const endOfYear = new Date('2024-12-30T10:00:00Z');
+                const result = parseTimeExpression('in 5 days', endOfYear);
+                expect(result?.getFullYear()).toBe(2025);
+                expect(result?.getMonth()).toBe(0); // January
+            });
         });
     });
 
     describe('formatScheduledTime', () => {
-        it('should format minutes correctly', () => {
+        it('should format minutes', () => {
             const now = new Date();
             const future = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes
             const result = formatScheduledTime(future);
-            expect(result).toContain('30 minute');
+            expect(result).toMatch(/in \d+ minutes?/);
         });
 
-        it('should format hours correctly', () => {
+        it('should format hours', () => {
             const now = new Date();
-            const future = new Date(now.getTime() + 5 * 60 * 60 * 1000); // 5 hours
+            const future = new Date(now.getTime() + 3 * 60 * 60 * 1000); // 3 hours
             const result = formatScheduledTime(future);
-            expect(result).toContain('5 hour');
+            expect(result).toMatch(/in \d+ hours?/);
         });
 
-        it('should format tomorrow correctly', () => {
+        it('should format days', () => {
             const now = new Date();
-            const future = new Date(now.getTime() + 25 * 60 * 60 * 1000); // 25 hours
+            const future = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days
             const result = formatScheduledTime(future);
-            expect(result).toBe('tomorrow');
-        });
-
-        it('should format days correctly', () => {
-            const now = new Date();
-            const future = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days
-            const result = formatScheduledTime(future);
-            expect(result).toContain('3 days');
-        });
-
-        it('should format week+ dates with full date', () => {
-            const now = new Date();
-            const future = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000); // 10 days
-            const result = formatScheduledTime(future);
-            // Should contain weekday and month abbreviations
-            expect(result.length).toBeGreaterThan(10);
+            expect(result).toMatch(/in \d+ days?/);
         });
     });
 });

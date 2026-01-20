@@ -3,8 +3,9 @@
  *
  * Provides endpoints for usage analytics, token consumption, and model statistics.
  */
-import { Hono } from 'hono';
+
 import { prisma } from '@aspendos/db';
+import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 
 type Variables = {
@@ -49,13 +50,16 @@ app.get('/usage', requireAuth, async (c) => {
         });
 
         // Group by interval
-        const grouped = new Map<string, {
-            tokensIn: number;
-            tokensOut: number;
-            totalTokens: number;
-            costUsd: number;
-            messageCount: number;
-        }>();
+        const grouped = new Map<
+            string,
+            {
+                tokensIn: number;
+                tokensOut: number;
+                totalTokens: number;
+                costUsd: number;
+                messageCount: number;
+            }
+        >();
 
         for (const msg of messages) {
             const date = new Date(msg.createdAt);
@@ -136,11 +140,14 @@ app.get('/messages', requireAuth, async (c) => {
         });
 
         // Group by day
-        const grouped = new Map<string, {
-            userMessages: number;
-            assistantMessages: number;
-            total: number;
-        }>();
+        const grouped = new Map<
+            string,
+            {
+                userMessages: number;
+                assistantMessages: number;
+                total: number;
+            }
+        >();
 
         for (const msg of messages) {
             const date = new Date(msg.createdAt);
@@ -211,13 +218,16 @@ app.get('/models', requireAuth, async (c) => {
         });
 
         // Group by model
-        const modelStats = new Map<string, {
-            count: number;
-            tokensIn: number;
-            tokensOut: number;
-            totalTokens: number;
-            costUsd: number;
-        }>();
+        const modelStats = new Map<
+            string,
+            {
+                count: number;
+                tokensIn: number;
+                tokensOut: number;
+                totalTokens: number;
+                costUsd: number;
+            }
+        >();
 
         for (const msg of messages) {
             const model = msg.modelUsed || 'unknown';

@@ -50,9 +50,7 @@ export interface NotificationPreferences {
 /**
  * Send a notification to a user through the best available channel
  */
-export async function sendNotification(
-    payload: NotificationPayload
-): Promise<DeliveryResult[]> {
+export async function sendNotification(payload: NotificationPayload): Promise<DeliveryResult[]> {
     const { userId, title, body, taskId, data, channelPref = 'auto' } = payload;
 
     // Get user preferences
@@ -208,7 +206,7 @@ async function sendPushNotification(
 async function sendEmailNotification(
     userId: string,
     title: string,
-    body: string
+    _body: string
 ): Promise<DeliveryResult> {
     console.log(`[Notification] Email to user ${userId}: ${title}`);
     // TODO: Implement email service (SendGrid, Resend, etc.)
@@ -224,9 +222,9 @@ async function sendEmailNotification(
  */
 async function sendInAppNotification(
     userId: string,
-    title: string,
-    body: string,
-    taskId?: string
+    _title: string,
+    _body: string,
+    _taskId?: string
 ): Promise<DeliveryResult> {
     // In-app notifications are handled by SSE stream
     // Just mark as success - the SSE endpoint will pull from NotificationLog

@@ -3,8 +3,9 @@
  *
  * Provides SSE stream, push subscription management, and notification preferences.
  */
-import { Hono } from 'hono';
+
 import { prisma } from '@aspendos/db';
+import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import {
     getUserNotificationPreferences,
@@ -107,7 +108,9 @@ app.get('/stream', requireAuth, async (c) => {
 
             // Send initial connection message
             controller.enqueue(
-                new TextEncoder().encode(`:connected\ndata: {"type":"connected","userId":"${userId}"}\n\n`)
+                new TextEncoder().encode(
+                    `:connected\ndata: {"type":"connected","userId":"${userId}"}\n\n`
+                )
             );
 
             // Function to send a notification through SSE
@@ -206,7 +209,7 @@ app.get('/stream', requireAuth, async (c) => {
         headers: {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
+            Connection: 'keep-alive',
         },
     });
 });

@@ -140,196 +140,197 @@ app.post(
 
         const { content, model_id, enable_thinking, stream: shouldStream } = validatedBody;
 
-    // Get user tier (default to STARTER if not available)
-    const user = c.get('user');
-    const userTier: UserTier =
-        ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+        // Get user tier (default to STARTER if not available)
+        const user = c.get('user');
+        const userTier: UserTier =
+            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
 
-    // Verify chat exists and belongs to user
-    const chat = await chatService.getChat(chatId, userId);
-    if (!chat) {
-        return c.json({ error: 'Chat not found' }, 404);
-    }
-
-    // Determine model to use
-    const modelId = model_id || chat.modelPreference || 'openai/gpt-4o-mini';
-
-    // Validate model is available for user's tier
-    if (!isModelAvailableForTier(modelId, userTier)) {
-        return c.json({ error: 'Model not available for your tier' }, 403);
-    }
-
-    // Save user message to database
-    await chatService.createMessage({
-        chatId,
-        userId,
-        role: 'user',
-        content,
-    });
-
-    // Auto-generate title if this is the first message
-    const existingMessages = await chatService.getMessages(chatId);
-    if (existingMessages.length === 1) {
-        await chatService.autoGenerateTitle(chatId, content);
-    }
-
-    // ========================================
-    // MEMORY DECISION LAYER
-    // ========================================
-    const memoryAgent = getMemoryAgent();
-    const decision = await memoryAgent.decideMemoryUsage(userId, content);
-
-    // ========================================
-    // OPENMEMORY RETRIEVAL
-    // ========================================
-    let memoriesUsed: {
-        id: string;
-        content: string;
-        sector: string;
-        confidence: number;
-        trace?: { recall_reason: string };
-    }[] = [];
-
-    if (decision.useMemory) {
-        try {
-            const memories = await openMemory.searchMemories(content, userId, { limit: 5 });
-            memoriesUsed = memories.map((m) => ({
-                id: m.id,
-                content: m.content,
-                sector: m.sector || 'semantic',
-                confidence: m.salience || 0.8,
-                trace: m.trace,
-            }));
-        } catch (error) {
-            console.error('[Memory] OpenMemory search failed:', error);
-            // Continue without memory context
+        // Verify chat exists and belongs to user
+        const chat = await chatService.getChat(chatId, userId);
+        if (!chat) {
+            return c.json({ error: 'Chat not found' }, 404);
         }
-    }
 
-    // Build message history
-    const history: Message[] = existingMessages.map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-    }));
+        // Determine model to use
+        const modelId = model_id || chat.modelPreference || 'openai/gpt-4o-mini';
 
-    // Build system prompt with memory context
-    const systemPrompt = buildSystemPrompt(decision, memoriesUsed, enable_thinking);
-
-    // Get tools for user's tier
-    const tools = getToolsForTier(userTier, userId);
-
-    // Merge MCP tools if available
-    let allTools = { ...tools };
-    if (isMCPInitialized()) {
-        try {
-            const mcpTools = await getMCPTools();
-            allTools = { ...tools, ...mcpTools };
-        } catch (error) {
-            console.error('[MCP] Failed to get MCP tools:', error);
+        // Validate model is available for user's tier
+        if (!isModelAvailableForTier(modelId, userTier)) {
+            return c.json({ error: 'Model not available for your tier' }, 403);
         }
-    }
 
-    // ========================================
-    // STREAMING RESPONSE
-    // ========================================
-    if (shouldStream) {
+        // Save user message to database
+        await chatService.createMessage({
+            chatId,
+            userId,
+            role: 'user',
+            content,
+        });
+
+        // Auto-generate title if this is the first message
+        const existingMessages = await chatService.getMessages(chatId);
+        if (existingMessages.length === 1) {
+            await chatService.autoGenerateTitle(chatId, content);
+        }
+
+        // ========================================
+        // MEMORY DECISION LAYER
+        // ========================================
+        const memoryAgent = getMemoryAgent();
+        const decision = await memoryAgent.decideMemoryUsage(userId, content);
+
+        // ========================================
+        // OPENMEMORY RETRIEVAL
+        // ========================================
+        let memoriesUsed: {
+            id: string;
+            content: string;
+            sector: string;
+            confidence: number;
+            trace?: { recall_reason: string };
+        }[] = [];
+
+        if (decision.useMemory) {
+            try {
+                const memories = await openMemory.searchMemories(content, userId, { limit: 5 });
+                memoriesUsed = memories.map((m) => ({
+                    id: m.id,
+                    content: m.content,
+                    sector: m.sector || 'semantic',
+                    confidence: m.salience || 0.8,
+                    trace: m.trace,
+                }));
+            } catch (error) {
+                console.error('[Memory] OpenMemory search failed:', error);
+                // Continue without memory context
+            }
+        }
+
+        // Build message history
+        const history: Message[] = existingMessages.map((m) => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+        }));
+
+        // Build system prompt with memory context
+        const systemPrompt = buildSystemPrompt(decision, memoriesUsed, enable_thinking);
+
+        // Get tools for user's tier
+        const tools = getToolsForTier(userTier, userId);
+
+        // Merge MCP tools if available
+        let allTools = { ...tools };
+        if (isMCPInitialized()) {
+            try {
+                const mcpTools = await getMCPTools();
+                allTools = { ...tools, ...mcpTools };
+            } catch (error) {
+                console.error('[MCP] Failed to get MCP tools:', error);
+            }
+        }
+
+        // ========================================
+        // STREAMING RESPONSE
+        // ========================================
+        if (shouldStream) {
+            try {
+                const result = streamText({
+                    model: getModel(modelId),
+                    system: systemPrompt,
+                    messages: history,
+                    tools: allTools,
+                    stopWhen: stepCountIs(5), // Allow up to 5 tool calls
+                    temperature: 0.7,
+                    onFinish: async ({ text, usage }) => {
+                        // Save assistant message to database
+                        await chatService.createMessage({
+                            chatId,
+                            userId,
+                            role: 'assistant',
+                            content: text,
+                            modelUsed: modelId,
+                            tokensIn: usage?.totalTokens,
+                            tokensOut: usage?.totalTokens,
+                        });
+                    },
+                });
+
+                // Return AI SDK compatible stream response
+                // Include custom headers for decision metadata
+                const response = result.toTextStreamResponse({
+                    headers: {
+                        'X-Memory-Decision': JSON.stringify({
+                            useMemory: decision.useMemory,
+                            queryType: decision.queryType,
+                            sectors: decision.sectors,
+                            reasoning: decision.reasoning,
+                        }),
+                        'X-Memories-Used': JSON.stringify(
+                            memoriesUsed.map((m) => ({
+                                id: m.id,
+                                sector: m.sector,
+                                confidence: m.confidence,
+                            }))
+                        ),
+                    },
+                });
+
+                return response;
+            } catch (error) {
+                console.error('[Chat] Streaming error:', error);
+                return c.json(
+                    {
+                        error: 'Failed to stream response',
+                        details: error instanceof Error ? error.message : 'Unknown error',
+                    },
+                    500
+                );
+            }
+        }
+
+        // ========================================
+        // NON-STREAMING RESPONSE
+        // ========================================
         try {
-            const result = streamText({
+            const result = await generateText({
                 model: getModel(modelId),
                 system: systemPrompt,
                 messages: history,
                 tools: allTools,
-                stopWhen: stepCountIs(5), // Allow up to 5 tool calls
+                stopWhen: stepCountIs(5),
                 temperature: 0.7,
-                onFinish: async ({ text, usage }) => {
-                    // Save assistant message to database
-                    await chatService.createMessage({
-                        chatId,
-                        userId,
-                        role: 'assistant',
-                        content: text,
-                        modelUsed: modelId,
-                        tokensIn: usage?.totalTokens,
-                        tokensOut: usage?.totalTokens,
-                    });
-                },
             });
 
-            // Return AI SDK compatible stream response
-            // Include custom headers for decision metadata
-            const response = result.toTextStreamResponse({
-                headers: {
-                    'X-Memory-Decision': JSON.stringify({
-                        useMemory: decision.useMemory,
-                        queryType: decision.queryType,
-                        sectors: decision.sectors,
-                        reasoning: decision.reasoning,
-                    }),
-                    'X-Memories-Used': JSON.stringify(
-                        memoriesUsed.map((m) => ({
-                            id: m.id,
-                            sector: m.sector,
-                            confidence: m.confidence,
-                        }))
-                    ),
-                },
+            // Save assistant message
+            const assistantMessage = await chatService.createMessage({
+                chatId,
+                userId,
+                role: 'assistant',
+                content: result.text,
+                modelUsed: modelId,
+                tokensIn: result.usage?.totalTokens,
+                tokensOut: result.usage?.totalTokens,
             });
 
-            return response;
+            return c.json({
+                message: assistantMessage,
+                decision,
+                memoriesUsed,
+                usage: result.usage,
+                toolCalls: result.toolCalls,
+            });
         } catch (error) {
-            console.error('[Chat] Streaming error:', error);
+            console.error('[Chat] Generation error:', error);
             return c.json(
                 {
-                    error: 'Failed to stream response',
+                    error: 'Failed to generate response',
                     details: error instanceof Error ? error.message : 'Unknown error',
                 },
                 500
             );
         }
     }
-
-    // ========================================
-    // NON-STREAMING RESPONSE
-    // ========================================
-    try {
-        const result = await generateText({
-            model: getModel(modelId),
-            system: systemPrompt,
-            messages: history,
-            tools: allTools,
-            stopWhen: stepCountIs(5),
-            temperature: 0.7,
-        });
-
-        // Save assistant message
-        const assistantMessage = await chatService.createMessage({
-            chatId,
-            userId,
-            role: 'assistant',
-            content: result.text,
-            modelUsed: modelId,
-            tokensIn: result.usage?.totalTokens,
-            tokensOut: result.usage?.totalTokens,
-        });
-
-        return c.json({
-            message: assistantMessage,
-            decision,
-            memoriesUsed,
-            usage: result.usage,
-            toolCalls: result.toolCalls,
-        });
-    } catch (error) {
-        console.error('[Chat] Generation error:', error);
-        return c.json(
-            {
-                error: 'Failed to generate response',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            500
-        );
-    }
-});
+);
 
 // POST /api/chat/:id/multi - Multi-model comparison (ULTRA only)
 app.post(
@@ -361,56 +362,57 @@ app.post(
 
         const { content, models } = validatedBody;
 
-    // Save user message
-    await chatService.createMessage({
-        chatId,
-        userId,
-        role: 'user',
-        content,
-    });
+        // Save user message
+        await chatService.createMessage({
+            chatId,
+            userId,
+            role: 'user',
+            content,
+        });
 
-    // Get message history
-    const messages = await chatService.getMessages(chatId);
-    const history: Message[] = messages.map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-    }));
+        // Get message history
+        const messages = await chatService.getMessages(chatId);
+        const history: Message[] = messages.map((m) => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+        }));
 
-    // Run all models in parallel
-    const results = await Promise.allSettled(
-        models.map(async (modelId: string) => {
-            try {
-                const result = await generateText({
-                    model: getModel(modelId),
-                    messages: history,
-                    temperature: 0.7,
-                });
-                return {
-                    modelId,
-                    text: result.text,
-                    usage: result.usage,
-                };
-            } catch (error) {
-                return {
-                    modelId,
-                    error: error instanceof Error ? error.message : 'Unknown error',
-                };
+        // Run all models in parallel
+        const results = await Promise.allSettled(
+            models.map(async (modelId: string) => {
+                try {
+                    const result = await generateText({
+                        model: getModel(modelId),
+                        messages: history,
+                        temperature: 0.7,
+                    });
+                    return {
+                        modelId,
+                        text: result.text,
+                        usage: result.usage,
+                    };
+                } catch (error) {
+                    return {
+                        modelId,
+                        error: error instanceof Error ? error.message : 'Unknown error',
+                    };
+                }
+            })
+        );
+
+        const responses = results.map((r, i) => {
+            if (r.status === 'fulfilled') {
+                return r.value;
             }
-        })
-    );
+            return {
+                modelId: models[i],
+                error: 'Failed to generate response',
+            };
+        });
 
-    const responses = results.map((r, i) => {
-        if (r.status === 'fulfilled') {
-            return r.value;
-        }
-        return {
-            modelId: models[i],
-            error: 'Failed to generate response',
-        };
-    });
-
-    return c.json({ responses });
-});
+        return c.json({ responses });
+    }
+);
 
 /**
  * Build system prompt with memory context
