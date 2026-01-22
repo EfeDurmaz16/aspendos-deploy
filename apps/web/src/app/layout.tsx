@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 import { GlobalCommand } from '@/components/global-command';
 import { SiteDock } from '@/components/layout/site-dock';
+import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
 
 const figtree = Figtree({
     subsets: ['latin'],
@@ -28,6 +29,18 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
     title: 'Aspendos | One Platform. Infinite Possibilities.',
     description: 'Unified AI workspace with persistent shared memory. Connect Claude, GPT-4, and Gemini in a single interface.',
+    manifest: '/manifest.json',
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: 'black-translucent',
+        title: 'Aspendos',
+    },
+    formatDetection: {
+        telephone: false,
+    },
+    icons: {
+        apple: '/icons/icon-192x192.svg',
+    },
 };
 
 export default function RootLayout({
@@ -37,6 +50,15 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
+            <head>
+                <meta name="application-name" content="Aspendos AI" />
+                <meta name="theme-color" content="#09090b" />
+                <meta name="mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                <meta name="apple-mobile-web-app-title" content="Aspendos" />
+                <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+            </head>
             <body
                 className={cn(
                     figtree.variable,
@@ -46,9 +68,12 @@ export default function RootLayout({
                 )}
             >
                 <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem>
+                    <OfflineBanner />
                     <GlobalCommand />
                     {children}
                     <SiteDock />
+                    <InstallPrompt />
+                    <UpdatePrompt />
                 </ThemeProvider>
             </body>
         </html>

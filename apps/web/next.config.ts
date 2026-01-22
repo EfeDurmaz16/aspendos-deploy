@@ -1,5 +1,15 @@
+import withSerwistInit from '@serwist/next';
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
+
+// Serwist PWA configuration
+const withSerwist = withSerwistInit({
+    swSrc: 'src/app/sw.ts',
+    swDest: 'public/sw.js',
+    cacheOnNavigation: true,
+    reloadOnOnline: true,
+    disable: process.env.NODE_ENV === 'development',
+});
 
 const nextConfig: NextConfig = {
     async headers() {
@@ -70,4 +80,4 @@ const sentryWebpackPluginOptions = {
     disableLogger: true,
 };
 
-export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);
+export default withSentryConfig(withSerwist(nextConfig), sentryWebpackPluginOptions);

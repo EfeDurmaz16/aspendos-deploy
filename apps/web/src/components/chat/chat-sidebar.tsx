@@ -62,51 +62,50 @@ export function ChatSidebar({
             </div>
 
             {/* New Chat Button */}
-            <div className="p-3">
+            <div className="p-4">
                 <Button
                     onClick={onNewChat}
-                    className="w-full justify-start gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
-                    size="sm"
+                    className="w-full justify-start gap-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm h-11 rounded-xl text-sm"
                 >
-                    <Plus weight="bold" className="size-4" />
+                    <Plus weight="bold" className="size-5" />
                     New Chat
                 </Button>
             </div>
 
             {/* Search */}
-            <div className="px-3 pb-2">
+            <div className="px-4 pb-4">
                 <div className="relative">
-                    <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                    <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                     <Input
                         placeholder="Search chats..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-8 pl-8 text-sm bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring"
+                        className="h-11 pl-10 text-sm bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring rounded-xl"
                     />
                 </div>
             </div>
 
             {/* Chat List */}
             <ScrollArea className="flex-1">
-                <div className="px-2 pb-4 space-y-4">
+                <div className="px-3 pb-4 space-y-5">
                     {isLoading ? (
                         <div className="flex justify-center py-8">
                             <CircleNotch className="size-5 animate-spin text-muted-foreground" />
                         </div>
                     ) : Object.keys(groupedChats).length === 0 ? (
                         <div className="text-center py-8 px-4">
-                            <ChatCircle className="size-8 text-muted-foreground/30 mx-auto mb-2" weight="duotone" />
-                            <p className="text-xs text-muted-foreground">
+                            <ChatCircle className="size-10 text-muted-foreground/30 mx-auto mb-3" weight="duotone" />
+                            <p className="text-sm text-muted-foreground">
                                 {searchQuery ? 'No matching chats' : 'No conversations yet'}
                             </p>
                         </div>
                     ) : (
                         Object.entries(groupedChats).map(([dateGroup, groupChats]) => (
                             <div key={dateGroup}>
-                                <h4 className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider mb-1.5 px-2">
+                                <h4 className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider mb-2 px-2">
                                     {dateGroup}
                                 </h4>
-                                <div className="space-y-0.5">
+                                <div className="space-y-1">
                                     {groupChats.map((chat) => (
                                         <ContextMenuChat
                                             key={chat.id}
@@ -124,7 +123,7 @@ export function ChatSidebar({
                                             <button
                                                 onClick={() => onSelectChat?.(chat.id)}
                                                 className={cn(
-                                                    'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm text-left transition-all group',
+                                                    'w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all group',
                                                     chat.id === currentChatId
                                                         ? 'bg-accent text-accent-foreground'
                                                         : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
@@ -132,12 +131,12 @@ export function ChatSidebar({
                                             >
                                                 <ChatCircle
                                                     className={cn(
-                                                        'size-4 flex-shrink-0 transition-colors',
+                                                        'size-5 flex-shrink-0 transition-colors',
                                                         chat.id === currentChatId ? 'text-accent-foreground' : 'text-muted-foreground/60'
                                                     )}
                                                     weight={chat.id === currentChatId ? 'fill' : 'regular'}
                                                 />
-                                                <span className="truncate flex-1 text-[13px]">{chat.title || 'Untitled'}</span>
+                                                <span className="truncate flex-1 text-sm">{chat.title || 'Untitled'}</span>
                                                 {chat.isPinned && (
                                                     <Star className="size-3 text-amber-500" weight="fill" />
                                                 )}
