@@ -3,7 +3,6 @@ import { Figtree, JetBrains_Mono, Instrument_Serif } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
-import { GlobalCommand } from '@/components/global-command';
 import { SiteDock } from '@/components/layout/site-dock';
 import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
 
@@ -67,9 +66,8 @@ export default function RootLayout({
                     'antialiased min-h-screen bg-background font-sans'
                 )}
             >
-                <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem>
+                <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
                     <OfflineBanner />
-                    <GlobalCommand />
                     {children}
                     <SiteDock />
                     <InstallPrompt />

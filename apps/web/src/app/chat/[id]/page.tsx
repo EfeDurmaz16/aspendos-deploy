@@ -171,21 +171,15 @@ export default function ChatPage() {
     const [initialMessages, setInitialMessages] = useState<any[]>([]);
 
     useEffect(() => {
-        if (chat?.messages) { // chat object from loadChat
+        if (chat?.messages) {
             // Map chat.messages to the format we need
-            // But wait, chat object type defines messages? No, definition above doesn't have messages.
-            // The API response likely has messages.
-            // @ts-ignore
-            if (chat.messages) {
-                // @ts-ignore
-                const converted = chat.messages.map((m: any) => ({
-                    id: m.id,
-                    role: m.role as 'user' | 'assistant',
-                    content: m.content,
-                    timestamp: new Date(m.createdAt),
-                }));
-                setInitialMessages(converted);
-            }
+            const converted = chat.messages.map((m: any) => ({
+                id: m.id,
+                role: m.role as 'user' | 'assistant',
+                content: m.content,
+                timestamp: new Date(m.createdAt),
+            }));
+            setInitialMessages(converted);
         }
     }, [chat]);
 

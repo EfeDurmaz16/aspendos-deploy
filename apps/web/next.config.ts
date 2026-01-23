@@ -12,11 +12,62 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
+    // Enable standalone output for Docker deployments
+    output: 'standalone',
+
+    // Strict mode for React
+    reactStrictMode: true,
+
+    // Optimize images
+    images: {
+        remotePatterns: [
+            { protocol: 'https', hostname: 'img.clerk.com' },
+            { protocol: 'https', hostname: '*.supabase.co' },
+            { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+        ],
+        formats: ['image/avif', 'image/webp'],
+    },
+
+    // Experimental features
+    experimental: {
+        // Instrument server code for performance monitoring
+        clientTraceMetadata: ['baggage', 'sentry-trace'],
+    },
+
     async headers() {
         return [
             {
                 source: '/:path*',
                 headers: [
+                    // Security headers
+                    {
+                        key: 'X-DNS-Prefetch-Control',
+                        value: 'on',
+                    },
+                    {
+                        key: 'Strict-Transport-Security',
+                        value: 'max-age=63072000; includeSubDomains; preload',
+                    },
+                    {
+                        key: 'X-Content-Type-Options',
+                        value: 'nosniff',
+                    },
+                    {
+                        key: 'X-Frame-Options',
+                        value: 'DENY',
+                    },
+                    {
+                        key: 'X-XSS-Protection',
+                        value: '1; mode=block',
+                    },
+                    {
+                        key: 'Referrer-Policy',
+                        value: 'strict-origin-when-cross-origin',
+                    },
+                    {
+                        key: 'Permissions-Policy',
+                        value: 'camera=(), microphone=(), geolocation=()',
+                    },
                     {
                         key: 'Content-Security-Policy',
                         value: [
@@ -27,11 +78,11 @@ const nextConfig: NextConfig = {
                             // Styles: self + inline (for Tailwind and styled-components)
                             "style-src 'self' 'unsafe-inline'",
                             // Images: self + Clerk CDN + data URIs (for inline images)
-                            "img-src 'self' data: https://img.clerk.com https://cdn.onesignal.com",
+                            "img-src 'self' data: blob: https://img.clerk.com https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
                             // Fonts: self + data URIs
                             "font-src 'self' data:",
-                            // Connect: API server + Clerk + OneSignal + Sentry
-                            `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'} https://clerk.*.com https://onesignal.com https://api.onesignal.com wss://onesignal.com https://sentry.io`,
+                            // Connect: API server + Clerk + OneSignal + Sentry + Qdrant
+                            `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'} https://clerk.*.com https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
                             // Frame: allow embedding from Clerk
                             "frame-src 'self' https://clerk.*.com",
                             // Workers: self + blob (for service workers)
