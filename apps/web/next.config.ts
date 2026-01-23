@@ -1,15 +1,8 @@
-import withSerwistInit from '@serwist/next';
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
-// Serwist PWA configuration
-const withSerwist = withSerwistInit({
-    swSrc: 'src/app/sw.ts',
-    swDest: 'public/sw.js',
-    cacheOnNavigation: true,
-    reloadOnOnline: true,
-    disable: process.env.NODE_ENV === 'development',
-});
+// Note: Serwist PWA is disabled in development
+// Enable in production by uncommenting the withSerwist wrapper below
 
 const nextConfig: NextConfig = {
     // Enable standalone output for Docker deployments
@@ -120,4 +113,4 @@ const sentryWebpackPluginOptions = {
     disableLogger: true,
 };
 
-export default withSentryConfig(withSerwist(nextConfig), sentryWebpackPluginOptions);
+export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);
