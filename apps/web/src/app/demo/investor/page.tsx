@@ -138,7 +138,7 @@ Would you like me to configure CI/CD pipelines for this server?`;
             <header className="border-b border-zinc-800 px-6 py-4">
                 <div className="flex items-center justify-between max-w-5xl mx-auto">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-400 flex items-center justify-center">
                             <Lightning weight="fill" className="w-6 h-6 text-white" />
                         </div>
                         <div>
@@ -162,8 +162,8 @@ Would you like me to configure CI/CD pipelines for this server?`;
                     <button
                         onClick={runDemo}
                         disabled={phase !== 'idle' && phase !== 'pac_notification'}
-                        className="px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl font-semibold
-                                   hover:from-violet-500 hover:to-fuchsia-500 transition-all
+                        className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-400 rounded-xl font-semibold
+                                   hover:from-amber-400 hover:to-amber-300 transition-all
                                    disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         <HardDrives className="w-5 h-5" />
@@ -193,7 +193,7 @@ Would you like me to configure CI/CD pipelines for this server?`;
                                 <div
                                     className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                                         msg.role === 'user'
-                                            ? 'bg-violet-600 text-white'
+                                            ? 'bg-amber-500 text-white'
                                             : msg.role === 'system'
                                               ? 'bg-zinc-800/50 text-zinc-400 text-sm border border-zinc-700'
                                               : 'bg-zinc-800 text-white'
@@ -222,12 +222,12 @@ Would you like me to configure CI/CD pipelines for this server?`;
                                 className="flex justify-start"
                             >
                                 <div className="bg-zinc-800 rounded-2xl px-4 py-3 flex items-center gap-3">
-                                    <Brain className="w-5 h-5 text-violet-400 animate-pulse" />
+                                    <Brain className="w-5 h-5 text-amber-400 animate-pulse" />
                                     <span className="text-zinc-300">Thinking...</span>
                                     <div className="flex gap-1">
-                                        <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                                        <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                                        <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                                        <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                                        <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                                        <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:300ms]" />
                                     </div>
                                 </div>
                             </motion.div>
@@ -244,7 +244,7 @@ Would you like me to configure CI/CD pipelines for this server?`;
                             >
                                 <div className="max-w-[80%] bg-zinc-800 rounded-2xl px-4 py-3">
                                     <div className="whitespace-pre-wrap">{streamingText}</div>
-                                    <span className="inline-block w-2 h-4 bg-violet-400 animate-pulse ml-0.5" />
+                                    <span className="inline-block w-2 h-4 bg-amber-400 animate-pulse ml-0.5" />
                                 </div>
                             </motion.div>
                         )}
@@ -363,7 +363,7 @@ function StatusStep({
                     done
                         ? 'bg-emerald-500 text-white'
                         : active
-                          ? 'bg-violet-500 text-white animate-pulse'
+                          ? 'bg-amber-500 text-white animate-pulse'
                           : 'bg-zinc-700 text-zinc-400'
                 }`}
             >

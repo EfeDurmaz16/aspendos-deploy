@@ -22,10 +22,10 @@ import type { PACItem, PACItemType } from '@/lib/pac/types';
 // ============================================
 
 const typeStyles: Record<PACItemType, { icon: typeof Bell; color: string; bgColor: string }> = {
-    reminder: { icon: Bell, color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
+    reminder: { icon: Bell, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
     suggestion: { icon: Lightbulb, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
     alert: { icon: Warning, color: 'text-red-400', bgColor: 'bg-red-500/10' },
-    insight: { icon: Brain, color: 'text-purple-400', bgColor: 'bg-purple-500/10' },
+    insight: { icon: Brain, color: 'text-amber-300', bgColor: 'bg-amber-400/10' },
 };
 
 // ============================================

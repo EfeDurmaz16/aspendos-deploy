@@ -59,9 +59,9 @@ export function NotificationToast({
         >
             {/* Progress bar */}
             {autoDismiss > 0 && (
-                <div className="absolute top-0 left-0 h-0.5 bg-indigo-500/20 w-full">
+                <div className="absolute top-0 left-0 h-0.5 bg-amber-500/20 w-full">
                     <motion.div
-                        className="h-full bg-indigo-500"
+                        className="h-full bg-amber-500"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
@@ -71,8 +71,8 @@ export function NotificationToast({
                 {/* Header */}
                 <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-indigo-500/10">
-                            <Bell className="w-4 h-4 text-indigo-500" />
+                        <div className="p-1.5 rounded-lg bg-amber-500/10">
+                            <Bell className="w-4 h-4 text-amber-500" />
                         </div>
                         <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                             Follow-up from Aspendos
@@ -98,7 +98,7 @@ export function NotificationToast({
                 {notification.chatId && (
                     <button
                         onClick={handleClick}
-                        className="mt-3 flex items-center gap-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                        className="mt-3 flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
                     >
                         <MessageSquare className="w-4 h-4" />
                         Continue Conversation

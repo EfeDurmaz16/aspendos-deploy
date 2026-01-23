@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth';
-import { createEmbedding } from '@/lib/services/openai';
+import { createEmbedding } from '@/lib/ai';
 import { deleteUserMemories, searchMemories, storeMemory } from '@/lib/services/qdrant';
 
 /**

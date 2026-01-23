@@ -78,7 +78,7 @@ const SECTORS = [
     { key: 'all', label: 'All', icon: Database, color: 'bg-zinc-500' },
     { key: 'episodic', label: 'Episodic', icon: Clock, color: 'bg-blue-500' },
     { key: 'semantic', label: 'Semantic', icon: Lightbulb, color: 'bg-emerald-500' },
-    { key: 'procedural', label: 'Procedural', icon: Brain, color: 'bg-purple-500' },
+    { key: 'procedural', label: 'Procedural', icon: Brain, color: 'bg-amber-500' },
     { key: 'emotional', label: 'Emotional', icon: Heart, color: 'bg-rose-500' },
     { key: 'reflective', label: 'Reflective', icon: Sparkle, color: 'bg-amber-500' },
 ];
@@ -387,10 +387,10 @@ export default function MemoryDashboardPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-black relative overflow-hidden">
-            {/* Gradient mesh backgrounds */}
+            {/* YULA Monolith Background - Amber glow only */}
             <div className="absolute inset-0 pointer-events-none -z-10">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-purple-100/20 to-transparent dark:from-purple-900/15 rounded-full blur-3xl" />
-                <div className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-blue-100/15 to-transparent dark:from-blue-900/10 rounded-full blur-3xl" />
+                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-100/10 to-transparent dark:from-amber-900/10 rounded-full blur-3xl" />
+                <div className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-amber-50/8 to-transparent dark:from-amber-800/8 rounded-full blur-3xl" />
                 <div className="absolute bottom-0 left-1/2 w-[700px] h-[700px] bg-gradient-to-t from-emerald-100/10 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl" />
             </div>
             <div className="max-w-6xl mx-auto p-6 space-y-8 relative z-10">
@@ -440,7 +440,7 @@ export default function MemoryDashboardPage() {
                             label="Avg Confidence"
                             value={`${Math.round(stats.avgConfidence * 100)}%`}
                             icon={Sparkle}
-                            color="bg-purple-600"
+                            color="bg-amber-600"
                         />
                     </div>
                 )}

@@ -132,11 +132,11 @@ const SECTOR_ICONS: Record<string, React.ElementType> = {
 };
 
 const SECTOR_COLORS: Record<string, string> = {
-    episodic: 'text-blue-500',
+    episodic: 'text-zinc-500',
     semantic: 'text-emerald-500',
-    procedural: 'text-purple-500',
+    procedural: 'text-amber-500',
     emotional: 'text-rose-500',
-    reflective: 'text-amber-500',
+    reflective: 'text-amber-400',
 };
 
 // ============================================

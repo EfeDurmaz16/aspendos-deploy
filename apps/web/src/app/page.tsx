@@ -195,7 +195,7 @@ export default function LandingPage() {
                             <BentoCard
                                 name="Cross-Model Integration"
                                 className="col-span-3 lg:col-span-1"
-                                background={<div className="absolute inset-0 bg-purple-500/5" />}
+                                background={<div className="absolute inset-0 bg-amber-500/5" />}
                                 Icon={ShareNetwork}
                                 description="Seamlessly route tasks to the best AI for the job. GPT-4, Claude, Gemini - together."
                                 href="/signup"
@@ -241,11 +241,11 @@ export default function LandingPage() {
                                 <p className="text-sm text-muted-foreground">A unified platform with shared memory, intelligent routing, and seamless multi-model coordination.</p>
                             </div>
                             <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                                <h3 className="font-semibold mb-3 text-blue-500">Opportunity</h3>
+                                <h3 className="font-semibold mb-3 text-amber-500">Opportunity</h3>
                                 <p className="text-sm text-muted-foreground">$190B AI market by 2025. $50B TAM in enterprise AI integration and memory management solutions.</p>
                             </div>
                             <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                                <h3 className="font-semibold mb-3 text-purple-500">Tech Stack</h3>
+                                <h3 className="font-semibold mb-3 text-amber-400">Tech Stack</h3>
                                 <p className="text-sm text-muted-foreground">Vector databases, distributed memory systems, AI routing algorithms, and enterprise-grade security.</p>
                             </div>
                         </div>

@@ -2,9 +2,8 @@ import { prisma } from '@aspendos/db';
 import type { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth';
-import { createEmbedding } from '@/lib/services/openai';
+import { createEmbedding, executeHybridRoute, createUnifiedStreamingCompletion } from '@/lib/ai';
 import { storeConversationEmbedding } from '@/lib/services/qdrant';
-import { executeHybridRoute, createUnifiedStreamingCompletion } from '@/lib/services/hybrid-router';
 
 // ============================================
 // TYPES

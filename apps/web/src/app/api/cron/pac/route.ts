@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@aspendos/db';
 import { analyzeContextForPAC } from '@/lib/pac/analyzer';
 import { searchConversations } from '@/lib/services/qdrant';
-import { createEmbedding } from '@/lib/services/openai';
+import { createEmbedding } from '@/lib/ai';
 
 // ============================================
 // PAC CRON ENDPOINT

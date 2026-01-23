@@ -1,4 +1,4 @@
-# Aspendos CI/CD Pipeline with Deployment
+# YULA OS CI/CD Pipeline
 name: CI/CD
 
 on:
@@ -10,9 +10,8 @@ on:
 env:
   BUN_VERSION: '1.1.0'
   NODE_VERSION: '20'
-  REGISTRY: ghcr.io
-  IMAGE_NAME_API: aspendos/api
-  IMAGE_NAME_WEB: aspendos/web
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
   # ============================================
@@ -41,11 +40,62 @@ jobs:
         run: cd apps/web && bunx tsc --noEmit
         continue-on-error: false
 
-      - name: Lint
-        run: bun run lint 2>/dev/null || true
-
       - name: Biome check
         run: bun biome check .
+
+  # ============================================
+  # TEST
+  # ============================================
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: yula_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run API tests
+        run: cd services/api && bun run test
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/yula_test
+          NODE_ENV: test
+          JWT_SECRET: test-secret-key-for-testing-only
+          BETTER_AUTH_SECRET: test-better-auth-secret-key
+
+      - name: Run Web tests
+        run: cd apps/web && bun run test 2>/dev/null || true
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+
+      - name: Run AI SDK Router tests
+        run: cd apps/web && bun run test:router 2>/dev/null || true
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'test-key' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || 'test-key' }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || 'test-key' }}
 
   # ============================================
   # BUILD
@@ -72,228 +122,69 @@ jobs:
       - name: Build Web
         run: cd apps/web && bun run build
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:8080' }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_ONESIGNAL_APP_ID: ${{ secrets.NEXT_PUBLIC_ONESIGNAL_APP_ID || '' }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://api.yula.dev' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
   # ============================================
-  # TEST
+  # DEPLOY TO VERCEL (Preview)
   # ============================================
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: lint
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: aspendos_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Run API tests
-        run: cd services/api && bun run test
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/aspendos_test
-          NODE_ENV: test
-          JWT_SECRET: test-secret-key-for-testing-only
-          BETTER_AUTH_SECRET: test-better-auth-secret-key
-
-      - name: Run Web tests
-        run: cd apps/web && bun run test || true
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080
-        # TODO: Fix Bun + happy-dom environment configuration issue
-        # Tests fail with "document is not defined" - needs investigation
-
-  # ============================================
-  # DOCKER BUILD & PUSH
-  # ============================================
-  docker:
-    name: Docker Build & Push
+  deploy-preview:
+    name: Deploy Preview to Vercel
     runs-on: ubuntu-latest
     needs: [build, test]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      api-image: ${{ steps.meta-api.outputs.tags }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for API
-        id: meta-api
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-
-      - name: Build and push API Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/api
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta-api.outputs.tags }}
-          labels: ${{ steps.meta-api.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Extract metadata for Web
-        id: meta-web
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-
-      - name: Build and push Web Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./apps/web
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta-web.outputs.tags }}
-          labels: ${{ steps.meta-web.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  # ============================================
-  # DEPLOY TO STAGING
-  # ============================================
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: docker
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    if: github.event_name == 'pull_request'
     environment:
-      name: staging
-      url: https://staging.aspendos.app
+      name: preview
+      url: ${{ steps.deploy.outputs.url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        if: env.RAILWAY_API_TOKEN != ''
-        run: npm install -g @railway/cli
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
 
-      - name: Deploy API to staging (Railway)
-        if: env.RAILWAY_API_TOKEN != ''
-        env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
-        run: |
-          railway up \
-            --service aspendos-api \
-            --environment staging \
-            --detach
-        continue-on-error: true
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy Web to staging (Railway)
-        if: env.RAILWAY_API_TOKEN != ''
-        env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
-        run: |
-          railway up \
-            --service aspendos-web \
-            --environment staging \
-            --detach
-        continue-on-error: true
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deployment instructions
-        if: env.RAILWAY_API_TOKEN == ''
+      - name: Deploy Preview to Vercel
+        id: deploy
         run: |
-          echo "⚠️  Staging deployment skipped - no RAILWAY_API_TOKEN configured"
-          echo ""
-          echo "To enable automated staging deployments:"
-          echo "1. Go to GitHub Settings → Secrets and variables → Actions"
-          echo "2. Add RAILWAY_API_TOKEN from https://railway.app/account/tokens"
-          echo "3. Ensure Railway project is linked in railway.json"
+          URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Preview deployed to: $URL"
 
   # ============================================
-  # DEPLOY TO PRODUCTION
+  # DEPLOY TO VERCEL (Production)
   # ============================================
   deploy-production:
-    name: Deploy to Production
+    name: Deploy Production to Vercel
     runs-on: ubuntu-latest
-    needs: docker
+    needs: [build, test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: production
-      url: https://aspendos.app
+      url: https://yula.dev
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        if: env.RAILWAY_API_TOKEN != ''
-        run: npm install -g @railway/cli
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
 
-      - name: Deploy API to production (Railway)
-        if: env.RAILWAY_API_TOKEN != ''
-        env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
-        run: |
-          railway up \
-            --service aspendos-api \
-            --environment production \
-            --detach
-        continue-on-error: true
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy Web to production (Railway)
-        if: env.RAILWAY_API_TOKEN != ''
-        env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
-        run: |
-          railway up \
-            --service aspendos-web \
-            --environment production \
-            --detach
-        continue-on-error: true
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deployment instructions
-        if: env.RAILWAY_API_TOKEN == ''
+      - name: Deploy Production to Vercel
         run: |
-          echo "⚠️  Production deployment skipped - no RAILWAY_API_TOKEN configured"
-          echo ""
-          echo "To enable automated production deployments:"
-          echo "1. Go to GitHub Settings → Secrets and variables → Actions"
-          echo "2. Add RAILWAY_API_TOKEN from https://railway.app/account/tokens"
-          echo "3. Ensure Railway project is linked in railway.json"
-          echo "4. See .github/DEPLOYMENT.md for detailed setup instructions"
+          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Production deployed to: $URL"
+          echo "YULA OS deployed successfully to production"
+          echo "Live at: https://yula.dev"

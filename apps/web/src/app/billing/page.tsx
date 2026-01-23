@@ -68,7 +68,7 @@ function UsageBar({
                         isHigh
                             ? 'bg-gradient-to-r from-amber-500 to-amber-400 shadow-lg shadow-amber-500/30'
                             : isMedium
-                              ? 'bg-gradient-to-r from-blue-500 to-blue-400 shadow-lg shadow-blue-500/30'
+                              ? 'bg-gradient-to-r from-amber-400 to-amber-300 shadow-lg shadow-amber-400/30'
                               : 'bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-lg shadow-emerald-500/30'
                     }`}
                     style={{ width: `${Math.min(percent, 100)}%` }}
@@ -177,11 +177,11 @@ function BillingContent() {
 
     return (
         <div className="min-h-screen bg-white dark:bg-zinc-950 py-12 px-4 relative overflow-hidden">
-            {/* Gradient mesh background */}
+            {/* YULA Monolith Background - Amber glow only */}
             <div className="absolute inset-0 pointer-events-none -z-10">
-                <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-gradient-to-br from-emerald-100/20 to-transparent dark:from-emerald-900/15 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-bl from-blue-100/20 to-transparent dark:from-blue-900/15 rounded-full blur-3xl" />
-                <div className="absolute top-1/2 right-1/3 w-[400px] h-[400px] bg-gradient-to-tr from-purple-100/15 to-transparent dark:from-purple-900/10 rounded-full blur-3xl" />
+                <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-gradient-to-br from-emerald-100/15 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-bl from-amber-100/10 to-transparent dark:from-amber-900/10 rounded-full blur-3xl" />
+                <div className="absolute top-1/2 right-1/3 w-[400px] h-[400px] bg-gradient-to-tr from-amber-50/8 to-transparent dark:from-amber-800/8 rounded-full blur-3xl" />
             </div>
 
             <div className="max-w-4xl mx-auto space-y-8 relative z-10">

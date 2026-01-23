@@ -1,11 +1,18 @@
-import { getGroqClient, ROUTER_MODEL } from '@/lib/services/groq';
+/**
+ * YULA PAC (Proactive AI Callbacks) Analyzer
+ *
+ * Uses Groq for fast analysis via Vercel AI SDK.
+ */
+
+import { generateText } from 'ai';
+import { groq } from '@/lib/ai/providers';
 import type { PACAnalysisResult } from './types';
 
 // ============================================
 // PAC ANALYZER - Uses Groq for fast analysis
 // ============================================
 
-const PAC_SYSTEM_PROMPT = `You are the Aspendos Proactive Agent. Analyze user context and decide if any proactive notifications are needed.
+const PAC_SYSTEM_PROMPT = `You are the Yula Proactive Agent. Analyze user context and decide if any proactive notifications are needed.
 
 You should generate notifications for:
 1. **Reminders** - Things the user mentioned wanting to do or remember
@@ -58,8 +65,9 @@ export async function analyzeContextForPAC(
     }
 
     try {
-        const completion = await getGroqClient().chat.completions.create({
-            model: ROUTER_MODEL,
+        // Use Vercel AI SDK generateText with Groq router model
+        const result = await generateText({
+            model: groq('llama-3.1-8b-instant'),
             messages: [
                 { role: 'system', content: PAC_SYSTEM_PROMPT },
                 {
@@ -68,17 +76,22 @@ export async function analyzeContextForPAC(
                 },
             ],
             temperature: 0.3,
-            max_tokens: 500,
-            response_format: { type: 'json_object' },
+            maxOutputTokens: 500,
         });
 
-        const content = completion.choices[0]?.message?.content;
+        const content = result.text;
         if (!content) {
             return { shouldNotify: false, items: [] };
         }
 
-        const result = JSON.parse(content) as PACAnalysisResult;
-        return result;
+        // Extract JSON from response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]) as PACAnalysisResult;
+            return parsed;
+        }
+
+        return { shouldNotify: false, items: [] };
     } catch (error) {
         console.error('[PAC Analyzer] Error:', error);
         return { shouldNotify: false, items: [] };
@@ -93,7 +106,7 @@ export async function quickPACCheck(lastMessage: string): Promise<boolean> {
     // Check for explicit reminder/scheduling keywords
     const reminderKeywords = [
         'remind me',
-        'don\'t forget',
+        "don't forget",
         'remember to',
         'alert me',
         'notify me',

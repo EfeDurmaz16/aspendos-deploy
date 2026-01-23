@@ -105,8 +105,8 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-3 gap-2">
-                        <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
-                            <Sparkle className="size-4 text-violet-500 mb-1.5" weight="fill" />
+                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                            <Sparkle className="size-4 text-amber-500 mb-1.5" weight="fill" />
                             <div className="text-lg font-semibold">{memories.length}</div>
                             <div className="text-[10px] text-muted-foreground">Memories</div>
                         </div>

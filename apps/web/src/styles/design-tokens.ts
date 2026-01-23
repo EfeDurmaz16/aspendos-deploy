@@ -94,8 +94,8 @@ export const colors = {
             background: '#f9fafb',
         },
         meta: {
-            primary: '#8b5cf6', // purple-500, distinctive
-            background: '#faf5ff',
+            primary: '#f59e0b', // amber-500, YULA brand
+            background: '#fffbeb',
         },
         mistral: {
             primary: '#06b6d4', // cyan-500

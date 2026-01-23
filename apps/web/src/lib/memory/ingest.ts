@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { createEmbedding, createEmbeddings } from '@/lib/services/openai';
+import { createEmbedding, createEmbeddings } from '@/lib/ai';
 import { storeMemory, qdrant, COLLECTIONS, VECTOR_SIZE } from '@/lib/services/qdrant';
 
 // ============================================

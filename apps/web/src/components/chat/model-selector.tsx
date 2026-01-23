@@ -128,9 +128,9 @@ export function ModelSelector({
                                             className={cn(
                                                 'w-3.5 h-3.5',
                                                 model.tier === 'ULTRA'
-                                                    ? 'text-purple-500'
+                                                    ? 'text-amber-500'
                                                     : model.tier === 'PRO'
-                                                      ? 'text-blue-500'
+                                                      ? 'text-emerald-500'
                                                       : 'text-zinc-400'
                                             )}
                                         />
@@ -142,9 +142,9 @@ export function ModelSelector({
                                                 className={cn(
                                                     'text-[10px] px-1.5 py-0.5 rounded uppercase font-medium',
                                                     model.tier === 'ULTRA'
-                                                        ? 'bg-purple-500/10 text-purple-500'
+                                                        ? 'bg-amber-500/10 text-amber-500'
                                                         : model.tier === 'PRO'
-                                                          ? 'bg-blue-500/10 text-blue-500'
+                                                          ? 'bg-emerald-500/10 text-emerald-500'
                                                           : 'bg-zinc-500/10 text-zinc-500'
                                                 )}
                                             >

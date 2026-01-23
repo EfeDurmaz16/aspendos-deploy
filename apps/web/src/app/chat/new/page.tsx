@@ -141,10 +141,10 @@ export default function NewChatPage() {
 
             {/* Main Chat */}
             <div className="flex-1 h-full flex flex-col relative bg-white dark:bg-zinc-950 dark:text-zinc-100">
-                {/* Gradient mesh background */}
+                {/* YULA Monolith Background - Amber glow only */}
                 <div className="absolute inset-0 pointer-events-none -z-10">
-                    <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-purple-100/15 to-transparent dark:from-purple-900/10 rounded-full blur-3xl" />
-                    <div className="absolute bottom-1/3 left-1/3 w-[600px] h-[600px] bg-gradient-to-bl from-blue-100/15 to-transparent dark:from-blue-900/10 rounded-full blur-3xl" />
+                    <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-100/10 to-transparent dark:from-amber-900/10 rounded-full blur-3xl" />
+                    <div className="absolute bottom-1/3 left-1/3 w-[600px] h-[600px] bg-gradient-to-bl from-amber-50/8 to-transparent dark:from-amber-800/8 rounded-full blur-3xl" />
                 </div>
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-md z-10 relative">

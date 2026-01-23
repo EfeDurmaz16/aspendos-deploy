@@ -268,10 +268,10 @@ export default function ChatPage() {
 
     return (
         <div className="h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-black overflow-hidden font-sans flex relative">
-            {/* Background */}
+            {/* YULA Monolith Background - Amber glow only */}
             <div className="absolute inset-0 pointer-events-none z-0">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-purple-100/20 to-transparent dark:from-purple-900/10 rounded-full blur-3xl opacity-50" />
-                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-bl from-emerald-100/20 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl opacity-50" />
+                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-100/10 to-transparent dark:from-amber-900/8 rounded-full blur-3xl opacity-50" />
+                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-bl from-emerald-100/15 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl opacity-50" />
             </div>
 
             {/* Sidebar */}

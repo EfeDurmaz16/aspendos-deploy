@@ -134,20 +134,20 @@
 
   --radius: 0.5rem;
 
-  /* Aceternity Colors */
+  /* YULA Monolith Colors - No purple/blue gradients */
   --black: #000000;
   --white: #ffffff;
-  --slate-950: #020617;
-  --indigo-300: #a5b4fc;
-  --violet-200: #ddd6fe;
-  --blue-300: #93c5fd;
-  --blue-400: #60a5fa;
-  --blue-500: #3b82f6;
+  --slate-950: #050505;
+  --amber-300: #fcd34d;
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --emerald-500: #10b981;
   --transparent: transparent;
-  --bg-0: #09090b;
-  --bg-100: #18181b;
-  --bg-200: #27272a;
-  --bg-300: #3f3f46;
+  --bg-0: #050505;
+  --bg-100: #0a0a0a;
+  --bg-200: #18181b;
+  --bg-300: #27272a;
   --text-100: #fafafa;
   --text-200: #e4e4e7;
   --text-300: #a1a1aa;
@@ -215,15 +215,15 @@
   --input: #404040;
   --ring: #d4d4d4;
 
-  /* Aceternity Colors (Dark) */
+  /* YULA Monolith Colors (Dark) - No purple/blue gradients */
   --black: #000000;
   --white: #ffffff;
-  --slate-950: #020617;
-  --indigo-300: #a5b4fc;
-  --violet-200: #ddd6fe;
-  --blue-300: #93c5fd;
-  --blue-400: #60a5fa;
-  --blue-500: #3b82f6;
+  --slate-950: #050505;
+  --amber-300: #fcd34d;
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --emerald-500: #10b981;
   --transparent: transparent;
 }
 
@@ -335,21 +335,21 @@
   box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
 }
 
-/* Gradient mesh background */
+/* Gradient mesh background - YULA Monolith: Amber glow only */
 .gradient-mesh {
   background:
-    radial-gradient(at 40% 20%, rgba(147, 197, 253, 0.15) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(196, 181, 253, 0.15) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, rgba(167, 243, 208, 0.15) 0px, transparent 50%),
-    radial-gradient(at 80% 100%, rgba(253, 224, 71, 0.1) 0px, transparent 50%);
+    radial-gradient(at 40% 20%, rgba(245, 158, 11, 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(251, 191, 36, 0.06) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, rgba(245, 158, 11, 0.04) 0px, transparent 50%);
 }
 
 [data-theme="dark"] .gradient-mesh {
   background:
-    radial-gradient(at 40% 20%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-    radial-gradient(at 80% 100%, rgba(245, 158, 11, 0.05) 0px, transparent 50%);
+    radial-gradient(at 40% 20%, rgba(245, 158, 11, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(251, 191, 36, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.06) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, rgba(217, 119, 6, 0.05) 0px, transparent 50%);
 }
 
 /* Hover lift animation */

@@ -49,7 +49,7 @@ export function SkyToggle() {
           transition={{ duration: 0.2, ease: "easeInOut" }}
           className="absolute inset-0 flex items-center justify-center"
         >
-          <Moon weight="fill" className="w-5 h-5 text-indigo-400" />
+          <Moon weight="fill" className="w-5 h-5 text-amber-400" />
         </motion.div>
       </div>
     </button>
