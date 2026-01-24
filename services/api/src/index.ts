@@ -17,6 +17,7 @@ import billingRoutes from './routes/billing';
 // Routes
 import chatRoutes from './routes/chat';
 import councilRoutes from './routes/council';
+import gamificationRoutes from './routes/gamification';
 import importRoutes from './routes/import';
 import memoryRoutes from './routes/memory';
 import notificationsRoutes from './routes/notifications';
@@ -220,6 +221,7 @@ app.route('/api/voice', voiceRoutes);
 app.route('/api/scheduler', schedulerRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/analytics', analyticsRoutes);
+app.route('/api/gamification', gamificationRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);
