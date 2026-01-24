@@ -92,13 +92,28 @@ function parseClaudeExport(data: unknown): ParsedConversation[] {
 
         if (Array.isArray(conv.chat_messages)) {
             for (const msg of conv.chat_messages) {
-                if (msg.sender && msg.text) {
-                    messages.push({
-                        role: msg.sender === 'human' ? 'user' : 'assistant',
-                        content: msg.text,
-                        createdAt: new Date(msg.created_at || conv.created_at),
-                    });
+                if (!msg.sender) continue;
+
+                // Get text content - try text field first, then content array
+                let text = msg.text || '';
+
+                // If text is empty, try to get from content array (newer Claude export format)
+                if (!text && Array.isArray(msg.content)) {
+                    for (const contentItem of msg.content) {
+                        if (contentItem && contentItem.type === 'text' && contentItem.text) {
+                            text = contentItem.text;
+                            break;
+                        }
+                    }
                 }
+
+                if (!text.trim()) continue;
+
+                messages.push({
+                    role: msg.sender === 'human' ? 'user' : 'assistant',
+                    content: text,
+                    createdAt: new Date(msg.created_at || conv.created_at),
+                });
             }
         }
 
@@ -496,6 +511,84 @@ describe('parseClaudeExport', () => {
         const result = parseClaudeExport(mockExport);
 
         expect(result[0].messages).toHaveLength(0);
+    });
+
+    it('should handle content array fallback when text is empty', () => {
+        const mockExport = [
+            {
+                uuid: 'uuid-123',
+                name: 'Test with content array',
+                created_at: '2024-01-15T10:00:00Z',
+                updated_at: '2024-01-15T10:00:00Z',
+                chat_messages: [
+                    {
+                        sender: 'human',
+                        text: '', // Empty text
+                        content: [{ type: 'text', text: 'Message from content array' }],
+                        created_at: '2024-01-15T10:00:00Z',
+                    },
+                    {
+                        sender: 'assistant',
+                        // No text field at all
+                        content: [{ type: 'text', text: 'Assistant response from content' }],
+                        created_at: '2024-01-15T10:00:10Z',
+                    },
+                ],
+            },
+        ];
+
+        const result = parseClaudeExport(mockExport);
+
+        expect(result[0].messages).toHaveLength(2);
+        expect(result[0].messages[0].content).toBe('Message from content array');
+        expect(result[0].messages[1].content).toBe('Assistant response from content');
+    });
+
+    it('should prefer text field over content array', () => {
+        const mockExport = [
+            {
+                uuid: 'uuid-123',
+                created_at: '2024-01-15T10:00:00Z',
+                updated_at: '2024-01-15T10:00:00Z',
+                chat_messages: [
+                    {
+                        sender: 'human',
+                        text: 'Primary text',
+                        content: [{ type: 'text', text: 'Fallback text' }],
+                    },
+                ],
+            },
+        ];
+
+        const result = parseClaudeExport(mockExport);
+
+        expect(result[0].messages[0].content).toBe('Primary text');
+    });
+
+    it('should skip messages with empty content array', () => {
+        const mockExport = [
+            {
+                uuid: 'uuid-123',
+                created_at: '2024-01-15T10:00:00Z',
+                updated_at: '2024-01-15T10:00:00Z',
+                chat_messages: [
+                    {
+                        sender: 'human',
+                        text: '',
+                        content: [],
+                    },
+                    {
+                        sender: 'human',
+                        text: 'Valid message',
+                    },
+                ],
+            },
+        ];
+
+        const result = parseClaudeExport(mockExport);
+
+        expect(result[0].messages).toHaveLength(1);
+        expect(result[0].messages[0].content).toBe('Valid message');
     });
 });
 

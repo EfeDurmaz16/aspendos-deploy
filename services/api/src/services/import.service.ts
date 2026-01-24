@@ -87,6 +87,12 @@ export async function listImportJobs(userId: string, limit = 20) {
 
 /**
  * Parse ChatGPT export format
+ *
+ * ChatGPT exports use a complex linked-list/tree structure where messages
+ * are stored in a `mapping` dict with parent/children references.
+ * This requires tree traversal to reconstruct linear conversations.
+ *
+ * Based on Klaros ChatGPT loader implementation.
  */
 export function parseChatGPTExport(data: unknown): ParsedConversation[] {
     const conversations: ParsedConversation[] = [];
@@ -98,39 +104,16 @@ export function parseChatGPTExport(data: unknown): ParsedConversation[] {
     for (const conv of data) {
         if (!conv.mapping || !conv.title) continue;
 
-        const messages: ParsedMessage[] = [];
-        const mapping = conv.mapping as Record<string, unknown>;
+        const mapping = conv.mapping as Record<string, ChatGPTNode>;
 
-        // Build message tree
-        for (const node of Object.values(mapping)) {
-            if (
-                node &&
-                typeof node === 'object' &&
-                'message' in node &&
-                node.message &&
-                typeof node.message === 'object'
-            ) {
-                const msg = node.message as {
-                    author?: { role?: string };
-                    content?: { parts?: string[] };
-                    create_time?: number;
-                };
+        // Find the root node (no parent)
+        const rootId = findChatGPTRoot(mapping);
+        if (!rootId) continue;
 
-                const role = msg.author?.role;
-                const content = msg.content?.parts?.join('\n');
+        // Traverse the tree to extract messages in order
+        const messages = traverseChatGPTTree(mapping, rootId);
 
-                if (role && content && (role === 'user' || role === 'assistant')) {
-                    messages.push({
-                        role: role as 'user' | 'assistant',
-                        content,
-                        createdAt: new Date((msg.create_time || 0) * 1000),
-                    });
-                }
-            }
-        }
-
-        // Sort messages by creation time
-        messages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+        if (messages.length === 0) continue;
 
         conversations.push({
             externalId: conv.id || `chatgpt-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -145,8 +128,116 @@ export function parseChatGPTExport(data: unknown): ParsedConversation[] {
     return conversations;
 }
 
+// ChatGPT node type for tree traversal
+interface ChatGPTNode {
+    id?: string;
+    parent?: string | null;
+    children?: string[];
+    message?: {
+        id?: string;
+        author?: { role?: string };
+        content?: { content_type?: string; parts?: (string | { text?: string })[] };
+        create_time?: number;
+        metadata?: { is_visually_hidden_from_conversation?: boolean; model_slug?: string };
+    };
+}
+
+/**
+ * Find the root node ID (node with no parent)
+ */
+function findChatGPTRoot(mapping: Record<string, ChatGPTNode>): string | null {
+    for (const [nodeId, node] of Object.entries(mapping)) {
+        if (node.parent === null || node.parent === undefined) {
+            return nodeId;
+        }
+    }
+    return null;
+}
+
+/**
+ * Recursively traverse the message tree to reconstruct linear conversation.
+ * Follows the first child at each level (main thread).
+ */
+function traverseChatGPTTree(mapping: Record<string, ChatGPTNode>, nodeId: string): ParsedMessage[] {
+    const node = mapping[nodeId];
+    if (!node) return [];
+
+    const messages: ParsedMessage[] = [];
+    const msgData = node.message;
+
+    if (msgData) {
+        const parsed = parseChatGPTMessage(msgData);
+        if (parsed) {
+            messages.push(parsed);
+        }
+    }
+
+    // Follow children (take first child for main thread)
+    const children = node.children || [];
+    if (children.length > 0) {
+        messages.push(...traverseChatGPTTree(mapping, children[0]));
+    }
+
+    return messages;
+}
+
+/**
+ * Parse a single ChatGPT message from the mapping structure.
+ */
+function parseChatGPTMessage(msgData: ChatGPTNode['message']): ParsedMessage | null {
+    if (!msgData) return null;
+
+    const author = msgData.author || {};
+    const roleStr = author.role || '';
+
+    // Only include user and assistant messages
+    if (roleStr !== 'user' && roleStr !== 'assistant') {
+        return null;
+    }
+
+    // Skip visually hidden messages
+    const metadata = msgData.metadata || {};
+    if (metadata.is_visually_hidden_from_conversation) {
+        return null;
+    }
+
+    // Extract text content
+    const content = msgData.content || {};
+    const contentType = content.content_type || '';
+
+    // Skip non-text content types (except user_editable_context)
+    if (contentType !== 'text' && contentType !== 'user_editable_context') {
+        return null;
+    }
+
+    // Get text from parts array
+    const parts = content.parts || [];
+    const textParts: string[] = [];
+    for (const part of parts) {
+        if (typeof part === 'string') {
+            textParts.push(part);
+        } else if (part && typeof part === 'object' && part.text) {
+            textParts.push(part.text);
+        }
+    }
+
+    const text = textParts.join('\n').trim();
+    if (!text) return null;
+
+    return {
+        role: roleStr as 'user' | 'assistant',
+        content: text,
+        createdAt: new Date((msgData.create_time || 0) * 1000),
+    };
+}
+
 /**
  * Parse Claude export format
+ *
+ * Claude exports have a simpler structure than ChatGPT, but may have
+ * content in either `text` field or `content` array.
+ *
+ * Based on Klaros Claude loader implementation.
  */
 export function parseClaudeExport(data: unknown): ParsedConversation[] {
     const conversations: ParsedConversation[] = [];
@@ -160,12 +251,9 @@ export function parseClaudeExport(data: unknown): ParsedConversation[] {
 
         if (Array.isArray(conv.chat_messages)) {
             for (const msg of conv.chat_messages) {
-                if (msg.sender && msg.text) {
-                    messages.push({
-                        role: msg.sender === 'human' ? 'user' : 'assistant',
-                        content: msg.text,
-                        createdAt: new Date(msg.created_at || conv.created_at),
-                    });
+                const parsed = parseClaudeMessage(msg, conv.created_at);
+                if (parsed) {
+                    messages.push(parsed);
                 }
             }
         }
@@ -181,6 +269,43 @@ export function parseClaudeExport(data: unknown): ParsedConversation[] {
     }
 
     return conversations;
+}
+
+// Claude message type for parsing
+interface ClaudeMessage {
+    sender?: string;
+    text?: string;
+    content?: Array<{ type?: string; text?: string }>;
+    created_at?: string;
+}
+
+/**
+ * Parse a single Claude message.
+ * Handles both `text` field and `content` array fallback.
+ */
+function parseClaudeMessage(msg: ClaudeMessage, convCreatedAt?: string): ParsedMessage | null {
+    if (!msg.sender) return null;
+
+    // Get text content - try text field first, then content array
+    let text = msg.text || '';
+
+    // If text is empty, try to get from content array (newer Claude export format)
+    if (!text && Array.isArray(msg.content)) {
+        for (const contentItem of msg.content) {
+            if (contentItem && contentItem.type === 'text' && contentItem.text) {
+                text = contentItem.text;
+                break;
+            }
+        }
+    }
+
+    if (!text.trim()) return null;
+
+    return {
+        role: msg.sender === 'human' ? 'user' : 'assistant',
+        content: text,
+        createdAt: new Date(msg.created_at || convCreatedAt || Date.now()),
+    };
 }
 
 /**
