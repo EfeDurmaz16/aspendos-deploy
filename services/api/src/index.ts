@@ -16,6 +16,7 @@ import analyticsRoutes from './routes/analytics';
 import billingRoutes from './routes/billing';
 // Routes
 import chatRoutes from './routes/chat';
+import councilRoutes from './routes/council';
 import importRoutes from './routes/import';
 import memoryRoutes from './routes/memory';
 import notificationsRoutes from './routes/notifications';
@@ -210,6 +211,7 @@ app.get('/api/chat/shared/:token', async (c) => {
 
 // API Routes
 app.route('/api/chat', chatRoutes);
+app.route('/api/council', councilRoutes);
 app.route('/api/import', importRoutes);
 app.route('/api/memory', memoryRoutes);
 app.route('/api/pac', pacRoutes);
