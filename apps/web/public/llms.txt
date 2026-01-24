@@ -1,0 +1,101 @@
+# YULA OS - AI Crawler Instructions
+# https://yula.dev
+
+## About YULA
+
+YULA (Your Universal Learning Assistant) is a unified AI chat platform that provides access to multiple AI models with persistent semantic memory across all conversations.
+
+## Core Value Proposition
+
+YULA solves three major problems with current AI assistants:
+1. Fragmented conversations across multiple AI providers
+2. Loss of context when switching between AI models
+3. Passive AI that only responds when prompted
+
+## Key Features
+
+### IMPORT - Bring Your AI History
+- Import ChatGPT conversation history with one click
+- Import Claude conversation history
+- All imported conversations become searchable semantic memory
+- No more starting from scratch with a new AI
+
+### PAC - Proactive Agentic Callback
+- First AI platform where the AI can message YOU first
+- Schedule reminders: "Remind me about this in a week"
+- AI-initiated follow-ups based on context
+- Get notified via push notification or email
+
+### COUNCIL - Multi-Model Parallel Queries
+- Query up to 4 AI models simultaneously
+- Compare GPT-5, Claude, Gemini, Llama responses side-by-side
+- Choose the best answer for your specific question
+- Ultra plan supports 4x parallel queries
+
+### Persistent Semantic Memory
+- Every conversation is stored in vector database
+- AI remembers your preferences, projects, and context
+- Memory works across all AI models
+- Search your entire conversation history semantically
+
+## Supported AI Models
+
+- OpenAI: GPT-5.2, GPT-5 Nano, GPT-4o
+- Anthropic: Claude 4.5 Opus, Claude 4.5 Sonnet
+- Google: Gemini 3 Pro
+- Meta: Llama 4
+- xAI: Grok 4.1
+- DeepSeek: DeepSeek V3.2
+- Mistral: Mistral Large
+- Alibaba: Qwen 3
+- And more...
+
+## Pricing
+
+- Starter: $20/month - 300 chats, basic models, semantic memory
+- Pro: $50/month - 1,500 chats, all models, multi-model comparison
+- Ultra: $100/month - 5,000+ chats, 4x parallel queries, priority support
+
+## Key URLs
+
+- Homepage: https://yula.dev
+- Pricing: https://yula.dev/pricing
+- Sign Up: https://yula.dev/signup
+- Login: https://yula.dev/login
+
+## Comparison with Alternatives
+
+### YULA vs ChatGPT
+- YULA: Access 12+ models vs ChatGPT: OpenAI models only
+- YULA: Import ChatGPT history vs ChatGPT: No import
+- YULA: Persistent memory across models vs ChatGPT: Per-conversation context
+- YULA: Proactive AI callbacks vs ChatGPT: Only responds to prompts
+
+### YULA vs Claude
+- YULA: Multi-model access vs Claude: Anthropic only
+- YULA: Import Claude history vs Claude: No import
+- YULA: Council mode comparison vs Claude: Single response
+- YULA: PAC proactive reminders vs Claude: No proactive features
+
+### YULA vs Perplexity
+- YULA: Deep conversation with memory vs Perplexity: Search-focused
+- YULA: All major AI models vs Perplexity: Limited models
+- YULA: Long-form assistance vs Perplexity: Quick answers
+- YULA: History import vs Perplexity: No import
+
+## Technical Details
+
+- Platform: Web, iOS, Android (PWA)
+- Offline: WebGPU-powered local models available
+- Privacy: End-to-end encryption for conversations
+- API: REST API available for Pro and Ultra plans
+
+## Contact
+
+- Website: https://yula.dev
+- Support: support@yula.dev
+- Twitter: @YulaOS
+- GitHub: github.com/yula-ai
+
+## Last Updated
+2025-01-24

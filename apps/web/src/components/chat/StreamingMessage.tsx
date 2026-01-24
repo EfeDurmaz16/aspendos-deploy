@@ -75,12 +75,12 @@ function MessageActions({
             <button
                 onClick={handleCopy}
                 className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-                title="Copy message"
+                aria-label={copied ? 'Copied to clipboard' : 'Copy message'}
             >
                 {copied ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" />
+                    <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" aria-hidden="true" />
                 ) : (
-                    <Copy className="w-3.5 h-3.5" weight="duotone" />
+                    <Copy className="w-3.5 h-3.5" weight="duotone" aria-hidden="true" />
                 )}
             </button>
 
@@ -88,7 +88,7 @@ function MessageActions({
             <AudioPlayer text={content} className="ml-1" />
 
             {/* Feedback buttons */}
-            <div className="flex items-center gap-0.5 ml-auto">
+            <div className="flex items-center gap-0.5 ml-auto" role="group" aria-label="Response feedback">
                 <button
                     onClick={() => handleFeedback('up')}
                     className={`p-1.5 rounded-lg transition-all ${
@@ -96,11 +96,13 @@ function MessageActions({
                             ? 'text-emerald-500 bg-emerald-500/15 ring-1 ring-emerald-500/30'
                             : 'text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
                     }`}
-                    title="Good response"
+                    aria-label="Mark as good response"
+                    aria-pressed={feedback === 'up'}
                 >
                     <ThumbsUp
                         className="w-3.5 h-3.5"
                         weight={feedback === 'up' ? 'fill' : 'duotone'}
+                        aria-hidden="true"
                     />
                 </button>
                 <button
@@ -110,11 +112,13 @@ function MessageActions({
                             ? 'text-rose-500 bg-rose-500/15 ring-1 ring-rose-500/30'
                             : 'text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'
                     }`}
-                    title="Bad response"
+                    aria-label="Mark as bad response"
+                    aria-pressed={feedback === 'down'}
                 >
                     <ThumbsDown
                         className="w-3.5 h-3.5"
                         weight={feedback === 'down' ? 'fill' : 'duotone'}
+                        aria-hidden="true"
                     />
                 </button>
             </div>
@@ -293,13 +297,19 @@ function StreamingMessageComponent({
     const isUser = message.role === 'user';
 
     return (
-        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}>
+        <div
+            className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}
+            role={isUser ? 'listitem' : 'listitem'}
+        >
             <div
                 className={`max-w-[85%] rounded-2xl px-4 py-3 transition-all ${
                     isUser
                         ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-50 dark:to-zinc-100 text-white dark:text-zinc-900 shadow-md'
                         : 'bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all'
                 }`}
+                aria-live={message.streaming ? 'polite' : 'off'}
+                aria-atomic="false"
+                aria-label={isUser ? 'Your message' : 'AI response'}
             >
                 {/* Error display */}
                 {message.error && (
@@ -378,18 +388,22 @@ function StreamingMessageComponent({
 
                 {/* Streaming indicator */}
                 {message.streaming && !message.content && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" role="status" aria-label="AI is typing">
+                        <span className="sr-only">AI is typing a response</span>
                         <span
                             className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
                             style={{ animationDelay: '0ms' }}
+                            aria-hidden="true"
                         />
                         <span
                             className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
                             style={{ animationDelay: '150ms' }}
+                            aria-hidden="true"
                         />
                         <span
                             className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
                             style={{ animationDelay: '300ms' }}
+                            aria-hidden="true"
                         />
                     </div>
                 )}

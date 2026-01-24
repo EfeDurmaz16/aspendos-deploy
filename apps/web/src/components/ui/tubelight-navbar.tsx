@@ -32,7 +32,9 @@ export function NavBar({ items, className }: NavBarProps) {
   }, [])
 
   return (
-    <div
+    <nav
+      role="navigation"
+      aria-label="Main navigation"
       className={cn(
         "fixed bottom-0 sm:top-0 left-1/2 -translate-x-1/2 z-50 mb-6 sm:pt-6",
         className,
@@ -48,6 +50,7 @@ export function NavBar({ items, className }: NavBarProps) {
               key={item.name}
               href={item.url}
               onClick={() => setActiveTab(item.name)}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "relative cursor-pointer text-sm font-semibold px-6 py-2 rounded-full transition-colors",
                 "text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400",
@@ -55,9 +58,10 @@ export function NavBar({ items, className }: NavBarProps) {
               )}
             >
               <span className="hidden md:inline">{item.name}</span>
-              <span className="md:hidden">
+              <span className="md:hidden" aria-hidden="true">
                 <Icon size={18} weight="bold" />
               </span>
+              <span className="sr-only md:hidden">{item.name}</span>
               {isActive && (
                 <motion.div
                   layoutId="lamp"
@@ -68,6 +72,7 @@ export function NavBar({ items, className }: NavBarProps) {
                     stiffness: 300,
                     damping: 30,
                   }}
+                  aria-hidden="true"
                 >
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-emerald-500 rounded-t-full">
                     <div className="absolute w-12 h-6 bg-emerald-500/20 rounded-full blur-md -top-2 -left-2" />
@@ -79,9 +84,9 @@ export function NavBar({ items, className }: NavBarProps) {
             </Link>
           )
         })}
-        <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block" />
+        <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block" aria-hidden="true" />
         <SkyToggle />
       </div>
-    </div>
+    </nav>
   )
 }

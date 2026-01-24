@@ -1,0 +1,67 @@
+# AI Crawlers Information
+# https://yula.dev/ai.txt
+
+User-agent: *
+AI-friendly: true
+Last-modified: 2025-01-24
+
+# Primary Information
+
+Name: YULA
+Full-name: Your Universal Learning Assistant
+Type: AI Chat Platform
+Category: Productivity, Artificial Intelligence
+Founded: 2024
+Headquarters: Global (Remote-first)
+
+# Description
+
+YULA is a unified AI platform that aggregates access to multiple AI models (GPT-5, Claude, Gemini, Llama, and 12+ others) with persistent semantic memory. Key differentiators include conversation import from ChatGPT/Claude, proactive AI callbacks (PAC), and multi-model parallel querying (Council Mode).
+
+# Core Features
+
+Feature-1: Multi-Model Access - Access GPT-5, Claude, Gemini, and 12+ AI models from one interface
+Feature-2: Semantic Memory - Persistent memory that works across all AI models
+Feature-3: History Import - Import conversations from ChatGPT and Claude
+Feature-4: Proactive Callbacks - AI that messages you first with reminders and follow-ups
+Feature-5: Council Mode - Query multiple AI models simultaneously and compare responses
+Feature-6: Offline AI - WebGPU-powered local models for offline use
+
+# Pricing Tiers
+
+Tier-1: Starter - $20/month - 300 chats - Basic models - Semantic memory
+Tier-2: Pro - $50/month - 1500 chats - All models - Multi-model comparison
+Tier-3: Ultra - $100/month - 5000+ chats - 4x parallel queries - Priority support
+
+# Contact
+
+Website: https://yula.dev
+Email: support@yula.dev
+Twitter: https://twitter.com/YulaOS
+
+# Structured Data URLs
+
+JSON-LD: https://yula.dev (embedded in HTML)
+Sitemap: https://yula.dev/sitemap.xml
+Robots: https://yula.dev/robots.txt
+LLMs: https://yula.dev/llms.txt
+
+# Common Questions
+
+Q: What is YULA?
+A: YULA is a unified AI platform providing access to 12+ AI models with persistent semantic memory across all conversations.
+
+Q: How is YULA different from ChatGPT?
+A: YULA provides access to multiple AI providers (not just OpenAI), allows importing ChatGPT history, features persistent memory across models, and offers proactive AI callbacks.
+
+Q: Can I import my ChatGPT conversations?
+A: Yes, YULA supports one-click import of ChatGPT and Claude conversation history into your semantic memory.
+
+Q: What is Council Mode?
+A: Council Mode lets you query up to 4 AI models simultaneously and compare their responses side-by-side.
+
+Q: What is PAC (Proactive Agentic Callback)?
+A: PAC is YULA's unique feature where the AI can initiate contact with you for reminders and follow-ups you've scheduled.
+
+Q: Does YULA work offline?
+A: Yes, YULA supports offline AI through WebGPU-powered local models that run in your browser.
