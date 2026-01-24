@@ -19,6 +19,7 @@ import chatRoutes from './routes/chat';
 import importRoutes from './routes/import';
 import memoryRoutes from './routes/memory';
 import notificationsRoutes from './routes/notifications';
+import pacRoutes from './routes/pac';
 import schedulerRoutes from './routes/scheduler';
 import voiceRoutes from './routes/voice';
 
@@ -211,6 +212,7 @@ app.get('/api/chat/shared/:token', async (c) => {
 app.route('/api/chat', chatRoutes);
 app.route('/api/import', importRoutes);
 app.route('/api/memory', memoryRoutes);
+app.route('/api/pac', pacRoutes);
 app.route('/api/billing', billingRoutes);
 app.route('/api/voice', voiceRoutes);
 app.route('/api/scheduler', schedulerRoutes);
