@@ -50,5 +50,10 @@
       "maxDuration": 60
     }
   },
-  "crons": []
+  "crons": [
+    {
+      "path": "/api/cron/pac",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }

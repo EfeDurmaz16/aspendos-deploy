@@ -17,8 +17,8 @@ RUN bun install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build TypeScript (if needed)
-RUN bun run build 2>/dev/null || true
+# Build TypeScript
+RUN bun run build
 
 # ============================================
 # PRODUCTION STAGE
@@ -37,8 +37,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Copy built application
 COPY --from=builder --chown=api:nodejs /app/package.json ./
 COPY --from=builder --chown=api:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=api:nodejs /app/src ./src
-COPY --from=builder --chown=api:nodejs /app/tsconfig.json ./
+COPY --from=builder --chown=api:nodejs /app/dist ./dist
 
 # Switch to non-root user
 USER api
@@ -51,4 +50,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
 # Start the application
-CMD ["bun", "run", "src/index.ts"]
+CMD ["bun", "run", "start"]
