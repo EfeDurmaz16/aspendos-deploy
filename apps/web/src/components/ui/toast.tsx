@@ -63,8 +63,15 @@ export function useToast() {
     return context;
 }
 
+/**
+ * YULA OS Toast Variants
+ * Design System v2.0 - Monolith Aesthetic
+ *
+ * Border radius: 8px (--radius-toast)
+ * Max width: 420px
+ */
 const toastVariants = cva(
-    'pointer-events-auto relative flex w-full max-w-sm items-center justify-between gap-3 rounded-lg border px-4 py-3 shadow-lg',
+    'pointer-events-auto relative flex w-full max-w-[420px] items-center justify-between gap-3 rounded-[8px] border px-4 py-3 shadow-lg transition-all duration-200',
     {
         variants: {
             variant: {

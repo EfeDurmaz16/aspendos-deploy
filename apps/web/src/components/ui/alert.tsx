@@ -4,21 +4,35 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-const alertVariants = cva('relative w-full rounded-lg border px-4 py-3 text-sm flex gap-3', {
-    variants: {
-        variant: {
-            info: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-200',
-            success:
-                'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200',
-            warning:
-                'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200',
-            error: 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-200',
+/**
+ * YULA OS Alert Component
+ * Design System v2.0 - Monolith Aesthetic
+ *
+ * Border radius: 8px
+ */
+const alertVariants = cva(
+    'relative w-full rounded-[8px] border px-4 py-3 text-sm flex gap-3 transition-colors duration-200',
+    {
+        variants: {
+            variant: {
+                info: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-200',
+                success:
+                    'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200',
+                warning:
+                    'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200',
+                error: 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-200',
+                // YULA Feature alerts
+                import: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-200',
+                pac: 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200',
+                council:
+                    'border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/20 text-violet-900 dark:text-violet-200',
+            },
         },
-    },
-    defaultVariants: {
-        variant: 'info',
-    },
-});
+        defaultVariants: {
+            variant: 'info',
+        },
+    }
+);
 
 interface AlertProps
     extends React.HTMLAttributes<HTMLDivElement>,

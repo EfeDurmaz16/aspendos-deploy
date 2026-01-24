@@ -1,22 +1,29 @@
-import * as React from "react"
+import * as React from 'react';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
-const Textarea = React.forwardRef<
-  HTMLTextAreaElement,
-  React.ComponentProps<"textarea">
->(({ className, ...props }, ref) => {
-  return (
-    <textarea
-      className={cn(
-        "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        className
-      )}
-      ref={ref}
-      {...props}
-    />
-  )
-})
-Textarea.displayName = "Textarea"
+/**
+ * YULA OS Textarea Component
+ * Design System v2.0 - Monolith Aesthetic
+ *
+ * Border radius: 6px (same as input)
+ * Padding: 12px
+ * Font size: 14px
+ */
+const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<'textarea'>>(
+    ({ className, ...props }, ref) => {
+        return (
+            <textarea
+                className={cn(
+                    'flex min-h-[80px] w-full rounded-[6px] border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-all duration-200 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 resize-none',
+                    className
+                )}
+                ref={ref}
+                {...props}
+            />
+        );
+    }
+);
+Textarea.displayName = 'Textarea';
 
-export { Textarea }
+export { Textarea };

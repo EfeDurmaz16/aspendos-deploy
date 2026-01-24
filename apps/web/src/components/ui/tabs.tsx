@@ -8,14 +8,20 @@ import { cn } from '@/lib/utils';
 
 const Tabs = TabsPrimitive.Root;
 
+/**
+ * YULA OS Tabs Component
+ * Design System v2.0 - Monolith Aesthetic
+ *
+ * Border radius: 8px for list container
+ */
 const tabsListVariants = cva(
-    'inline-flex items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground',
+    'inline-flex items-center justify-center rounded-[8px] bg-muted p-1 text-muted-foreground',
     {
         variants: {
             variant: {
                 default: 'bg-muted',
-                line: 'border-b border-border bg-transparent',
-                enclosed: 'border border-border rounded-lg',
+                line: 'border-b border-border bg-transparent rounded-none',
+                enclosed: 'border border-border rounded-[8px]',
                 solid: 'bg-muted',
             },
         },
@@ -41,7 +47,7 @@ const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, T
 TabsList.displayName = TabsPrimitive.List.displayName;
 
 const tabsTriggerVariants = cva(
-    'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+    'inline-flex items-center justify-center whitespace-nowrap rounded-[6px] px-3 py-1.5 text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
     {
         variants: {
             variant: {
