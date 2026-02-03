@@ -22,37 +22,50 @@ import {
 import { cn } from '@/lib/utils';
 
 // =============================================================================
-// DESIGN SYSTEM: EDITORIAL LUXURY
-// Deep navy (#0A0E27), Gold (#D4AF37), Cream (#F8F6F0), Pure white
+// DESIGN SYSTEM: WARM SOPHISTICATION (YULA v3)
+// Warm charcoal (#2D2926), Terracotta (#D4714A), Cream (#F5F0E8)
 // Playfair Display (serif headlines) + DM Sans (body)
 // Generous whitespace, asymmetric layouts, large typography
 // =============================================================================
 
 const COLORS = {
-    navy: '#0A0E27',
-    navyLight: '#141B3D',
-    gold: '#D4AF37',
-    goldLight: '#E8D48A',
-    cream: '#F8F6F0',
+    // Primary brand colors
+    charcoal: '#2D2926',      // Main dark background
+    charcoalLight: '#3D3632', // Lighter dark for cards
+    terracotta: '#D4714A',    // Primary accent
+    terracottaLight: '#E07B54', // Hover state
+    terracottaDark: '#C4623B',  // Active state
+    cream: '#F5F0E8',         // Light background
+    creamLight: '#FAF8F5',    // Lighter cream for cards
     white: '#FFFFFF',
+    // Legacy mappings for compatibility
+    navy: '#2D2926',
+    navyLight: '#3D3632',
+    gold: '#D4714A',
+    goldLight: '#E07B54',
+    // Warm gray scale
     gray: {
-        100: '#F5F5F5',
-        200: '#E5E5E5',
-        300: '#D4D4D4',
-        400: '#A3A3A3',
-        500: '#737373',
-        600: '#525252',
-        700: '#404040',
-        800: '#262626',
-        900: '#171717',
+        50: '#FAF8F5',
+        100: '#F5F0E8',
+        200: '#E8E2D9',
+        300: '#D9D3CA',
+        400: '#A8A199',
+        500: '#6B635A',
+        600: '#524B44',
+        700: '#403A34',
+        800: '#2D2926',
+        900: '#1A1816',
     },
+    // Text colors
+    textOnDark: '#E8DED0',
+    textOnLight: '#2D2926',
 };
 
-// Feature accent colors
+// Feature accent colors - warm palette
 const ACCENTS = {
-    import: '#3B82F6',    // Blue
-    pac: '#F59E0B',       // Amber
-    council: '#EC4899',   // Pink
+    import: '#4A7BD4',    // Warm Blue
+    pac: '#D4714A',       // Terracotta (primary)
+    council: '#9B7DC4',   // Warm Violet
 };
 
 // =============================================================================
@@ -60,8 +73,8 @@ const ACCENTS = {
 // Elegant "Y" with neural network pattern
 // =============================================================================
 
-function YulaMonogram({ className = '', variant = 'dark' }: { className?: string; variant?: 'dark' | 'light' | 'gold' }) {
-    const color = variant === 'gold' ? COLORS.gold : variant === 'light' ? COLORS.white : COLORS.navy;
+function YulaMonogram({ className = '', variant = 'dark' }: { className?: string; variant?: 'dark' | 'light' | 'terracotta' | 'gold' }) {
+    const color = variant === 'terracotta' || variant === 'gold' ? COLORS.terracotta : variant === 'light' ? COLORS.textOnDark : COLORS.charcoal;
 
     return (
         <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -112,7 +125,7 @@ function YulaLogoAnimated({ className = '' }: { className?: string }) {
             <motion.div
                 className="absolute inset-0 rounded-full"
                 style={{
-                    background: `radial-gradient(circle, ${COLORS.gold}20 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, ${COLORS.terracotta}20 0%, transparent 70%)`,
                 }}
                 animate={{
                     scale: [1, 1.2, 1],
@@ -131,7 +144,7 @@ function YulaLogoAnimated({ className = '' }: { className?: string }) {
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
-                <YulaMonogram className="w-full h-full" variant="gold" />
+                <YulaMonogram className="w-full h-full" variant="terracotta" />
             </motion.div>
 
             {/* Orbiting particles */}
@@ -182,7 +195,7 @@ function GradientMeshBackground() {
             <div
                 className="absolute inset-0"
                 style={{
-                    background: `linear-gradient(135deg, ${COLORS.navy} 0%, ${COLORS.navyLight} 50%, ${COLORS.navy} 100%)`,
+                    background: `linear-gradient(135deg, ${COLORS.charcoal} 0%, ${COLORS.charcoalLight} 50%, ${COLORS.charcoal} 100%)`,
                 }}
             />
 
@@ -190,7 +203,7 @@ function GradientMeshBackground() {
             <motion.div
                 className="absolute w-[800px] h-[800px] rounded-full opacity-30 blur-[120px]"
                 style={{
-                    background: `radial-gradient(circle, ${COLORS.gold}40 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, ${COLORS.terracotta}40 0%, transparent 70%)`,
                     top: '-20%',
                     right: '-10%',
                 }}
@@ -1045,7 +1058,7 @@ export default function LandingPage() {
                 <section
                     ref={heroRef}
                     className="relative min-h-screen flex items-center justify-center overflow-hidden"
-                    style={{ background: COLORS.navy }}
+                    style={{ background: COLORS.charcoal }}
                 >
                     <GradientMeshBackground />
 
@@ -1146,7 +1159,7 @@ export default function LandingPage() {
                             >
                                 {['No credit card required', '7-day free trial', 'Cancel anytime'].map((text, i) => (
                                     <span key={text} className="flex items-center gap-2">
-                                        <Check size={16} weight="bold" style={{ color: COLORS.gold }} />
+                                        <Check size={16} weight="bold" style={{ color: COLORS.terracotta }} />
                                         {text}
                                     </span>
                                 ))}
@@ -1184,7 +1197,7 @@ export default function LandingPage() {
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
                                 className="text-sm font-medium tracking-widest uppercase"
-                                style={{ color: COLORS.gold }}
+                                style={{ color: COLORS.terracotta }}
                             >
                                 Three Superpowers
                             </motion.span>
@@ -1288,7 +1301,7 @@ export default function LandingPage() {
                 {/* =========================================================
                     LIVE DEMO - Interactive Chat Terminal
                     ========================================================= */}
-                <AnimatedSection id="demo" className="py-32" style={{ background: COLORS.navy }}>
+                <AnimatedSection id="demo" className="py-32" style={{ background: COLORS.charcoal }}>
                     <div className="container max-w-6xl mx-auto px-6">
                         <div className="grid lg:grid-cols-2 gap-16 items-center">
                             {/* Left: Text */}
@@ -1298,7 +1311,7 @@ export default function LandingPage() {
                                     whileInView={{ opacity: 1 }}
                                     viewport={{ once: true }}
                                     className="text-sm font-medium tracking-widest uppercase"
-                                    style={{ color: COLORS.gold }}
+                                    style={{ color: COLORS.terracotta }}
                                 >
                                     Try It Live
                                 </motion.span>
@@ -1320,7 +1333,7 @@ export default function LandingPage() {
                                         'Query 4 AI models at once',
                                     ].map((item, i) => (
                                         <div key={i} className="flex items-center gap-3 text-white/60">
-                                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLORS.gold }} />
+                                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLORS.terracotta }} />
                                             <span>{item}</span>
                                         </div>
                                     ))}
@@ -1528,7 +1541,7 @@ export default function LandingPage() {
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
                                 className="text-sm font-medium tracking-widest uppercase"
-                                style={{ color: COLORS.gold }}
+                                style={{ color: COLORS.terracotta }}
                             >
                                 Simple Setup
                             </motion.span>
@@ -1567,7 +1580,7 @@ export default function LandingPage() {
                                         {/* Step Number */}
                                         <span
                                             className="text-6xl font-light"
-                                            style={{ color: COLORS.gold, fontFamily: "'Playfair Display', serif" }}
+                                            style={{ color: COLORS.terracotta, fontFamily: "'Playfair Display', serif" }}
                                         >
                                             {item.step}
                                         </span>
@@ -1599,7 +1612,7 @@ export default function LandingPage() {
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
                                 className="text-sm font-medium tracking-widest uppercase"
-                                style={{ color: COLORS.gold }}
+                                style={{ color: COLORS.terracotta }}
                             >
                                 Why Switch
                             </motion.span>
@@ -1620,7 +1633,7 @@ export default function LandingPage() {
                                         <th className="py-5 px-6 text-center">
                                             <span
                                                 className="text-lg font-semibold"
-                                                style={{ color: COLORS.gold, fontFamily: "'Playfair Display', serif" }}
+                                                style={{ color: COLORS.terracotta, fontFamily: "'Playfair Display', serif" }}
                                             >
                                                 YULA
                                             </span>
@@ -1644,15 +1657,15 @@ export default function LandingPage() {
                                                     row.yula ? (
                                                         <div
                                                             className="w-6 h-6 rounded-full mx-auto flex items-center justify-center"
-                                                            style={{ backgroundColor: `${COLORS.gold}20` }}
+                                                            style={{ backgroundColor: `${COLORS.terracotta}20` }}
                                                         >
-                                                            <Check size={14} weight="bold" style={{ color: COLORS.gold }} />
+                                                            <Check size={14} weight="bold" style={{ color: COLORS.terracotta }} />
                                                         </div>
                                                     ) : (
                                                         <span className="text-gray-300">—</span>
                                                     )
                                                 ) : (
-                                                    <span className="text-sm font-medium" style={{ color: COLORS.gold }}>{row.yula}</span>
+                                                    <span className="text-sm font-medium" style={{ color: COLORS.terracotta }}>{row.yula}</span>
                                                 )}
                                             </td>
                                             <td className="py-5 px-6 text-center">
@@ -1679,7 +1692,7 @@ export default function LandingPage() {
                 {/* =========================================================
                     STATS SECTION
                     ========================================================= */}
-                <AnimatedSection className="py-24" style={{ background: COLORS.navy }}>
+                <AnimatedSection className="py-24" style={{ background: COLORS.charcoal }}>
                     <div className="container max-w-6xl mx-auto px-6">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
                             {[
@@ -1698,7 +1711,7 @@ export default function LandingPage() {
                                 >
                                     <div
                                         className="text-4xl md:text-5xl font-semibold mb-2"
-                                        style={{ color: COLORS.gold, fontFamily: "'Playfair Display', serif" }}
+                                        style={{ color: COLORS.terracotta, fontFamily: "'Playfair Display', serif" }}
                                     >
                                         {stat.value}
                                     </div>
@@ -1723,7 +1736,7 @@ export default function LandingPage() {
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
                                 className="text-sm font-medium tracking-widest uppercase"
-                                style={{ color: COLORS.gold }}
+                                style={{ color: COLORS.terracotta }}
                             >
                                 And More
                             </motion.span>
@@ -1774,7 +1787,7 @@ export default function LandingPage() {
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
                                 className="text-sm font-medium tracking-widest uppercase"
-                                style={{ color: COLORS.gold }}
+                                style={{ color: COLORS.terracotta }}
                             >
                                 Simple Pricing
                             </motion.span>
@@ -1834,12 +1847,12 @@ export default function LandingPage() {
                                 viewport={{ once: true }}
                                 transition={{ delay: 0.2 }}
                                 className="relative p-8 rounded-3xl text-white md:-translate-y-4"
-                                style={{ background: COLORS.navy }}
+                                style={{ background: COLORS.charcoal }}
                             >
                                 {/* Popular Badge */}
                                 <div
                                     className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase"
-                                    style={{ background: COLORS.gold, color: COLORS.navy }}
+                                    style={{ background: COLORS.terracotta, color: COLORS.charcoal }}
                                 >
                                     Most Popular
                                 </div>
@@ -1860,7 +1873,7 @@ export default function LandingPage() {
                                 <ul className="space-y-4 mb-8">
                                     {['1,500 chats/month', 'All AI models', 'Advanced memory', 'Unlimited import', 'PAC reminders', 'Council (2 models)', 'Voice mode'].map((f) => (
                                         <li key={f} className="flex items-center gap-3 text-sm text-white/80">
-                                            <Check size={16} weight="bold" style={{ color: COLORS.gold }} />
+                                            <Check size={16} weight="bold" style={{ color: COLORS.terracotta }} />
                                             {f}
                                         </li>
                                     ))}
@@ -1868,7 +1881,7 @@ export default function LandingPage() {
                                 <Link
                                     href="/signup?tier=pro"
                                     className="block w-full py-3.5 text-center rounded-full font-semibold transition-all duration-300 hover:scale-[1.02]"
-                                    style={{ background: COLORS.gold, color: COLORS.navy }}
+                                    style={{ background: COLORS.terracotta, color: COLORS.charcoal }}
                                 >
                                     Upgrade to Pro
                                 </Link>
@@ -1926,7 +1939,7 @@ export default function LandingPage() {
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
                                 className="text-sm font-medium tracking-widest uppercase"
-                                style={{ color: COLORS.gold }}
+                                style={{ color: COLORS.terracotta }}
                             >
                                 FAQ
                             </motion.span>
@@ -1989,7 +2002,7 @@ export default function LandingPage() {
                 {/* =========================================================
                     FINAL CTA SECTION
                     ========================================================= */}
-                <AnimatedSection className="py-32 relative overflow-hidden" style={{ background: COLORS.navy }}>
+                <AnimatedSection className="py-32 relative overflow-hidden" style={{ background: COLORS.charcoal }}>
                     <GradientMeshBackground />
 
                     <div className="container max-w-4xl mx-auto px-6 text-center relative z-10">
@@ -2015,7 +2028,7 @@ export default function LandingPage() {
                                 <Link
                                     href="/signup"
                                     className="group inline-flex items-center gap-3 px-10 py-5 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-[1.02]"
-                                    style={{ background: COLORS.gold, color: COLORS.navy }}
+                                    style={{ background: COLORS.terracotta, color: COLORS.charcoal }}
                                 >
                                     Get Started Free
                                     <ArrowRight size={22} weight="bold" className="transition-transform group-hover:translate-x-1" />
