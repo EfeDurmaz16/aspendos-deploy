@@ -72,9 +72,6 @@
     }
   },
   "plugins": {
-    "notification": {
-      "all": true
-    },
     "deep-link": {
       "desktop": {
         "schemes": ["yula"]
