@@ -2,8 +2,16 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { passkey } from "@better-auth/passkey";
+import { polar } from "@polar-sh/better-auth";
+import { Polar } from "@polar-sh/sdk";
 import { prisma } from "@aspendos/db";
 import { headers } from "next/headers";
+
+// Initialize Polar client for payments
+const polarClient = new Polar({
+    accessToken: process.env.POLAR_ACCESS_TOKEN!,
+    server: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+});
 
 export const authInstance = betterAuth({
     database: prismaAdapter(prisma, {
@@ -38,9 +46,57 @@ export const authInstance = betterAuth({
     plugins: [
         passkey(),
         nextCookies(),
+        // Polar plugin for payments
+        polar({
+            client: polarClient,
+            createCustomerOnSignUp: true,
+            enableCustomerPortal: true,
+            checkout: {
+                enabled: true,
+                products: [
+                    {
+                        productId: process.env.POLAR_PRO_PRODUCT_ID!,
+                        slug: "pro",
+                    },
+                    {
+                        productId: process.env.POLAR_ULTRA_PRODUCT_ID!,
+                        slug: "ultra",
+                    },
+                ],
+                successUrl: "/chat?upgraded=true",
+                cancelUrl: "/pricing",
+            },
+            webhooks: {
+                secret: process.env.POLAR_WEBHOOK_SECRET!,
+            },
+        }),
     ],
-    /** if no database is provided, the user data will be stored in memory.
-     * Make sure to provide a database to persist user data **/
+    // Sync users to Convex after auth events
+    hooks: {
+        after: [
+            {
+                matcher: (context) => context.path.startsWith("/sign-up") || context.path.startsWith("/sign-in"),
+                handler: async (ctx) => {
+                    // Sync user to Convex after signup/signin
+                    if (ctx.context?.user) {
+                        try {
+                            await fetch(`${process.env.CONVEX_HTTP_URL}/webhooks/auth`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    event: "user.created",
+                                    user: ctx.context.user,
+                                }),
+                            });
+                        } catch (error) {
+                            console.error("Failed to sync user to Convex:", error);
+                        }
+                    }
+                    return ctx;
+                },
+            },
+        ],
+    },
 });
 
 /**

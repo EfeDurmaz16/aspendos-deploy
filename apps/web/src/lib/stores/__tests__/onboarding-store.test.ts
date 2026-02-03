@@ -140,7 +140,7 @@ describe('SPOTLIGHT_TARGETS Configuration', () => {
     it('should have valid CSS selectors', () => {
         SPOTLIGHT_TARGETS.forEach((target) => {
             // Should be a valid selector string starting with [, ., or #
-            expect(target.selector).toMatch(/^[\[\.#]/);
+            expect(target.selector).toMatch(/^[[.#]/);
         });
     });
 

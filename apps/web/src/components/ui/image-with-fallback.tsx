@@ -1,7 +1,6 @@
-
-import { useState, type ImgHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
-import { Image as ImageIcon } from "lucide-react";
+import { useState, type ImgHTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
+import { Image as ImageIcon } from 'lucide-react';
 
 interface ImageWithFallbackProps extends ImgHTMLAttributes<HTMLImageElement> {
     fallbackClassName?: string;
@@ -20,7 +19,7 @@ export function ImageWithFallback({
         return (
             <div
                 className={cn(
-                    "flex items-center justify-center bg-zinc-800 rounded-md",
+                    'flex items-center justify-center bg-zinc-800 rounded-md',
                     className,
                     fallbackClassName
                 )}
@@ -31,12 +30,6 @@ export function ImageWithFallback({
     }
 
     return (
-        <img
-            src={src}
-            alt={alt}
-            className={className}
-            onError={() => setError(true)}
-            {...props}
-        />
+        <img src={src} alt={alt} className={className} onError={() => setError(true)} {...props} />
     );
 }
