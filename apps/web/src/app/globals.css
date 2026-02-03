@@ -128,11 +128,12 @@
    ============================================================================= */
 
 :root {
-  /* YULA Brand Colors - From Pencil Design System */
+  /* YULA Brand Colors - From Pencil Design System (QtTSw frame) */
   --yula-navy: #0A0E27;            /* Primary dark background */
   --yula-navy-light: #111827;      /* Surface dark */
-  --yula-gold: #D4AF37;            /* Primary accent - gold */
-  --yula-gold-light: #E8D48A;      /* Gold hover/light */
+  --yula-terracotta: #D4714A;      /* Primary accent - terracotta */
+  --yula-terracotta-light: #E07B54; /* Terracotta hover/light */
+  --yula-terracotta-dark: #C4623B; /* Terracotta active/dark */
   --yula-cream: #F8F6F0;           /* Light backgrounds */
   --yula-white: #FFFFFF;           /* Pure white */
   --yula-text-primary: #FFFFFF;    /* Text on dark backgrounds */
@@ -155,19 +156,19 @@
   --card-foreground: #0A0E27;
   --popover: #FFFFFF;
   --popover-foreground: #0A0E27;
-  --primary: #D4AF37;
+  --primary: #D4714A;
   --primary-foreground: #0A0E27;
   --secondary: #F2F3F0;
   --secondary-foreground: #0A0E27;
   --muted: #F2F3F0;
   --muted-foreground: #64748B;
-  --accent: #D4AF37;
+  --accent: #D4714A;
   --accent-foreground: #0A0E27;
   --destructive: #DC2626;
   --destructive-foreground: #FAFAFA;
   --border: #E5E5E5;
   --input: #E5E5E5;
-  --ring: #D4AF37;
+  --ring: #D4714A;
   --radius: 6px;
 
   /* Semantic Colors */
@@ -222,8 +223,9 @@
   /* YULA Brand Colors - Dark Mode (Primary Experience) */
   --yula-navy: #0A0E27;
   --yula-navy-light: #111827;
-  --yula-gold: #D4AF37;
-  --yula-gold-light: #E8D48A;
+  --yula-terracotta: #D4714A;
+  --yula-terracotta-light: #E07B54;
+  --yula-terracotta-dark: #C4623B;
   --yula-cream: #F8F6F0;
   --yula-white: #FFFFFF;
   --yula-text-primary: #FFFFFF;
@@ -240,19 +242,19 @@
   --card-foreground: #FFFFFF;
   --popover: #111827;
   --popover-foreground: #FFFFFF;
-  --primary: #D4AF37;
+  --primary: #D4714A;
   --primary-foreground: #0A0E27;
   --secondary: #1E293B;
   --secondary-foreground: #FFFFFF;
   --muted: #1E293B;
   --muted-foreground: #94A3B8;
-  --accent: #D4AF37;
+  --accent: #D4714A;
   --accent-foreground: #0A0E27;
   --destructive: #EF4444;
   --destructive-foreground: #FAFAFA;
   --border: #1E293B;
   --input: #1E293B;
-  --ring: #D4AF37;
+  --ring: #D4714A;
 
   /* Semantic Colors - Dark Mode */
   --success: #22C55E;
@@ -284,19 +286,19 @@
   --card-foreground: #0A0E27;
   --popover: #FFFFFF;
   --popover-foreground: #0A0E27;
-  --primary: #D4AF37;
+  --primary: #D4714A;
   --primary-foreground: #0A0E27;
   --secondary: #F2F3F0;
   --secondary-foreground: #0A0E27;
   --muted: #F2F3F0;
   --muted-foreground: #64748B;
-  --accent: #D4AF37;
+  --accent: #D4714A;
   --accent-foreground: #0A0E27;
   --destructive: #DC2626;
   --destructive-foreground: #FAFAFA;
   --border: #E5E5E5;
   --input: #E5E5E5;
-  --ring: #D4AF37;
+  --ring: #D4714A;
 }
 
 /* =============================================================================
@@ -756,24 +758,24 @@
    ============================================================================= */
 
 /* YULA Brand Colors - From Pencil */
-.text-yula-gold { color: var(--yula-gold); }
+.text-yula-terracotta { color: var(--yula-terracotta); }
 .text-yula-navy { color: var(--yula-navy); }
 .text-yula-cream { color: var(--yula-cream); }
 .text-yula-white { color: var(--yula-white); }
 .text-yula-secondary { color: var(--yula-text-secondary); }
 
-.bg-yula-gold { background-color: var(--yula-gold); }
+.bg-yula-terracotta { background-color: var(--yula-terracotta); }
 .bg-yula-navy { background-color: var(--yula-navy); }
 .bg-yula-cream { background-color: var(--yula-cream); }
 .bg-yula-surface { background-color: var(--yula-navy-light); }
 
-.border-yula-gold { border-color: var(--yula-gold); }
+.border-yula-terracotta { border-color: var(--yula-terracotta); }
 .border-yula-navy { border-color: var(--yula-navy); }
 .border-yula-dark { border-color: var(--yula-border-dark); }
 
 /* YULA Button Styles - Gold on Navy */
 .btn-yula-primary {
-  background-color: var(--yula-gold);
+  background-color: var(--yula-terracotta);
   color: var(--yula-navy);
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
@@ -782,7 +784,7 @@
 }
 
 .btn-yula-primary:hover {
-  background-color: var(--yula-gold-light);
+  background-color: var(--yula-terracotta-light);
 }
 
 .btn-yula-secondary {
@@ -809,7 +811,7 @@
 
 .card-yula-featured {
   background-color: var(--card);
-  border: 2px solid var(--yula-gold);
+  border: 2px solid var(--yula-terracotta);
   border-radius: 8px;
   padding: 1.5rem;
 }
@@ -824,7 +826,7 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   border-radius: 4px;
-  background-color: var(--yula-gold);
+  background-color: var(--yula-terracotta);
   color: var(--yula-navy);
 }
 
@@ -844,12 +846,12 @@
 }
 
 .pricing-card:hover {
-  border-color: var(--yula-gold);
+  border-color: var(--yula-terracotta);
 }
 
 .pricing-card-featured {
   background-color: var(--card);
-  border: 2px solid var(--yula-gold);
+  border: 2px solid var(--yula-terracotta);
   border-radius: 8px;
   padding: 2rem;
   position: relative;
@@ -877,7 +879,7 @@
 }
 
 .footer-yula a:hover {
-  color: var(--yula-gold);
+  color: var(--yula-terracotta);
 }
 
 /* YULA Logo Text */
