@@ -14,7 +14,6 @@ const nextConfig: NextConfig = {
     // Optimize images
     images: {
         remotePatterns: [
-            { protocol: 'https', hostname: 'img.clerk.com' },
             { protocol: 'https', hostname: '*.supabase.co' },
             { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
         ],
@@ -23,7 +22,6 @@ const nextConfig: NextConfig = {
 
     // Experimental features
     experimental: {
-        // Instrument server code for performance monitoring
         clientTraceMetadata: ['baggage', 'sentry-trace'],
     },
 
@@ -69,12 +67,12 @@ const nextConfig: NextConfig = {
                                   key: 'Content-Security-Policy',
                                   value: [
                                       "default-src 'self'",
-                                      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://cdn.onesignal.com",
+                                      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.onesignal.com",
                                       "style-src 'self' 'unsafe-inline'",
-                                      "img-src 'self' data: blob: https://img.clerk.com https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
+                                      "img-src 'self' data: blob: https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
                                       "font-src 'self' data:",
-                                      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://api.aspendos.app'} https://*.clerk.com https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
-                                      "frame-src 'self' https://*.clerk.com",
+                                      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://api.aspendos.app'} https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
+                                      "frame-src 'self'",
                                       "worker-src 'self' blob:",
                                       "object-src 'none'",
                                       "base-uri 'self'",
@@ -91,25 +89,13 @@ const nextConfig: NextConfig = {
     },
 };
 
-// Sentry configuration options
 const sentryWebpackPluginOptions = {
-    // For all available options, see:
-    // https://github.com/getsentry/sentry-webpack-plugin#options
-
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
     authToken: process.env.SENTRY_AUTH_TOKEN,
-
-    // Only print logs for uploading source maps in CI
     silent: !process.env.CI,
-
-    // Upload source maps in production only
     dryRun: process.env.NODE_ENV !== 'production',
-
-    // Hides source maps from generated client bundles
     hideSourceMaps: true,
-
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
     disableLogger: true,
 };
 
