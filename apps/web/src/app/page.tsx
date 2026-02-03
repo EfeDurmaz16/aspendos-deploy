@@ -1,26 +1,29 @@
 'use client';
 
+import { motion, useScroll, useTransform } from 'framer-motion';
+import Link from 'next/link';
+import { useRef } from 'react';
 import {
-    CheckCircle,
-    Bell,
+    ArrowRight,
     Brain,
-    Database,
-    Cpu,
-    Headphones,
+    CheckCircle,
+    CloudArrowUp,
+    Lightning,
+    Play,
+    Sparkle,
+    Users,
+    Bell,
+    ChatCircle,
+    Clock,
+    Export,
     GithubLogo,
     XLogo,
-    ShareNetwork,
-    Aperture,
+    LinkedinLogo,
+    ArrowsClockwise,
     ShieldCheck,
     Microphone,
-    Code,
-    Images as ImageIcon,
+    Translate,
 } from '@phosphor-icons/react';
-import { Home, Zap, CreditCard, LayoutDashboard } from 'lucide-react';
-import { NavBar } from "@/components/ui/tubelight-navbar";
-import ResponsiveHeroBanner from "@/components/ui/responsive-hero-banner";
-import { BentoGrid, BentoCard } from "@/components/ui/bento-grid";
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -30,431 +33,954 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { AuroraBackground } from '@/components/ui/aurora-background';
-import { GoogleGeminiEffect } from '@/components/ui/google-gemini-effect';
-import { Gallery6 } from "@/components/blocks/gallery6";
-import MultiOrbitSemiCircle from "@/components/ui/multi-orbit-semi-circle";
-import { useScroll, useTransform } from 'framer-motion';
-import React, { useRef } from 'react';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
+import { cn } from '@/lib/utils';
 
-const galleryItems = [
-    {
-        id: "item-1",
-        title: "Live React Preview",
-        summary: "Code generation that comes alive. See and interact with React components as they are built.",
-        url: "#",
-        image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=2670&auto=format&fit=crop"
+// Feature accent colors from Design System v2.0
+const FEATURE_COLORS = {
+    import: {
+        primary: '#2563EB',
+        bg: 'bg-blue-500',
+        bgLight: 'bg-blue-500/10',
+        text: 'text-blue-500',
+        border: 'border-blue-500/30',
+        gradient: 'from-blue-500 to-blue-600',
     },
-    {
-        id: "item-2",
-        title: "Real-time Voice",
-        summary: "Fluid conversation with speech-to-text and text-to-speech. Talk to your AI like a teammate.",
-        url: "#",
-        image: "https://images.unsplash.com/photo-1589254065878-42c9da997008?q=80&w=2670&auto=format&fit=crop"
+    pac: {
+        primary: '#D97706',
+        bg: 'bg-amber-600',
+        bgLight: 'bg-amber-500/10',
+        text: 'text-amber-500',
+        border: 'border-amber-500/30',
+        gradient: 'from-amber-500 to-amber-600',
     },
-    {
-        id: "item-3",
-        title: "Visual Generation",
-        summary: "Integrated video and image models. Create assets without leaving the conversation.",
-        url: "#",
-        image: "https://images.unsplash.com/photo-1620641788427-b9f4dbf3b385?q=80&w=2663&auto=format&fit=crop"
+    council: {
+        primary: '#7C3AED',
+        bg: 'bg-violet-600',
+        bgLight: 'bg-violet-500/10',
+        text: 'text-violet-500',
+        border: 'border-violet-500/30',
+        gradient: 'from-violet-500 to-violet-600',
     },
-    {
-        id: "item-4",
-        title: "Advanced Editing",
-        summary: "Photo editing tools built-in. Enhance, crop, and modify images instantly.",
-        url: "#",
-        image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=2565&auto=format&fit=crop"
-    }
-];
+};
+
+// Animated gradient background
+function GradientBackground() {
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-blue-500/5 via-transparent to-transparent rounded-full blur-3xl animate-pulse" />
+            <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-violet-500/5 via-transparent to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-bl from-amber-500/5 via-transparent to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
+    );
+}
+
+// Feature Card Component
+function FeatureCard({
+    icon: Icon,
+    title,
+    subtitle,
+    description,
+    color,
+    features,
+    cta,
+    href,
+    delay = 0,
+}: {
+    icon: React.ElementType;
+    title: string;
+    subtitle: string;
+    description: string;
+    color: typeof FEATURE_COLORS.import;
+    features: string[];
+    cta: string;
+    href: string;
+    delay?: number;
+}) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay }}
+        >
+            <Card className={cn(
+                'h-full relative overflow-hidden group transition-all duration-300',
+                'hover:shadow-xl hover:-translate-y-1',
+                'border-zinc-200 dark:border-zinc-800',
+                'bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm'
+            )}>
+                {/* Gradient accent */}
+                <div className={cn(
+                    'absolute top-0 left-0 right-0 h-1',
+                    `bg-gradient-to-r ${color.gradient}`
+                )} />
+
+                <CardHeader className="pb-4">
+                    <div className={cn(
+                        'w-14 h-14 rounded-xl flex items-center justify-center mb-4',
+                        color.bgLight
+                    )}>
+                        <Icon className={cn('w-7 h-7', color.text)} weight="duotone" />
+                    </div>
+                    <div className={cn('text-xs font-bold uppercase tracking-wider mb-1', color.text)}>
+                        {subtitle}
+                    </div>
+                    <CardTitle className="text-2xl">{title}</CardTitle>
+                    <CardDescription className="text-base mt-2">
+                        {description}
+                    </CardDescription>
+                </CardHeader>
+
+                <CardContent className="pb-6">
+                    <ul className="space-y-3">
+                        {features.map((feature, i) => (
+                            <li key={i} className="flex items-start gap-3 text-sm">
+                                <CheckCircle className={cn('w-5 h-5 flex-shrink-0 mt-0.5', color.text)} weight="fill" />
+                                <span className="text-zinc-600 dark:text-zinc-400">{feature}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </CardContent>
+
+                <CardFooter>
+                    <Button
+                        variant="outline"
+                        className={cn(
+                            'w-full group-hover:bg-gradient-to-r',
+                            `group-hover:${color.gradient}`,
+                            'group-hover:text-white group-hover:border-transparent',
+                            'transition-all duration-300'
+                        )}
+                        asChild
+                    >
+                        <Link href={href}>
+                            {cta}
+                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </motion.div>
+    );
+}
+
+// Stats component
+function StatCard({ value, label }: { value: string; label: string }) {
+    return (
+        <div className="text-center">
+            <div className="text-4xl md:text-5xl font-bold text-foreground">{value}</div>
+            <div className="text-sm text-muted-foreground mt-1">{label}</div>
+        </div>
+    );
+}
+
+// Comparison row
+function ComparisonRow({
+    feature,
+    yula,
+    others,
+}: {
+    feature: string;
+    yula: boolean | string;
+    others: boolean | string;
+}) {
+    return (
+        <tr className="border-b border-zinc-200 dark:border-zinc-800">
+            <td className="py-4 px-4 text-sm font-medium">{feature}</td>
+            <td className="py-4 px-4 text-center">
+                {typeof yula === 'boolean' ? (
+                    yula ? (
+                        <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto" weight="fill" />
+                    ) : (
+                        <span className="text-zinc-400">-</span>
+                    )
+                ) : (
+                    <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{yula}</span>
+                )}
+            </td>
+            <td className="py-4 px-4 text-center">
+                {typeof others === 'boolean' ? (
+                    others ? (
+                        <CheckCircle className="w-5 h-5 text-zinc-400 mx-auto" weight="fill" />
+                    ) : (
+                        <span className="text-zinc-400">-</span>
+                    )
+                ) : (
+                    <span className="text-sm text-muted-foreground">{others}</span>
+                )}
+            </td>
+        </tr>
+    );
+}
 
 export default function LandingPage() {
-    const ref = useRef(null);
+    const heroRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({
-        target: ref,
+        target: heroRef,
         offset: ['start start', 'end start'],
     });
 
-    const pathLengthFirst = useTransform(scrollYProgress, [0, 0.8], [0.2, 1.2]);
-    const pathLengthSecond = useTransform(scrollYProgress, [0, 0.8], [0.15, 1.2]);
-    const pathLengthThird = useTransform(scrollYProgress, [0, 0.8], [0.1, 1.2]);
-    const pathLengthFourth = useTransform(scrollYProgress, [0, 0.8], [0.05, 1.2]);
-    const pathLengthFifth = useTransform(scrollYProgress, [0, 0.8], [0, 1.2]);
+    const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+    const heroY = useTransform(scrollYProgress, [0, 0.5], [0, 100]);
 
     return (
-        <div className="flex flex-col min-h-screen font-sans bg-background text-foreground overflow-x-hidden">
-            <NavBar
-                items={[
-                    { name: 'Home', url: '/', icon: Home },
-                    { name: 'Features', url: '#features', icon: Zap },
-                    { name: 'Pricing', url: '#pricing', icon: CreditCard },
-                    { name: 'Dashboard', url: '/memory', icon: LayoutDashboard }
-                ]}
-            />
+        <div className="flex flex-col min-h-screen bg-background text-foreground overflow-x-hidden">
+            {/* Navigation */}
+            <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-zinc-200 dark:border-zinc-800">
+                <div className="container max-w-7xl mx-auto px-4 md:px-6">
+                    <nav className="flex items-center justify-between h-16">
+                        <Link href="/" className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
+                                <Sparkle className="w-5 h-5 text-white" weight="fill" />
+                            </div>
+                            <span className="font-bold text-xl tracking-tight">YULA</span>
+                        </Link>
+
+                        <div className="hidden md:flex items-center gap-8">
+                            <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                Features
+                            </Link>
+                            <Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                How It Works
+                            </Link>
+                            <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                Pricing
+                            </Link>
+                            <Link href="#faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                FAQ
+                            </Link>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link href="/login">Sign In</Link>
+                            </Button>
+                            <Button size="sm" className="bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600" asChild>
+                                <Link href="/signup">Get Started Free</Link>
+                            </Button>
+                        </div>
+                    </nav>
+                </div>
+            </header>
 
             <main className="flex-1">
-                {/* Hero Section with Aurora Background */}
-                <AuroraBackground className="bg-zinc-50 dark:bg-zinc-950">
-                    <div className="w-full h-full">
-                        <ResponsiveHeroBanner
-                            title="One Platform. Infinite Possibilities."
-                            titleLine2=""
-                            description="Hundreds of models and shared memory in a single interface. Use the best AI for every task, without losing context."
-                            primaryButtonText="Join the Revolution"
-                            primaryButtonHref="/signup"
-                            secondaryButtonText="Watch the usage"
-                            secondaryButtonHref="#demo"
-                            badgeLabel="Mission"
-                            badgeText="Unifying AGI"
-                            ctaButtonText="Login"
-                            ctaButtonHref="/login"
-                            backgroundImageUrl=""
-                            navLinks={[]}
-                        />
-                    </div>
-                </AuroraBackground>
+                {/* Hero Section */}
+                <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
+                    <GradientBackground />
 
-                {/* Google Gemini Effect Section */}
-                <section className="w-full relative pt-20 overflow-hidden">
-                    <div
-                        className="h-[300vh] bg-background w-full dark:border dark:border-white/[0.1] rounded-md relative overflow-clip"
-                        ref={ref}
+                    <motion.div
+                        style={{ opacity: heroOpacity, y: heroY }}
+                        className="container max-w-6xl mx-auto px-4 md:px-6 py-24 md:py-32 relative z-10"
                     >
-                        <GoogleGeminiEffect
-                            pathLengths={[
-                                pathLengthFirst,
-                                pathLengthSecond,
-                                pathLengthThird,
-                                pathLengthFourth,
-                                pathLengthFifth,
-                            ]}
-                            title="AI today is fragmented."
-                            description="Hundreds of models, zero continuity. Aspendos unifies them through shared memory and orchestration."
-                        />
-                    </div>
+                        <div className="text-center space-y-8">
+                            {/* Badge */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5 }}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20"
+                            >
+                                <Sparkle className="w-4 h-4 text-violet-500" weight="fill" />
+                                <span className="text-sm font-medium text-violet-600 dark:text-violet-400">
+                                    Your Universal Learning Assistant
+                                </span>
+                            </motion.div>
+
+                            {/* Headline */}
+                            <motion.h1
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.1 }}
+                                className="text-5xl md:text-7xl font-bold tracking-tight leading-tight"
+                            >
+                                AI that{' '}
+                                <span className="bg-gradient-to-r from-blue-500 via-violet-500 to-amber-500 bg-clip-text text-transparent">
+                                    remembers
+                                </span>
+                                ,<br />
+                                <span className="bg-gradient-to-r from-amber-500 via-violet-500 to-blue-500 bg-clip-text text-transparent">
+                                    anticipates
+                                </span>
+                                , and{' '}
+                                <span className="bg-gradient-to-r from-violet-500 to-blue-500 bg-clip-text text-transparent">
+                                    evolves
+                                </span>
+                            </motion.h1>
+
+                            {/* Subheadline */}
+                            <motion.p
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.2 }}
+                                className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
+                            >
+                                Import your ChatGPT history. Get proactive reminders.
+                                Ask 4 AI models at once. All in one beautiful interface.
+                            </motion.p>
+
+                            {/* CTAs */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.3 }}
+                                className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                            >
+                                <Button
+                                    size="lg"
+                                    className="h-14 px-8 text-lg bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 shadow-lg shadow-violet-500/25"
+                                    asChild
+                                >
+                                    <Link href="/signup">
+                                        Start Free Trial
+                                        <ArrowRight className="w-5 h-5 ml-2" />
+                                    </Link>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="h-14 px-8 text-lg"
+                                    asChild
+                                >
+                                    <Link href="#demo">
+                                        <Play className="w-5 h-5 mr-2" weight="fill" />
+                                        Watch Demo
+                                    </Link>
+                                </Button>
+                            </motion.div>
+
+                            {/* Social proof */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.4 }}
+                                className="pt-8 flex items-center justify-center gap-8 text-sm text-muted-foreground"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4 text-emerald-500" weight="fill" />
+                                    No credit card required
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4 text-emerald-500" weight="fill" />
+                                    Free forever tier
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4 text-emerald-500" weight="fill" />
+                                    Cancel anytime
+                                </span>
+                            </motion.div>
+                        </div>
+                    </motion.div>
+
+                    {/* Scroll indicator */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1 }}
+                        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+                    >
+                        <div className="w-6 h-10 rounded-full border-2 border-zinc-300 dark:border-zinc-700 flex items-start justify-center p-2">
+                            <motion.div
+                                animate={{ y: [0, 12, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                                className="w-1.5 h-1.5 rounded-full bg-zinc-400"
+                            />
+                        </div>
+                    </motion.div>
                 </section>
 
-                {/* Why We Built This Story Section */}
-                <section className="py-24 px-4 bg-zinc-50 dark:bg-zinc-900/50 border-y border-zinc-200 dark:border-zinc-800">
-                    <div className="container max-w-4xl mx-auto space-y-12">
-                        <div className="space-y-6 text-center">
-                            <h2 className="text-sm font-semibold text-blue-500 uppercase tracking-wider">Our Story</h2>
-                            <h3 className="text-3xl md:text-4xl font-serif text-foreground">Why We Built This</h3>
-                        </div>
-
-                        <div className="prose dark:prose-invert prose-lg mx-auto text-zinc-600 dark:text-zinc-400 font-serif leading-relaxed">
-                            <p>
-                                The idea for Aspendos was born from my own frustration as a developer constantly switching between different AI tools and losing context every time. Every day, I found myself jumping between ChatGPT, Claude, and Gemini, realizing that none of these conversations or ideas lived in a shared memory.
-                            </p>
-                            <p>
-                                Today, AI is evolving into a true collaborator, yet the way we work with it is still fragmented and disconnected. That's why we built Aspendos: a unified AI workspace that connects all your tools, documents, and conversations through a continuous shared memory layer, helping teams and individuals work seamlessly with AI.
-                            </p>
-                            <p>
-                                Our vision for the next decade is to help create a world where AI becomes part of humanity's collective memory, empowering people to think, build, and create together more effectively than ever before.
-                            </p>
-                            <p className="font-medium text-foreground">
-                                Aspendos exists to make that future possible.
-                            </p>
-                        </div>
-
-                        <div className="flex items-center gap-4 pt-8 border-t border-zinc-200 dark:border-zinc-800 max-w-lg mx-auto">
-                            <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xl">
-                                E
-                            </div>
-                            <div>
-                                <div className="font-semibold text-foreground">Efe Baran Durmaz</div>
-                                <div className="text-sm text-muted-foreground">AI & Backend Engineer @ Nokia</div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Features Section */}
-                <section id="features" className="px-4 md:px-6 py-24 bg-muted/20">
-                    <div className="container max-w-6xl mx-auto">
-                        <div className="mb-16 max-w-2xl">
-                            <h2 className="text-3xl font-semibold tracking-tight mb-4">
-                                Unified Intelligence.
+                {/* Three Core Features Section */}
+                <section id="features" className="py-24 md:py-32 bg-zinc-50 dark:bg-zinc-900/50">
+                    <div className="container max-w-7xl mx-auto px-4 md:px-6">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-center mb-16"
+                        >
+                            <h2 className="text-sm font-bold text-violet-500 uppercase tracking-wider mb-4">
+                                Three Superpowers
                             </h2>
-                            <p className="text-lg text-muted-foreground">
-                                Four pillars that redefine how you interact with Artificial Intelligence.
+                            <h3 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                                What makes YULA different
+                            </h3>
+                            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                                Not just another chatbot. YULA brings three revolutionary features
+                                that transform how you work with AI.
                             </p>
-                        </div>
+                        </motion.div>
 
-                        <BentoGrid>
-                            <BentoCard
-                                name="Persistent Shared Memory"
-                                className="col-span-3 lg:col-span-1"
-                                background={<div className="absolute inset-0 bg-blue-500/5" />}
-                                Icon={Brain}
-                                description="Unified memory across all AI interactions. Aspendos remembers everything."
-                                href="/signup"
-                                cta="Learn more"
+                        <div className="grid md:grid-cols-3 gap-8">
+                            <FeatureCard
+                                icon={CloudArrowUp}
+                                title="IMPORT"
+                                subtitle="Bring Your History"
+                                description="Don't lose your ChatGPT or Claude conversations. Import everything and keep your context alive."
+                                color={FEATURE_COLORS.import}
+                                features={[
+                                    'One-click ChatGPT export import',
+                                    'Claude conversation migration',
+                                    'Automatic memory extraction',
+                                    'Searchable conversation archive',
+                                    'Export anytime, no lock-in',
+                                ]}
+                                cta="Import Now"
+                                href="/import"
+                                delay={0.1}
                             />
-                            <BentoCard
-                                name="Cross-Model Integration"
-                                className="col-span-3 lg:col-span-1"
-                                background={<div className="absolute inset-0 bg-amber-500/5" />}
-                                Icon={ShareNetwork}
-                                description="Seamlessly route tasks to the best AI for the job. GPT-4, Claude, Gemini - together."
+
+                            <FeatureCard
+                                icon={Bell}
+                                title="PAC"
+                                subtitle="Proactive AI Callbacks"
+                                description="AI that reaches out to you. Get intelligent reminders based on your conversations."
+                                color={FEATURE_COLORS.pac}
+                                features={[
+                                    'Detects commitments automatically',
+                                    'Smart reminder scheduling',
+                                    'Push, email, and in-app alerts',
+                                    'Snooze and customize timing',
+                                    'Never forget a follow-up again',
+                                ]}
+                                cta="Enable PAC"
                                 href="/signup"
-                                cta="Explore"
+                                delay={0.2}
                             />
-                            <BentoCard
-                                name="Multimodal"
-                                className="col-span-3 lg:col-span-1"
-                                background={<div className="absolute inset-0 bg-emerald-500/5" />}
-                                Icon={Aperture}
-                                description="Text, vision, audio, and code in one platform. A complete sensory experience."
+
+                            <FeatureCard
+                                icon={Users}
+                                title="COUNCIL"
+                                subtitle="Multi-Model Wisdom"
+                                description="Ask 4 AI models simultaneously. Get diverse perspectives, make better decisions."
+                                color={FEATURE_COLORS.council}
+                                features={[
+                                    '4 AI personas respond in parallel',
+                                    'GPT-4, Claude, Gemini, and more',
+                                    'Compare different perspectives',
+                                    'AI-generated synthesis',
+                                    'Pick the best answer',
+                                ]}
+                                cta="Try Council"
                                 href="/signup"
-                                cta="Try Voice"
+                                delay={0.3}
                             />
-                            <BentoCard
-                                name="Privacy-First Architecture"
-                                className="col-span-3"
-                                background={<div className="absolute inset-0 bg-zinc-900/5 dark:bg-zinc-100/5" />}
-                                Icon={ShieldCheck}
-                                description="Your data, your control, always encrypted. We prioritize your security."
-                                href="/signup"
-                                cta="Start Securely"
-                            />
-                        </BentoGrid>
-                    </div>
-                </section>
-
-                {/* The Vision Grid Section */}
-                <section className="px-4 md:px-6 py-24 bg-background border-t border-zinc-200 dark:border-zinc-800">
-                    <div className="container max-w-6xl mx-auto">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl font-semibold tracking-tight mb-4">Building the future of unified AI</h2>
-                            <p className="text-muted-foreground max-w-2xl mx-auto">Our roadmap to a more connected intelligence.</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                                <h3 className="font-semibold mb-3 text-red-500">The Problem</h3>
-                                <p className="text-sm text-muted-foreground">AI landscape consists of 300+ fragmented models with no memory continuity, leading to complex integrations and costly context management.</p>
-                            </div>
-                            <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                                <h3 className="font-semibold mb-3 text-emerald-500">The Solution</h3>
-                                <p className="text-sm text-muted-foreground">A unified platform with shared memory, intelligent routing, and seamless multi-model coordination.</p>
-                            </div>
-                            <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                                <h3 className="font-semibold mb-3 text-amber-500">Opportunity</h3>
-                                <p className="text-sm text-muted-foreground">$190B AI market by 2025. $50B TAM in enterprise AI integration and memory management solutions.</p>
-                            </div>
-                            <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                                <h3 className="font-semibold mb-3 text-amber-400">Tech Stack</h3>
-                                <p className="text-sm text-muted-foreground">Vector databases, distributed memory systems, AI routing algorithms, and enterprise-grade security.</p>
-                            </div>
-                        </div>
-
-                        {/* Roadmap */}
-                        <div className="mt-12 p-8 rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
-                            <h3 className="text-xl font-semibold mb-6 text-center">Roadmap</h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 relative">
-                                {/* Connector Line (Desktop) */}
-                                <div className="absolute top-4 left-0 w-full h-0.5 bg-zinc-200 dark:bg-zinc-800 hidden md:block opacity-50"></div>
-
-                                <div className="relative z-10 text-center">
-                                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mx-auto mb-4 ring-4 ring-background">1</div>
-                                    <div className="font-semibold">Q1: Beta</div>
-                                    <div className="text-sm text-muted-foreground">Public Beta Launch</div>
-                                </div>
-                                <div className="relative z-10 text-center">
-                                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 text-muted-foreground flex items-center justify-center font-bold mx-auto mb-4 ring-4 ring-background">2</div>
-                                    <div className="font-semibold">Q2: Pilots</div>
-                                    <div className="text-sm text-muted-foreground">Enterprise Pilots</div>
-                                </div>
-                                <div className="relative z-10 text-center">
-                                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 text-muted-foreground flex items-center justify-center font-bold mx-auto mb-4 ring-4 ring-background">3</div>
-                                    <div className="font-semibold">Q3: Release</div>
-                                    <div className="text-sm text-muted-foreground">Public Release</div>
-                                </div>
-                                <div className="relative z-10 text-center">
-                                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 text-muted-foreground flex items-center justify-center font-bold mx-auto mb-4 ring-4 ring-background">4</div>
-                                    <div className="font-semibold">Q4: Scale</div>
-                                    <div className="text-sm text-muted-foreground">10,000+ Users</div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </section>
 
-                {/* Gallery Section */}
-                <div className="bg-background">
-                    <Gallery6
-                        heading="Capabilities in Action"
-                        items={galleryItems}
-                        demoUrl="/signup"
-                    />
-                </div>
+                {/* How It Works */}
+                <section id="how-it-works" className="py-24 md:py-32">
+                    <div className="container max-w-6xl mx-auto px-4 md:px-6">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-center mb-16"
+                        >
+                            <h2 className="text-sm font-bold text-violet-500 uppercase tracking-wider mb-4">
+                                Simple Setup
+                            </h2>
+                            <h3 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                                Up and running in minutes
+                            </h3>
+                        </motion.div>
 
-                {/* Integrations Section */}
-                <div className="bg-muted/10">
-                    <MultiOrbitSemiCircle />
-                </div>
+                        <div className="grid md:grid-cols-4 gap-8">
+                            {[
+                                {
+                                    step: '01',
+                                    title: 'Sign Up',
+                                    description: 'Create your free account in seconds. No credit card needed.',
+                                    icon: Sparkle,
+                                },
+                                {
+                                    step: '02',
+                                    title: 'Import History',
+                                    description: 'Upload your ChatGPT or Claude export files.',
+                                    icon: CloudArrowUp,
+                                },
+                                {
+                                    step: '03',
+                                    title: 'Start Chatting',
+                                    description: 'Continue your conversations with full context preserved.',
+                                    icon: ChatCircle,
+                                },
+                                {
+                                    step: '04',
+                                    title: 'Let AI Help',
+                                    description: 'Get proactive reminders and multi-model insights.',
+                                    icon: Lightning,
+                                },
+                            ].map((item, i) => (
+                                <motion.div
+                                    key={item.step}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="relative"
+                                >
+                                    {i < 3 && (
+                                        <div className="hidden md:block absolute top-8 left-full w-full h-0.5 bg-gradient-to-r from-zinc-200 to-transparent dark:from-zinc-800" />
+                                    )}
+                                    <div className="text-center">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/10 to-blue-500/10 flex items-center justify-center mx-auto mb-4">
+                                            <item.icon className="w-8 h-8 text-violet-500" weight="duotone" />
+                                        </div>
+                                        <div className="text-xs font-bold text-violet-500 mb-2">{item.step}</div>
+                                        <h4 className="text-lg font-semibold mb-2">{item.title}</h4>
+                                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Comparison Section */}
+                <section className="py-24 md:py-32 bg-zinc-50 dark:bg-zinc-900/50">
+                    <div className="container max-w-4xl mx-auto px-4 md:px-6">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-center mb-16"
+                        >
+                            <h2 className="text-sm font-bold text-violet-500 uppercase tracking-wider mb-4">
+                                Why Switch
+                            </h2>
+                            <h3 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                                YULA vs. The Rest
+                            </h3>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900"
+                        >
+                            <table className="w-full">
+                                <thead className="bg-zinc-50 dark:bg-zinc-800/50">
+                                    <tr>
+                                        <th className="py-4 px-4 text-left text-sm font-semibold">Feature</th>
+                                        <th className="py-4 px-4 text-center text-sm font-semibold">
+                                            <span className="text-violet-500">YULA</span>
+                                        </th>
+                                        <th className="py-4 px-4 text-center text-sm font-semibold text-muted-foreground">Others</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ComparisonRow feature="Import ChatGPT/Claude history" yula={true} others={false} />
+                                    <ComparisonRow feature="Proactive AI reminders" yula={true} others={false} />
+                                    <ComparisonRow feature="Multi-model parallel queries" yula="4 models" others="1 model" />
+                                    <ComparisonRow feature="Persistent memory" yula={true} others="Limited" />
+                                    <ComparisonRow feature="Export your data" yula={true} others="Varies" />
+                                    <ComparisonRow feature="Voice conversations" yula={true} others={true} />
+                                    <ComparisonRow feature="Model switching" yula="Instant" others="Per chat" />
+                                </tbody>
+                            </table>
+                        </motion.div>
+                    </div>
+                </section>
+
+                {/* Stats Section */}
+                <section className="py-24 md:py-32">
+                    <div className="container max-w-6xl mx-auto px-4 md:px-6">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0 }}
+                            >
+                                <StatCard value="100+" label="AI Models Available" />
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <StatCard value="<100ms" label="Response Time" />
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <StatCard value="99.9%" label="Uptime" />
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.3 }}
+                            >
+                                <StatCard value="5" label="Languages" />
+                            </motion.div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Additional Features */}
+                <section className="py-24 md:py-32 bg-zinc-50 dark:bg-zinc-900/50">
+                    <div className="container max-w-6xl mx-auto px-4 md:px-6">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-center mb-16"
+                        >
+                            <h2 className="text-sm font-bold text-violet-500 uppercase tracking-wider mb-4">
+                                And More
+                            </h2>
+                            <h3 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                                Everything you need
+                            </h3>
+                        </motion.div>
+
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[
+                                { icon: Brain, title: 'Persistent Memory', description: 'AI that remembers your preferences, projects, and context across all conversations.' },
+                                { icon: Microphone, title: 'Voice Mode', description: 'Natural voice conversations with real-time transcription and synthesis.' },
+                                { icon: ArrowsClockwise, title: 'Model Switching', description: 'Switch between GPT-4, Claude, Gemini instantly without losing context.' },
+                                { icon: ShieldCheck, title: 'Privacy First', description: 'Your data is encrypted and never used to train AI models.' },
+                                { icon: Export, title: 'Export Anytime', description: 'Your conversations are yours. Export everything at any time.' },
+                                { icon: Translate, title: 'Multilingual', description: 'Full support for English, Turkish, Spanish, French, and German.' },
+                            ].map((feature, i) => (
+                                <motion.div
+                                    key={feature.title}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.05 }}
+                                    className="p-6 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
+                                >
+                                    <feature.icon className="w-8 h-8 text-violet-500 mb-4" weight="duotone" />
+                                    <h4 className="font-semibold mb-2">{feature.title}</h4>
+                                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
 
                 {/* Pricing Section */}
-                <section id="pricing" className="px-4 md:px-6 py-24 container max-w-5xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-semibold tracking-tight mb-4">
-                            Universal Access.
-                        </h2>
-                        <p className="text-lg text-muted-foreground mb-6">
-                            Eliminate the complexity and financial burden of managing multiple subscriptions.
-                            Access premium AI models that usually cost over $200/month, unified here.
-                        </p>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                            <CheckCircle weight="fill" /> Free Tier Available
+                <section id="pricing" className="py-24 md:py-32">
+                    <div className="container max-w-5xl mx-auto px-4 md:px-6">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-center mb-16"
+                        >
+                            <h2 className="text-sm font-bold text-violet-500 uppercase tracking-wider mb-4">
+                                Simple Pricing
+                            </h2>
+                            <h3 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                                Start free, scale as you grow
+                            </h3>
+                            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                                Access premium AI models worth $200+/month for a fraction of the cost.
+                            </p>
+                        </motion.div>
+
+                        <div className="grid md:grid-cols-3 gap-8">
+                            {/* Starter */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <Card className="h-full">
+                                    <CardHeader>
+                                        <CardTitle>Starter</CardTitle>
+                                        <CardDescription>For trying YULA</CardDescription>
+                                        <div className="text-4xl font-bold mt-4">
+                                            $0
+                                            <span className="text-lg font-normal text-muted-foreground">/mo</span>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ul className="space-y-3">
+                                            {['100 chats/month', '1 AI model', 'Basic memory', 'Import up to 50 chats', 'Email support'].map((f) => (
+                                                <li key={f} className="flex items-center gap-3 text-sm">
+                                                    <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
+                                                    <span className="text-muted-foreground">{f}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button variant="outline" className="w-full" asChild>
+                                            <Link href="/signup">Get Started</Link>
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            </motion.div>
+
+                            {/* Pro */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <Card className="h-full relative border-violet-500/50 shadow-xl scale-105">
+                                    <div className="absolute -top-3 left-0 right-0 mx-auto w-fit">
+                                        <span className="bg-gradient-to-r from-violet-500 to-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                            MOST POPULAR
+                                        </span>
+                                    </div>
+                                    <CardHeader>
+                                        <CardTitle>Pro</CardTitle>
+                                        <CardDescription>Your daily AI companion</CardDescription>
+                                        <div className="text-4xl font-bold mt-4">
+                                            $20
+                                            <span className="text-lg font-normal text-muted-foreground">/mo</span>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ul className="space-y-3">
+                                            {[
+                                                '1,500 chats/month',
+                                                'All AI models',
+                                                'Advanced memory + search',
+                                                'Unlimited import',
+                                                'PAC reminders',
+                                                'COUNCIL (2 models)',
+                                                'Voice mode',
+                                                'Priority support',
+                                            ].map((f) => (
+                                                <li key={f} className="flex items-center gap-3 text-sm">
+                                                    <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
+                                                    <span>{f}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button className="w-full bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600" asChild>
+                                            <Link href="/signup?tier=pro">Upgrade to Pro</Link>
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            </motion.div>
+
+                            {/* Ultra */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.3 }}
+                            >
+                                <Card className="h-full">
+                                    <CardHeader>
+                                        <CardTitle>Ultra</CardTitle>
+                                        <CardDescription>For power users</CardDescription>
+                                        <div className="text-4xl font-bold mt-4">
+                                            $50
+                                            <span className="text-lg font-normal text-muted-foreground">/mo</span>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ul className="space-y-3">
+                                            {[
+                                                '5,000+ chats/month',
+                                                'All models + experimental',
+                                                'Full Memory Inspector',
+                                                'COUNCIL (4 models)',
+                                                'API access',
+                                                'Custom integrations',
+                                                'Dedicated support',
+                                            ].map((f) => (
+                                                <li key={f} className="flex items-center gap-3 text-sm">
+                                                    <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
+                                                    <span className="text-muted-foreground">{f}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button variant="outline" className="w-full" asChild>
+                                            <Link href="/signup?tier=ultra">Go Ultra</Link>
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            </motion.div>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        {/* Starter Plan */}
-                        <Card className="bg-background/60 backdrop-blur-sm border-zinc-200 dark:border-zinc-800">
-                            <CardHeader>
-                                <CardTitle className="text-xl">Starter</CardTitle>
-                                <CardDescription>For trying Aspendos and exploring AI.</CardDescription>
-                                <div className="text-4xl font-bold mt-4">$20<span className="text-lg text-muted-foreground font-normal">/mo</span></div>
-                            </CardHeader>
-                            <CardContent>
-                                <ul className="space-y-4">
-                                    {[
-                                        '~300 chats/month (~10/day)',
-                                        'GPT-5 Nano + 1 main model',
-                                        '10 min voice/day',
-                                        'Basic memory across chats',
-                                        'Email support'
-                                    ].map((item) => (
-                                        <li key={item} className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400">
-                                            <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                            <CardFooter>
-                                <Button variant="outline" className="w-full h-11" asChild>
-                                    <Link href="/signup?tier=starter">Get Started</Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-
-                        {/* Pro Plan */}
-                        <Card className="border-emerald-500/30 bg-zinc-900/5 dark:bg-emerald-950/10 relative overflow-hidden backdrop-blur-md shadow-2xl scale-105 z-10">
-                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent" />
-                            <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                                POPULAR
-                            </div>
-                            <CardHeader className="relative">
-                                <CardTitle className="text-xl">Pro</CardTitle>
-                                <CardDescription>Your daily AI operating system.</CardDescription>
-                                <div className="text-4xl font-bold mt-4">$50<span className="text-lg text-muted-foreground font-normal">/mo</span></div>
-                            </CardHeader>
-                            <CardContent className="relative">
-                                <ul className="space-y-4">
-                                    {[
-                                        '~1,500 chats/month',
-                                        'All models: GPT-5, Claude, Gemini',
-                                        '60 min voice/day',
-                                        'Advanced memory + search',
-                                        'Multi-model comparison',
-                                        'Priority routing',
-                                        'Email + chat support'
-                                    ].map((item) => (
-                                        <li key={item} className="flex items-center gap-3 text-sm font-medium">
-                                            <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                            <CardFooter className="relative">
-                                <Button className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 shadow-lg transition-all hover:scale-[1.02]" asChild>
-                                    <Link href="/signup?tier=pro">Upgrade to Pro</Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-
-                        {/* Ultra Plan */}
-                        <Card className="bg-background/60 backdrop-blur-sm border-zinc-200 dark:border-zinc-800">
-                            <CardHeader>
-                                <CardTitle className="text-xl">Ultra</CardTitle>
-                                <CardDescription>For power users and teams.</CardDescription>
-                                <div className="text-4xl font-bold mt-4">$100<span className="text-lg text-muted-foreground font-normal">/mo</span></div>
-                            </CardHeader>
-                            <CardContent>
-                                <ul className="space-y-4">
-                                    {[
-                                        '5,000+ chats/month',
-                                        'All models + experimental',
-                                        '180 min voice/day',
-                                        'Full Memory Inspector',
-                                        'Multi-model parallel (4x)',
-                                        'Highest priority performance',
-                                        'Priority support'
-                                    ].map((item) => (
-                                        <li key={item} className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400">
-                                            <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                            <CardFooter>
-                                <Button variant="outline" className="w-full h-11" asChild>
-                                    <Link href="/signup?tier=ultra">Go Ultra</Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
                     </div>
                 </section>
 
                 {/* FAQ Section */}
-                <div className="px-4 md:px-6 py-24 container max-w-3xl mx-auto space-y-8">
-                    <h2 className="text-2xl font-semibold text-center">
-                        Frequently Asked Questions
-                    </h2>
-                    <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="item-1">
-                            <AccordionTrigger>What happens if I exceed my plan limits?</AccordionTrigger>
-                            <AccordionContent>
-                                You'll receive notifications at 75%, 90%, and 100% of your monthly limit. Once exceeded, you cannot create new chats until your usage resets on the first of next month.
-                            </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="item-2">
-                            <AccordionTrigger>Can I change plans anytime?</AccordionTrigger>
-                            <AccordionContent>
-                                Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.
-                            </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="item-3">
-                            <AccordionTrigger>What is your refund policy?</AccordionTrigger>
-                            <AccordionContent>
-                                We do not offer refunds for subscriptions. However, you can cancel anytime and will not be charged for the next billing period.
-                            </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="item-4">
-                            <AccordionTrigger>Do you offer a free trial?</AccordionTrigger>
-                            <AccordionContent>
-                                Yes! Start with the Starter plan to explore Aspendos free for your first 100 chats. No credit card required.
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                </div>
+                <section id="faq" className="py-24 md:py-32 bg-zinc-50 dark:bg-zinc-900/50">
+                    <div className="container max-w-3xl mx-auto px-4 md:px-6">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-center mb-16"
+                        >
+                            <h2 className="text-sm font-bold text-violet-500 uppercase tracking-wider mb-4">
+                                FAQ
+                            </h2>
+                            <h3 className="text-4xl md:text-5xl font-bold tracking-tight">
+                                Common questions
+                            </h3>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                        >
+                            <Accordion type="single" collapsible className="w-full">
+                                <AccordionItem value="import">
+                                    <AccordionTrigger>How do I import my ChatGPT history?</AccordionTrigger>
+                                    <AccordionContent>
+                                        Go to ChatGPT Settings → Data Controls → Export Data. Download the ZIP file,
+                                        then upload it to YULA's Import page. We'll automatically parse your conversations
+                                        and extract memories.
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="pac">
+                                    <AccordionTrigger>What are PAC reminders?</AccordionTrigger>
+                                    <AccordionContent>
+                                        PAC (Proactive AI Callbacks) automatically detects commitments in your conversations
+                                        like "I'll do this tomorrow" or "remind me to..." and creates smart reminders.
+                                        You'll get notifications via push, email, or in-app.
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="council">
+                                    <AccordionTrigger>How does COUNCIL work?</AccordionTrigger>
+                                    <AccordionContent>
+                                        COUNCIL lets you ask up to 4 AI models the same question simultaneously.
+                                        Each responds with a different perspective: The Scholar (academic), The Visionary (creative),
+                                        The Pragmatist (practical), and Devil's Advocate (critical). You can then choose
+                                        the best response or get an AI-generated synthesis.
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="data">
+                                    <AccordionTrigger>Is my data safe?</AccordionTrigger>
+                                    <AccordionContent>
+                                        Yes. All data is encrypted at rest and in transit. Your conversations are never
+                                        used to train AI models. You can export or delete your data at any time.
+                                        We're GDPR compliant.
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="cancel">
+                                    <AccordionTrigger>Can I cancel anytime?</AccordionTrigger>
+                                    <AccordionContent>
+                                        Yes! You can cancel your subscription at any time. You'll keep access until
+                                        the end of your billing period. No questions asked.
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
+                        </motion.div>
+                    </div>
+                </section>
+
+                {/* CTA Section */}
+                <section className="py-24 md:py-32">
+                    <div className="container max-w-4xl mx-auto px-4 md:px-6 text-center">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="space-y-8"
+                        >
+                            <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+                                Ready to transform your AI experience?
+                            </h2>
+                            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                                Join thousands of users who've upgraded from ChatGPT.
+                                Start free, no credit card required.
+                            </p>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                <Button
+                                    size="lg"
+                                    className="h-14 px-8 text-lg bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 shadow-lg shadow-violet-500/25"
+                                    asChild
+                                >
+                                    <Link href="/signup">
+                                        Get Started Free
+                                        <ArrowRight className="w-5 h-5 ml-2" />
+                                    </Link>
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
             </main>
 
-            <footer className="py-12 border-t bg-muted/30">
-                <div className="container max-w-7xl mx-auto px-4 md:px-6 flex flex-col items-center gap-6 text-center">
-                    <div className="flex items-center gap-6 text-muted-foreground">
-                        <Link href="#" className="hover:text-foreground transition-colors"><GithubLogo size={24} /></Link>
-                        <Link href="#" className="hover:text-foreground transition-colors"><XLogo size={24} /></Link>
+            {/* Footer */}
+            <footer className="py-12 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                <div className="container max-w-7xl mx-auto px-4 md:px-6">
+                    <div className="grid md:grid-cols-4 gap-8 mb-8">
+                        <div>
+                            <Link href="/" className="flex items-center gap-2 mb-4">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
+                                    <Sparkle className="w-5 h-5 text-white" weight="fill" />
+                                </div>
+                                <span className="font-bold text-xl">YULA</span>
+                            </Link>
+                            <p className="text-sm text-muted-foreground">
+                                Your Universal Learning Assistant.
+                                AI that remembers, anticipates, and evolves.
+                            </p>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-4">Product</h4>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li><Link href="#features" className="hover:text-foreground transition-colors">Features</Link></li>
+                                <li><Link href="#pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
+                                <li><Link href="/import" className="hover:text-foreground transition-colors">Import</Link></li>
+                                <li><Link href="/chat" className="hover:text-foreground transition-colors">Chat</Link></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-4">Company</h4>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li><Link href="/about" className="hover:text-foreground transition-colors">About</Link></li>
+                                <li><Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link></li>
+                                <li><Link href="/careers" className="hover:text-foreground transition-colors">Careers</Link></li>
+                                <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-4">Legal</h4>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li><Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                                <li><Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
+                                <li><Link href="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link></li>
+                            </ul>
+                        </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                        © 2026 Aspendos Inc. All rights reserved.
-                    </p>
+
+                    <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-zinc-200 dark:border-zinc-800">
+                        <p className="text-sm text-muted-foreground">
+                            © 2026 YULA. All rights reserved.
+                        </p>
+                        <div className="flex items-center gap-4 mt-4 md:mt-0">
+                            <Link href="https://github.com" className="text-muted-foreground hover:text-foreground transition-colors">
+                                <GithubLogo size={20} />
+                            </Link>
+                            <Link href="https://x.com" className="text-muted-foreground hover:text-foreground transition-colors">
+                                <XLogo size={20} />
+                            </Link>
+                            <Link href="https://linkedin.com" className="text-muted-foreground hover:text-foreground transition-colors">
+                                <LinkedinLogo size={20} />
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </footer>
         </div>

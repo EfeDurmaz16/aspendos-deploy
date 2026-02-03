@@ -35,6 +35,11 @@ model User {
   pushSubscriptions        PushSubscription[]
   notificationPreferences  NotificationPreferences?
   notificationLogs         NotificationLog[]
+  importJobs               ImportJob[]
+  pacReminders             PACReminder[]
+  pacSettings              PACSettings?
+  councilSessions          CouncilSession[]
+  gamificationProfile      GamificationProfile?
 
   emailVerified Boolean   @default(false)
   image         String?
@@ -402,4 +407,300 @@ model NotificationLog {
   @@index([userId, status])
   @@index([createdAt])
   @@map("notification_log")
+}
+
+// ============================================
+// IMPORT FEATURE (History Import from ChatGPT/Claude)
+// ============================================
+
+model ImportJob {
+  id            String         @id @default(cuid())
+  userId        String
+  source        ImportSource
+  status        ImportStatus   @default(PENDING)
+  fileName      String
+  fileSize      Int // In bytes
+  totalItems    Int            @default(0)
+  importedItems Int            @default(0)
+  errorMessage  String?
+  metadata      Json? // Source-specific metadata
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entities ImportEntity[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("import_job")
+}
+
+model ImportEntity {
+  id         String           @id @default(cuid())
+  jobId      String
+  type       ImportEntityType
+  externalId String // Original ID from source platform
+  title      String?
+  content    Json // Full conversation/entity content
+  selected   Boolean          @default(true) // User can deselect items
+  imported   Boolean          @default(false)
+  chatId     String? // Reference to created Chat after import
+  errorMsg   String?
+  createdAt  DateTime         @default(now())
+
+  job ImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, externalId])
+  @@index([jobId])
+  @@index([jobId, selected])
+  @@map("import_entity")
+}
+
+enum ImportSource {
+  CHATGPT
+  CLAUDE
+  GEMINI
+  OTHER
+}
+
+enum ImportStatus {
+  PENDING
+  UPLOADING
+  PARSING
+  PREVIEWING
+  IMPORTING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum ImportEntityType {
+  CONVERSATION
+  MESSAGE
+  ATTACHMENT
+  MEMORY
+}
+
+// ============================================
+// PAC FEATURE (Proactive AI Callbacks)
+// ============================================
+
+model PACReminder {
+  id            String         @id @default(cuid())
+  userId        String
+  type          ReminderType
+  content       String         @db.Text
+  triggerAt     DateTime
+  status        ReminderStatus @default(PENDING)
+  source        String? // "explicit" (user said "remind me") or "implicit" (detected commitment)
+  sourceText    String?        @db.Text // Original text that triggered this reminder
+  chatId        String? // Reference to source conversation
+  priority      Int            @default(50) // 1-100
+  deliveredAt   DateTime?
+  respondedAt   DateTime?
+  responseType  String? // "acknowledged", "snoozed", "dismissed"
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  escalations PACEscalation[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([triggerAt])
+  @@index([status, triggerAt])
+  @@map("pac_reminder")
+}
+
+model PACEscalation {
+  id          String   @id @default(cuid())
+  reminderId  String
+  level       Int      @default(1) // 1, 2, 3 escalation levels
+  channel     String // "push", "email", "sms"
+  scheduledAt DateTime
+  sentAt      DateTime?
+  status      String   @default("pending") // "pending", "sent", "failed"
+  createdAt   DateTime @default(now())
+
+  reminder PACReminder @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+
+  @@index([reminderId])
+  @@index([scheduledAt])
+  @@map("pac_escalation")
+}
+
+model PACSettings {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  enabled           Boolean  @default(true)
+  explicitEnabled   Boolean  @default(true) // "remind me" style requests
+  implicitEnabled   Boolean  @default(true) // Detected commitments
+  pushEnabled       Boolean  @default(true)
+  emailEnabled      Boolean  @default(true)
+  smsEnabled        Boolean  @default(false)
+  quietHoursStart   String? // "22:00" format
+  quietHoursEnd     String? // "08:00" format
+  timezone          String   @default("UTC")
+  minPriority       Int      @default(30) // Only notify for priority >= this
+  escalationEnabled Boolean  @default(true)
+  digestEnabled     Boolean  @default(true) // Daily digest of upcoming reminders
+  digestTime        String   @default("09:00")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("pac_settings")
+}
+
+enum ReminderType {
+  EXPLICIT // User explicitly asked to be reminded
+  IMPLICIT // AI detected a commitment
+  FOLLOWUP // AI proactively following up on a topic
+  SCHEDULED // Time-based scheduled reminder
+}
+
+enum ReminderStatus {
+  PENDING
+  SCHEDULED
+  DELIVERED
+  ACKNOWLEDGED
+  SNOOZED
+  DISMISSED
+  EXPIRED
+  FAILED
+}
+
+// ============================================
+// COUNCIL FEATURE (Multi-Model Parallel Querying)
+// ============================================
+
+model CouncilSession {
+  id              String            @id @default(cuid())
+  userId          String
+  chatId          String? // Optional link to a chat conversation
+  query           String            @db.Text
+  status          CouncilStatus     @default(PENDING)
+  selectedPersona String? // Which persona's response was selected
+  synthesisText   String?           @db.Text // Combined synthesis of all responses
+  totalLatencyMs  Int               @default(0)
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responses CouncilResponse[]
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("council_session")
+}
+
+model CouncilResponse {
+  id        String         @id @default(cuid())
+  sessionId String
+  persona   PersonaType
+  modelId   String // e.g., "claude-3-sonnet", "gpt-4", "gemini-pro", "llama-3"
+  content   String         @db.Text
+  latencyMs Int            @default(0)
+  tokensIn  Int            @default(0)
+  tokensOut Int            @default(0)
+  status    ResponseStatus @default(PENDING)
+  errorMsg  String?
+  rating    Int? // 1-5 user rating
+  selected  Boolean        @default(false)
+  createdAt DateTime       @default(now())
+
+  session CouncilSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([sessionId, persona])
+  @@map("council_response")
+}
+
+enum CouncilStatus {
+  PENDING
+  QUERYING
+  STREAMING
+  SYNTHESIZING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum PersonaType {
+  LOGICAL // Analytical, data-driven (Claude)
+  CREATIVE // Innovative, out-of-the-box (GPT-4)
+  PRUDENT // Cautious, risk-aware (Gemini)
+  SWIFT // Fast, efficient (Groq/Llama)
+}
+
+enum ResponseStatus {
+  PENDING
+  STREAMING
+  COMPLETED
+  FAILED
+  TIMEOUT
+}
+
+// ============================================
+// GAMIFICATION SYSTEM
+// ============================================
+
+model GamificationProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  totalXp          Int      @default(0)
+  level            Int      @default(1)
+  currentStreak    Int      @default(0)
+  longestStreak    Int      @default(0)
+  lastActiveDate   DateTime @default(now())
+  streakFreezes    Int      @default(1) // Free tier gets 1, Pro gets 3
+  freezesUsed      Int      @default(0)
+  referralCode     String   @unique
+  referredBy       String? // userId of referrer
+  totalReferrals   Int      @default(0)
+  proDaysEarned    Int      @default(0) // From referrals
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievements Achievement[]
+  xpLogs       XPLog[]
+
+  @@index([referralCode])
+  @@map("gamification_profile")
+}
+
+model Achievement {
+  id          String    @id @default(cuid())
+  profileId   String
+  code        String // e.g., "first_chat", "streak_7", "council_master"
+  unlockedAt  DateTime  @default(now())
+  notified    Boolean   @default(false)
+
+  profile GamificationProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, code])
+  @@index([profileId])
+  @@map("achievement")
+}
+
+model XPLog {
+  id        String   @id @default(cuid())
+  profileId String
+  amount    Int
+  action    String // e.g., "send_message", "complete_conversation", "use_council"
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  profile GamificationProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([profileId, createdAt])
+  @@map("xp_log")
 }

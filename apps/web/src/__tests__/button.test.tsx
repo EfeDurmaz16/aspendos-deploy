@@ -35,7 +35,7 @@ describe('Button Component', () => {
     it('should render button with small size', () => {
         render(<Button size="sm">Small Button</Button>);
         const button = screen.getByText('Small Button');
-        expect(button).toHaveClass('h-9');
+        expect(button).toHaveClass('h-8'); // Updated to match design system v2.0
     });
 
     it('should render button with large size', () => {

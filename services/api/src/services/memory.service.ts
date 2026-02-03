@@ -310,3 +310,48 @@ export async function getGlobalMemories(userId: string, limit?: number): Promise
         take: limit || 50,
     });
 }
+
+/**
+ * Synthesize recent memories into a coherent narrative
+ * Retrieves recent memories and creates a summarized view using AI
+ */
+export async function synthesizeMemories(userId: string): Promise<string> {
+    // Retrieve recent active memories ordered by importance and recency
+    const recentMemories = await prisma.memory.findMany({
+        where: {
+            userId,
+            isActive: true,
+        },
+        orderBy: [{ importance: 'desc' }, { lastAccessedAt: 'desc' }],
+        take: 20,
+    });
+
+    if (recentMemories.length === 0) {
+        return 'No memories available to synthesize.';
+    }
+
+    // Group memories by sector
+    const memoriesBySector: Record<string, Memory[]> = {};
+    for (const memory of recentMemories) {
+        const sector = memory.sector;
+        if (!memoriesBySector[sector]) {
+            memoriesBySector[sector] = [];
+        }
+        memoriesBySector[sector].push(memory);
+    }
+
+    // Build a structured narrative from memories
+    const sections: string[] = [];
+
+    for (const [sector, memories] of Object.entries(memoriesBySector)) {
+        const sectorTitle = sector.charAt(0).toUpperCase() + sector.slice(1);
+        const memoriesText = memories
+            .map((m, i) => `${i + 1}. ${m.content} (confidence: ${m.confidence})`)
+            .join('\n');
+        sections.push(`## ${sectorTitle} Memories\n${memoriesText}`);
+    }
+
+    const synthesizedNarrative = `# Memory Synthesis for User ${userId}\n\n${sections.join('\n\n')}`;
+
+    return synthesizedNarrative;
+}

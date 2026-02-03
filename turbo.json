@@ -16,6 +16,11 @@
         },
         "db:push": {
             "cache": false
+        },
+        "test": {
+            "dependsOn": [],
+            "outputs": [],
+            "cache": false
         }
     }
 }
