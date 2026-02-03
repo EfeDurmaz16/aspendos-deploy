@@ -116,20 +116,20 @@ function extractTimeOffset(text: string): number {
 export async function createReminder(
     userId: string,
     commitment: DetectedCommitment,
-    conversationId?: string,
-    messageId?: string
+    chatId?: string,
 ) {
+    const priorityMap: Record<string, number> = { LOW: 30, MEDIUM: 50, HIGH: 80 };
     return prisma.pACReminder.create({
         data: {
             userId,
             type: commitment.type,
             content: commitment.content,
             triggerAt: commitment.triggerAt,
-            priority: commitment.priority,
+            priority: priorityMap[commitment.priority] || 50,
             status: 'PENDING',
-            confidence: commitment.confidence,
-            conversationId,
-            messageId,
+            source: commitment.type === 'EXPLICIT' ? 'explicit' : 'implicit',
+            sourceText: commitment.content,
+            chatId,
         },
     });
 }
@@ -145,11 +145,6 @@ export async function getPendingReminders(userId: string, limit = 20) {
         },
         orderBy: [{ triggerAt: 'asc' }],
         take: limit,
-        include: {
-            conversation: {
-                select: { id: true, title: true },
-            },
-        },
     });
 }
 
@@ -168,9 +163,6 @@ export async function getDueReminders(limit = 100) {
             user: {
                 select: { id: true, email: true, name: true },
             },
-            conversation: {
-                select: { id: true, title: true },
-            },
         },
     });
 }
@@ -182,8 +174,9 @@ export async function completeReminder(reminderId: string, userId: string) {
     return prisma.pACReminder.updateMany({
         where: { id: reminderId, userId },
         data: {
-            status: 'COMPLETED',
-            completedAt: new Date(),
+            status: 'ACKNOWLEDGED',
+            respondedAt: new Date(),
+            responseType: 'acknowledged',
         },
     });
 }
@@ -196,7 +189,8 @@ export async function dismissReminder(reminderId: string, userId: string) {
         where: { id: reminderId, userId },
         data: {
             status: 'DISMISSED',
-            dismissedAt: new Date(),
+            respondedAt: new Date(),
+            responseType: 'dismissed',
         },
     });
 }
@@ -220,7 +214,6 @@ export async function snoozeReminder(reminderId: string, userId: string, minutes
         data: {
             status: 'SNOOZED',
             triggerAt: newTriggerAt,
-            snoozeCount: { increment: 1 },
         },
     });
 
@@ -228,9 +221,10 @@ export async function snoozeReminder(reminderId: string, userId: string, minutes
     await prisma.pACEscalation.create({
         data: {
             reminderId,
-            type: 'SNOOZE',
-            previousTriggerAt: reminder.triggerAt,
-            newTriggerAt,
+            level: 1,
+            channel: 'in_app',
+            scheduledAt: newTriggerAt,
+            status: 'pending',
         },
     });
 
@@ -254,7 +248,6 @@ export async function getPACSettings(userId: string) {
                 implicitEnabled: true,
                 pushEnabled: true,
                 emailEnabled: false,
-                quietHoursEnabled: false,
                 quietHoursStart: '22:00',
                 quietHoursEnd: '08:00',
                 escalationEnabled: true,
@@ -278,7 +271,6 @@ export async function updatePACSettings(
         implicitEnabled: boolean;
         pushEnabled: boolean;
         emailEnabled: boolean;
-        quietHoursEnabled: boolean;
         quietHoursStart: string;
         quietHoursEnd: string;
         escalationEnabled: boolean;
@@ -296,7 +288,6 @@ export async function updatePACSettings(
             implicitEnabled: settings.implicitEnabled ?? true,
             pushEnabled: settings.pushEnabled ?? true,
             emailEnabled: settings.emailEnabled ?? false,
-            quietHoursEnabled: settings.quietHoursEnabled ?? false,
             quietHoursStart: settings.quietHoursStart ?? '22:00',
             quietHoursEnd: settings.quietHoursEnd ?? '08:00',
             escalationEnabled: settings.escalationEnabled ?? true,
@@ -310,9 +301,9 @@ export async function updatePACSettings(
  * Check if in quiet hours
  */
 export function isInQuietHours(
-    settings: { quietHoursEnabled: boolean; quietHoursStart: string; quietHoursEnd: string }
+    settings: { quietHoursStart?: string; quietHoursEnd?: string }
 ): boolean {
-    if (!settings.quietHoursEnabled) return false;
+    if (!settings.quietHoursStart || !settings.quietHoursEnd) return false;
 
     const now = new Date();
     const [startHour, startMin] = settings.quietHoursStart.split(':').map(Number);
@@ -338,7 +329,7 @@ export async function getPACStats(userId: string) {
     const [total, pending, completed, snoozed] = await Promise.all([
         prisma.pACReminder.count({ where: { userId } }),
         prisma.pACReminder.count({ where: { userId, status: 'PENDING' } }),
-        prisma.pACReminder.count({ where: { userId, status: 'COMPLETED' } }),
+        prisma.pACReminder.count({ where: { userId, status: 'ACKNOWLEDGED' } }),
         prisma.pACReminder.count({ where: { userId, status: 'SNOOZED' } }),
     ]);
 

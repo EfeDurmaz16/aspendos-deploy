@@ -13,6 +13,7 @@ import { validateBody, validateParams } from '../middleware/validate';
 import * as chatService from '../services/chat.service';
 import { getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
+import { createReminder, detectCommitments, getPACSettings } from '../services/pac.service';
 import { getToolsForTier, type UserTier } from '../tools';
 import {
     chatIdParamSchema,
@@ -166,6 +167,27 @@ app.post(
             role: 'user',
             content,
         });
+
+        // ========================================
+        // PAC: DETECT COMMITMENTS IN USER MESSAGE
+        // ========================================
+        try {
+            const pacSettings = await getPACSettings(userId);
+            if (pacSettings.enabled) {
+                const commitments = detectCommitments(content);
+                for (const commitment of commitments) {
+                    if (
+                        (commitment.type === 'EXPLICIT' && pacSettings.explicitEnabled) ||
+                        (commitment.type === 'IMPLICIT' && pacSettings.implicitEnabled)
+                    ) {
+                        await createReminder(userId, commitment, chatId);
+                    }
+                }
+            }
+        } catch (pacError) {
+            console.error('[PAC] Commitment detection failed:', pacError);
+            // Non-blocking - continue with chat
+        }
 
         // Auto-generate title if this is the first message
         const existingMessages = await chatService.getMessages(chatId);
