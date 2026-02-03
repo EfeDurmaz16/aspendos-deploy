@@ -1,42 +1,40 @@
-const { heroui } = require("heroui-native");
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    darkMode: "class",
     content: [
         "./App.{js,jsx,ts,tsx}",
         "./app/**/*.{js,jsx,ts,tsx}",
         "./components/**/*.{js,jsx,ts,tsx}",
-        "./node_modules/heroui-native/**/*.{js,jsx,ts,tsx}", // Check if this path is correct for your node_modules structure
     ],
+    presets: [require("nativewind/preset")],
     theme: {
         extend: {
             colors: {
-                background: "#ffffff",
-                foreground: "#0a0a0a",
-                card: "#ffffff",
-                "card-foreground": "#0a0a0a",
-                popover: "#ffffff",
-                "popover-foreground": "#0a0a0a",
-                primary: "#171717",
-                "primary-foreground": "#fafafa",
-                secondary: "#f5f5f5",
-                "secondary-foreground": "#171717",
-                muted: "#f5f5f5",
-                "muted-foreground": "#737373",
-                accent: "#f5f5f5",
-                "accent-foreground": "#171717",
-                destructive: "#ef4444",
-                "destructive-foreground": "#fafafa",
-                border: "#e5e5e5",
-                input: "#e5e5e5",
-                ring: "#0a0a0a",
-                // Custom
+                background: "var(--color-background)",
+                foreground: "var(--color-foreground)",
+                card: "var(--color-card)",
+                "card-foreground": "var(--color-card-foreground)",
+                popover: "var(--color-popover)",
+                "popover-foreground": "var(--color-popover-foreground)",
+                primary: "var(--color-primary)",
+                "primary-foreground": "var(--color-primary-foreground)",
+                secondary: "var(--color-secondary)",
+                "secondary-foreground": "var(--color-secondary-foreground)",
+                muted: "var(--color-muted)",
+                "muted-foreground": "var(--color-muted-foreground)",
+                accent: "var(--color-accent)",
+                "accent-foreground": "var(--color-accent-foreground)",
+                destructive: "var(--color-destructive)",
+                "destructive-foreground": "var(--color-destructive-foreground)",
+                border: "var(--color-border)",
+                input: "var(--color-input)",
+                ring: "var(--color-ring)",
             },
             fontFamily: {
-                sans: ["Figtree"],
-                mono: ["JetBrains Mono"],
+                sans: ["System"],
+                mono: ["Menlo"],
             },
         },
     },
-    plugins: [heroui()],
+    plugins: [],
 };
