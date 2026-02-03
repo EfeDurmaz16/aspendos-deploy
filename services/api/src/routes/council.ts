@@ -103,11 +103,11 @@ app.get('/sessions/:id/stream', async (c) => {
 
                 if (type === 'text') {
                     await stream.write(
-                        `data: ${JSON.stringify({ persona, type: 'text', content })}\n\n`
+                        `data: ${JSON.stringify({ persona, type: 'persona_chunk', content })}\n\n`
                     );
                 } else if (type === 'done') {
                     await stream.write(
-                        `data: ${JSON.stringify({ persona, type: 'done', latencyMs })}\n\n`
+                        `data: ${JSON.stringify({ persona, type: 'persona_complete', latencyMs })}\n\n`
                     );
                     activeStreams.delete(persona);
                     completed.add(persona);
