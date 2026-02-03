@@ -22,50 +22,50 @@ import {
 import { cn } from '@/lib/utils';
 
 // =============================================================================
-// DESIGN SYSTEM: WARM SOPHISTICATION (YULA v3)
-// Warm charcoal (#2D2926), Terracotta (#D4714A), Cream (#F5F0E8)
+// DESIGN SYSTEM: YULA v3 (from Pencil MCP)
+// Navy (#0A0E27), Gold (#D4AF37), Cream (#F8F6F0)
 // Playfair Display (serif headlines) + DM Sans (body)
 // Generous whitespace, asymmetric layouts, large typography
 // =============================================================================
 
 const COLORS = {
-    // Primary brand colors
-    charcoal: '#2D2926',      // Main dark background
-    charcoalLight: '#3D3632', // Lighter dark for cards
-    terracotta: '#D4714A',    // Primary accent
-    terracottaLight: '#E07B54', // Hover state
-    terracottaDark: '#C4623B',  // Active state
-    cream: '#F5F0E8',         // Light background
-    creamLight: '#FAF8F5',    // Lighter cream for cards
+    // Primary brand colors (from Pencil design tokens)
+    navy: '#0A0E27',          // Main dark background
+    navyLight: '#1A1E37',     // Lighter dark for cards
+    gold: '#D4AF37',          // Primary accent
+    goldLight: '#E0BF4A',     // Hover state
+    goldDark: '#C49F2A',      // Active state
+    cream: '#F8F6F0',         // Light background
+    creamLight: '#FDFCFA',    // Lighter cream for cards
     white: '#FFFFFF',
     // Legacy mappings for compatibility
-    navy: '#2D2926',
-    navyLight: '#3D3632',
-    gold: '#D4714A',
-    goldLight: '#E07B54',
+    charcoal: '#0A0E27',
+    charcoalLight: '#1A1E37',
+    terracotta: '#D4AF37',
+    terracottaLight: '#E0BF4A',
     // Warm gray scale
     gray: {
-        50: '#FAF8F5',
-        100: '#F5F0E8',
-        200: '#E8E2D9',
-        300: '#D9D3CA',
+        50: '#FDFCFA',
+        100: '#F8F6F0',
+        200: '#F0EDE5',
+        300: '#E5E1D8',
         400: '#A8A199',
         500: '#6B635A',
         600: '#524B44',
-        700: '#403A34',
-        800: '#2D2926',
-        900: '#1A1816',
+        700: '#1A1E37',
+        800: '#0A0E27',
+        900: '#050812',
     },
     // Text colors
-    textOnDark: '#E8DED0',
-    textOnLight: '#2D2926',
+    textOnDark: '#F8F6F0',
+    textOnLight: '#0A0E27',
 };
 
-// Feature accent colors - warm palette
+// Feature accent colors (from Pencil design tokens)
 const ACCENTS = {
-    import: '#4A7BD4',    // Warm Blue
-    pac: '#D4714A',       // Terracotta (primary)
-    council: '#9B7DC4',   // Warm Violet
+    import: '#3B82F6',    // Import Blue
+    pac: '#F59E0B',       // PAC Amber
+    council: '#EC4899',   // Council Pink
 };
 
 // =============================================================================

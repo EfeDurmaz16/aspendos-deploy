@@ -41,11 +41,11 @@ export const metadata: Metadata = {
     ...baseMetadata,
 };
 
-// Viewport configuration - YULA warm theme colors
+// Viewport configuration - YULA v3 theme colors (from Pencil)
 export const viewport: Viewport = {
     themeColor: [
-        { media: '(prefers-color-scheme: light)', color: '#F5F0E8' },
-        { media: '(prefers-color-scheme: dark)', color: '#2D2926' },
+        { media: '(prefers-color-scheme: light)', color: '#F8F6F0' },
+        { media: '(prefers-color-scheme: dark)', color: '#0A0E27' },
     ],
     width: 'device-width',
     initialScale: 1,
