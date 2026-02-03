@@ -209,6 +209,8 @@ app.post('/jobs/:id/entities/bulk-select', async (c) => {
 app.post('/jobs/:id/execute', async (c) => {
     const userId = c.get('userId')!;
     const jobId = c.req.param('id');
+    const body = await c.req.json();
+    const selectedIds = body.selectedIds as string[] | undefined;
 
     // Verify job belongs to user
     const job = await importService.getImportJob(jobId, userId);
@@ -225,7 +227,7 @@ app.post('/jobs/:id/execute', async (c) => {
     }
 
     try {
-        const result = await importService.executeImport(jobId, userId);
+        const result = await importService.executeImport(jobId, userId, selectedIds);
 
         return c.json({
             success: true,

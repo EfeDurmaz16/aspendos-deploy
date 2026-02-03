@@ -56,7 +56,7 @@ export async function updateImportJobStatus(
         where: { id: jobId },
         data: {
             status,
-            error,
+            errorMessage: error,
             ...(status === 'COMPLETED' || status === 'FAILED'
                 ? { completedAt: new Date() }
                 : {}),
@@ -354,10 +354,15 @@ export async function updateEntitySelection(entityId: string, selected: boolean)
 /**
  * Execute import for selected entities
  */
-export async function executeImport(jobId: string, userId: string) {
+export async function executeImport(jobId: string, userId: string, selectedIds?: string[]) {
     // Get selected entities
     const entities = await prisma.importEntity.findMany({
-        where: { jobId, selected: true, imported: false },
+        where: {
+            jobId,
+            selected: true,
+            imported: false,
+            ...(selectedIds ? { id: { in: selectedIds } } : {}),
+        },
     });
 
     if (entities.length === 0) {
@@ -379,23 +384,23 @@ export async function executeImport(jobId: string, userId: string) {
             };
 
             // Create conversation in YULA
-            const conversation = await prisma.conversation.create({
+            const chat = await prisma.chat.create({
                 data: {
                     userId,
                     title: entity.title || 'Imported Conversation',
-                    model: 'imported',
-                    importedFrom: content.source,
-                    importedAt: new Date(),
+                    modelPreference: 'imported',
+                    description: `Imported from ${content.source} on ${new Date().toISOString()}`,
                 },
             });
 
             // Create messages
-            const messageData = content.messages.map((msg, index) => ({
-                conversationId: conversation.id,
+            const messageData = content.messages.map((msg) => ({
+                chatId: chat.id,
+                userId,
                 role: msg.role,
                 content: msg.content,
                 createdAt: new Date(msg.createdAt),
-                order: index,
+                modelUsed: 'imported',
             }));
 
             await prisma.message.createMany({ data: messageData });
@@ -415,7 +420,7 @@ export async function executeImport(jobId: string, userId: string) {
                         type: 'imported_conversation',
                         source: content.source,
                         title: entity.title,
-                        conversationId: conversation.id,
+                        chatId: chat.id,
                         importJobId: jobId,
                     },
                 }

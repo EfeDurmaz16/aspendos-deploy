@@ -1,16 +1,17 @@
 import { serve } from '@hono/node-server';
-import * as Sentry from '@sentry/node';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { getModelsForTier, SUPPORTED_MODELS } from './lib/ai-providers';
 import { auth } from './lib/auth';
+import { validateEnv } from './lib/env';
 import {
     closeMCPClients,
     getConnectedMCPServers,
     getMCPStatus,
     initializeMCPClients,
 } from './lib/mcp-clients';
+import { initSentry, Sentry } from './lib/sentry';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
 import analyticsRoutes from './routes/analytics';
 import billingRoutes from './routes/billing';
@@ -25,21 +26,11 @@ import pacRoutes from './routes/pac';
 import schedulerRoutes from './routes/scheduler';
 import voiceRoutes from './routes/voice';
 
+// Validate environment variables on startup
+validateEnv();
+
 // Initialize Sentry
-if (process.env.SENTRY_DSN) {
-    Sentry.init({
-        dsn: process.env.SENTRY_DSN,
-        environment: process.env.NODE_ENV || 'development',
-        tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-        integrations: [
-            Sentry.httpIntegration(),
-            Sentry.captureConsoleIntegration({ levels: ['error'] }),
-        ],
-    });
-    console.log('[Sentry] Initialized for API service');
-} else {
-    console.log('[Sentry] DSN not configured, error tracking disabled');
-}
+initSentry();
 
 type Variables = {
     user: typeof auth.$Infer.Session.user | null;
@@ -118,6 +109,13 @@ app.use('*', async (c, next) => {
 
 // Apply rate limiting
 app.use('*', rateLimit());
+
+// Global error handler
+app.onError((err, c) => {
+    Sentry.captureException(err);
+    console.error('Unhandled error:', err);
+    return c.json({ error: 'Internal Server Error' }, 500);
+});
 
 // Health check
 app.get('/health', (c) =>
