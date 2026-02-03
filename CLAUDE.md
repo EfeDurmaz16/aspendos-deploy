@@ -222,6 +222,8 @@ Use these subagents for specific tasks:
 
 Invoke with `/skill-name`:
 
+### Development Skills
+
 | Skill | Purpose |
 |-------|---------|
 | `/streaming-chat` | Implement streaming chat features |
@@ -234,3 +236,24 @@ Invoke with `/skill-name`:
 | `/mcp-server` | MCP server development |
 | `/deploy-railway` | Railway deployment |
 | `/deploy-vercel` | Vercel deployment |
+
+### Marketing Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/social-content` | Generate social media content for X, Reddit, LinkedIn |
+| `/gtm-plan` | Create GTM campaign plans with $0 budget strategies |
+| `/competitor-compare` | Generate competitor comparison content |
+| `/viral-hook` | Create viral hooks for 3 core messages (IMPORT, PAC, COUNCIL) |
+| `/launch-checklist` | Product Hunt launch preparation checklist |
+| `/content-calendar` | Build content calendars with message rotation |
+| `/tweet-optimizer` | Optimize tweets for X algorithm engagement |
+| `/reddit-validator` | Validate Reddit posts to avoid spam detection |
+
+### Marketing Core Messages
+
+| Code | Message | Description |
+|------|---------|-------------|
+| 🔵 IMPORT | "Geçmişini getir" | ChatGPT/Claude history import & export |
+| 🟢 PAC | "AI sana yazar" | Proactive AI that initiates conversations |
+| 🟣 COUNCIL | "4 AI'a sor" | Multi-model parallel querying |

@@ -67,3 +67,14 @@ conversations_gpt.json
 landing-2/
 *pitch-deck*
 *audit*
+# Local tool state
+.omc/
+.claude/plugins/
+.playwright-mcp/
+.serena/
+
+# Temp scripts and logs
+ralph_log*.txt
+overnight-mission.sh
+start.sh
+start_ralph.sh
