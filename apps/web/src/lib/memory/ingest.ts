@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { createEmbedding, createEmbeddings } from '@/lib/ai';
-import { storeMemory, qdrant, COLLECTIONS, VECTOR_SIZE } from '@/lib/services/qdrant';
+import { createEmbeddings } from '@/lib/ai';
+import { storeMemory, qdrant, COLLECTIONS } from '@/lib/services/qdrant';
 
 // ============================================
 // CHATGPT EXPORT FORMAT
@@ -161,26 +161,29 @@ export async function ingestConversations(
             // Create embeddings for the batch
             const embeddings = await createEmbeddings(batch.map((c) => c.slice(0, 8000))); // Limit text size
 
-            // Store each in Qdrant
-            for (let j = 0; j < batch.length; j++) {
-                try {
-                    await storeMemory({
+            // Store concurrently in Qdrant using Promise.all
+            await Promise.all(
+                batch.map((conversation, j) =>
+                    storeMemory({
                         id: uuidv4(),
                         vector: embeddings[j],
                         userId,
-                        content: batch[j].slice(0, 5000), // Store truncated
+                        content: conversation.slice(0, 5000), // Store truncated
                         type: 'context',
                         metadata: {
                             source,
                             importedAt: new Date().toISOString(),
                         },
-                    });
-                    success++;
-                } catch (error) {
-                    console.error('[Ingest] Failed to store memory:', error);
-                    failed++;
-                }
-            }
+                    })
+                        .then(() => {
+                            success++;
+                        })
+                        .catch((error) => {
+                            console.error(`[Ingest] Failed to store memory for conversation ${j}:`, error);
+                            failed++;
+                        })
+                )
+            );
         } catch (error) {
             console.error('[Ingest] Batch embedding failed:', error);
             failed += batch.length;
@@ -261,10 +264,10 @@ export async function importAspendosExport(
         try {
             const embeddings = await createEmbeddings(batch.map((m) => m.content.slice(0, 8000)));
 
-            for (let j = 0; j < batch.length; j++) {
-                try {
-                    const memory = batch[j];
-                    await storeMemory({
+            // Store concurrently using Promise.all
+            await Promise.all(
+                batch.map((memory, j) =>
+                    storeMemory({
                         id: uuidv4(), // New ID for imported memory
                         vector: embeddings[j],
                         userId,
@@ -278,13 +281,16 @@ export async function importAspendosExport(
                             originalCreatedAt: memory.createdAt,
                             importedAt: new Date().toISOString(),
                         },
-                    });
-                    success++;
-                } catch (error) {
-                    console.error('[Import] Failed to store memory:', error);
-                    failed++;
-                }
-            }
+                    })
+                        .then(() => {
+                            success++;
+                        })
+                        .catch((error) => {
+                            console.error(`[Import] Failed to store memory ${j}:`, error);
+                            failed++;
+                        })
+                )
+            );
         } catch (error) {
             console.error('[Import] Batch embedding failed:', error);
             failed += batch.length;

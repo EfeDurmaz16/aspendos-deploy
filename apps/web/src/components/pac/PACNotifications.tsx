@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bell,
@@ -27,46 +27,6 @@ const typeStyles: Record<PACItemType, { icon: typeof Bell; color: string; bgColo
     alert: { icon: Warning, color: 'text-red-400', bgColor: 'bg-red-500/10' },
     insight: { icon: Brain, color: 'text-amber-300', bgColor: 'bg-amber-400/10' },
 };
-
-// ============================================
-// MOCK DATA (for demo)
-// ============================================
-
-const mockPACItems: PACItem[] = [
-    {
-        id: '1',
-        userId: 'demo',
-        type: 'reminder',
-        title: 'Review PR #42',
-        description: 'You mentioned wanting to review the authentication PR today.',
-        scheduledFor: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'pending',
-        priority: 'medium',
-        createdAt: new Date(),
-    },
-    {
-        id: '2',
-        userId: 'demo',
-        type: 'suggestion',
-        title: 'Take a break',
-        description: "You've been coding for 2 hours. Consider a short break.",
-        scheduledFor: new Date(),
-        status: 'pending',
-        priority: 'low',
-        createdAt: new Date(),
-    },
-    {
-        id: '3',
-        userId: 'demo',
-        type: 'insight',
-        title: 'Pattern detected',
-        description: 'You often ask about React patterns. Check out the new hooks guide.',
-        scheduledFor: new Date(),
-        status: 'pending',
-        priority: 'low',
-        createdAt: new Date(),
-    },
-];
 
 // ============================================
 // PAC ITEM COMPONENT
@@ -145,8 +105,26 @@ interface PACNotificationsProps {
 }
 
 export function PACNotifications({ className, collapsed = false, onToggleCollapse }: PACNotificationsProps) {
-    const [items, setItems] = useState<PACItem[]>(mockPACItems);
+    const [items, setItems] = useState<PACItem[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(true);
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const response = await fetch('/api/notifications');
+                if (response.ok) {
+                    const data = await response.json();
+                    setItems(data.notifications || []);
+                }
+            } catch (error) {
+                console.error('Failed to fetch PAC notifications:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchNotifications();
+    }, []);
 
     const pendingItems = items.filter((item) => item.status === 'pending');
     const urgentCount = pendingItems.filter((item) => item.priority === 'high').length;
@@ -243,29 +221,40 @@ export function PACNotifications({ className, collapsed = false, onToggleCollaps
             {/* Items */}
             {isExpanded && (
                 <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                    <AnimatePresence>
-                        {pendingItems.length > 0 ? (
-                            pendingItems.map((item) => (
-                                <PACItemCard
-                                    key={item.id}
-                                    item={item}
-                                    onDismiss={handleDismiss}
-                                    onSnooze={handleSnooze}
-                                    onAct={handleAct}
-                                />
-                            ))
-                        ) : (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-center py-8 text-zinc-500"
-                            >
-                                <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">No pending notifications</p>
-                                <p className="text-xs mt-1">We'll nudge you when needed</p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    {loading ? (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-center py-8 text-zinc-500"
+                        >
+                            <Bell className="h-8 w-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                            <p className="text-sm">Loading notifications...</p>
+                        </motion.div>
+                    ) : (
+                        <AnimatePresence>
+                            {pendingItems.length > 0 ? (
+                                pendingItems.map((item) => (
+                                    <PACItemCard
+                                        key={item.id}
+                                        item={item}
+                                        onDismiss={handleDismiss}
+                                        onSnooze={handleSnooze}
+                                        onAct={handleAct}
+                                    />
+                                ))
+                            ) : (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="text-center py-8 text-zinc-500"
+                                >
+                                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">No notifications yet</p>
+                                    <p className="text-xs mt-1">We'll nudge you when needed</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    )}
                 </div>
             )}
         </aside>

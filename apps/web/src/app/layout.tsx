@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, DM_Sans, JetBrains_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { cn } from '@/lib/utils';
 import { SiteDock } from '@/components/layout/site-dock';
 import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
@@ -15,26 +15,6 @@ import {
     faqSchema,
     serializeSchema,
 } from '@/lib/seo/structured-data';
-
-const playfairDisplay = Playfair_Display({
-    subsets: ['latin'],
-    variable: '--font-playfair',
-    display: 'swap',
-    weight: ['400', '500', '600', '700'],
-});
-
-const dmSans = DM_Sans({
-    subsets: ['latin'],
-    variable: '--font-dm-sans',
-    display: 'swap',
-    weight: ['400', '500', '600', '700'],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-    subsets: ['latin'],
-    variable: '--font-mono',
-    display: 'swap',
-});
 
 // Comprehensive metadata for SEO and GEO
 export const metadata: Metadata = {
@@ -69,10 +49,6 @@ export default function RootLayout({
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
                 <meta name="apple-mobile-web-app-title" content="YULA" />
                 <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
-
-                {/* Preconnect to critical origins for performance */}
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 
                 {/* DNS prefetch for API and external services */}
                 <link rel="dns-prefetch" href="https://api.yula.dev" />
@@ -111,21 +87,19 @@ export default function RootLayout({
             </head>
             <body
                 className={cn(
-                    playfairDisplay.variable,
-                    dmSans.variable,
-                    jetbrainsMono.variable,
                     'antialiased min-h-screen bg-background'
                 )}
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
                 {/* Accessibility: Skip to main content link */}
                 <SkipLink />
 
                 <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
                     <OfflineBanner />
-                    <main id="main-content" tabIndex={-1}>
-                        {children}
-                    </main>
+                    <ErrorBoundary>
+                        <main id="main-content" tabIndex={-1}>
+                            {children}
+                        </main>
+                    </ErrorBoundary>
                     <SiteDock />
                     <InstallPrompt />
                     <UpdatePrompt />

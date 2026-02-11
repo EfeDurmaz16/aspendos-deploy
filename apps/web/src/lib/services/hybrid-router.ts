@@ -51,7 +51,6 @@ export async function* createUnifiedStreamingCompletion(
     }
 ): AsyncGenerator<{ type: 'text' | 'done' | 'error' | 'fallback'; content: string; metadata?: Record<string, unknown> }> {
     const { model, temperature = 0.7, maxTokens = 4000 } = options;
-    const provider = MODEL_PROVIDERS[model] || 'openai';
     const modelsToTry = [model, ...(FALLBACK_CHAIN[model] || [])];
 
     for (let i = 0; i < modelsToTry.length; i++) {
@@ -153,7 +152,7 @@ export async function executeHybridRoute(
     let memoryContext = '';
     let memories: Array<{ content: string; score: number }> = [];
 
-    if (decision.type === 'rag_search' || decision.type === 'direct_reply') {
+    if (decision.type === 'rag_search') {
         try {
             const queryEmbedding = await createEmbedding(
                 decision.type === 'rag_search' ? (decision as { query: string }).query : userMessage

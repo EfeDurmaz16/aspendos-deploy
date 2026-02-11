@@ -69,6 +69,7 @@ const backendToFrontendPersona: Record<string, CouncilPersona> = {
     DEVILS_ADVOCATE: 'devils-advocate',
 };
 
+
 export function useCouncil() {
     const {
         council,
@@ -81,6 +82,49 @@ export function useCouncil() {
     const abortControllerRef = useRef<AbortController | null>(null);
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // Synthesize verdict from all responses
+    const synthesizeVerdict = useCallback(
+        async (sessId: string, question: string, thoughts: Record<CouncilPersona, string>) => {
+            try {
+                const response = await fetch(`${API_BASE}/api/council/sessions/${sessId}/synthesize`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const verdict: CouncilVerdict = {
+                        recommendation: data.synthesis || generateLocalConsensus(question, thoughts),
+                        confidence: 0.75 + Math.random() * 0.2,
+                        reasoning:
+                            'After careful deliberation, the Council has reached a balanced consensus that considers logical analysis, creative possibilities, and prudent risk assessment.',
+                        contributions: thoughts,
+                    };
+                    setCouncilVerdict(verdict);
+                } else {
+                    const verdict: CouncilVerdict = {
+                        recommendation: generateLocalConsensus(question, thoughts),
+                        confidence: 0.75 + Math.random() * 0.2,
+                        reasoning: 'After careful deliberation, the Council has reached a balanced consensus.',
+                        contributions: thoughts,
+                    };
+                    setCouncilVerdict(verdict);
+                }
+            } catch {
+                const verdict: CouncilVerdict = {
+                    recommendation: generateLocalConsensus(question, thoughts),
+                    confidence: 0.75 + Math.random() * 0.2,
+                    reasoning: 'After careful deliberation, the Council has reached a balanced consensus.',
+                    contributions: thoughts,
+                };
+                setCouncilVerdict(verdict);
+            }
+        },
+        [setCouncilVerdict]
+    );
+
 
     // Real API-based deliberation
     const streamDeliberation = useCallback(
@@ -113,11 +157,9 @@ export function useCouncil() {
                     'devils-advocate': '',
                 };
 
-                const eventSource = new EventSource(
-                    `${API_BASE}${streamUrl}`,
-                    // @ts-ignore - credentials option exists
-                    { withCredentials: true }
-                );
+                const eventSource = new EventSource(`${API_BASE}${streamUrl}`, {
+                    withCredentials: true,
+                } as EventSourceInit);
 
                 eventSource.onmessage = (event) => {
                     try {
@@ -159,129 +201,16 @@ export function useCouncil() {
                 };
 
                 eventSource.onerror = () => {
-                    // Fallback to simulated responses if API fails
-                    console.warn('Council SSE connection failed, using fallback');
+                    console.error('Council SSE connection failed');
                     eventSource.close();
-                    simulateDeliberationFallback(question);
+                    setError('Council is temporarily unavailable. Please try again.');
                 };
             } catch (err) {
                 console.error('Council API error:', err);
-                // Fallback to simulated responses
-                simulateDeliberationFallback(question);
+                setError('Council is temporarily unavailable. Please try again.');
             }
         },
-        [startCouncilDeliberation, addCouncilThought]
-    );
-
-    // Synthesize verdict from all responses
-    const synthesizeVerdict = async (
-        sessId: string,
-        question: string,
-        thoughts: Record<CouncilPersona, string>
-    ) => {
-        try {
-            const response = await fetch(`${API_BASE}/api/council/sessions/${sessId}/synthesize`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                const verdict: CouncilVerdict = {
-                    recommendation: data.synthesis || generateLocalConsensus(question, thoughts),
-                    confidence: 0.75 + Math.random() * 0.2,
-                    reasoning: 'After careful deliberation, the Council has reached a balanced consensus that considers logical analysis, creative possibilities, and prudent risk assessment.',
-                    contributions: thoughts,
-                };
-                setCouncilVerdict(verdict);
-            } else {
-                // Use local synthesis
-                const verdict: CouncilVerdict = {
-                    recommendation: generateLocalConsensus(question, thoughts),
-                    confidence: 0.75 + Math.random() * 0.2,
-                    reasoning: 'After careful deliberation, the Council has reached a balanced consensus.',
-                    contributions: thoughts,
-                };
-                setCouncilVerdict(verdict);
-            }
-        } catch {
-            // Use local synthesis
-            const verdict: CouncilVerdict = {
-                recommendation: generateLocalConsensus(question, thoughts),
-                confidence: 0.75 + Math.random() * 0.2,
-                reasoning: 'After careful deliberation, the Council has reached a balanced consensus.',
-                contributions: thoughts,
-            };
-            setCouncilVerdict(verdict);
-        }
-    };
-
-    // Fallback simulated responses
-    const simulatedResponses: Record<CouncilPersona, string[]> = {
-        logic: [
-            'Based on the available data, the most efficient approach would be to prioritize the option with the highest probability of success.',
-            'Analyzing the cost-benefit ratio, I recommend focusing on measurable outcomes and setting clear milestones.',
-            'The logical conclusion suggests starting with a structured plan that addresses the core variables.',
-        ],
-        creative: [
-            'What if we approached this from an entirely different angle? Consider the unexpected opportunities.',
-            'I see potential in combining multiple ideas - sometimes the best solutions emerge from creative synthesis.',
-            "Let's not limit ourselves to conventional thinking. There might be an innovative path we haven't explored.",
-        ],
-        prudent: [
-            'Before proceeding, we should consider the potential risks and have contingency plans in place.',
-            "I recommend taking a measured approach - it's wise to test assumptions before full commitment.",
-            "Let's ensure we're not overlooking any long-term consequences. Patience often yields better outcomes.",
-        ],
-        'devils-advocate': [
-            'Have we considered what could go wrong? Let me challenge some assumptions here.',
-            'Before moving forward, we should ask: what are we missing? What blind spots might we have?',
-            'Playing devil\'s advocate: what if the opposite approach makes more sense? Let\'s test our reasoning.',
-        ],
-    };
-
-    // Fallback simulation when API is unavailable
-    const simulateDeliberationFallback = useCallback(
-        async (question: string): Promise<void> => {
-            const personas: CouncilPersona[] = ['logic', 'creative', 'prudent', 'devils-advocate'];
-            const thoughts: Record<CouncilPersona, string> = {
-                logic: '',
-                creative: '',
-                prudent: '',
-                'devils-advocate': '',
-            };
-
-            for (let i = 0; i < personas.length; i++) {
-                const persona = personas[i];
-                await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 500));
-
-                const responses = simulatedResponses[persona];
-                const thought = responses[Math.floor(Math.random() * responses.length)];
-                thoughts[persona] = thought;
-
-                const councilThought: CouncilThought = {
-                    persona,
-                    thought,
-                    confidence: 0.7 + Math.random() * 0.25,
-                    timestamp: new Date(),
-                };
-
-                addCouncilThought(councilThought);
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            const verdict: CouncilVerdict = {
-                recommendation: generateLocalConsensus(question, thoughts),
-                confidence: 0.75 + Math.random() * 0.2,
-                reasoning: 'After careful deliberation, the Council has reached a balanced consensus that considers logical analysis, creative possibilities, and prudent risk assessment.',
-                contributions: thoughts,
-            };
-
-            setCouncilVerdict(verdict);
-        },
-        [addCouncilThought, setCouncilVerdict]
+        [addCouncilThought, startCouncilDeliberation, synthesizeVerdict]
     );
 
     // Start deliberation on a question
@@ -343,8 +272,10 @@ export function useCouncil() {
 
 // Helper to generate a local consensus recommendation
 function generateLocalConsensus(
-    question: string,
+    _question: string,
     thoughts: Record<CouncilPersona, string>
 ): string {
-    return `Regarding your question, the Council recommends a balanced approach: Start with a structured plan (Logic), remain open to creative pivots (Creative), while maintaining awareness of potential risks (Prudent). This synthesis ensures both progress and protection.`;
+    const responseCount = Object.values(thoughts).filter(t => t.length > 0).length;
+    if (responseCount === 0) return 'No Council responses available.';
+    return `Based on ${responseCount} Council perspectives. Review individual responses above for the full analysis.`;
 }
