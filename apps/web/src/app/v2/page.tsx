@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
-import { ArrowRight, Sparkle, Brain, Lightning, Eye, Shield, Command, Terminal, Globe, Clock, Users, Star, Play, Check } from '@phosphor-icons/react';
+import { ArrowRight, Sparkle, Brain, Lightning, Eye, Shield, Command, Terminal, Globe, Clock, Star, Play, Check } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useRef } from 'react';
 import { cn } from '@/lib/utils';
@@ -276,10 +276,10 @@ export default function LandingPageV2() {
     { title: "Task Automation", description: "Schedule reminders, automate workflows, and let AI proactively manage your tasks.", icon: Clock },
   ];
 
-  const testimonials = [
-    { quote: "Finally, an AI tool that actually remembers my preferences. The unified memory is a game-changer for my workflow.", author: "Sarah Chen", role: "Senior Engineer at Stripe" },
-    { quote: "Switching between GPT and Claude used to be painful. Now they share context and I can use the best model for each task.", author: "Marcus Johnson", role: "Product Lead at Figma" },
-    { quote: "The proactive scheduling feature has completely changed how I manage my projects. It's like having a brilliant assistant.", author: "Elena Rodriguez", role: "Founder, TechStart" },
+  const earlyAdopterBenefits = [
+    { title: "Unified Memory", description: "One conversation thread that works across GPT-4, Claude, and Gemini. Context that actually persists." },
+    { title: "Smart Routing", description: "Automatic model selection based on your query. Always get the best AI for the task." },
+    { title: "Proactive AI", description: "Schedule reminders and let AI initiate conversations when needed. Your AI works for you." },
   ];
 
   const faqs = [
@@ -435,7 +435,7 @@ export default function LandingPageV2() {
               <ul className="space-y-3 text-zinc-500 text-sm">
                 <li className="flex items-center gap-3">
                   <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />
-                  300+ AI models with zero memory continuity
+                  Multiple AI tools with zero memory continuity
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />
@@ -478,11 +478,10 @@ export default function LandingPageV2() {
 
       {/* Stats Section */}
       <section className="py-24 px-6 border-y border-zinc-800">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          <StatBlock value="300+" label="AI Models" delay={0} />
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-8">
+          <StatBlock value="10+" label="AI Models" delay={0} />
           <StatBlock value="<100ms" label="Routing Latency" delay={0.1} />
-          <StatBlock value="99.9%" label="Uptime" delay={0.2} />
-          <StatBlock value="50K+" label="Active Users" delay={0.3} />
+          <StatBlock value="Growing" label="Community" delay={0.2} />
         </div>
       </section>
 
@@ -585,19 +584,34 @@ export default function LandingPageV2() {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* What YULA Offers */}
       <section className="py-32 px-6 bg-zinc-950/50">
         <div className="max-w-6xl mx-auto">
           <CinematicSection className="mb-12 text-center">
-            <span className="font-mono text-xs text-cyan-400 tracking-widest uppercase mb-4 block">Testimonials</span>
+            <span className="font-mono text-xs text-cyan-400 tracking-widest uppercase mb-4 block">Why YULA</span>
             <h2 className="text-4xl md:text-5xl font-serif text-white">
-              Loved by builders.
+              Built for early adopters.
             </h2>
           </CinematicSection>
 
           <div className="grid md:grid-cols-3 gap-1">
-            {testimonials.map((testimonial, index) => (
-              <TestimonialCard key={testimonial.author} {...testimonial} index={index} />
+            {earlyAdopterBenefits.map((benefit, index) => (
+              <motion.div
+                key={benefit.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.15 }}
+                className="p-8 border border-zinc-800 bg-zinc-950/30"
+              >
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-cyan-400" weight="fill" />
+                  ))}
+                </div>
+                <h3 className="text-white font-medium mb-3">{benefit.title}</h3>
+                <p className="text-zinc-400 text-sm leading-relaxed">{benefit.description}</p>
+              </motion.div>
             ))}
           </div>
         </div>

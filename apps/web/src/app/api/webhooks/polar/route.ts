@@ -11,11 +11,19 @@ import { Webhooks } from '@polar-sh/nextjs';
  * Events: order.created, subscription.created/updated/canceled
  */
 
-// Helper to safely extract clerkId from metadata
-function getClerkIdFromMetadata(metadata: unknown): string | undefined {
-    if (metadata && typeof metadata === 'object' && 'clerkId' in metadata) {
-        const clerkId = (metadata as { clerkId: unknown }).clerkId;
-        return typeof clerkId === 'string' ? clerkId : undefined;
+// Helper to safely extract userId from metadata (supports both new userId and legacy clerkId)
+function getUserIdFromMetadata(metadata: unknown): string | undefined {
+    if (metadata && typeof metadata === 'object') {
+        // Try new Better Auth userId first
+        if ('userId' in metadata) {
+            const userId = (metadata as { userId: unknown }).userId;
+            if (typeof userId === 'string') return userId;
+        }
+        // Fallback to legacy clerkId for backward compatibility
+        if ('clerkId' in metadata) {
+            const clerkId = (metadata as { clerkId: unknown }).clerkId;
+            if (typeof clerkId === 'string') return clerkId;
+        }
     }
     return undefined;
 }
@@ -32,6 +40,11 @@ const TIER_LIMITS: Record<
     Tier,
     { monthlyCredit: number; chatsRemaining: number; voiceMinutesRemaining: number }
 > = {
+    [Tier.FREE]: {
+        monthlyCredit: 100, // 100K tokens
+        chatsRemaining: 100, // ~3/day
+        voiceMinutesRemaining: 0, // No voice
+    },
     [Tier.STARTER]: {
         monthlyCredit: 1000, // 1M tokens
         chatsRemaining: 300, // ~10/day
@@ -50,48 +63,33 @@ const TIER_LIMITS: Record<
 };
 
 export const POST = Webhooks({
-    webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
-
-    onPayload: async (payload) => {
-        console.log(`[Polar Webhook] Event: ${payload.type}`);
-    },
+    webhookSecret: process.env.POLAR_WEBHOOK_SECRET || (() => { throw new Error('POLAR_WEBHOOK_SECRET is required'); })(),
 
     onOrderCreated: async (payload) => {
         const { data: order } = payload;
-        console.log(
-            `[Polar Webhook] Order: ${order.id} - ${order.totalAmount || 'N/A'} ${order.currency}`
-        );
 
-        // Get the Clerk user ID from metadata (try order metadata first, then customer metadata)
-        const clerkId =
-            getClerkIdFromMetadata(order.metadata) ||
-            getClerkIdFromMetadata(order.customer?.metadata);
-        if (!clerkId) {
-            console.log('[Polar Webhook] No clerkId in metadata, skipping');
+        // Get user ID from metadata (try order metadata first, then customer metadata)
+        const userId =
+            getUserIdFromMetadata(order.metadata) ||
+            getUserIdFromMetadata(order.customer?.metadata);
+        if (!userId) {
+            console.warn('[Polar Webhook] No userId in order metadata, skipping');
             return;
         }
+        // Log the order for audit trail
+        console.log(`[Polar Webhook] Order created for user ${userId}, product: ${order.product?.name}`);
 
-        // Determine plan from product (lowercase match)
-        const productName = order.product?.name?.toLowerCase() || 'pro';
-        const plan = productName.includes('ultra')
-            ? 'ultra'
-            : productName.includes('pro')
-              ? 'pro'
-              : 'starter';
-
-        console.log(`[Polar Webhook] Updating user ${clerkId} to plan: ${plan}`);
     },
 
     onSubscriptionCreated: async (payload) => {
         const { data: subscription } = payload;
-        console.log(`[Polar Webhook] Subscription created: ${subscription.id}`);
 
-        // Get the Clerk user ID from metadata (try subscription metadata first, then customer metadata)
-        const clerkId =
-            getClerkIdFromMetadata(subscription.metadata) ||
-            getClerkIdFromMetadata(subscription.customer?.metadata);
-        if (!clerkId) {
-            console.log('[Polar Webhook] No clerkId in metadata');
+        // Get user ID from metadata (supports both userId and legacy clerkId)
+        const userId =
+            getUserIdFromMetadata(subscription.metadata) ||
+            getUserIdFromMetadata(subscription.customer?.metadata);
+        if (!userId) {
+            console.warn('[Polar Webhook] No userId in subscription metadata');
             return;
         }
 
@@ -106,14 +104,20 @@ export const POST = Webhooks({
         const limits = TIER_LIMITS[tier];
 
         try {
-            // Find user by clerkId
-            const user = await prisma.user.findUnique({
-                where: { clerkId },
+            // Find user by ID (try direct ID first, then legacy clerkId)
+            let user = await prisma.user.findUnique({
+                where: { id: userId },
                 include: { billingAccount: true },
             });
+            if (!user) {
+                user = await prisma.user.findUnique({
+                    where: { clerkId: userId },
+                    include: { billingAccount: true },
+                });
+            }
 
             if (!user) {
-                console.error(`[Polar Webhook] User not found: ${clerkId}`);
+                console.error(`[Polar Webhook] User not found: ${userId}`);
                 return;
             }
 
@@ -136,8 +140,6 @@ export const POST = Webhooks({
                     },
                 }),
             ]);
-
-            console.log(`[Polar Webhook] User ${clerkId} upgraded to ${plan}`);
         } catch (error) {
             console.error('[Polar Webhook] Database error:', error);
         }
@@ -145,7 +147,6 @@ export const POST = Webhooks({
 
     onSubscriptionUpdated: async (payload) => {
         const { data: subscription } = payload;
-        console.log(`[Polar Webhook] Subscription updated: ${subscription.id}`);
 
         // Map Polar status to our status
         const statusMap: Record<string, string> = {
@@ -167,9 +168,8 @@ export const POST = Webhooks({
                     where: { id: billingAccount.id },
                     data: { status },
                 });
-                console.log(`[Polar Webhook] Subscription status: ${status}`);
             } else {
-                console.log('[Polar Webhook] Billing account not found for subscription');
+                console.warn('[Polar Webhook] Billing account not found for subscription');
             }
         } catch (error) {
             console.error('[Polar Webhook] Error updating status:', error);
@@ -178,7 +178,6 @@ export const POST = Webhooks({
 
     onSubscriptionCanceled: async (payload) => {
         const { data: subscription } = payload;
-        console.log(`[Polar Webhook] Subscription canceled: ${subscription.id}`);
 
         try {
             // Find the billing account and its user
@@ -188,29 +187,27 @@ export const POST = Webhooks({
             });
 
             if (!billingAccount) {
-                console.log('[Polar Webhook] Billing account not found');
+                console.warn('[Polar Webhook] Billing account not found');
                 return;
             }
 
-            // Downgrade to starter
+            // Downgrade to free tier on cancellation
             await prisma.$transaction([
                 prisma.user.update({
                     where: { id: billingAccount.userId },
-                    data: { tier: Tier.STARTER },
+                    data: { tier: Tier.FREE },
                 }),
                 prisma.billingAccount.update({
                     where: { id: billingAccount.id },
                     data: {
-                        plan: 'starter',
+                        plan: 'free',
                         status: 'canceled',
                         subscriptionId: null,
-                        ...TIER_LIMITS.STARTER,
+                        ...TIER_LIMITS.FREE,
                         creditUsed: 0,
                     },
                 }),
             ]);
-
-            console.log(`[Polar Webhook] User downgraded to starter`);
         } catch (error) {
             console.error('[Polar Webhook] Error canceling subscription:', error);
         }

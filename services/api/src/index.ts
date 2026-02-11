@@ -68,7 +68,13 @@ app.use('*', async (c, next) => {
 app.use(
     '*',
     cors({
-        origin: ['http://localhost:3000', 'https://aspendos.net'],
+        origin: [
+            'http://localhost:3000',
+            'https://aspendos.net',
+            'https://yula.dev',
+            'https://www.yula.dev',
+            ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : []),
+        ],
         credentials: true,
     })
 );

@@ -5,9 +5,12 @@
  */
 import { Hono } from 'hono';
 import { stream } from 'hono/streaming';
+import type { TierName } from '../config/tiers';
+import { getLimit } from '../config/tiers';
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
-import * as councilService from '../services/council.service';
 import type { PersonaType } from '../services/council.service';
+import * as councilService from '../services/council.service';
 
 const app = new Hono();
 
@@ -30,21 +33,63 @@ app.post('/sessions', async (c) => {
         return c.json({ error: 'query is required' }, 400);
     }
 
+    // Check council session limit based on user's tier
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { tier: true },
+    });
+
+    if (!user) {
+        return c.json({ error: 'User not found' }, 404);
+    }
+
+    const tier = (user.tier || 'FREE') as TierName;
+    const monthlyLimit = getLimit(tier, 'monthlyCouncilSessions');
+
+    // Count council sessions this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const sessionsThisMonth = await prisma.councilSession.count({
+        where: {
+            userId,
+            createdAt: {
+                gte: startOfMonth,
+            },
+        },
+    });
+
+    if (sessionsThisMonth >= monthlyLimit) {
+        return c.json(
+            {
+                error: 'Council session limit reached',
+                limit: monthlyLimit,
+                used: sessionsThisMonth,
+                tier,
+            },
+            403
+        );
+    }
+
     // Create session
     const session = await councilService.createCouncilSession(userId, query);
 
     // Return session info for streaming endpoint
-    return c.json({
-        sessionId: session.id,
-        streamUrl: `/api/council/sessions/${session.id}/stream`,
-        personas: Object.entries(councilService.COUNCIL_PERSONAS).map(([key, def]) => ({
-            id: key,
-            name: def.name,
-            role: def.role,
-            color: def.color,
-            modelId: def.modelId,
-        })),
-    }, 201);
+    return c.json(
+        {
+            sessionId: session.id,
+            streamUrl: `/api/council/sessions/${session.id}/stream`,
+            personas: Object.entries(councilService.COUNCIL_PERSONAS).map(([key, def]) => ({
+                id: key,
+                name: def.name,
+                role: def.role,
+                color: def.color,
+                modelId: def.modelId,
+            })),
+        },
+        201
+    );
 });
 
 /**
@@ -224,7 +269,7 @@ app.post('/sessions/:id/synthesize', async (c) => {
     try {
         const synthesis = await councilService.generateSynthesis(sessionId);
         return c.json({ synthesis });
-    } catch (error) {
+    } catch (_error) {
         return c.json({ error: 'Failed to generate synthesis' }, 500);
     }
 });

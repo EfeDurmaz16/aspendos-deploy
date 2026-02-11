@@ -162,6 +162,35 @@ export default function SettingsPage() {
         }
     };
 
+    const handleDataExport = async () => {
+        try {
+            const response = await fetch('/api/memory/export', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to export data');
+            }
+
+            const data = await response.json();
+
+            // Create a blob and trigger download
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `yula-data-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Data export failed:', error);
+            alert('Failed to export data. Please try again.');
+        }
+    };
+
     if (!isLoaded || isLoading) {
         return (
             <div className="h-screen flex items-center justify-center bg-background">
@@ -440,11 +469,14 @@ export default function SettingsPage() {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <button className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors">
+                                        <button
+                                            onClick={handleDataExport}
+                                            className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+                                        >
                                             Request Data Export
                                         </button>
                                         <p className="text-sm text-zinc-500 mt-2">
-                                            You'll receive an email with a download link within 24 hours.
+                                            Download a JSON file containing all your data.
                                         </p>
                                     </CardContent>
                                 </Card>

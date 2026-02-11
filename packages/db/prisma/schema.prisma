@@ -20,7 +20,7 @@ model User {
   email     String   @unique
   name      String?
   avatar    String?
-  tier      Tier     @default(STARTER)
+  tier      Tier     @default(FREE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -52,6 +52,7 @@ model User {
 }
 
 enum Tier {
+  FREE
   STARTER
   PRO
   ULTRA

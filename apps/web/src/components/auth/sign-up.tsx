@@ -10,12 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import Image from "next/image";
 import { Loader2, X } from "lucide-react";
 import { signUp } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function SignUp() {
     const [firstName, setFirstName] = useState("");
@@ -28,6 +30,7 @@ export default function SignUp() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [passwordError, setPasswordError] = useState('');
+    const [tosAccepted, setTosAccepted] = useState(false);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -171,10 +174,27 @@ export default function SignUp() {
                             </div>
                         </div>
                     </div>
+                    <div className="flex items-start gap-2">
+                        <Checkbox
+                            id="tos"
+                            checked={tosAccepted}
+                            onCheckedChange={(checked) => setTosAccepted(checked === true)}
+                        />
+                        <Label htmlFor="tos" className="text-sm font-normal leading-tight cursor-pointer">
+                            I agree to the{" "}
+                            <Link href="/terms" className="underline hover:text-primary">
+                                Terms of Service
+                            </Link>{" "}
+                            and{" "}
+                            <Link href="/privacy" className="underline hover:text-primary">
+                                Privacy Policy
+                            </Link>
+                        </Label>
+                    </div>
                     <Button
                         type="submit"
                         className="w-full"
-                        disabled={loading || passwordError !== ''}
+                        disabled={loading || passwordError !== '' || !tosAccepted}
                         onClick={async () => {
                             await signUp.email({
                                 email,

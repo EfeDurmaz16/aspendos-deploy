@@ -97,7 +97,7 @@ export function useCouncil() {
                     const data = await response.json();
                     const verdict: CouncilVerdict = {
                         recommendation: data.synthesis || generateLocalConsensus(question, thoughts),
-                        confidence: 0.75 + Math.random() * 0.2,
+                        confidence: undefined,
                         reasoning:
                             'After careful deliberation, the Council has reached a balanced consensus that considers logical analysis, creative possibilities, and prudent risk assessment.',
                         contributions: thoughts,
@@ -106,7 +106,7 @@ export function useCouncil() {
                 } else {
                     const verdict: CouncilVerdict = {
                         recommendation: generateLocalConsensus(question, thoughts),
-                        confidence: 0.75 + Math.random() * 0.2,
+                        confidence: undefined,
                         reasoning: 'After careful deliberation, the Council has reached a balanced consensus.',
                         contributions: thoughts,
                     };
@@ -115,7 +115,7 @@ export function useCouncil() {
             } catch {
                 const verdict: CouncilVerdict = {
                     recommendation: generateLocalConsensus(question, thoughts),
-                    confidence: 0.75 + Math.random() * 0.2,
+                    confidence: undefined,
                     reasoning: 'After careful deliberation, the Council has reached a balanced consensus.',
                     contributions: thoughts,
                 };
@@ -178,7 +178,7 @@ export function useCouncil() {
                                 const councilThought: CouncilThought = {
                                     persona: frontendPersona,
                                     thought: thoughts[frontendPersona] || data.content,
-                                    confidence: 0.7 + Math.random() * 0.25,
+                                    confidence: undefined,
                                     timestamp: new Date(),
                                 };
                                 addCouncilThought(councilThought);

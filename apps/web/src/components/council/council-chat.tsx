@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PaperPlaneRight, Users, X, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import { useCouncil, personaDefinitions } from './use-council';
+import { useCouncil } from './use-council';
 import { CouncilPersonaCard } from './council-persona';
 import { CouncilDeliberation } from './council-deliberation';
 import { CouncilVerdictCard } from './council-verdict';
@@ -23,7 +23,6 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
     const {
         isActive,
         isDeliberating,
-        thoughts,
         verdict,
         askCouncil,
         reset,

@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +16,7 @@ export default function SignIn() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+    const [error, setError] = useState("");
 
     return (
         <Card className="max-w-md">
@@ -45,7 +46,7 @@ export default function SignIn() {
                         <div className="flex items-center">
                             <Label htmlFor="password">Password</Label>
                             <Link
-                                href="#"
+                                href="/forgot-password"
                                 className="ml-auto inline-block text-sm underline"
                             >
                                 Forgot your password?
@@ -70,11 +71,15 @@ export default function SignIn() {
                         />
                         <Label htmlFor="remember">Remember me</Label>
                     </div>
+                    {error && (
+                        <p className="text-sm text-destructive">{error}</p>
+                    )}
                     <Button
                         type="submit"
                         className="w-full"
                         disabled={loading}
                         onClick={async () => {
+                            setError("");
                             await signIn.email({
                                 email,
                                 password,
@@ -84,6 +89,10 @@ export default function SignIn() {
                                         setLoading(true);
                                     },
                                     onResponse: () => {
+                                        setLoading(false);
+                                    },
+                                    onError: () => {
+                                        setError("Invalid email or password. Please try again.");
                                         setLoading(false);
                                     },
                                 },

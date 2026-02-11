@@ -20,7 +20,8 @@ const personaIcons: Record<CouncilPersona, typeof Brain> = {
 };
 
 export function CouncilVerdictCard({ verdict, onAccept, onAskAgain }: CouncilVerdictProps) {
-    const confidencePercent = Math.round(verdict.confidence * 100);
+    const hasConfidence = verdict.confidence !== undefined && verdict.confidence !== null;
+    const confidencePercent = hasConfidence ? Math.round((verdict.confidence as number) * 100) : 0;
 
     return (
         <motion.div
@@ -46,23 +47,25 @@ export function CouncilVerdictCard({ verdict, onAccept, onAskAgain }: CouncilVer
                     </motion.div>
                     <div>
                         <h2 className="text-xl font-semibold text-white">Council Verdict</h2>
-                        <div className="mt-1 flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                                <div
-                                    className={cn(
-                                        'h-2 w-2 rounded-full',
-                                        confidencePercent >= 80
-                                            ? 'bg-emerald-400'
-                                            : confidencePercent >= 60
-                                                ? 'bg-amber-400'
-                                                : 'bg-red-400'
-                                    )}
-                                />
-                                <span className="text-sm text-zinc-400">
-                                    {confidencePercent}% consensus confidence
-                                </span>
+                        {hasConfidence && (
+                            <div className="mt-1 flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                    <div
+                                        className={cn(
+                                            'h-2 w-2 rounded-full',
+                                            confidencePercent >= 80
+                                                ? 'bg-emerald-400'
+                                                : confidencePercent >= 60
+                                                    ? 'bg-amber-400'
+                                                    : 'bg-red-400'
+                                        )}
+                                    />
+                                    <span className="text-sm text-zinc-400">
+                                        {confidencePercent}% consensus confidence
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>

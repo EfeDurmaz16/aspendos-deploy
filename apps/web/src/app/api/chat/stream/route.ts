@@ -87,10 +87,23 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // Check billing limits
-        if (user.billingAccount && user.billingAccount.chatsRemaining <= 0) {
+        // ========================================
+        // MODEL-TIER GATING
+        // ========================================
+        const TIER_ALLOWED_MODELS: Record<string, string[]> = {
+            FREE: ['gpt-4o-mini', 'gemini-flash', 'gemini-2.0-flash'],
+            STARTER: ['gpt-4o-mini', 'claude-3-haiku', 'gemini-flash', 'gemini-2.0-flash'],
+            PRO: [], // Empty array = all models allowed
+            ULTRA: [], // Empty array = all models allowed
+        };
+
+        const userTier = user.tier || 'FREE';
+        const allowedModels = TIER_ALLOWED_MODELS[userTier];
+
+        // If user explicitly requests a model, validate tier access
+        if (model && allowedModels.length > 0 && !allowedModels.includes(model)) {
             return new Response(
-                JSON.stringify({ error: 'Chat limit reached. Please upgrade your plan.' }),
+                JSON.stringify({ error: 'Model not available on your plan. Please upgrade.' }),
                 {
                     status: 403,
                     headers: { 'Content-Type': 'application/json' },
@@ -98,16 +111,48 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Get recent messages for context
+        // Check billing limits with atomic decrement to prevent race conditions
+        if (user.billingAccount) {
+            const result = await prisma.billingAccount.updateMany({
+                where: { userId: user.id, chatsRemaining: { gt: 0 } },
+                data: { chatsRemaining: { decrement: 1 } },
+            });
+            if (result.count === 0) {
+                return new Response(
+                    JSON.stringify({ error: 'Chat limit reached. Please upgrade your plan.' }),
+                    {
+                        status: 403,
+                        headers: { 'Content-Type': 'application/json' },
+                    }
+                );
+            }
+        }
+
+        // Get recent messages for context (with IDOR protection)
         let recentMessages: string[] = [];
         if (chatId) {
+            // Verify chat ownership before accessing messages
+            const chatOwnership = await prisma.chat.findFirst({
+                where: { id: chatId, userId: session.userId },
+                select: { id: true },
+            });
+
+            if (!chatOwnership) {
+                return new Response(JSON.stringify({ error: 'Chat not found or access denied' }), {
+                    status: 403,
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            }
+
             const recent = await prisma.message.findMany({
-                where: { chatId },
+                where: { chatId, userId: session.userId },
                 orderBy: { createdAt: 'desc' },
                 take: 6,
                 select: { role: true, content: true },
             });
-            recentMessages = recent.reverse().map((m) => `${m.role}: ${m.content.slice(0, 200)}`);
+            recentMessages = recent
+                .reverse()
+                .map((m: { role: string; content: string }) => `${m.role}: ${m.content.slice(0, 200)}`);
         }
 
         const sse = createSSEEncoder();
@@ -165,7 +210,13 @@ export async function POST(req: NextRequest) {
                             ? `You are Aspendos, a helpful AI assistant with persistent memory. You have context from previous conversations:\n\n${memoryContext}\n\nUse this context naturally when relevant.`
                             : 'You are Aspendos, a helpful AI assistant with persistent memory across conversations.';
 
-                        const selectedModel = (decision as { model: string }).model || 'gpt-4o-mini';
+                        let selectedModel = (decision as { model: string }).model || 'gpt-4o-mini';
+
+                        // Override model if user's tier doesn't allow it
+                        if (allowedModels.length > 0 && !allowedModels.includes(selectedModel)) {
+                            selectedModel = 'gpt-4o-mini';
+                        }
+
                         usedModel = selectedModel;
 
                         const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
@@ -243,6 +294,11 @@ export async function POST(req: NextRequest) {
                     const tokensIn = Math.ceil(message.length / 4);
                     const tokensOut = Math.ceil(fullContent.length / 4);
 
+                    // Calculate approximate cost based on model and tokens
+                    const costPerInputToken = usedModel.includes('gpt-4o-mini') ? 0.00000015 : usedModel.includes('gpt-4o') ? 0.0000025 : usedModel.includes('claude') ? 0.000003 : usedModel.includes('gemini') ? 0.0000001 : 0.000001;
+                    const costPerOutputToken = costPerInputToken * 4;
+                    const estimatedCost = (tokensIn * costPerInputToken) + (tokensOut * costPerOutputToken);
+
                     if (chatId) {
                         prisma.message
                             .createMany({
@@ -256,48 +312,55 @@ export async function POST(req: NextRequest) {
                                         modelUsed: usedModel,
                                         tokensIn,
                                         tokensOut,
+                                        costUsd: estimatedCost,
                                     },
                                 ],
                             })
-                            .catch((err) => console.error('[Chat] Failed to save messages:', err));
+                            .catch((err: unknown) =>
+                                console.error('[Chat] Failed to save messages:', err)
+                            );
 
+                        // Verify chat ownership before updating
                         prisma.chat
-                            .update({
-                                where: { id: chatId },
+                            .updateMany({
+                                where: { id: chatId, userId: user.id },
                                 data: { updatedAt: new Date() },
                             })
                             .catch(() => {});
                     }
 
-                    // Store conversation embedding
-                    try {
-                        const exchangeText = `User: ${message}\nAssistant: ${fullContent.slice(0, 500)}`;
-                        const exchangeEmbedding = await createEmbedding(exchangeText);
+                    // Fire-and-forget: don't block response on embedding
+                    void (async () => {
+                        try {
+                            const exchangeText = `User: ${message}\nAssistant: ${fullContent.slice(0, 500)}`;
+                            const exchangeEmbedding = await createEmbedding(exchangeText);
 
-                        await storeConversationEmbedding({
-                            id: uuidv4(),
-                            vector: exchangeEmbedding,
-                            userId: user.id,
-                            conversationId: chatId || 'unknown',
-                            messageId: uuidv4(),
-                            content: exchangeText,
-                            role: 'exchange',
-                        });
-                    } catch (error) {
-                        console.warn('[Chat] Failed to store embedding:', error);
-                    }
+                            await storeConversationEmbedding({
+                                id: uuidv4(),
+                                vector: exchangeEmbedding,
+                                userId: user.id,
+                                conversationId: chatId || 'unknown',
+                                messageId: uuidv4(),
+                                content: exchangeText,
+                                role: 'exchange',
+                            });
+                        } catch (error) {
+                            console.error('Background embedding failed:', error);
+                        }
+                    })();
 
-                    // Update billing
+                    // Update credit usage (chat decrement already done atomically above)
                     if (user.billingAccount) {
                         prisma.billingAccount
                             .update({
                                 where: { userId: user.id },
                                 data: {
-                                    chatsRemaining: { decrement: 1 },
                                     creditUsed: { increment: tokensIn + tokensOut },
                                 },
                             })
-                            .catch((err) => console.error('[Chat] Failed to update billing:', err));
+                            .catch((err: unknown) =>
+                                console.error('[Chat] Failed to update billing credit:', err)
+                            );
                     }
 
                     controller.close();

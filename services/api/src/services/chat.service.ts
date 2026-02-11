@@ -2,6 +2,8 @@
  * Chat Database Service
  * Handles CRUD operations for chats and messages using Prisma.
  */
+
+import { randomBytes } from 'node:crypto';
 import { type Chat, type Message, type Prisma, prisma, type User } from '@aspendos/db';
 
 // ============================================
@@ -314,8 +316,9 @@ export async function createShareToken(chatId: string, userId: string): Promise<
     const token = generateRandomToken(32);
 
     // Store the share token in chat metadata or a separate table
-    // For simplicity, we'll use the chat's description field temporarily
-    // In production, you'd want a dedicated ChatShare table
+    // TODO: TEMPORARY - Using description field for share token storage
+    // For production, migrate to a dedicated ChatShare table with proper indexing
+    // and expiration handling to avoid security and performance issues
     await prisma.chat.update({
         where: { id: chatId },
         data: {
@@ -392,12 +395,8 @@ export async function revokeShareToken(chatId: string, userId: string): Promise<
     });
 }
 
-// Helper to generate random token
+// Helper to generate cryptographically secure random token
 function generateRandomToken(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    // Use crypto.randomBytes for secure token generation
+    return randomBytes(length).toString('base64url').slice(0, length);
 }

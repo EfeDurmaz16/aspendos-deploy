@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { SiteDock } from '@/components/layout/site-dock';
 import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
 import { SkipLink } from '@/components/accessibility/skip-link';
+import { CookieConsent } from '@/components/ui/cookie-consent';
 import { baseMetadata } from '@/lib/seo/metadata';
 import {
     organizationSchema,
@@ -103,6 +104,7 @@ export default function RootLayout({
                     <SiteDock />
                     <InstallPrompt />
                     <UpdatePrompt />
+                    <CookieConsent />
                 </ThemeProvider>
             </body>
         </html>

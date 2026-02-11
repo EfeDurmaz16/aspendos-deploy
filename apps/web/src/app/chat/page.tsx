@@ -1,12 +1,9 @@
 'use client';
 
-import { Brain, CircleNotch, Plus, ChatCircle, Cpu, Lightning, ArrowRight } from '@phosphor-icons/react';
+import { Brain, CircleNotch } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 import { PromptInputBox } from '@/components/chat/prompt-input-box';
 import { ShortcutsDock } from '@/components/chat/shortcuts-dock';
 import { SkyToggle } from '@/components/ui/sky-toggle';
@@ -61,11 +58,11 @@ export default function ChatIndexPage() {
         loadChats();
     }, [isLoaded, isSignedIn, router]);
 
-    const handleNewChat = () => {
+    const handleNewChat = useCallback(() => {
         // Navigate immediately to /chat/new without creating chat ID
         // Chat will be created when user sends first message
         router.push('/chat/new');
-    };
+    }, [router]);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -86,7 +83,7 @@ export default function ChatIndexPage() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [router]);
+    }, [handleNewChat]);
 
     // Show loading while checking auth or redirecting
     if (!isLoaded || !isSignedIn) {
@@ -131,7 +128,11 @@ export default function ChatIndexPage() {
                         />
                     </div>
                     <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-                        Good morning, Efe
+                        {(() => {
+                            const hour = new Date().getHours();
+                            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+                            return greeting;
+                        })()}
                     </h1>
                 </div>
 
@@ -140,7 +141,7 @@ export default function ChatIndexPage() {
                     <PromptInputBox
                         onSubmit={(text) => {
                             // In a real app, this would start a chat with the initial message
-                            console.log("Starting chat with:", text);
+                            void text;
                             handleNewChat();
                         }}
                     />
@@ -164,4 +165,3 @@ export default function ChatIndexPage() {
 
     );
 }
-
