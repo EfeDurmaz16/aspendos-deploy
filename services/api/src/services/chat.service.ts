@@ -34,7 +34,7 @@ export async function getOrCreateUser(
     if (byEmail) return byEmail;
 
     // User should exist if session is valid - this is an error case
-    throw new Error(`User not found: ${userId} / ${email}`);
+    throw new Error('Authenticated user not found in database');
 }
 
 /**
@@ -189,11 +189,14 @@ export async function createMessage(input: CreateMessageInput): Promise<Message>
 }
 
 /**
- * Get messages for a chat
+ * Get messages for a chat (with optional userId for defense-in-depth ownership check)
  */
-export async function getMessages(chatId: string, limit?: number): Promise<Message[]> {
+export async function getMessages(chatId: string, limit?: number, userId?: string): Promise<Message[]> {
     return prisma.message.findMany({
-        where: { chatId },
+        where: {
+            chatId,
+            ...(userId ? { chat: { userId } } : {}),
+        },
         orderBy: { createdAt: 'asc' },
         take: limit,
     });

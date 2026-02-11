@@ -213,7 +213,7 @@ app.post(
         }
 
         // Auto-generate title if this is the first message
-        const existingMessages = await chatService.getMessages(chatId);
+        const existingMessages = await chatService.getMessages(chatId, undefined, userId);
         if (existingMessages.length === 1) {
             await chatService.autoGenerateTitle(chatId, content);
         }
@@ -427,7 +427,7 @@ app.post(
         });
 
         // Get message history
-        const messages = await chatService.getMessages(chatId);
+        const messages = await chatService.getMessages(chatId, undefined, userId);
         const history: Message[] = messages.map((m) => ({
             role: m.role as 'user' | 'assistant',
             content: m.content,
@@ -450,7 +450,7 @@ app.post(
                 } catch (error) {
                     return {
                         modelId,
-                        error: error instanceof Error ? error.message : 'Unknown error',
+                        error: 'Model generation failed',
                     };
                 }
             })
@@ -565,11 +565,12 @@ app.post(
             const newChat = await chatService.forkChat(chatId, userId, validatedBody.fromMessageId);
             return c.json(newChat, 201);
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to fork chat';
-            if (message.includes('not found')) {
-                return c.json({ error: message }, 404);
+            console.error('[Chat] Fork failed:', error instanceof Error ? error.message : 'Unknown');
+            const msg = error instanceof Error ? error.message : '';
+            if (msg.includes('not found')) {
+                return c.json({ error: 'Chat or message not found' }, 404);
             }
-            return c.json({ error: message }, 500);
+            return c.json({ error: 'Failed to fork chat' }, 500);
         }
     }
 );
@@ -584,11 +585,12 @@ app.post('/:id/share', validateParams(chatIdParamSchema), async (c) => {
         const token = await chatService.createShareToken(chatId, userId);
         return c.json({ token, url: `/chat/shared/${token}` });
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to create share token';
-        if (message.includes('not found')) {
-            return c.json({ error: message }, 404);
+        console.error('[Chat] Share token creation failed:', error instanceof Error ? error.message : 'Unknown');
+        const msg = error instanceof Error ? error.message : '';
+        if (msg.includes('not found')) {
+            return c.json({ error: 'Chat not found' }, 404);
         }
-        return c.json({ error: message }, 500);
+        return c.json({ error: 'Failed to create share token' }, 500);
     }
 });
 
@@ -602,11 +604,12 @@ app.delete('/:id/share', validateParams(chatIdParamSchema), async (c) => {
         await chatService.revokeShareToken(chatId, userId);
         return c.json({ success: true });
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to revoke share token';
-        if (message.includes('not found')) {
-            return c.json({ error: message }, 404);
+        console.error('[Chat] Share token revoke failed:', error instanceof Error ? error.message : 'Unknown');
+        const msg = error instanceof Error ? error.message : '';
+        if (msg.includes('not found')) {
+            return c.json({ error: 'Chat not found' }, 404);
         }
-        return c.json({ error: message }, 500);
+        return c.json({ error: 'Failed to revoke share token' }, 500);
     }
 });
 

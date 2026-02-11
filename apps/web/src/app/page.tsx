@@ -835,7 +835,7 @@ function CTASection() {
                         fontFamily: "'DM Sans', sans-serif"
                     }}
                 >
-                    Join thousands of professionals who've upgraded their AI experience.
+                    Join early adopters building a smarter AI workflow.
                     Import your history, get proactive reminders, and make better decisions with Council.
                 </p>
 
@@ -895,7 +895,7 @@ function StatsSection() {
                             fontFamily: "'Playfair Display', serif"
                         }}
                     >
-                        10,000+
+                        Early Access
                     </div>
                     <div
                         className="text-xs mt-1"
@@ -905,7 +905,7 @@ function StatsSection() {
                             opacity: 0.7
                         }}
                     >
-                        happy users
+                        join the beta
                     </div>
                 </div>
 

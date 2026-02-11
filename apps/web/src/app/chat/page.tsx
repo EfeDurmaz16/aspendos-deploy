@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { PromptInputBox } from '@/components/chat/prompt-input-box';
 import { ShortcutsDock } from '@/components/chat/shortcuts-dock';
 import { SkyToggle } from '@/components/ui/sky-toggle';
+import { WelcomeGuide } from '@/components/onboarding';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -107,6 +108,8 @@ export default function ChatIndexPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-black relative overflow-hidden flex flex-col items-center justify-center p-4">
+            {/* Onboarding for new users */}
+            <WelcomeGuide />
             {/* YULA Monolith Background - Amber glow only */}
             <div className="absolute inset-0 pointer-events-none -z-10">
                 <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-100/10 to-transparent dark:from-amber-900/10 rounded-full blur-3xl" />

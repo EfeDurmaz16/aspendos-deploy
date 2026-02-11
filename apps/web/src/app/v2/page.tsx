@@ -716,7 +716,7 @@ export default function LandingPageV2() {
             Ready to unify your AI?
           </h2>
           <p className="text-zinc-400 text-lg mb-10 max-w-xl mx-auto">
-            Join thousands of developers and creators building with persistent context.
+            Join early adopters building with persistent AI context.
           </p>
           <Link
             href="/signup"
