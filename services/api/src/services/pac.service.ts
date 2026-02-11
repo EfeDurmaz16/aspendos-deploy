@@ -111,20 +111,59 @@ function extractTimeOffset(text: string): number {
 }
 
 /**
- * Create a reminder
+ * Adjust trigger time toward user's optimal hour (feedback loop).
+ * Only nudges implicit reminders by up to 2 hours toward the learned best hour.
+ * Explicit reminders respect the user's exact request.
+ */
+function adjustToOptimalHour(triggerAt: Date, optimalHour: number | null, type: ReminderType): Date {
+    if (optimalHour === null || type === 'EXPLICIT') return triggerAt;
+
+    const triggerHour = triggerAt.getHours();
+    const diff = optimalHour - triggerHour;
+
+    // Only nudge if within +-4 hours and the nudge is meaningful (>= 1hr)
+    if (Math.abs(diff) >= 1 && Math.abs(diff) <= 4) {
+        // Nudge up to 2 hours toward optimal
+        const nudgeHours = Math.sign(diff) * Math.min(Math.abs(diff), 2);
+        const adjusted = new Date(triggerAt);
+        adjusted.setHours(adjusted.getHours() + nudgeHours);
+        // Don't move into the past
+        if (adjusted.getTime() > Date.now()) return adjusted;
+    }
+
+    return triggerAt;
+}
+
+/**
+ * Create a reminder with behavioral learning adjustment
  */
 export async function createReminder(
     userId: string,
     commitment: DetectedCommitment,
     chatId?: string,
 ) {
+    // Close the feedback loop: adjust implicit reminder timing toward optimal hour
+    let adjustedTriggerAt = commitment.triggerAt;
+    if (commitment.type === 'IMPLICIT') {
+        try {
+            const effectiveness = await computeEffectiveness(userId);
+            adjustedTriggerAt = adjustToOptimalHour(
+                commitment.triggerAt,
+                effectiveness.optimalHour,
+                commitment.type,
+            );
+        } catch {
+            // If effectiveness computation fails, use original time
+        }
+    }
+
     const priorityMap: Record<string, number> = { LOW: 30, MEDIUM: 50, HIGH: 80 };
     return prisma.pACReminder.create({
         data: {
             userId,
             type: commitment.type,
             content: commitment.content,
-            triggerAt: commitment.triggerAt,
+            triggerAt: adjustedTriggerAt,
             priority: priorityMap[commitment.priority] || 50,
             status: 'PENDING',
             source: commitment.type === 'EXPLICIT' ? 'explicit' : 'implicit',

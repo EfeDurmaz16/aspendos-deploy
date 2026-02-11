@@ -104,7 +104,26 @@ function getProvider(modelId: string) {
 }
 
 /**
- * Create a new council session
+ * Get user's preferred persona ordering based on historical selections.
+ * Preferred personas stream first, giving the user a better experience.
+ */
+async function getPersonaOrdering(userId: string): Promise<PersonaType[]> {
+    const allPersonas = Object.keys(COUNCIL_PERSONAS) as PersonaType[];
+
+    try {
+        const stats = await getCouncilStats(userId);
+        if (!stats.insights || !stats.insights.personaScores) return allPersonas;
+
+        const scores = stats.insights.personaScores;
+        // Sort by preference score (highest first), keeping all personas
+        return [...allPersonas].sort((a, b) => (scores[b] || 0) - (scores[a] || 0));
+    } catch {
+        return allPersonas;
+    }
+}
+
+/**
+ * Create a new council session with preference-aware persona ordering
  */
 export async function createCouncilSession(userId: string, query: string) {
     const session = await prisma.councilSession.create({
@@ -115,10 +134,11 @@ export async function createCouncilSession(userId: string, query: string) {
         },
     });
 
-    // Create response entries for each persona
-    const personas = Object.keys(COUNCIL_PERSONAS) as PersonaType[];
+    // Order personas by user preference (learned from selections)
+    const orderedPersonas = await getPersonaOrdering(userId);
+
     await prisma.councilResponse.createMany({
-        data: personas.map((persona) => ({
+        data: orderedPersonas.map((persona) => ({
             sessionId: session.id,
             persona,
             modelId: COUNCIL_PERSONAS[persona].modelId,

@@ -44,13 +44,35 @@ export const authInstance = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
+        requireEmailVerification: process.env.NODE_ENV === "production",
         minPasswordLength: 8,
+        maxPasswordLength: 128,
+        autoSignIn: true,
+        revokeSessionsOnPasswordReset: true,
         async sendResetPassword(data, _request) {
             const resetUrl = (data as { url?: unknown }).url;
             const email = (data as { user?: { email?: unknown } }).user?.email;
             if (typeof resetUrl !== "string" || typeof email !== "string") return;
             await sendPasswordResetEmail({ to: email, resetUrl });
         },
+    },
+    account: {
+        accountLinking: {
+            enabled: false,
+        },
+    },
+    session: {
+        expiresIn: 60 * 60 * 24 * 7, // 7 days
+        updateAge: 60 * 60 * 24, // Update session token daily
+        cookie: {
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax" as const,
+            httpOnly: true,
+        },
+    },
+    rateLimit: {
+        window: 60, // 1 minute window
+        max: 10, // max 10 auth attempts per minute
     },
     socialProviders: {
         google: {

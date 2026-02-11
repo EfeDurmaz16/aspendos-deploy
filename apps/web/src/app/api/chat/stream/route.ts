@@ -62,13 +62,25 @@ export async function POST(req: NextRequest) {
             message,
             model,
             chatId,
-            temperature = 0.7,
-            maxTokens = 4000,
+            temperature: rawTemperature = 0.7,
+            maxTokens: rawMaxTokens = 4000,
             skipRouter = false,
         } = body;
 
+        // Clamp user-controlled parameters to safe bounds
+        const temperature = Math.max(0, Math.min(2, Number(rawTemperature) || 0.7));
+        const maxTokens = Math.min(Math.max(1, Math.floor(Number(rawMaxTokens) || 4000)), 8000);
+
         if (!message?.trim()) {
             return new Response(JSON.stringify({ error: 'Message is required' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+
+        // Cap input message length to prevent cost runaway (32K chars ~ 8K tokens)
+        if (message.length > 32000) {
+            return new Response(JSON.stringify({ error: 'Message too long. Maximum 32,000 characters.' }), {
                 status: 400,
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -348,13 +360,14 @@ export async function POST(req: NextRequest) {
                         }
                     })();
 
-                    // Update credit usage (chat decrement already done atomically above)
+                    // Update credit usage in K-tokens (consistent with billing service)
                     if (user.billingAccount) {
+                        const kTokensUsed = Math.ceil((tokensIn + tokensOut) / 1000);
                         prisma.billingAccount
                             .update({
                                 where: { userId: user.id },
                                 data: {
-                                    creditUsed: { increment: tokensIn + tokensOut },
+                                    creditUsed: { increment: kTokensUsed },
                                 },
                             })
                             .catch((err: unknown) =>

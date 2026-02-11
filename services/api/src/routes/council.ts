@@ -30,8 +30,12 @@ app.post('/sessions', async (c) => {
 
     const { query } = body;
 
-    if (!query || typeof query !== 'string') {
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
         return c.json({ error: 'query is required' }, 400);
+    }
+
+    if (query.length > 2000) {
+        return c.json({ error: 'Query too long. Maximum 2,000 characters.' }, 400);
     }
 
     // Check council session limit based on user's tier

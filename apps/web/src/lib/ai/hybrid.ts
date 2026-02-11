@@ -134,11 +134,17 @@ export async function executeHybridRoute(
         }
     }
 
-    // 2. If RAG search or direct reply, fetch memories
+    // 2. Fetch memories only when relevant (skip for greetings and general knowledge)
     let memoryContext = '';
     let memories: Array<{ content: string; score: number }> = [];
 
-    if (decision.type === 'rag_search' || decision.type === 'direct_reply') {
+    const skipMemoryReasons = [
+        'Fast route: simple greeting',
+        'Router fallback - defaulting to direct reply',
+    ];
+    const shouldSkipMemory = skipMemoryReasons.some(r => decision.reason?.includes(r));
+
+    if (!shouldSkipMemory && (decision.type === 'rag_search' || decision.type === 'direct_reply')) {
         try {
             const queryText =
                 decision.type === 'rag_search'

@@ -165,9 +165,29 @@ app.use('*', async (c, next) => {
     }
 
     const origin = c.req.header('origin');
-    // If Origin header is present, validate it
+    const referer = c.req.header('referer');
+
+    // Require Origin or Referer on authenticated state-changing requests
+    // (prevents CSRF by rejecting requests with no origin info)
+    if (!origin && !referer) {
+        return c.json({ error: 'Forbidden' }, 403);
+    }
+
+    // Validate Origin if present
     if (origin && !ALLOWED_ORIGINS.has(origin)) {
         return c.json({ error: 'Forbidden' }, 403);
+    }
+
+    // Validate Referer if Origin not present
+    if (!origin && referer) {
+        try {
+            const refererOrigin = new URL(referer).origin;
+            if (!ALLOWED_ORIGINS.has(refererOrigin)) {
+                return c.json({ error: 'Forbidden' }, 403);
+            }
+        } catch {
+            return c.json({ error: 'Forbidden' }, 403);
+        }
     }
 
     return next();
@@ -255,8 +275,22 @@ app.on(['POST', 'GET'], '/api/auth/*', (c) => {
     return auth.handler(c.req.raw);
 });
 
-// Public: Get shared chat by token (no auth required)
+// Public: Get shared chat by token (no auth required, rate limited by IP)
+const sharedChatLimiter = new Map<string, { count: number; resetAt: number }>();
 app.get('/api/chat/shared/:token', async (c) => {
+    // Simple IP-based rate limit: 30 requests per minute
+    const ip = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
+    const now = Date.now();
+    const entry = sharedChatLimiter.get(ip);
+    if (entry && entry.resetAt > now) {
+        if (entry.count >= 30) {
+            return c.json({ error: 'Too many requests' }, 429);
+        }
+        entry.count++;
+    } else {
+        sharedChatLimiter.set(ip, { count: 1, resetAt: now + 60_000 });
+    }
+
     const { getSharedChat } = await import('./services/chat.service');
     const token = c.req.param('token');
 
