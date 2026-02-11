@@ -142,11 +142,13 @@ const webSearchTool: MCPTool = {
         required: ['query'],
     },
     execute: async (params) => {
-        // Placeholder - integrate with actual search API
         return {
-            success: true,
-            content: `[Web search placeholder] Query: ${params.query}`,
-            metadata: { resultsCount: 0 },
+            success: false,
+            content: 'Web search is currently unavailable. Please try again later or rephrase your question.',
+            metadata: {
+                resultsCount: 0,
+                query: params.query
+            },
         };
     },
 };

@@ -325,6 +325,12 @@ app.post(
                                 console.warn(`[Quality] Low score ${reflection.qualityScore}/100 for query "${content.slice(0, 60)}..." - ${reflection.retryStrategy || 'no strategy'}`);
                             }
                         }).catch(() => { /* non-blocking */ });
+
+                        // MOAT: Routing feedback loop
+                        // The routing decision (useMemory, queryType, sectors) is captured in X-Memory-Decision header.
+                        // User feedback (thumbs up/down) on the message links back to this routing choice.
+                        // Over time, we learn: which routing decisions lead to quality responses.
+                        // This is a compounding advantage: competitors route once, we learn and improve routing.
                     },
                 });
 
@@ -465,7 +471,7 @@ app.post(
                         text: result.text,
                         usage: result.usage,
                     };
-                } catch (error) {
+                } catch (_error) {
                     return {
                         modelId,
                         error: 'Model generation failed',

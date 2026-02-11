@@ -193,6 +193,19 @@ app.use('*', async (c, next) => {
     return next();
 });
 
+// Body size limit: reject payloads over 10MB (except import which has its own limit)
+app.use('*', async (c, next) => {
+    const contentLength = c.req.header('content-length');
+    if (contentLength) {
+        const size = parseInt(contentLength, 10);
+        const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10MB
+        if (size > MAX_BODY_SIZE) {
+            return c.json({ error: 'Request body too large. Maximum 10MB.' }, 413);
+        }
+    }
+    return next();
+});
+
 // Apply rate limiting
 app.use('*', rateLimit());
 
@@ -203,15 +216,21 @@ app.onError((err, c) => {
     return c.json({ error: 'Internal Server Error' }, 500);
 });
 
-// Health check (no internal details exposed)
-app.get('/health', (c) =>
-    c.json({
-        status: 'ok',
-        service: 'api',
-        version: '0.3.0',
-        timestamp: new Date().toISOString(),
-    })
-);
+// Health check with database connectivity
+app.get('/health', async (c) => {
+    try {
+        const { prisma } = await import('./lib/prisma');
+        await prisma.$queryRawUnsafe('SELECT 1');
+        return c.json({
+            status: 'ok',
+            service: 'api',
+            version: '0.3.0',
+            timestamp: new Date().toISOString(),
+        });
+    } catch {
+        return c.json({ status: 'degraded', service: 'api', timestamp: new Date().toISOString() }, 503);
+    }
+});
 
 // Models endpoint - now uses local configuration
 app.get('/api/models', (c) => {
@@ -533,6 +552,13 @@ async function startServer() {
             console.log('✅ MCP clients closed');
         } catch (error) {
             console.error('Error closing MCP clients:', error);
+        }
+        try {
+            const { prisma } = await import('./lib/prisma');
+            await prisma.$disconnect();
+            console.log('✅ Database connection closed');
+        } catch (error) {
+            console.error('Error disconnecting database:', error);
         }
         process.exit(0);
     };

@@ -51,6 +51,18 @@ app.post('/sessions', async (c) => {
     const tier = (user.tier || 'FREE') as TierName;
     const monthlyLimit = getLimit(tier, 'monthlyCouncilSessions');
 
+    // Check if Council is available for this tier
+    if (monthlyLimit === 0) {
+        return c.json(
+            {
+                error: 'Council requires Starter tier or above',
+                tier,
+                upgradeRequired: true,
+            },
+            403
+        );
+    }
+
     // Count council sessions this month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
@@ -304,12 +316,19 @@ app.post('/sessions/:id/synthesize', async (c) => {
     }
 
     try {
-        const synthesis = await councilService.generateSynthesis(sessionId);
+        const result = await councilService.generateSynthesis(sessionId);
 
-        // Meter synthesis tokens (estimate: ~600 output + ~800 input for context)
-        await billingService.recordTokenUsage(userId, 800, 600, 'openai/gpt-4o');
+        // Meter actual synthesis token usage
+        if (result.usage.promptTokens > 0 || result.usage.completionTokens > 0) {
+            await billingService.recordTokenUsage(
+                userId,
+                result.usage.promptTokens,
+                result.usage.completionTokens,
+                'openai/gpt-4o'
+            );
+        }
 
-        return c.json({ synthesis });
+        return c.json({ synthesis: result.text });
     } catch (_error) {
         return c.json({ error: 'Failed to generate synthesis' }, 500);
     }

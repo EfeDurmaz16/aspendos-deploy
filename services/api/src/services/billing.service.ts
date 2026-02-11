@@ -105,7 +105,7 @@ export async function recordTokenUsage(
     await prisma.creditLog.create({
         data: {
             billingAccountId: account.id,
-            amount: Math.round(-creditsUsed), // Negative for usage
+            amount: -Math.ceil(creditsUsed), // Negative for usage, ceil to prevent sub-1K queries being free
             reason: 'model_inference',
             metadata: {
                 model: modelId,

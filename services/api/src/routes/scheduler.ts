@@ -5,6 +5,7 @@
  */
 
 import { ScheduledTaskStatus } from '@aspendos/db';
+import { timingSafeEqual } from 'crypto';
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
@@ -28,6 +29,23 @@ type Variables = {
 };
 
 const app = new Hono<{ Variables: Variables }>();
+
+// ============================================
+// SECURITY HELPER
+// ============================================
+
+/**
+ * Timing-safe CRON_SECRET comparison to prevent timing attacks
+ */
+function verifyCronSecret(provided: string | undefined): boolean {
+    const expected = process.env.CRON_SECRET;
+    if (!expected || !provided) return false;
+    try {
+        return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+    } catch {
+        return false;
+    }
+}
 
 // ============================================
 // AUTHENTICATED ROUTES
@@ -212,7 +230,7 @@ app.patch('/tasks/:id', requireAuth, validateBody(rescheduleTaskSchema), async (
 app.post('/execute', validateBody(executeTaskSchema), async (c) => {
     // Fail-closed: require CRON_SECRET for task execution
     const cronSecret = c.req.header('x-cron-secret') || c.req.header('authorization')?.replace('Bearer ', '');
-    if (!process.env.CRON_SECRET || cronSecret !== process.env.CRON_SECRET) {
+    if (!verifyCronSecret(cronSecret)) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -280,7 +298,7 @@ app.post('/poll', async (c) => {
     // This endpoint should be called by a cron job
     // Verify it's an internal call (e.g., via API key or secret header)
     const cronSecret = c.req.header('x-cron-secret');
-    if (!process.env.CRON_SECRET || cronSecret !== process.env.CRON_SECRET) {
+    if (!verifyCronSecret(cronSecret)) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -335,7 +353,7 @@ app.post('/poll', async (c) => {
 // POST /api/scheduler/consolidate - Run memory consolidation for active users (cron)
 app.post('/consolidate', async (c) => {
     const cronSecret = c.req.header('x-cron-secret');
-    if (!process.env.CRON_SECRET || cronSecret !== process.env.CRON_SECRET) {
+    if (!verifyCronSecret(cronSecret)) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 

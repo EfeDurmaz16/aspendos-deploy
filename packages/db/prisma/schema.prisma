@@ -637,10 +637,10 @@ enum CouncilStatus {
 }
 
 enum PersonaType {
-  LOGICAL // Analytical, data-driven (Claude)
+  SCHOLAR // Analytical, data-driven (Claude)
   CREATIVE // Innovative, out-of-the-box (GPT-4)
-  PRUDENT // Cautious, risk-aware (Gemini)
-  SWIFT // Fast, efficient (Groq/Llama)
+  PRACTICAL // Cautious, risk-aware (Gemini)
+  DEVILS_ADVOCATE // Fast, efficient (Groq/Llama)
 }
 
 enum ResponseStatus {

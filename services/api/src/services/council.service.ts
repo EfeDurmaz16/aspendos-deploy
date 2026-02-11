@@ -4,11 +4,11 @@
  * Handles parallel streaming responses from 4 AI personas using different models.
  */
 
-import { prisma } from '../lib/prisma';
-import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
+import { prisma } from '../lib/prisma';
 
 // Persona types
 export type PersonaType = 'SCHOLAR' | 'CREATIVE' | 'PRACTICAL' | 'DEVILS_ADVOCATE';
@@ -298,6 +298,22 @@ export async function selectResponse(sessionId: string, userId: string, persona:
         data: { selectedPersona: persona },
     });
 
+    // MOAT: Cross-system feedback loop (Council → Memory)
+    // Council selection reveals user's thinking style preference (SCHOLAR/CREATIVE/PRACTICAL/DEVILS_ADVOCATE).
+    // Store this as reflective memory to inform future responses and personalization.
+    // Competitors show 4 answers; we learn which thinking styles the user values and adapt.
+    try {
+        const openMemory = await import('./openmemory.service');
+        const personaName = COUNCIL_PERSONAS[persona]?.name || persona;
+        await openMemory.addMemory(
+            `User prefers ${personaName} perspective for decision-making`,
+            userId,
+            { sector: 'reflective', metadata: { source: 'council_selection', persona } }
+        );
+    } catch {
+        /* non-blocking cross-system bridge */
+    }
+
     return { success: true };
 }
 
@@ -352,13 +368,16 @@ Please synthesize these perspectives into a balanced recommendation.`,
         synthesis += chunk;
     }
 
+    // Get actual token usage
+    const usage = await result.usage;
+
     // Store synthesis
     await prisma.councilSession.update({
         where: { id: sessionId },
         data: { synthesis },
     });
 
-    return synthesis;
+    return { text: synthesis, usage: { promptTokens: usage?.promptTokens || 0, completionTokens: usage?.completionTokens || 0 } };
 }
 
 /**

@@ -37,9 +37,9 @@ const IMPLICIT_PATTERNS = [
 
 // Time pattern extraction
 const TIME_PATTERNS = [
-    { pattern: /in (\d+) minutes?/i, extract: (m: RegExpMatchArray) => parseInt(m[1]) },
-    { pattern: /in (\d+) hours?/i, extract: (m: RegExpMatchArray) => parseInt(m[1]) * 60 },
-    { pattern: /in (\d+) days?/i, extract: (m: RegExpMatchArray) => parseInt(m[1]) * 60 * 24 },
+    { pattern: /in (\d+) minutes?/i, extract: (m: RegExpMatchArray) => parseInt(m[1], 10) },
+    { pattern: /in (\d+) hours?/i, extract: (m: RegExpMatchArray) => parseInt(m[1], 10) * 60 },
+    { pattern: /in (\d+) days?/i, extract: (m: RegExpMatchArray) => parseInt(m[1], 10) * 60 * 24 },
     { pattern: /tomorrow/i, extract: () => 24 * 60 },
     { pattern: /next week/i, extract: () => 7 * 24 * 60 },
     { pattern: /(?:this |tonight|this evening)/i, extract: () => 8 * 60 }, // ~8 hours
@@ -210,7 +210,7 @@ export async function getDueReminders(limit = 100) {
  * Complete a reminder
  */
 export async function completeReminder(reminderId: string, userId: string) {
-    return prisma.pACReminder.updateMany({
+    const result = await prisma.pACReminder.updateMany({
         where: { id: reminderId, userId },
         data: {
             status: 'ACKNOWLEDGED',
@@ -218,6 +218,28 @@ export async function completeReminder(reminderId: string, userId: string) {
             responseType: 'acknowledged',
         },
     });
+
+    // MOAT: Cross-system feedback loop (PAC → Memory)
+    // When user completes a reminder, extract episodic memory about the action.
+    // This creates compounding advantage: PAC completion enriches Memory.
+    // Competitors have separate reminder and memory systems; ours learn from each other.
+    try {
+        const reminder = await prisma.pACReminder.findFirst({
+            where: { id: reminderId, userId },
+        });
+        if (reminder) {
+            const openMemory = await import('./openmemory.service');
+            await openMemory.addMemory(
+                `Completed task: ${reminder.content}`,
+                userId,
+                { sector: 'episodic', metadata: { source: 'pac_completion', reminderId } }
+            );
+        }
+    } catch {
+        /* non-blocking cross-system bridge */
+    }
+
+    return result;
 }
 
 /**
