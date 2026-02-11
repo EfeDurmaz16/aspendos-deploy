@@ -196,7 +196,7 @@ app.get('/sessions/:id/stream', async (c) => {
  */
 app.get('/sessions', async (c) => {
     const userId = c.get('userId')!;
-    const limit = parseInt(c.req.query('limit') || '20', 10);
+    const limit = Math.min(parseInt(c.req.query('limit') || '20', 10) || 20, 50);
 
     const sessions = await councilService.listCouncilSessions(userId, limit);
 

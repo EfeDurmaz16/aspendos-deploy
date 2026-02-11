@@ -69,6 +69,12 @@ app.post('/jobs', async (c) => {
             return c.json({ error: 'No conversations found in file' }, 400);
         }
 
+        // Cap conversation count to prevent OOM on massive imports
+        const MAX_CONVERSATIONS = 10000;
+        if (conversations.length > MAX_CONVERSATIONS) {
+            conversations = conversations.slice(0, MAX_CONVERSATIONS);
+        }
+
         // Store entities for preview
         await importService.storeImportEntities(job.id, conversations);
 
@@ -201,6 +207,10 @@ app.post('/jobs/:id/entities/bulk-select', async (c) => {
 
     if (!Array.isArray(entityIds) || typeof selected !== 'boolean') {
         return c.json({ error: 'entityIds array and selected boolean are required' }, 400);
+    }
+
+    if (entityIds.length > 500) {
+        return c.json({ error: 'Maximum 500 entities per bulk operation' }, 400);
     }
 
     for (const entityId of entityIds) {
