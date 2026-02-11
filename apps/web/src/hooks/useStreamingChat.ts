@@ -166,17 +166,15 @@ export function useStreamingChat(chatId: string) {
                         const newChat = await res.json();
                         const newChatId = newChat.id;
 
-                        // Update the actual chat ID
+                        // Update the actual chat ID and URL
                         setActualChatId(newChatId);
-
-                        // Update the URL without page reload
                         if (typeof window !== 'undefined') {
                             window.history.replaceState(null, '', `/chat/${newChatId}`);
                         }
 
-                        // Wait for transport to update with new chat ID
-                        // The transport will be recreated due to actualChatId change
-                        await new Promise((resolve) => setTimeout(resolve, 100));
+                        // Return early - the sendMessage will be called again
+                        // after transport re-initializes with the new chatId
+                        return null;
                     } catch (err) {
                         const errorMessage =
                             err instanceof Error ? err.message : 'Failed to create chat';
@@ -219,20 +217,14 @@ export function useStreamingChat(chatId: string) {
 
     // Clear messages (local state only - doesn't affect server)
     const clearMessages = useCallback(() => {
-        // Note: AI SDK useChat doesn't have a clear method by default
-        // This would need to be handled at the app level by creating a new chat
-        console.log('[useStreamingChat] clearMessages called - create new chat to clear');
+        // Note: AI SDK useChat doesn't expose a clear method.
+        // Callers should create a new chat/session if they want a blank state.
     }, []);
 
     // Load messages from API (for initial load)
-    const loadMessages = useCallback((serverMessages: ChatMessage[]) => {
+    const loadMessages = useCallback((_serverMessages: ChatMessage[]) => {
         // AI SDK manages its own message state
         // This is mainly for compatibility - messages come from the chat endpoint
-        console.log(
-            '[useStreamingChat] loadMessages called with',
-            serverMessages.length,
-            'messages'
-        );
     }, []);
 
     // Retry last message

@@ -110,6 +110,8 @@ model Chat {
   modelPreference String? // null = auto-select
   memoryScope     String   @default("global") // global, project, chat
   projectId       String?
+  shareToken      String?  @unique
+  sharedAt        DateTime?
   isArchived      Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -120,6 +122,7 @@ model Chat {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([shareToken])
 }
 
 model Message {

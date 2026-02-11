@@ -67,11 +67,13 @@ const nextConfig: NextConfig = {
                                   key: 'Content-Security-Policy',
                                   value: [
                                       "default-src 'self'",
+                                      // unsafe-inline required by Next.js for inline scripts/styles
+                                      // TODO: migrate to nonce-based CSP via Next.js middleware when stable
                                       "script-src 'self' 'unsafe-inline' https://cdn.onesignal.com",
                                       "style-src 'self' 'unsafe-inline'",
                                       "img-src 'self' data: blob: https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
                                       "font-src 'self' data:",
-                                      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://api.aspendos.app'} https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
+                                      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://api.aspendos.app'} https://yula.dev https://www.yula.dev https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
                                       "frame-src 'self'",
                                       "worker-src 'self' blob:",
                                       "object-src 'none'",

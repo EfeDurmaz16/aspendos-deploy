@@ -82,22 +82,22 @@ export async function GET(req: NextRequest) {
                 });
 
                 if (analysis.shouldNotify && analysis.items.length > 0) {
-                    // Store PAC items as in-app notifications (deduped)
-                    let createdCount = 0;
-                    for (const item of analysis.items) {
-                        const existing = await prisma.notificationLog.findFirst({
-                            where: {
-                                userId: user.id,
-                                title: item.title,
-                                createdAt: { gte: dedupSince },
-                            },
-                            select: { id: true },
-                        });
+                    // Batch dedup check: fetch all recent notification titles for this user at once
+                    const existingNotifs = await prisma.notificationLog.findMany({
+                        where: {
+                            userId: user.id,
+                            title: { in: analysis.items.map((i: { title: string }) => i.title) },
+                            createdAt: { gte: dedupSince },
+                        },
+                        select: { title: true },
+                    });
+                    const existingTitles = new Set(existingNotifs.map((n: { title: string }) => n.title));
 
-                        if (existing) continue;
-
-                        await prisma.notificationLog.create({
-                            data: {
+                    // Batch create non-duplicate notifications
+                    const newItems = analysis.items.filter((item: { title: string }) => !existingTitles.has(item.title));
+                    if (newItems.length > 0) {
+                        await prisma.notificationLog.createMany({
+                            data: newItems.map((item: { type: string; title: string; description: string; priority: string; triggerReason: string }) => ({
                                 userId: user.id,
                                 type: `PAC_${item.type.toUpperCase()}`,
                                 title: item.title,
@@ -108,10 +108,10 @@ export async function GET(req: NextRequest) {
                                     priority: item.priority,
                                     triggerReason: item.triggerReason,
                                 },
-                            },
+                            })),
                         });
-                        createdCount++;
                     }
+                    const createdCount = newItems.length;
 
                     if (createdCount > 0) {
                         results.push({ userId: user.id, notifications: createdCount });

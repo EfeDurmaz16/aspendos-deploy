@@ -315,17 +315,11 @@ export async function createShareToken(chatId: string, userId: string): Promise<
     // Generate a random token
     const token = generateRandomToken(32);
 
-    // Store the share token in chat metadata or a separate table
-    // TODO: TEMPORARY - Using description field for share token storage
-    // For production, migrate to a dedicated ChatShare table with proper indexing
-    // and expiration handling to avoid security and performance issues
     await prisma.chat.update({
         where: { id: chatId },
         data: {
-            description: JSON.stringify({
-                shareToken: token,
-                sharedAt: new Date().toISOString(),
-            }),
+            shareToken: token,
+            sharedAt: new Date(),
         },
     });
 
@@ -336,13 +330,8 @@ export async function createShareToken(chatId: string, userId: string): Promise<
  * Get a shared chat by token (public access)
  */
 export async function getSharedChat(token: string) {
-    // Find chat with matching share token in description
-    const chats = await prisma.chat.findMany({
-        where: {
-            description: {
-                contains: token,
-            },
-        },
+    const chat = await prisma.chat.findUnique({
+        where: { shareToken: token },
         include: {
             messages: {
                 orderBy: { createdAt: 'asc' },
@@ -356,25 +345,19 @@ export async function getSharedChat(token: string) {
         },
     });
 
-    // Verify the token matches
-    for (const chat of chats) {
-        try {
-            const meta = JSON.parse(chat.description || '{}');
-            if (meta.shareToken === token) {
-                return {
-                    id: chat.id,
-                    title: chat.title,
-                    messages: chat.messages.map((m) => ({
-                        id: m.id,
-                        role: m.role,
-                        content: m.content,
-                        createdAt: m.createdAt,
-                    })),
-                    author: chat.user?.name || 'Anonymous',
-                    sharedAt: meta.sharedAt,
-                };
-            }
-        } catch {}
+    if (chat) {
+        return {
+            id: chat.id,
+            title: chat.title,
+            messages: chat.messages.map((m) => ({
+                id: m.id,
+                role: m.role,
+                content: m.content,
+                createdAt: m.createdAt,
+            })),
+            author: chat.user?.name || 'Anonymous',
+            sharedAt: chat.sharedAt?.toISOString(),
+        };
     }
 
     return null;
@@ -391,7 +374,7 @@ export async function revokeShareToken(chatId: string, userId: string): Promise<
 
     await prisma.chat.update({
         where: { id: chatId },
-        data: { description: null },
+        data: { shareToken: null, sharedAt: null },
     });
 }
 

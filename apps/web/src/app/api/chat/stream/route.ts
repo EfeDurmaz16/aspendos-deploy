@@ -291,8 +291,10 @@ export async function POST(req: NextRequest) {
                     controller.enqueue(sse.done());
 
                     // Store message and update billing (async)
-                    const tokensIn = Math.ceil(message.length / 4);
-                    const tokensOut = Math.ceil(fullContent.length / 4);
+                    // Approximate token count: ~3.5 chars/token for English, ~2 for code/multilingual
+                    const charsPerToken = /[\u0080-\uffff]/.test(message) ? 2 : 3.5;
+                    const tokensIn = Math.ceil(message.length / charsPerToken);
+                    const tokensOut = Math.ceil(fullContent.length / charsPerToken);
 
                     // Calculate approximate cost based on model and tokens
                     const costPerInputToken = usedModel.includes('gpt-4o-mini') ? 0.00000015 : usedModel.includes('gpt-4o') ? 0.0000025 : usedModel.includes('claude') ? 0.000003 : usedModel.includes('gemini') ? 0.0000001 : 0.000001;
@@ -300,8 +302,9 @@ export async function POST(req: NextRequest) {
                     const estimatedCost = (tokensIn * costPerInputToken) + (tokensOut * costPerOutputToken);
 
                     if (chatId) {
-                        prisma.message
-                            .createMany({
+                        // Batch DB writes in a transaction for data consistency
+                        prisma.$transaction([
+                            prisma.message.createMany({
                                 data: [
                                     { chatId, userId: user.id, role: 'user', content: message },
                                     {
@@ -315,18 +318,14 @@ export async function POST(req: NextRequest) {
                                         costUsd: estimatedCost,
                                     },
                                 ],
-                            })
-                            .catch((err: unknown) =>
-                                console.error('[Chat] Failed to save messages:', err)
-                            );
-
-                        // Verify chat ownership before updating
-                        prisma.chat
-                            .updateMany({
+                            }),
+                            prisma.chat.updateMany({
                                 where: { id: chatId, userId: user.id },
                                 data: { updatedAt: new Date() },
-                            })
-                            .catch(() => {});
+                            }),
+                        ]).catch((err: unknown) =>
+                            console.error('[Chat] Failed to save messages:', err)
+                        );
                     }
 
                     // Fire-and-forget: don't block response on embedding
