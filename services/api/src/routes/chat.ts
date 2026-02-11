@@ -69,6 +69,11 @@ app.post('/', validateBody(createChatSchema), async (c) => {
     // Ensure user exists
     await chatService.getOrCreateUser(userId, user.email, user.name);
 
+    // Check chat quota before creating
+    if (!(await billingService.hasChatsRemaining(userId))) {
+        return c.json({ error: 'Monthly chat limit reached. Please upgrade your plan.' }, 403);
+    }
+
     const chat = await chatService.createChat({
         userId,
         title: validatedBody.title,
@@ -408,6 +413,11 @@ app.post(
 
         const { content, models } = validatedBody;
 
+        // Check token budget (estimate: models.length * 1000 tokens each)
+        if (!(await billingService.hasTokens(userId, models.length * 1000))) {
+            return c.json({ error: 'Insufficient token budget for multi-model comparison' }, 403);
+        }
+
         // Save user message
         await chatService.createMessage({
             chatId,
@@ -455,6 +465,19 @@ app.post(
                 error: 'Failed to generate response',
             };
         });
+
+        // Meter token usage for each successful model call
+        for (const resp of responses) {
+            if ('usage' in resp && resp.usage) {
+                const usage = resp.usage as { promptTokens?: number; completionTokens?: number };
+                await billingService.recordTokenUsage(
+                    userId,
+                    usage.promptTokens || 0,
+                    usage.completionTokens || 0,
+                    resp.modelId
+                );
+            }
+        }
 
         return c.json({ responses });
     }
@@ -532,6 +555,11 @@ app.post(
         const validatedParams = c.get('validatedParams') as { id: string };
         const validatedBody = c.get('validatedBody') as { fromMessageId?: string };
         const chatId = validatedParams.id;
+
+        // Check chat quota before forking
+        if (!(await billingService.hasChatsRemaining(userId))) {
+            return c.json({ error: 'Monthly chat limit reached. Please upgrade your plan.' }, 403);
+        }
 
         try {
             const newChat = await chatService.forkChat(chatId, userId, validatedBody.fromMessageId);
