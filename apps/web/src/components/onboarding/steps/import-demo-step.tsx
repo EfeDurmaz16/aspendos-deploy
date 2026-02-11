@@ -6,7 +6,6 @@ import { Download, ArrowRight, FileJson, MessageSquare, Check } from 'lucide-rea
 
 // Feature accent color: Electric Blue
 const ACCENT_COLOR = '#2563EB';
-const ACCENT_COLOR_LIGHT = '#3B82F6';
 
 interface ImportDemoStepProps {
   onNext: () => void;

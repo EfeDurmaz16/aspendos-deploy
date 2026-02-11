@@ -61,7 +61,7 @@
   /* Typography - Playfair Display for headlines, DM Sans for body */
   --font-serif: var(--font-playfair), 'Playfair Display', 'Georgia', 'Times New Roman', serif;
   --font-sans: var(--font-dm-sans), 'DM Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: var(--font-mono), 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
 
   /* Border Radius */
   --radius-sm: 4px;
@@ -128,6 +128,11 @@
    ============================================================================= */
 
 :root {
+  /* Font fallbacks (self-hosting optional). These map to Tailwind tokens above. */
+  --font-playfair: 'Playfair Display';
+  --font-dm-sans: 'DM Sans';
+  --font-jetbrains-mono: 'JetBrains Mono';
+
   /* YULA Brand Colors - From Pencil Design System (QtTSw frame) */
   --yula-navy: #0A0E27;            /* Primary dark background */
   --yula-navy-light: #111827;      /* Surface dark */

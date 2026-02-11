@@ -415,12 +415,18 @@ export default function AnalyticsPage() {
                                                     cx="50%"
                                                     cy="50%"
                                                     outerRadius={100}
-                                                    label={(entry: any) => {
+                                                    label={(entry: unknown) => {
+                                                        const data = entry as Partial<ModelData>;
+                                                        const modelRaw =
+                                                            typeof data.model === 'string'
+                                                                ? data.model
+                                                                : '';
                                                         const model =
-                                                            entry.model?.split('/')[1] ||
-                                                            entry.model ||
-                                                            '';
-                                                        const percentage = entry.percentage || 0;
+                                                            modelRaw.split('/')[1] || modelRaw;
+                                                        const percentage =
+                                                            typeof data.percentage === 'number'
+                                                                ? data.percentage
+                                                                : 0;
                                                         return `${model}: ${percentage.toFixed(1)}%`;
                                                     }}
                                                 >

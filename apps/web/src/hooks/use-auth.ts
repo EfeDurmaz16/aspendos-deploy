@@ -1,6 +1,7 @@
 'use client';
 
 import { useSession as useBetterAuthSession } from '@/lib/auth-client';
+import { signOut as betterAuthSignOut } from '@/lib/auth-client';
 
 export function useAuth() {
     const session = useBetterAuthSession();
@@ -10,6 +11,9 @@ export function useAuth() {
         userId: session.data?.user?.id ?? null,
         sessionId: session.data?.session?.id ?? null,
         getToken: async () => null,
+        signOut: async () => {
+            await betterAuthSignOut();
+        },
     };
 }
 

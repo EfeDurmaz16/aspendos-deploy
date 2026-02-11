@@ -71,7 +71,7 @@ export function VoiceButton({ onTranscription, disabled = false, className }: Vo
         animationFrameRef.current = requestAnimationFrame(checkSilence);
     }, [isRecording, stopRecording]);
 
-    const processAudio = async () => {
+    const processAudio = useCallback(async () => {
         setIsProcessing(true);
         try {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
@@ -93,7 +93,7 @@ export function VoiceButton({ onTranscription, disabled = false, className }: Vo
         } finally {
             setIsProcessing(false);
         }
-    };
+    }, [onTranscription]);
 
     const startRecording = useCallback(async () => {
         try {

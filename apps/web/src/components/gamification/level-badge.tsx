@@ -133,7 +133,7 @@ interface LevelUpAnimationProps {
 }
 
 export function LevelUpAnimation({
-  fromLevel,
+  fromLevel: _fromLevel,
   toLevel,
   onComplete,
 }: LevelUpAnimationProps) {

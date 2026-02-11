@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { X, Search, RotateCcw, Check } from "lucide-react";
+import { X, Search, RotateCcw } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassButton } from "@/components/ui/glass-button";
 import { motion, AnimatePresence } from "framer-motion";

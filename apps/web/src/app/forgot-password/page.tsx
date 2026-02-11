@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useState } from 'react';
 import { forgetPassword } from '@/lib/auth-client';

@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from './button';
 import { Grid2x2PlusIcon, ChevronLeftIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import SignIn from '@/components/auth/sign-in';
 import SignUp from '@/components/auth/sign-up';
 

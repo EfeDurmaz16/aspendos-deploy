@@ -1,31 +1,43 @@
+import { prisma } from '@aspendos/db';
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
     try {
-        const headersList = await headers();
-        const session = await auth.api.getSession({
-            headers: headersList,
-        });
+        const session = await auth();
 
-        if (!session?.user) {
+        if (!session?.userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // In production, this would query the database
-        // For now, return sample data
-        const summary = {
-            totalMessages: 1247,
-            totalChats: 89,
-            totalTokensIn: 456789,
-            totalTokensOut: 234567,
-            totalTokens: 691356,
-            totalCostUsd: 12.45,
-            messagesThisMonth: 342,
-        };
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        return NextResponse.json(summary);
+        const [totalMessages, totalChats, aggregates, messagesThisMonth] = await Promise.all([
+            prisma.message.count({ where: { userId: session.userId } }),
+            prisma.chat.count({ where: { userId: session.userId } }),
+            prisma.message.aggregate({
+                where: { userId: session.userId },
+                _sum: { tokensIn: true, tokensOut: true, costUsd: true },
+            }),
+            prisma.message.count({
+                where: { userId: session.userId, createdAt: { gte: startOfMonth, lte: now } },
+            }),
+        ]);
+
+        const totalTokensIn = aggregates._sum.tokensIn ?? 0;
+        const totalTokensOut = aggregates._sum.tokensOut ?? 0;
+        const totalCostUsd = aggregates._sum.costUsd ?? 0;
+
+        return NextResponse.json({
+            totalMessages,
+            totalChats,
+            totalTokensIn,
+            totalTokensOut,
+            totalTokens: totalTokensIn + totalTokensOut,
+            totalCostUsd,
+            messagesThisMonth,
+        });
     } catch (error) {
         console.error('Analytics summary error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

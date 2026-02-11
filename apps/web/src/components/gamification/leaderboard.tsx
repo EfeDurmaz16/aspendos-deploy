@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { TrophyIcon, MedalIcon, CrownIcon } from 'lucide-react';
+import { MedalIcon, CrownIcon } from 'lucide-react';
 import { LevelBadge } from './level-badge';
 
 interface LeaderboardEntry {

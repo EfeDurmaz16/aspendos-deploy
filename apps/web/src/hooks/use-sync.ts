@@ -59,7 +59,7 @@ export function useSync(authToken: string | null) {
                 }
             });
         }
-    }, [isOnline, authToken]);
+    }, [isOnline, authToken, performQuickSync]);
 
     // Full sync - fetch all data from server
     const performFullSyncAction = useCallback(async () => {

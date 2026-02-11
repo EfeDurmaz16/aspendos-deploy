@@ -120,9 +120,15 @@ export function ModelPicker({
         },
     ];
 
-    const selectedModelData = topModels.find((m) => m.id === selectedModel);
+    const enabledSet = new Set(enabledModels);
+    const availableTopModels =
+        enabledModels.length > 0 ? topModels.filter((m) => enabledSet.has(m.id)) : topModels;
 
-    const filteredModels = topModels.filter(
+    const selectedModelData =
+        availableTopModels.find((m) => m.id === selectedModel) ||
+        topModels.find((m) => m.id === selectedModel);
+
+    const filteredModels = availableTopModels.filter(
         (model) =>
             model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             model.description.toLowerCase().includes(searchQuery.toLowerCase())

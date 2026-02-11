@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useMemoryGraph, categoryColors } from './use-memory-graph';
 import { MemoryNodeCard } from './memory-node';
 import type { MemoryNodeCategory } from '@/stores/yula-store';
+import type { ForceGraphMethods, NodeObject } from 'react-force-graph-2d';
 
 // Dynamically import ForceGraph2D to avoid SSR issues
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -33,9 +34,18 @@ interface MemoryGraphProps {
     width?: number;
 }
 
+type GraphNode = NodeObject & {
+    id: string;
+    name: string;
+    color: string;
+    category: MemoryNodeCategory;
+    x?: number;
+    y?: number;
+};
+
 export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const graphRef = useRef<any>(null);
+    const graphRef = useRef<ForceGraphMethods | null>(null);
     const [dimensions, setDimensions] = useState({ width: width || 400, height });
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<MemoryNodeCategory | null>(null);
@@ -97,7 +107,8 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
 
     // Custom node rendering
     const nodeCanvasObject = useCallback(
-        (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+        (node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+            if (typeof node.x !== 'number' || typeof node.y !== 'number') return;
             const label = node.name;
             const fontSize = 12 / globalScale;
             const nodeRadius = 8;
@@ -125,10 +136,10 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
 
     // Handle node click
     const handleNodeClick = useCallback(
-        (node: any) => {
+        (node: GraphNode) => {
             selectNode(node.id);
             // Center on node
-            if (graphRef.current) {
+            if (graphRef.current && typeof node.x === 'number' && typeof node.y === 'number') {
                 graphRef.current.centerAt(node.x, node.y, 500);
                 graphRef.current.zoom(2, 500);
             }
@@ -138,7 +149,7 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
 
     // Handle node hover
     const handleNodeHover = useCallback(
-        (node: any) => {
+        (node: GraphNode | null) => {
             hoverNode(node?.id || null);
         },
         [hoverNode]

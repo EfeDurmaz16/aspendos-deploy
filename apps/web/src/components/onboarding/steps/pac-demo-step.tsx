@@ -7,7 +7,6 @@ import { Bell, ArrowRight, MessageCircle, Calendar, Lightbulb } from 'lucide-rea
 
 // Feature accent color: Electric Amber
 const ACCENT_COLOR = '#D97706';
-const ACCENT_COLOR_LIGHT = '#F59E0B';
 
 interface PacDemoStepProps {
   onNext: () => void;

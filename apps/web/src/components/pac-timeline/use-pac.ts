@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo } from 'react';
-import { useYulaStore, type PACItem, type PACItemType, type PACItemStatus } from '@/stores/yula-store';
+import { useYulaStore, type PACItem, type PACItemType } from '@/stores/yula-store';
 
 // Sample PAC items for demo
 const samplePACItems: Omit<PACItem, 'id' | 'createdAt' | 'status'>[] = [
@@ -66,7 +66,6 @@ export function usePAC() {
     const {
         pac,
         addPACItem,
-        updatePACItem,
         snoozePACItem,
         approvePACItem,
         dismissPACItem,
@@ -84,7 +83,7 @@ export function usePAC() {
             }
             localStorage.setItem('yula-pac-initialized', 'true');
         }
-    }, []); // Only run once on mount
+    }, [addPACItem, pac.items.length]); // Only run once when empty
 
     // Helper to safely get time from Date or string
     const getTime = useCallback((date: Date | string | undefined): number => {

@@ -40,22 +40,6 @@ export function useLocalAI() {
         error: null,
     });
 
-    // Check WebGPU support on mount
-    useEffect(() => {
-        localAI.isSupported().then((supported) => {
-            setState((prev) => ({ ...prev, isSupported: supported }));
-
-            // If supported, check for previously loaded model
-            if (supported) {
-                getSetting<ModelId>('localAIModel').then((savedModel) => {
-                    if (savedModel) {
-                        loadModel(savedModel);
-                    }
-                });
-            }
-        });
-    }, []);
-
     // Load a model
     const loadModel = useCallback(async (modelId: ModelId) => {
         setState((prev) => ({
@@ -93,6 +77,22 @@ export function useLocalAI() {
             }));
         }
     }, []);
+
+    // Check WebGPU support on mount
+    useEffect(() => {
+        localAI.isSupported().then((supported) => {
+            setState((prev) => ({ ...prev, isSupported: supported }));
+
+            // If supported, check for previously loaded model
+            if (supported) {
+                getSetting<ModelId>('localAIModel').then((savedModel) => {
+                    if (savedModel) {
+                        loadModel(savedModel);
+                    }
+                });
+            }
+        });
+    }, [loadModel]);
 
     // Unload the current model
     const unloadModel = useCallback(async () => {

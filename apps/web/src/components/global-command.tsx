@@ -2,17 +2,11 @@
 
 import * as React from "react"
 import {
-    Calculator,
-    Calendar,
     CreditCard,
     Gear,
-    Smiley,
-    User,
     Brain,
     ChatCircle,
     House,
-    MagnifyingGlass,
-    Command as CommandIcon,
     Moon,
     Sun
 } from "@phosphor-icons/react"
@@ -26,7 +20,6 @@ import {
     CommandItem,
     CommandList,
     CommandSeparator,
-    CommandShortcut,
 } from "@/components/ui/command"
 import { useTheme } from "next-themes"
 

@@ -7,7 +7,6 @@ import { Users, ArrowRight, Zap, Brain, Shield, Palette } from 'lucide-react';
 
 // Feature accent color: Electric Violet
 const ACCENT_COLOR = '#7C3AED';
-const ACCENT_COLOR_LIGHT = '#8B5CF6';
 
 interface CouncilDemoStepProps {
   onNext: () => void;

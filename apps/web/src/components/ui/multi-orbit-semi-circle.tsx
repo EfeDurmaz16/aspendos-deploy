@@ -10,7 +10,15 @@ const ICONS = [
     'https://pub-940ccf6255b54fa799a9b01050e6c227.r2.dev/spotify-icon.svg',
 ];
 
-function SemiCircleOrbit({ radius, centerX, centerY, count, iconSize }: any) {
+type SemiCircleOrbitProps = {
+    radius: number;
+    centerX: number;
+    centerY: number;
+    count: number;
+    iconSize: number;
+};
+
+function SemiCircleOrbit({ radius, centerX, centerY, count, iconSize }: SemiCircleOrbitProps) {
     return (
         <>
             {/* Semi-circle glow background */}

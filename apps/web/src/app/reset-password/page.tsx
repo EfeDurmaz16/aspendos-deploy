@@ -14,13 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useState, useMemo, Suspense } from 'react';
 import { resetPassword } from '@/lib/auth-client';
 import { Warning, CheckCircle, Lock } from '@phosphor-icons/react';
 
 function ResetPasswordContent() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
 

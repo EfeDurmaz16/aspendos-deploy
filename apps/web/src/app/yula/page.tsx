@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Sparkle,
@@ -12,7 +12,6 @@ import {
     Lightning,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import { useYulaStore } from '@/stores/yula-store';
 
 // Components
 import { PACTimeline } from '@/components/pac-timeline';
@@ -24,7 +23,6 @@ import { WelcomeGuideTrigger } from '@/components/onboarding';
 type ActiveView = 'chat' | 'council' | 'memory';
 
 export default function YulaPage() {
-    const { settings } = useYulaStore();
     const [activeView, setActiveView] = useState<ActiveView>('chat');
     const [pacCollapsed, setPacCollapsed] = useState(false);
     const [memoryCollapsed, setMemoryCollapsed] = useState(false);

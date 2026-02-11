@@ -34,7 +34,7 @@ interface ResponsiveHeroBannerProps {
 
 const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
     logoUrl = 'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/febf2421-4a9a-42d6-871d-ff4f9518021c_1600w.png',
-    backgroundImageUrl = 'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/0e2dbea0-c0a9-413f-a57b-af279633c0df_3840w.jpg',
+    backgroundImageUrl: _backgroundImageUrl = 'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/0e2dbea0-c0a9-413f-a57b-af279633c0df_3840w.jpg',
     navLinks = [
         { label: 'Home', href: '#', isActive: true },
         { label: 'Missions', href: '#' },

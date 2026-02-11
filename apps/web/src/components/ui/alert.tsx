@@ -41,7 +41,7 @@ interface AlertProps
 }
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
-    ({ className, variant, onDismiss, ...props }, ref) => (
+    ({ className, variant, onDismiss: _onDismiss, ...props }, ref) => (
         <div
             ref={ref}
             role="alert"

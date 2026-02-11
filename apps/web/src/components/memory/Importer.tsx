@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Upload, FileText, Check, Warning, Spinner, DownloadSimple, Trash } from '@phosphor-icons/react';
+import { Upload, FileText, Check, Warning, Spinner, DownloadSimple } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,

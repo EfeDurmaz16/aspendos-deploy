@@ -38,7 +38,7 @@ export default function SignupLayout({
                 type="application/ld+json"
                 strategy="afterInteractive"
             >
-                {serializeSchema(breadcrumbSchema as any)}
+                {serializeSchema(breadcrumbSchema)}
             </Script>
             {children}
         </>

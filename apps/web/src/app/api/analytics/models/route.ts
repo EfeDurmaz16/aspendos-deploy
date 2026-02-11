@@ -1,37 +1,51 @@
+import { prisma } from '@aspendos/db';
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
     try {
-        const headersList = await headers();
-        const session = await auth.api.getSession({
-            headers: headersList,
-        });
+        const session = await auth();
 
-        if (!session?.user) {
+        if (!session?.userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const { searchParams } = new URL(request.url);
-        const days = parseInt(searchParams.get('days') || '30');
+        const days = Math.min(Math.max(parseInt(searchParams.get('days') || '30'), 1), 365);
 
-        // Sample model usage data
-        const models = [
-            { model: 'openai/gpt-4o', count: 245, tokensIn: 123456, tokensOut: 67890 },
-            { model: 'anthropic/claude-3-5-sonnet', count: 189, tokensIn: 98765, tokensOut: 54321 },
-            { model: 'google/gemini-2.0-flash', count: 87, tokensIn: 45678, tokensOut: 23456 },
-            { model: 'groq/llama-3.3-70b', count: 56, tokensIn: 34567, tokensOut: 17890 },
-        ];
+        const now = new Date();
+        const start = new Date(now);
+        start.setDate(start.getDate() - days);
 
-        const totalCount = models.reduce((sum, m) => sum + m.count, 0);
+        const grouped = await prisma.message.groupBy({
+            by: ['modelUsed'],
+            where: {
+                userId: session.userId,
+                role: 'assistant',
+                modelUsed: { not: null },
+                createdAt: { gte: start, lte: now },
+            },
+            _count: { _all: true },
+            _sum: { tokensIn: true, tokensOut: true, costUsd: true },
+            orderBy: { _count: { id: 'desc' } },
+        });
 
-        const data = models.map((m) => ({
-            ...m,
-            totalTokens: m.tokensIn + m.tokensOut,
-            costUsd: ((m.tokensIn * 0.00001) + (m.tokensOut * 0.00003)),
-            percentage: (m.count / totalCount) * 100,
-        }));
+        const totalCount =
+            grouped.reduce((sum, item) => sum + item._count._all, 0) || 1;
+
+        const data = grouped.map((item) => {
+            const tokensIn = item._sum.tokensIn ?? 0;
+            const tokensOut = item._sum.tokensOut ?? 0;
+            return {
+                model: item.modelUsed,
+                count: item._count._all,
+                tokensIn,
+                tokensOut,
+                totalTokens: tokensIn + tokensOut,
+                costUsd: item._sum.costUsd ?? 0,
+                percentage: (item._count._all / totalCount) * 100,
+            };
+        });
 
         return NextResponse.json({ data, days });
     } catch (error) {

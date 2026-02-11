@@ -13,7 +13,6 @@ import {
     type LocalMessage,
     type LocalMemory,
     type PendingMutation,
-    getLocalChats,
     getPendingMutations,
     removeMutation,
     saveLocalChat,

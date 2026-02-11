@@ -42,10 +42,9 @@ export function HybridEngineToggle({
     showLabel = true,
     size = 'md',
 }: HybridEngineToggleProps) {
-    const { settings, toggleEngineMode, setEngineMode } = useYulaStore();
+    const { settings, toggleEngineMode } = useYulaStore();
     const mode = settings.engineMode;
     const config = modeConfig[mode];
-    const Icon = config.icon;
 
     const sizeClasses = {
         sm: {

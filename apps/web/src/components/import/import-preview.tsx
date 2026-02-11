@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     MessageSquare,
-    Calendar,
     Search,
     CheckCheck,
     Square,
@@ -84,7 +83,6 @@ export function ImportPreview({
     const selectedCount = conversations.filter((c) => c.selected).length;
     const totalCount = conversations.length;
     const allSelected = selectedCount === totalCount;
-    const someSelected = selectedCount > 0 && selectedCount < totalCount;
 
     const filteredConversations = React.useMemo(() => {
         if (!searchQuery.trim()) return conversations;

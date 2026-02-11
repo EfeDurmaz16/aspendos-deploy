@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
@@ -38,10 +40,16 @@ const styles = `
   }
 `;
 
-// Inject styles into document
-const styleSheet = document.createElement('style');
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
+function useInjectPromptBoxStyles() {
+    React.useEffect(() => {
+        const styleId = 'yula-ai-prompt-box-styles';
+        if (document.getElementById(styleId)) return;
+        const styleSheet = document.createElement('style');
+        styleSheet.id = styleId;
+        styleSheet.innerText = styles;
+        document.head.appendChild(styleSheet);
+    }, []);
+}
 
 // Textarea Component
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -397,7 +405,7 @@ const PromptInputTextarea: React.FC<
     );
 };
 
-interface PromptInputActionsProps extends React.HTMLAttributes<HTMLDivElement> {}
+type PromptInputActionsProps = React.HTMLAttributes<HTMLDivElement>;
 const PromptInputActions: React.FC<PromptInputActionsProps> = ({
     children,
     className,
@@ -456,6 +464,8 @@ interface PromptInputBoxProps {
 }
 export const PromptInputBox = React.forwardRef(
     (props: PromptInputBoxProps, ref: React.Ref<HTMLDivElement>) => {
+        useInjectPromptBoxStyles();
+
         const {
             onSend = () => {},
             isLoading = false,
@@ -466,6 +476,7 @@ export const PromptInputBox = React.forwardRef(
         const [files, setFiles] = React.useState<File[]>([]);
         const [filePreviews, setFilePreviews] = React.useState<{ [key: string]: string }>({});
         const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
+        const [fileError, setFileError] = React.useState<string | null>(null);
         const [isRecording, setIsRecording] = React.useState(false);
         const [showSearch, setShowSearch] = React.useState(false);
         const [showThink, setShowThink] = React.useState(false);
@@ -485,22 +496,32 @@ export const PromptInputBox = React.forwardRef(
 
         const handleCanvasToggle = () => setShowCanvas((prev) => !prev);
 
-        const isImageFile = (file: File) => file.type.startsWith('image/');
+        const isImageFile = React.useCallback((file: File) => file.type.startsWith('image/'), []);
 
-        const processFile = (file: File) => {
-            if (!isImageFile(file)) {
-                console.log('Only image files are allowed');
-                return;
-            }
-            if (file.size > 10 * 1024 * 1024) {
-                console.log('File too large (max 10MB)');
-                return;
-            }
-            setFiles([file]);
-            const reader = new FileReader();
-            reader.onload = (e) => setFilePreviews({ [file.name]: e.target?.result as string });
-            reader.readAsDataURL(file);
-        };
+        const processFile = React.useCallback(
+            (file: File) => {
+                if (!isImageFile(file)) {
+                    setFileError('Only image files are allowed.');
+                    return;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                    setFileError('File too large (max 10MB).');
+                    return;
+                }
+
+                setFileError(null);
+                setFiles([file]);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const result = e.target?.result;
+                    setFilePreviews({
+                        [file.name]: typeof result === 'string' ? result : '',
+                    });
+                };
+                reader.readAsDataURL(file);
+            },
+            [isImageFile]
+        );
 
         const handleDragOver = React.useCallback((e: React.DragEvent) => {
             e.preventDefault();
@@ -512,18 +533,22 @@ export const PromptInputBox = React.forwardRef(
             e.stopPropagation();
         }, []);
 
-        const handleDrop = React.useCallback((e: React.DragEvent) => {
+        const handleDrop = React.useCallback(
+            (e: React.DragEvent) => {
             e.preventDefault();
             e.stopPropagation();
             const files = Array.from(e.dataTransfer.files);
             const imageFiles = files.filter((file) => isImageFile(file));
             if (imageFiles.length > 0) processFile(imageFiles[0]);
-        }, []);
+        },
+            [isImageFile, processFile]
+        );
 
         const handleRemoveFile = (index: number) => {
             const fileToRemove = files[index];
             if (fileToRemove && filePreviews[fileToRemove.name]) setFilePreviews({});
             setFiles([]);
+            setFileError(null);
         };
 
         const openImageModal = (imageUrl: string) => setSelectedImage(imageUrl);
@@ -541,7 +566,7 @@ export const PromptInputBox = React.forwardRef(
                     }
                 }
             }
-        }, []);
+        }, [processFile]);
 
         React.useEffect(() => {
             document.addEventListener('paste', handlePaste);
@@ -562,10 +587,9 @@ export const PromptInputBox = React.forwardRef(
             }
         };
 
-        const handleStartRecording = () => console.log('Started recording');
+        const handleStartRecording = () => setIsRecording(true);
 
         const handleStopRecording = (duration: number) => {
-            console.log(`Stopped recording after ${duration} seconds`);
             setIsRecording(false);
             onSend(`[Voice message - ${duration} seconds]`, []);
         };
@@ -590,6 +614,15 @@ export const PromptInputBox = React.forwardRef(
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                 >
+                    {fileError && !isRecording && (
+                        <div
+                            role="status"
+                            aria-live="polite"
+                            className="text-xs text-red-300 px-1 pb-1"
+                        >
+                            {fileError}
+                        </div>
+                    )}
                     {files.length > 0 && !isRecording && (
                         <div className="flex flex-wrap gap-2 p-0 pb-1 transition-all duration-300">
                             {files.map((file, index) => (

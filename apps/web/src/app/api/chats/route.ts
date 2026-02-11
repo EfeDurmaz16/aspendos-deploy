@@ -45,7 +45,16 @@ export async function GET(req: NextRequest) {
         }
 
         return NextResponse.json({
-            chats: chats.map((chat) => ({
+            chats: chats.map(
+                (chat: {
+                    id: string;
+                    title: string;
+                    description: string | null;
+                    _count: { messages: number };
+                    messages: Array<{ content: string; createdAt: Date }>;
+                    createdAt: Date;
+                    updatedAt: Date;
+                }) => ({
                 id: chat.id,
                 title: chat.title,
                 description: chat.description,
@@ -54,7 +63,8 @@ export async function GET(req: NextRequest) {
                 lastMessageAt: chat.messages[0]?.createdAt,
                 createdAt: chat.createdAt,
                 updatedAt: chat.updatedAt,
-            })),
+            })
+            ),
             nextCursor,
         });
     } catch (error) {

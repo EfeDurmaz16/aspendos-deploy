@@ -31,7 +31,6 @@ interface MemoryUsed {
 
 interface StreamingMessageProps {
     message: ChatMessage & { memoriesUsed?: MemoryUsed[] };
-    isCurrentUser?: boolean;
     onFeedback?: (messageId: string, feedback: 'up' | 'down') => void;
 }
 
@@ -291,7 +290,6 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
  */
 function StreamingMessageComponent({
     message,
-    isCurrentUser = false,
     onFeedback,
 }: StreamingMessageProps) {
     const isUser = message.role === 'user';

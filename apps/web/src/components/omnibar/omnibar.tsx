@@ -168,7 +168,7 @@ export function Omnibar() {
                                             results={results}
                                             selectedIndex={selectedIndex}
                                             onSelect={executeAction}
-                                            onHover={(index) => {
+                                            onHover={() => {
                                                 // Update selected index on hover
                                             }}
                                         />
@@ -178,7 +178,7 @@ export function Omnibar() {
                                         results={results}
                                         selectedIndex={selectedIndex}
                                         onSelect={executeAction}
-                                        onHover={(index) => {
+                                        onHover={() => {
                                             // Update selected index on hover
                                         }}
                                     />

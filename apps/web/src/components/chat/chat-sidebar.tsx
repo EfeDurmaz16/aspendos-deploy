@@ -1,12 +1,11 @@
 'use client';
 
-import { ChatCircle, CircleNotch, DotsThree, Plus, MagnifyingGlass, Star, Trash, Pencil } from '@phosphor-icons/react';
+import { ChatCircle, CircleNotch, DotsThree, Plus, MagnifyingGlass, Star } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { ContextMenuChat } from '@/components/chat/context-menu-chat';
-import { toast } from 'sonner';
 import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -110,12 +109,8 @@ export function ChatSidebar({
                                         <ContextMenuChat
                                             key={chat.id}
                                             chat={{ id: chat.id, title: chat.title || 'Untitled', isPinned: chat.isPinned }}
-                                            onEditTitle={onEditChatTitle || ((id, title) => {
-                                                toast.info('Edit title coming soon');
-                                            })}
-                                            onDelete={onDeleteChat || ((id) => {
-                                                toast.info('Delete coming soon');
-                                            })}
+                                            onEditTitle={onEditChatTitle}
+                                            onDelete={onDeleteChat}
                                             onOpenInNewTab={(id) => {
                                                 window.open(`/chat/${id}`, '_blank');
                                             }}

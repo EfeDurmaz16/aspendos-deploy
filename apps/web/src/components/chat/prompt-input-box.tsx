@@ -1,8 +1,8 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { PaperPlaneRight, Paperclip, Microphone, X } from "@phosphor-icons/react"
+import { motion } from "framer-motion"
+import { PaperPlaneRight, Paperclip, Microphone } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 interface PromptInputBoxProps {

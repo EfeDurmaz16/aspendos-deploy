@@ -43,14 +43,14 @@ export default function PricingLayout({
                 type="application/ld+json"
                 strategy="afterInteractive"
             >
-                {serializeSchema(productSchemas as any)}
+                {serializeSchema(productSchemas)}
             </Script>
             <Script
                 id="pricing-breadcrumb-schema"
                 type="application/ld+json"
                 strategy="afterInteractive"
             >
-                {serializeSchema(breadcrumbSchema as any)}
+                {serializeSchema(breadcrumbSchema)}
             </Script>
             {children}
         </>

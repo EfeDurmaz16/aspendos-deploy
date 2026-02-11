@@ -1,7 +1,7 @@
 'use client';
 
-import { Headphones, CircleNotch, X, Waveform } from '@phosphor-icons/react';
-import { useState, useEffect } from 'react';
+import { Headphones, CircleNotch, X } from '@phosphor-icons/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils'; // Ensure utils exist
 import { useGeminiLive } from '@/hooks/use-gemini-live';
