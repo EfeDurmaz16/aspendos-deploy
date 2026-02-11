@@ -111,16 +111,35 @@ export function rateLimit() {
     return async (c: Context, next: Next) => {
         const userId = c.get('userId');
 
-        // Skip rate limiting for unauthenticated requests
+        // IP-based rate limiting for unauthenticated requests
         if (!userId) {
+            const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
+                || c.req.header('cf-connecting-ip')
+                || 'unknown';
+            const ipState = getRateLimitState(`ip:${ip}`, 'FREE');
+            const ipLimits = TIER_LIMITS.FREE;
+
+            if (ipState.requestsToday >= ipLimits.requestsPerDay) {
+                return c.json({ error: 'Rate limit exceeded' }, 429);
+            }
+            if (ipState.tokens < 1) {
+                return c.json({ error: 'Rate limit exceeded' }, 429);
+            }
+
+            ipState.tokens -= 1;
+            ipState.requestsToday += 1;
             await next();
             return;
         }
 
-        // Get user tier (default to FREE)
+        // Get user tier (default to FREE, validate against known tiers)
         const user = c.get('user');
+        const rawTier = (user as unknown as Record<string, unknown>)?.tier;
+        const VALID_TIERS = new Set<string>(['FREE', 'STARTER', 'PRO', 'ULTRA']);
         const tier: UserTier =
-            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'FREE';
+            (typeof rawTier === 'string' && VALID_TIERS.has(rawTier))
+                ? rawTier as UserTier
+                : 'FREE';
 
         const limits = TIER_LIMITS[tier];
         const state = getRateLimitState(userId, tier);
