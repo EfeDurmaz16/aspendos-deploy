@@ -5,6 +5,7 @@
  * Parses conversation formats, stores in database, and indexes for search.
  */
 
+import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma';
 import * as openMemory from './openmemory.service';
 
@@ -116,7 +117,7 @@ export function parseChatGPTExport(data: unknown): ParsedConversation[] {
         if (messages.length === 0) continue;
 
         conversations.push({
-            externalId: conv.id || `chatgpt-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            externalId: conv.id || `chatgpt-${randomUUID()}`,
             title: conv.title,
             messages,
             createdAt: new Date((conv.create_time || 0) * 1000),
@@ -259,7 +260,7 @@ export function parseClaudeExport(data: unknown): ParsedConversation[] {
         }
 
         conversations.push({
-            externalId: conv.uuid || `claude-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            externalId: conv.uuid || `claude-${randomUUID()}`,
             title: conv.name || 'Untitled Conversation',
             messages,
             createdAt: new Date(conv.created_at),

@@ -9,6 +9,11 @@ import type { Context, Next } from 'hono';
 
 // Rate limit configuration per tier
 const TIER_LIMITS = {
+    FREE: {
+        requestsPerMinute: 10,
+        requestsPerDay: 100,
+        tokensPerDay: 10000,
+    },
     STARTER: {
         requestsPerMinute: 20,
         requestsPerDay: 500,
@@ -112,10 +117,10 @@ export function rateLimit() {
             return;
         }
 
-        // Get user tier (default to STARTER)
+        // Get user tier (default to FREE)
         const user = c.get('user');
         const tier: UserTier =
-            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'FREE';
 
         const limits = TIER_LIMITS[tier];
         const state = getRateLimitState(userId, tier);
@@ -173,7 +178,7 @@ export function rateLimit() {
 /**
  * Get rate limit status for a user
  */
-export function getRateLimitStatus(userId: string, tier: UserTier = 'STARTER') {
+export function getRateLimitStatus(userId: string, tier: UserTier = 'FREE') {
     const limits = TIER_LIMITS[tier];
     const state = getRateLimitState(userId, tier);
 
