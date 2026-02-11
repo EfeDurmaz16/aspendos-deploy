@@ -166,10 +166,11 @@ app.post(
             return c.json({ error: 'Model not available for your tier' }, 403);
         }
 
-        // Check chat and token quotas before processing
-        const [hasChats, hasTokenBudget] = await Promise.all([
+        // Check chat, token quotas, and daily cost ceiling before processing
+        const [hasChats, hasTokenBudget, costCeiling] = await Promise.all([
             billingService.hasChatsRemaining(userId),
             billingService.hasTokens(userId, 1000), // Rough minimum estimate
+            billingService.checkCostCeiling(userId),
         ]);
 
         if (!hasChats) {
@@ -178,6 +179,10 @@ app.post(
 
         if (!hasTokenBudget) {
             return c.json({ error: 'Monthly token limit reached. Please upgrade your plan.' }, 403);
+        }
+
+        if (!costCeiling.allowed) {
+            return c.json({ error: 'Daily spending limit reached. Try again tomorrow or upgrade your plan.' }, 403);
         }
 
         // Decrement chat quota
