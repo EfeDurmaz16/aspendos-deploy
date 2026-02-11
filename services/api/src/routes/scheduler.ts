@@ -8,6 +8,7 @@ import { ScheduledTaskStatus } from '@aspendos/db';
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
+import { recordTokenUsage } from '../services/billing.service';
 import * as commitmentService from '../services/commitment-detector.service';
 import { sendNotification } from '../services/notification.service';
 import * as schedulerService from '../services/scheduler.service';
@@ -233,6 +234,9 @@ app.post('/execute', validateBody(executeTaskSchema), async (c) => {
         // Generate the re-engagement message
         const message = await commitmentService.generateReengagementMessage(task);
 
+        // Meter the LLM call for re-engagement generation (~200 input + 150 output tokens)
+        await recordTokenUsage(task.userId, 200, 150, 'openai/gpt-4o-mini');
+
         // Mark as completed
         await schedulerService.markTaskCompleted(taskId, message, 'pending_delivery');
 
@@ -285,6 +289,10 @@ app.post('/poll', async (c) => {
         try {
             await schedulerService.markTaskProcessing(task.id);
             const message = await commitmentService.generateReengagementMessage(task);
+
+            // Meter the LLM call for re-engagement generation
+            await recordTokenUsage(task.userId, 200, 150, 'openai/gpt-4o-mini');
+
             await schedulerService.markTaskCompleted(task.id, message, 'pending_delivery');
 
             // Trigger notification delivery
