@@ -33,6 +33,12 @@ app.post('/transcribe', async (c) => {
             return c.json({ error: 'No audio file provided' }, 400);
         }
 
+        // Limit audio file size to 25MB (OpenAI Whisper limit)
+        const MAX_AUDIO_SIZE = 25 * 1024 * 1024;
+        if (audioFile.size > MAX_AUDIO_SIZE) {
+            return c.json({ error: 'Audio file exceeds 25MB limit' }, 400);
+        }
+
         // Convert to Blob for OpenAI API
         const transcription = await getOpenAI().audio.transcriptions.create({
             file: audioFile,
@@ -46,30 +52,36 @@ app.post('/transcribe', async (c) => {
             duration: (audioFile as File & { size: number }).size / 16000, // Rough estimate
         });
     } catch (error) {
-        console.error('[Voice] Transcription error:', error);
-        return c.json(
-            {
-                error: 'Failed to transcribe audio',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            500
-        );
+        console.error('[Voice] Transcription error:', error instanceof Error ? error.message : 'Unknown');
+        return c.json({ error: 'Failed to transcribe audio' }, 500);
     }
 });
+
+// Allowed TTS voices (prevent arbitrary parameter injection)
+const ALLOWED_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] as const;
+const MAX_TTS_TEXT_LENGTH = 4096; // OpenAI TTS limit
 
 // POST /api/voice/synthesize - Convert text to speech
 app.post('/synthesize', async (c) => {
     const body = await c.req.json();
     const { text, voice = 'alloy' } = body;
 
-    if (!text) {
+    if (!text || typeof text !== 'string') {
         return c.json({ error: 'No text provided' }, 400);
+    }
+
+    if (text.length > MAX_TTS_TEXT_LENGTH) {
+        return c.json({ error: `Text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters` }, 400);
+    }
+
+    if (!ALLOWED_VOICES.includes(voice)) {
+        return c.json({ error: 'Invalid voice parameter' }, 400);
     }
 
     try {
         const mp3 = await getOpenAI().audio.speech.create({
             model: 'tts-1',
-            voice: voice, // alloy, echo, fable, onyx, nova, shimmer
+            voice: voice,
             input: text,
         });
 
@@ -85,14 +97,8 @@ app.post('/synthesize', async (c) => {
             voice,
         });
     } catch (error) {
-        console.error('[Voice] Synthesis error:', error);
-        return c.json(
-            {
-                error: 'Failed to synthesize speech',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            500
-        );
+        console.error('[Voice] Synthesis error:', error instanceof Error ? error.message : 'Unknown');
+        return c.json({ error: 'Failed to synthesize speech' }, 500);
     }
 });
 
@@ -101,8 +107,16 @@ app.post('/synthesize/stream', async (c) => {
     const body = await c.req.json();
     const { text, voice = 'alloy' } = body;
 
-    if (!text) {
+    if (!text || typeof text !== 'string') {
         return c.json({ error: 'No text provided' }, 400);
+    }
+
+    if (text.length > MAX_TTS_TEXT_LENGTH) {
+        return c.json({ error: `Text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters` }, 400);
+    }
+
+    if (!ALLOWED_VOICES.includes(voice)) {
+        return c.json({ error: 'Invalid voice parameter' }, 400);
     }
 
     try {
@@ -125,14 +139,8 @@ app.post('/synthesize/stream', async (c) => {
             },
         });
     } catch (error) {
-        console.error('[Voice] Streaming synthesis error:', error);
-        return c.json(
-            {
-                error: 'Failed to stream speech',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            500
-        );
+        console.error('[Voice] Streaming synthesis error:', error instanceof Error ? error.message : 'Unknown');
+        return c.json({ error: 'Failed to stream speech' }, 500);
     }
 });
 
@@ -182,14 +190,8 @@ app.post('/token', async (c) => {
             url: 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent', // Standard Gemini Live endpoint
         });
     } catch (error) {
-        console.error('[Voice] Token generation error:', error);
-        return c.json(
-            {
-                error: 'Failed to generate voice token',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            500
-        );
+        console.error('[Voice] Token generation error:', error instanceof Error ? error.message : 'Unknown');
+        return c.json({ error: 'Failed to generate voice token' }, 500);
     }
 });
 

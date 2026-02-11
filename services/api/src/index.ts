@@ -85,11 +85,18 @@ app.use('*', async (c, next) => {
         await next();
     } catch (err) {
         // Capture error in Sentry
+        // Sanitize headers before sending to Sentry (never log auth tokens)
+        const SENSITIVE_HEADERS = ['authorization', 'cookie', 'x-cron-secret', 'x-polar-signature', 'polar-signature'];
+        const safeHeaders = Object.fromEntries(
+            [...c.req.raw.headers.entries()].filter(
+                ([key]) => !SENSITIVE_HEADERS.includes(key.toLowerCase())
+            )
+        );
         Sentry.captureException(err, {
             extra: {
                 path: c.req.path,
                 method: c.req.method,
-                headers: Object.fromEntries(c.req.raw.headers.entries()),
+                headers: safeHeaders,
             },
         });
         // Re-throw to let Hono handle the error response

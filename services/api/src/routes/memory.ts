@@ -57,9 +57,15 @@ app.get('/dashboard/list', async (c) => {
  * Note: OpenMemory doesn't support direct updates, so we delete and re-add
  */
 app.patch('/dashboard/:id', async (c) => {
-    const _userId = c.get('userId')!;
+    const userId = c.get('userId')!;
     const memoryId = c.req.param('id');
     const body = await c.req.json();
+
+    // Verify ownership before update
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
+    }
 
     // Update memory
     try {
@@ -92,7 +98,15 @@ app.patch('/dashboard/:id', async (c) => {
  * DELETE /api/memory/dashboard/:id
  */
 app.delete('/dashboard/:id', async (c) => {
+    const userId = c.get('userId')!;
     const memoryId = c.req.param('id');
+
+    // Verify ownership before delete
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
+    }
+
     await openMemory.deleteMemory(memoryId);
     return c.json({ success: true, message: 'Memory deleted' });
 });
@@ -101,6 +115,7 @@ app.delete('/dashboard/:id', async (c) => {
  * POST /api/memory/dashboard/bulk-delete - Bulk delete memories
  */
 app.post('/dashboard/bulk-delete', async (c) => {
+    const userId = c.get('userId')!;
     const body = await c.req.json();
     const ids = body.ids as string[];
 
@@ -108,9 +123,17 @@ app.post('/dashboard/bulk-delete', async (c) => {
         return c.json({ error: 'ids array is required' }, 400);
     }
 
+    // Cap bulk operations to prevent abuse
+    if (ids.length > 100) {
+        return c.json({ error: 'Maximum 100 items per bulk delete' }, 400);
+    }
+
     let deleted = 0;
     for (const id of ids) {
         try {
+            // Verify ownership before each delete
+            const isOwner = await openMemory.verifyMemoryOwnership(id, userId);
+            if (!isOwner) continue;
             await openMemory.deleteMemory(id);
             deleted++;
         } catch {
@@ -126,10 +149,17 @@ app.post('/dashboard/bulk-delete', async (c) => {
  * Positive feedback = reinforce memory
  */
 app.post('/dashboard/feedback', async (c) => {
+    const userId = c.get('userId')!;
     const body = await c.req.json();
 
     if (!body.memoryId || typeof body.wasHelpful !== 'boolean') {
         return c.json({ error: 'memoryId and wasHelpful are required' }, 400);
+    }
+
+    // Verify ownership before reinforcing
+    const isOwner = await openMemory.verifyMemoryOwnership(body.memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
     }
 
     if (body.wasHelpful) {
@@ -197,7 +227,14 @@ app.post('/search', async (c) => {
  * POST /api/memory/reinforce/:id
  */
 app.post('/reinforce/:id', async (c) => {
+    const userId = c.get('userId')!;
     const memoryId = c.req.param('id');
+
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
+    }
+
     await openMemory.reinforceMemory(memoryId);
     return c.json({ success: true });
 });
@@ -206,7 +243,14 @@ app.post('/reinforce/:id', async (c) => {
  * DELETE /api/memory/:id
  */
 app.delete('/:id', async (c) => {
+    const userId = c.get('userId')!;
     const memoryId = c.req.param('id');
+
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
+    }
+
     await openMemory.deleteMemory(memoryId);
     return c.json({ success: true });
 });

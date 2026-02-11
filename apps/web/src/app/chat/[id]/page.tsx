@@ -10,10 +10,11 @@ import { AddModelsModal } from '@/components/chat/add-models-modal';
 import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
 import { ContextMenuMessage } from '@/components/chat/context-menu-message';
 import { useAuth } from '@/hooks/use-auth';
-import { useStreamingChat } from '@/hooks/useStreamingChat';
+import { useStreamingChat, type ChatMessage, type MemoryDecision } from '@/hooks/useStreamingChat';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import type { PromptInputMessage } from '@/components/ai-elements/prompt-input';
+import type { MessageResponseProps } from '@/components/ai-elements/message';
 
 // AI Elements Imports
 import {
@@ -26,8 +27,6 @@ import {
     Message,
     MessageContent,
     MessageResponse,
-    MessageAttachment,
-    MessageAttachments,
 } from '@/components/ai-elements/message';
 import {
     PromptInput,
@@ -50,12 +49,25 @@ import {
     PromptInputSelectContent,
     PromptInputSelectItem,
 } from '@/components/ai-elements/prompt-input';
-import { Reasoning, ChainOfThought } from '@/components/ai-elements/reasoning';
+import { Reasoning } from '@/components/ai-elements/reasoning';
 
 // Streamdown Plugins
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css'; // Ensure katex CSS is imported for math rendering
+
+const REMARK_PLUGINS = [remarkMath] as unknown as NonNullable<MessageResponseProps['plugins']>;
+const REHYPE_PLUGINS = [rehypeKatex] as unknown as NonNullable<
+    MessageResponseProps['rehypePlugins']
+>;
+
+type StoredChatMessage = {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    createdAt: string;
+    decision?: MemoryDecision | null;
+};
 
 interface Chat {
     id: string;
@@ -63,7 +75,7 @@ interface Chat {
     modelPreference: string | null;
     createdAt: string;
     updatedAt: string;
-    messages?: any[];
+    messages?: StoredChatMessage[];
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -83,11 +95,11 @@ export default function ChatPage() {
 
     const [isAddModelsOpen, setIsAddModelsOpen] = useState(false);
     const [enabledModels, setEnabledModels] = useState<string[]>([
-        'openai/gpt-5.2',
-        'anthropic/claude-opus-4.5',
-        'anthropic/claude-sonnet-4.5',
-        'openai/gpt-5-nano',
-        'google/gemini-3-pro-preview',
+        'openai/gpt-4o-mini',
+        'anthropic/claude-3-5-haiku-20241022',
+        'google/gemini-2.0-flash',
+        'openai/gpt-4o',
+        'anthropic/claude-sonnet-4-5-20250929',
     ]);
     const [model, setModel] = useState('openai/gpt-4o-mini');
     const [webSearch, setWebSearch] = useState(false);
@@ -168,16 +180,17 @@ export default function ChatPage() {
     }, [isLoaded, isSignedIn]);
 
     // Initial messages from chat load (re-implementing original logic because useStreamingChat is a wrapper)
-    const [initialMessages, setInitialMessages] = useState<any[]>([]);
+    const [initialMessages, setInitialMessages] = useState<ChatMessage[]>([]);
 
     useEffect(() => {
         if (chat?.messages) {
             // Map chat.messages to the format we need
-            const converted = chat.messages.map((m: any) => ({
+            const converted: ChatMessage[] = chat.messages.map((m) => ({
                 id: m.id,
-                role: m.role as 'user' | 'assistant',
+                role: m.role,
                 content: m.content,
                 timestamp: new Date(m.createdAt),
+                decision: m.decision ?? undefined,
             }));
             setInitialMessages(converted);
         }
@@ -188,10 +201,9 @@ export default function ChatPage() {
     // If we load old messages, we should probably initialize useStreamingChat with them if possible,
     // or just display them.
     // The previous code did: const allMessages = [...initialMessages, ...messages];
-    const allMessages = [...initialMessages, ...messages];
+    const allMessages: ChatMessage[] = [...initialMessages, ...messages];
 
-
-    const handleNewChat = async () => {
+    const handleNewChat = useCallback(async () => {
         try {
             const res = await fetch(`${API_BASE}/api/chat`, {
                 method: 'POST',
@@ -206,7 +218,7 @@ export default function ChatPage() {
         } catch {
             /* Handle error */
         }
-    };
+    }, [router]);
 
     const handleModelChange = useCallback(
         async (modelId: string) => {
@@ -246,12 +258,13 @@ export default function ChatPage() {
     }, [handleNewChat]);
 
     // Handle PromptInput submission
-    const handleSubmit = async (message: { text: string; files: any[] }) => {
-        // Just text for now, as useStreamingChat expects string
-        // If files are present, we might want to handle them (upload, then send URL?)
-        // For this MVP step, we'll focus on text.
-        await sendMessage(message.text, { model });
-    };
+    const handleSubmit = useCallback(
+        async (message: PromptInputMessage) => {
+            const text = webSearch ? `[Search] ${message.text}` : message.text;
+            await sendMessage(text, { model });
+        },
+        [model, sendMessage, webSearch]
+    );
 
     if (!isLoaded) {
         return (
@@ -339,31 +352,22 @@ export default function ChatPage() {
                                     <ContextMenuMessage
                                         key={msg.id || index}
                                         message={{ id: msg.id, content: msg.content, role: msg.role }}
-                                        onReply={(m) => {
-                                            // Handle reply - could prepend quote to input
-                                            toast.info('Reply feature coming soon');
-                                        }}
-                                        onEdit={msg.role === 'user' ? (m) => {
-                                            toast.info('Edit feature coming soon');
-                                        } : undefined}
-                                        onRegenerate={msg.role === 'assistant' ? (id) => {
-                                            toast.info('Regenerate feature coming soon');
-                                        } : undefined}
-                                        onForward={(m) => {
-                                            toast.info('Forward feature coming soon');
-                                        }}
                                     >
                                         <Message from={msg.role}>
                                             {/* Show reasoning for assistant messages if available */}
-                                            {msg.role === 'assistant' && msg.reasoning && (
-                                                <Reasoning isStreaming={isStreaming && index === allMessages.length - 1}>
-                                                    {msg.reasoning}
+                                            {msg.role === 'assistant' && msg.decision?.reasoning && (
+                                                <Reasoning
+                                                    isStreaming={
+                                                        isStreaming && index === allMessages.length - 1
+                                                    }
+                                                >
+                                                    {msg.decision.reasoning}
                                                 </Reasoning>
                                             )}
                                             <MessageContent>
                                                 <MessageResponse
-                                                    plugins={[remarkMath] as any}
-                                                    rehypePlugins={[rehypeKatex] as any}
+                                                    plugins={REMARK_PLUGINS}
+                                                    rehypePlugins={REHYPE_PLUGINS}
                                                 >
                                                     {msg.content}
                                                 </MessageResponse>
@@ -467,4 +471,3 @@ export default function ChatPage() {
         </div>
     );
 }
-

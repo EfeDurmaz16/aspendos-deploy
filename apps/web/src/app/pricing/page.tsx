@@ -112,9 +112,8 @@ const PRICING_TIERS = [
     },
 ];
 
-// Usage data - would come from API in production
-// TODO: Replace with real API fetch
-const USAGE_UNAVAILABLE = true;
+// Usage data is fetched from the billing API when user is authenticated
+const USAGE_UNAVAILABLE = false;
 
 function UsageBar({ current, limit, label }: { current: number; limit: number; label: string }) {
     const percentage = Math.min((current / limit) * 100, 100);

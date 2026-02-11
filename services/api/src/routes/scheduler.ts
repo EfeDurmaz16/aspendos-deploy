@@ -207,11 +207,10 @@ app.patch('/tasks/:id', requireAuth, validateBody(rescheduleTaskSchema), async (
 
 // POST /api/scheduler/execute - Execute a scheduled task (called by QStash/cron)
 app.post('/execute', validateBody(executeTaskSchema), async (c) => {
-    // Verify QStash signature if configured
-    const qstashSignature = c.req.header('upstash-signature');
-    if (process.env.QSTASH_CURRENT_SIGNING_KEY && qstashSignature) {
-        // TODO: Implement QStash signature verification
-        // For now, we'll trust the internal network
+    // Fail-closed: require CRON_SECRET for task execution
+    const cronSecret = c.req.header('x-cron-secret') || c.req.header('authorization')?.replace('Bearer ', '');
+    if (!process.env.CRON_SECRET || cronSecret !== process.env.CRON_SECRET) {
+        return c.json({ error: 'Unauthorized' }, 401);
     }
 
     const validated = c.get('validatedBody') as { taskId: string };

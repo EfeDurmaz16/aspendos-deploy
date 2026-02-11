@@ -87,14 +87,37 @@ app.post('/checkout', requireAuth, validateBody(createCheckoutSchema), async (c)
 
     const { plan, cycle, success_url, cancel_url } = validatedBody;
 
+    // Validate redirect URLs to prevent open redirect attacks
+    const ALLOWED_REDIRECT_HOSTS = [
+        'yula.dev',
+        'www.yula.dev',
+        'localhost',
+        'localhost:3000',
+    ];
+    const validateRedirectUrl = (url: string | undefined): string | undefined => {
+        if (!url) return undefined;
+        try {
+            const parsed = new URL(url);
+            if (!ALLOWED_REDIRECT_HOSTS.includes(parsed.host)) {
+                return undefined;
+            }
+            return url;
+        } catch {
+            return undefined;
+        }
+    };
+
+    const safeSuccessUrl = validateRedirectUrl(success_url) || `${process.env.FRONTEND_URL}/billing/success`;
+    const safeCancelUrl = validateRedirectUrl(cancel_url);
+
     try {
         const { checkoutUrl, checkoutId } = await polarService.createCheckout({
             userId,
             email: user.email,
             plan,
             cycle,
-            successUrl: success_url || `${process.env.FRONTEND_URL}/billing/success`,
-            cancelUrl: cancel_url,
+            successUrl: safeSuccessUrl,
+            cancelUrl: safeCancelUrl,
         });
 
         return c.json({
@@ -162,13 +185,14 @@ app.post('/webhook', async (c) => {
     // Get raw body for signature verification
     const rawBody = await c.req.text();
 
-    // Verify signature
-    if (webhookSecret && signature) {
-        const isValid = polarService.verifyWebhookSignature(rawBody, signature, webhookSecret);
-        if (!isValid) {
-            console.error('Invalid webhook signature');
-            return c.json({ error: 'Invalid signature' }, 401);
-        }
+    // Fail-closed: reject webhooks if secret is not configured
+    if (!webhookSecret) {
+        console.error('POLAR_WEBHOOK_SECRET is not configured - rejecting webhook');
+        return c.json({ error: 'Webhook not configured' }, 500);
+    }
+    if (!signature || !polarService.verifyWebhookSignature(rawBody, signature, webhookSecret)) {
+        console.error('Invalid webhook signature');
+        return c.json({ error: 'Invalid signature' }, 401);
     }
 
     try {

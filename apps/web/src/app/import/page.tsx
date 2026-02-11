@@ -216,8 +216,17 @@ export default function ImportPage() {
                     currentTitle: selectedConvs[i].title,
                 });
 
-                // TODO: Replace with actual API call
-                await new Promise((resolve) => setTimeout(resolve, 100));
+                // Send each conversation to the import API
+                const res = await fetch('/api/chats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: selectedConvs[i].title,
+                        source: selectedConvs[i].source,
+                        externalId: selectedConvs[i].externalId,
+                    }),
+                });
+                if (!res.ok) console.error(`Failed to import: ${selectedConvs[i].title}`);
             }
 
             setStep('complete');

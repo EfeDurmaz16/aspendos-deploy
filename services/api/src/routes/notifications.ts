@@ -100,16 +100,16 @@ app.patch('/preferences', requireAuth, async (c) => {
 app.get('/stream', requireAuth, async (c) => {
     const userId = c.get('userId')!;
 
-    console.log(`[Notifications] SSE stream connected for user ${userId}`);
+    console.log(`[Notifications] SSE stream connected`);
 
     const stream = new ReadableStream({
         async start(controller) {
             let isActive = true;
 
-            // Send initial connection message
+            // Send initial connection message (no userId to prevent leaking internal IDs)
             controller.enqueue(
                 new TextEncoder().encode(
-                    `:connected\ndata: {"type":"connected","userId":"${userId}"}\n\n`
+                    `:connected\ndata: {"type":"connected"}\n\n`
                 )
             );
 
@@ -199,7 +199,7 @@ app.get('/stream', requireAuth, async (c) => {
                 isActive = false;
                 clearInterval(heartbeat);
                 clearInterval(pollInterval);
-                console.log(`[Notifications] SSE connection closed for user ${userId}`);
+                console.log(`[Notifications] SSE connection closed`);
                 controller.close();
             });
         },

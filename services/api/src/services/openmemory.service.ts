@@ -205,6 +205,21 @@ export async function getMemoryStats(userId: string): Promise<MemoryStats> {
 }
 
 /**
+ * Verify that a memory belongs to a specific user (IDOR prevention)
+ */
+export async function verifyMemoryOwnership(memoryId: string, userId: string): Promise<boolean> {
+    try {
+        const memData = await q.get_mem.get(memoryId);
+        if (!memData) return false;
+        const meta = memData.meta ? JSON.parse(memData.meta) : {};
+        // OpenMemory stores user_id in the memory record or metadata
+        return memData.user_id === userId || meta.user_id === userId;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Get OpenMemory client for direct access
  */
 export function getMemoryClient(): Memory {

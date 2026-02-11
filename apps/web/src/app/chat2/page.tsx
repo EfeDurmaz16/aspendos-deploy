@@ -81,31 +81,28 @@ const MODEL_GROUPS = {
         models: [
             { id: 'gpt-4o', name: 'GPT-4o', description: 'Most capable model' },
             { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: 'Fast and efficient' },
-            { id: 'o1-preview', name: 'o1 Preview', description: 'Advanced reasoning' },
         ],
     },
     anthropic: {
         label: 'Anthropic',
         providerId: 'anthropic' as const,
         models: [
-            { id: 'claude-opus', name: 'Claude Opus', description: 'Most capable' },
-            { id: 'claude-sonnet', name: 'Claude Sonnet', description: 'Balanced performance' },
-            { id: 'claude-haiku', name: 'Claude Haiku', description: 'Fast responses' },
+            { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5', description: 'Balanced performance' },
+            { id: 'claude-3-5-haiku', name: 'Claude 3.5 Haiku', description: 'Fast responses' },
         ],
     },
     google: {
         label: 'Google',
         providerId: 'google' as const,
         models: [
-            { id: 'gemini-pro', name: 'Gemini Pro', description: 'Advanced reasoning' },
-            { id: 'gemini-flash', name: 'Gemini Flash', description: 'Ultra-fast' },
+            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Ultra-fast' },
         ],
     },
     meta: {
         label: 'Meta',
         providerId: 'llama' as const,
         models: [
-            { id: 'llama-3.1-70b', name: 'Llama 3.1 70B', description: 'Open source, powerful' },
+            { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', description: 'Open source, powerful' },
             { id: 'llama-3.1-8b', name: 'Llama 3.1 8B', description: 'Lightweight' },
         ],
     },
