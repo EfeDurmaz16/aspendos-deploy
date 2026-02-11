@@ -368,7 +368,7 @@ export async function POST(req: NextRequest) {
                     controller.enqueue(
                         sse.encode({
                             type: 'error',
-                            content: error instanceof Error ? error.message : 'Streaming failed',
+                            content: 'Streaming failed',
                         })
                     );
                     controller.close();

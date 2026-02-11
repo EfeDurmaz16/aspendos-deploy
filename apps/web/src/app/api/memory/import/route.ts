@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error('[API /memory/import] Error:', error);
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Import failed' },
+            { error: 'Import failed' },
             { status: 500 }
         );
     }
