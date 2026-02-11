@@ -123,16 +123,23 @@ app.get('/sessions/:id/stream', async (c) => {
     c.header('Connection', 'keep-alive');
 
     return stream(c, async (stream) => {
-        const personas: PersonaType[] = ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
+        // Use DB-stored persona ordering (learned from user preferences)
+        // Session responses are created in preference order during createCouncilSession()
+        const dbResponses = session.responses || [];
+        const personas: PersonaType[] = dbResponses.length > 0
+            ? dbResponses.map(r => r.persona as PersonaType)
+            : ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
 
         // Create streaming generators for each persona
         const streams = personas.map((persona) =>
             councilService.streamPersonaResponse(sessionId, persona, session.query)
         );
 
-        // Track completion
+        // Track completion and actual token usage
         const completed = new Set<PersonaType>();
         const activeStreams = new Map<PersonaType, AsyncGenerator>();
+        let totalPromptTokens = 0;
+        let totalCompletionTokens = 0;
 
         personas.forEach((persona, i) => {
             activeStreams.set(persona, streams[i]);
@@ -154,13 +161,18 @@ app.get('/sessions/:id/stream', async (c) => {
                     continue;
                 }
 
-                const { type, content, latencyMs } = result.value;
+                const { type, content, latencyMs, usage } = result.value;
 
                 if (type === 'text') {
                     await stream.write(
                         `data: ${JSON.stringify({ persona, type: 'persona_chunk', content })}\n\n`
                     );
                 } else if (type === 'done') {
+                    // Accumulate actual token usage from each persona
+                    if (usage) {
+                        totalPromptTokens += usage.promptTokens;
+                        totalCompletionTokens += usage.completionTokens;
+                    }
                     await stream.write(
                         `data: ${JSON.stringify({ persona, type: 'persona_complete', latencyMs })}\n\n`
                     );
@@ -178,14 +190,12 @@ app.get('/sessions/:id/stream', async (c) => {
         // Update session status
         await councilService.updateSessionStatus(sessionId);
 
-        // Meter token usage for all 4 persona LLM calls
-        // Each persona: ~200 input tokens (system + query) + up to 500 output tokens
-        const personaCount = completed.size;
-        if (personaCount > 0) {
+        // Meter actual token usage from all persona LLM calls
+        if (totalPromptTokens > 0 || totalCompletionTokens > 0) {
             await billingService.recordTokenUsage(
                 userId,
-                personaCount * 200,  // estimated input tokens
-                personaCount * 400,  // estimated output tokens (avg < maxTokens 500)
+                totalPromptTokens,
+                totalCompletionTokens,
                 'council-parallel'
             );
         }

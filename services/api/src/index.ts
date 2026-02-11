@@ -402,8 +402,13 @@ app.get('/api/export', async (c) => {
         const { prisma } = await import('./lib/prisma');
         const openMemory = await import('./services/openmemory.service');
 
-        // Fetch all user data in parallel
-        const [user, chats, memories, pacReminders, pacSettings, billingAccount, councilSessions, importJobs] = await Promise.all([
+        // Pagination: prevent OOM on large accounts
+        const page = Math.max(1, parseInt(c.req.query('page') || '1', 10) || 1);
+        const chatLimit = 50; // 50 chats per page
+        const chatSkip = (page - 1) * chatLimit;
+
+        // Fetch all user data in parallel (chats paginated)
+        const [user, chats, chatCount, memories, pacReminders, pacSettings, billingAccount, councilSessions, importJobs] = await Promise.all([
             prisma.user.findUnique({
                 where: { id: userId },
                 select: { id: true, name: true, email: true, createdAt: true, tier: true },
@@ -412,8 +417,11 @@ app.get('/api/export', async (c) => {
                 where: { userId },
                 include: { messages: { select: { role: true, content: true, createdAt: true, modelUsed: true } } },
                 orderBy: { createdAt: 'desc' },
+                take: chatLimit,
+                skip: chatSkip,
             }),
-            openMemory.listMemories(userId, { limit: 10000 }),
+            prisma.chat.count({ where: { userId } }),
+            openMemory.listMemories(userId, { limit: 1000 }),
             prisma.pACReminder.findMany({
                 where: { userId },
                 select: { id: true, content: true, type: true, status: true, triggerAt: true, createdAt: true },
@@ -438,6 +446,12 @@ app.get('/api/export', async (c) => {
         return c.json({
             exportedAt: new Date().toISOString(),
             format: 'YULA_EXPORT_V1',
+            pagination: {
+                page,
+                chatLimit,
+                totalChats: chatCount,
+                totalPages: Math.ceil(chatCount / chatLimit),
+            },
             user,
             chats: chats.map(chat => ({
                 id: chat.id,

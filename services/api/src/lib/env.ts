@@ -13,12 +13,15 @@ const optionalEnvVars = [
     'OPENAI_API_KEY',
     'ANTHROPIC_API_KEY',
     'GROQ_API_KEY',
+    'GOOGLE_AI_API_KEY',
     'QDRANT_URL',
     'QDRANT_API_KEY',
     'POLAR_ACCESS_TOKEN',
     'POLAR_WEBHOOK_SECRET',
+    'CRON_SECRET',
     'AGENTS_URL',
     'FRONTEND_URL',
+    'CORS_ORIGINS',
 ] as const;
 
 export function validateEnv() {

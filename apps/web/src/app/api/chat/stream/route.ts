@@ -295,19 +295,38 @@ export async function POST(req: NextRequest) {
                             })
                         );
                     } else if (decision.type === 'proactive_schedule') {
-                        // Handle proactive scheduling
+                        // Handle proactive scheduling - connect to real PAC queue
                         const scheduleDecision = decision as { schedule: { time: string; action: string }; reason: string };
-                        fullContent = `[Proactive reminder scheduled]\n\nI'll remind you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.\n\n(PAC system will handle this notification)`;
-                        usedModel = 'system';
 
+                        // Attempt to schedule via PAC service
+                        try {
+                            const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8080';
+                            const pacResponse = await fetch(`${apiBase}/api/pac/reminders`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Cookie': req.headers.get('cookie') || '' },
+                                body: JSON.stringify({
+                                    content: scheduleDecision.schedule.action,
+                                    triggerAt: scheduleDecision.schedule.time,
+                                    type: 'EXPLICIT',
+                                }),
+                            });
+
+                            if (pacResponse.ok) {
+                                fullContent = `I've scheduled a reminder for you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.\n\nYou'll be notified when it's time.`;
+                            } else {
+                                fullContent = `I tried to schedule a reminder for "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}, but the scheduling service returned an error. Please try setting the reminder manually.`;
+                            }
+                        } catch {
+                            fullContent = `I'll remind you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.\n\nNote: The reminder service is temporarily unavailable. Please set a manual reminder as backup.`;
+                        }
+
+                        usedModel = 'system';
                         controller.enqueue(
                             sse.encode({
                                 type: 'text',
                                 content: fullContent,
                             })
                         );
-
-                        // TODO: Store in PAC queue
                     }
 
                     // ========================================

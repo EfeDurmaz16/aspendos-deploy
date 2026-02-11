@@ -312,6 +312,14 @@ app.post(
                         extractMemoriesFromExchange(userId, content, text).catch(err =>
                             console.error('[Memory] Auto-extraction failed:', err)
                         );
+
+                        // Self-reflection: score response quality (fire-and-forget)
+                        // This builds data for learning which memory/routing combos work best
+                        getMemoryAgent().reflectOnResponse(content, text, decision.useMemory).then(reflection => {
+                            if (!reflection.satisfied) {
+                                console.warn(`[Quality] Low score ${reflection.qualityScore}/100 for query "${content.slice(0, 60)}..." - ${reflection.retryStrategy || 'no strategy'}`);
+                            }
+                        }).catch(() => { /* non-blocking */ });
                     },
                 });
 

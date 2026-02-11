@@ -191,7 +191,7 @@ export async function* streamPersonaResponse(
     sessionId: string,
     persona: PersonaType,
     query: string
-): AsyncGenerator<{ type: 'text' | 'done' | 'error'; content?: string; latencyMs?: number }> {
+): AsyncGenerator<{ type: 'text' | 'done' | 'error'; content?: string; latencyMs?: number; usage?: { promptTokens: number; completionTokens: number } }> {
     const startTime = Date.now();
     const personaDef = COUNCIL_PERSONAS[persona];
 
@@ -219,6 +219,8 @@ export async function* streamPersonaResponse(
             yield { type: 'text', content: chunk };
         }
 
+        // Get actual token usage from the stream result
+        const usage = await result.usage;
         const latencyMs = Date.now() - startTime;
 
         // Update response in database
@@ -231,7 +233,14 @@ export async function* streamPersonaResponse(
             },
         });
 
-        yield { type: 'done', latencyMs };
+        yield {
+            type: 'done',
+            latencyMs,
+            usage: {
+                promptTokens: usage?.promptTokens || 0,
+                completionTokens: usage?.completionTokens || 0,
+            },
+        };
     } catch (error) {
         console.error(`Error streaming ${persona}:`, error);
 

@@ -111,10 +111,24 @@ export async function routeUserMessage(
             throw new Error('Empty response from router');
         }
 
-        // Parse JSON response
+        // Parse and validate JSON response
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-            const decision = JSON.parse(jsonMatch[0]) as RouteDecision;
+            const raw = JSON.parse(jsonMatch[0]);
+
+            // Runtime validation: ensure type is one of the valid decision types
+            const VALID_ROUTE_TYPES = ['direct_reply', 'rag_search', 'tool_call', 'proactive_schedule'];
+            if (!raw || typeof raw !== 'object' || !VALID_ROUTE_TYPES.includes(raw.type)) {
+                throw new Error(`Invalid route type from LLM: ${raw?.type}`);
+            }
+
+            // Sanitize string fields to prevent injection
+            const decision: RouteDecision = {
+                ...raw,
+                type: raw.type,
+                reason: typeof raw.reason === 'string' ? raw.reason.slice(0, 500) : 'No reason provided',
+            } as RouteDecision;
+
             // Constrain model to user's tier
             if ('model' in decision && decision.model) {
                 decision.model = constrainModelToTier(decision.model, context?.userTier);
@@ -142,7 +156,11 @@ export async function routeUserMessage(
             if (content) {
                 const jsonMatch = content.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
-                    return JSON.parse(jsonMatch[0]) as RouteDecision;
+                    const raw = JSON.parse(jsonMatch[0]);
+                    const VALID_ROUTE_TYPES = ['direct_reply', 'rag_search', 'tool_call', 'proactive_schedule'];
+                    if (raw && typeof raw === 'object' && VALID_ROUTE_TYPES.includes(raw.type)) {
+                        return raw as RouteDecision;
+                    }
                 }
             }
         } catch (fallbackError) {

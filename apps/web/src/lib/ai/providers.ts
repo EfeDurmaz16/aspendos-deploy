@@ -8,6 +8,7 @@
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { createGroq } from '@ai-sdk/groq';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 // ============================================
 // PROVIDER INITIALIZATION
@@ -19,6 +20,13 @@ import { createGroq } from '@ai-sdk/groq';
  */
 export const groq = createGroq({
     apiKey: process.env.GROQ_API_KEY,
+});
+
+/**
+ * Google Generative AI provider - Gemini models
+ */
+export const google = createGoogleGenerativeAI({
+    apiKey: process.env.GOOGLE_AI_API_KEY,
 });
 
 // Re-export default providers
@@ -38,13 +46,16 @@ export type ModelId =
     | 'claude-3-5-sonnet-20241022'
     | 'claude-3-haiku-20240307'
     | 'claude-3-opus-20240229'
+    // Google
+    | 'gemini-2.0-flash'
+    | 'gemini-2.5-pro-preview-05-06'
     // Groq (Fast)
     | 'llama-3.1-70b-versatile'
     | 'llama-3.1-8b-instant'
     | 'llama3-8b-8192'
     | 'mixtral-8x7b-32768';
 
-export type ProviderType = 'openai' | 'anthropic' | 'groq';
+export type ProviderType = 'openai' | 'anthropic' | 'google' | 'groq';
 
 export interface ModelConfig {
     id: ModelId;
@@ -108,6 +119,21 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
         contextWindow: 200000,
     },
 
+    // Google Models
+    'gemini-2.0-flash': {
+        id: 'gemini-2.0-flash',
+        provider: 'google',
+        displayName: 'Gemini 2.0 Flash',
+        contextWindow: 1000000,
+        isFast: true,
+    },
+    'gemini-2.5-pro-preview-05-06': {
+        id: 'gemini-2.5-pro-preview-05-06',
+        provider: 'google',
+        displayName: 'Gemini 2.5 Pro',
+        contextWindow: 1000000,
+    },
+
     // Groq Models (Fast inference)
     'llama-3.1-70b-versatile': {
         id: 'llama-3.1-70b-versatile',
@@ -159,6 +185,8 @@ export function getModel(modelId: ModelId | string) {
             return openai(config.id);
         case 'anthropic':
             return anthropic(config.id);
+        case 'google':
+            return google(config.id);
         case 'groq':
             return groq(config.id);
         default:
@@ -188,15 +216,17 @@ export function getFallbackRouterModel() {
  * Fallback chain for each model - used when primary fails
  */
 export const FALLBACK_CHAIN: Record<string, ModelId[]> = {
-    'gpt-4o': ['claude-3-5-sonnet-20241022', 'llama-3.1-70b-versatile'],
-    'gpt-4o-mini': ['claude-3-haiku-20240307', 'llama-3.1-8b-instant'],
+    'gpt-4o': ['claude-3-5-sonnet-20241022', 'gemini-2.5-pro-preview-05-06'],
+    'gpt-4o-mini': ['gemini-2.0-flash', 'claude-3-haiku-20240307'],
     'gpt-4-turbo': ['claude-3-5-sonnet-20241022', 'gpt-4o'],
-    'gpt-3.5-turbo': ['gpt-4o-mini', 'llama-3.1-8b-instant'],
-    'claude-3-5-sonnet-20241022': ['gpt-4o', 'llama-3.1-70b-versatile'],
-    'claude-3-haiku-20240307': ['gpt-4o-mini', 'llama-3.1-8b-instant'],
+    'gpt-3.5-turbo': ['gpt-4o-mini', 'gemini-2.0-flash'],
+    'claude-3-5-sonnet-20241022': ['gpt-4o', 'gemini-2.5-pro-preview-05-06'],
+    'claude-3-haiku-20240307': ['gpt-4o-mini', 'gemini-2.0-flash'],
     'claude-3-opus-20240229': ['claude-3-5-sonnet-20241022', 'gpt-4o'],
+    'gemini-2.0-flash': ['gpt-4o-mini', 'claude-3-haiku-20240307'],
+    'gemini-2.5-pro-preview-05-06': ['gpt-4o', 'claude-3-5-sonnet-20241022'],
     'llama-3.1-70b-versatile': ['gpt-4o', 'claude-3-5-sonnet-20241022'],
-    'llama-3.1-8b-instant': ['gpt-4o-mini', 'claude-3-haiku-20240307'],
+    'llama-3.1-8b-instant': ['gpt-4o-mini', 'gemini-2.0-flash'],
     'llama3-8b-8192': ['llama-3.1-8b-instant', 'gpt-4o-mini'],
     'mixtral-8x7b-32768': ['llama-3.1-70b-versatile', 'gpt-4o'],
 };
