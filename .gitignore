@@ -78,3 +78,16 @@ ralph_log*.txt
 overnight-mission.sh
 start.sh
 start_ralph.sh
+
+# Benchmark artifacts
+*benchmark*.json
+*compare*.json
+analyze-bun.json
+better-bun*.json
+report-npm.json
+raw-bun*.txt
+better-min-time.txt
+
+# Build artifacts
+apps/yula-video/build/
+klaros/build/
