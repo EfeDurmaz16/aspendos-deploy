@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
                     },
                     {
                         key: 'Permissions-Policy',
-                        value: 'camera=(), microphone=(), geolocation=()',
+                        value: 'camera=(), microphone=(self), geolocation=()',
                     },
                     // Content-Security-Policy - only enabled in production
                     // Development needs more permissive settings for hot reload
@@ -67,7 +67,7 @@ const nextConfig: NextConfig = {
                                   key: 'Content-Security-Policy',
                                   value: [
                                       "default-src 'self'",
-                                      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.onesignal.com",
+                                      "script-src 'self' 'unsafe-inline' https://cdn.onesignal.com",
                                       "style-src 'self' 'unsafe-inline'",
                                       "img-src 'self' data: blob: https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
                                       "font-src 'self' data:",

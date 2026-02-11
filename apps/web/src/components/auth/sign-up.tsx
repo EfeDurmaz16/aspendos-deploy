@@ -5,7 +5,6 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -28,6 +27,7 @@ export default function SignUp() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -49,6 +49,20 @@ export default function SignUp() {
             reader.readAsDataURL(file);
         });
     }
+
+    const validatePassword = (pwd: string) => {
+        if (pwd.length < 8) return 'Password must be at least 8 characters';
+        if (!/[A-Z]/.test(pwd)) return 'Password must contain an uppercase letter';
+        if (!/[a-z]/.test(pwd)) return 'Password must contain a lowercase letter';
+        if (!/[0-9]/.test(pwd)) return 'Password must contain a number';
+        return '';
+    };
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newPassword = e.target.value;
+        setPassword(newPassword);
+        setPasswordError(validatePassword(newPassword));
+    };
 
     return (
         <Card className="z-50 rounded-md rounded-t-none max-w-md">
@@ -105,10 +119,13 @@ export default function SignUp() {
                             id="password"
                             type="password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={handlePasswordChange}
                             autoComplete="new-password"
                             placeholder="Password"
                         />
+                        {passwordError && (
+                            <p className="text-xs text-red-500">{passwordError}</p>
+                        )}
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="password_confirmation">Confirm Password</Label>
@@ -157,7 +174,7 @@ export default function SignUp() {
                     <Button
                         type="submit"
                         className="w-full"
-                        disabled={loading}
+                        disabled={loading || passwordError !== ''}
                         onClick={async () => {
                             await signUp.email({
                                 email,

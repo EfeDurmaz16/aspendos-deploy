@@ -6,7 +6,6 @@ import {
     CircleNotch,
     Database,
     Globe,
-    Key,
     Moon,
     Palette,
     Shield,
@@ -86,7 +85,6 @@ export default function SettingsPage() {
 
     const [settings, setSettings] = useState<UserSettings>(defaultSettings);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
     const [activeSection, setActiveSection] = useState('account');
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -143,9 +141,25 @@ export default function SettingsPage() {
     };
 
     const handleDeleteAccount = async () => {
-        // In production, this would call an API to delete the account
-        setShowDeleteConfirm(false);
-        alert('Account deletion requested. You will receive an email confirmation.');
+        try {
+            // Call account deletion API
+            const response = await fetch('/api/account', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete account');
+            }
+
+            // Sign out and redirect
+            setShowDeleteConfirm(false);
+            // Redirect to home page after deletion
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Account deletion failed:', error);
+            alert('Failed to delete account. Please contact support.');
+        }
     };
 
     if (!isLoaded || isLoading) {
@@ -301,14 +315,18 @@ export default function SettingsPage() {
                                             Theme
                                         </label>
                                         <div className="flex gap-3">
-                                            {[
+                                            {(
+                                                [
                                                 { id: 'light', label: 'Light', icon: Sun },
                                                 { id: 'dark', label: 'Dark', icon: Moon },
                                                 { id: 'system', label: 'System', icon: Globe },
-                                            ].map((theme) => (
+                                            ] as const
+                                            ).map((theme) => (
                                                 <button
                                                     key={theme.id}
-                                                    onClick={() => updateSettings('appearance', 'theme', theme.id as any)}
+                                                    onClick={() =>
+                                                        updateSettings('appearance', 'theme', theme.id)
+                                                    }
                                                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-all ${
                                                         settings.appearance.theme === theme.id
                                                             ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
