@@ -21,8 +21,12 @@ app.post('/detect', async (c) => {
 
     const { message, conversationId, messageId } = body;
 
-    if (!message || typeof message !== 'string') {
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
         return c.json({ error: 'message is required' }, 400);
+    }
+
+    if (message.length > 10000) {
+        return c.json({ error: 'Message too long. Maximum 10,000 characters.' }, 400);
     }
 
     // Get user settings
@@ -126,8 +130,8 @@ app.patch('/reminders/:id/snooze', async (c) => {
 
     const { minutes } = body;
 
-    if (typeof minutes !== 'number' || minutes <= 0) {
-        return c.json({ error: 'minutes must be a positive number' }, 400);
+    if (typeof minutes !== 'number' || minutes <= 0 || minutes > 10080) {
+        return c.json({ error: 'minutes must be between 1 and 10080 (7 days)' }, 400);
     }
 
     const result = await pacService.snoozeReminder(reminderId, userId, minutes);
