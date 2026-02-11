@@ -7,6 +7,31 @@ import { Polar } from "@polar-sh/sdk";
 import { prisma } from "@aspendos/db";
 import { headers } from "next/headers";
 
+async function sendPasswordResetEmail(args: { to: string; resetUrl: string }) {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.RESEND_FROM;
+
+    if (!apiKey || !from) return;
+
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            from,
+            to: args.to,
+            subject: "Reset your YULA password",
+            html: `<p>Reset your password by clicking the link below:</p><p><a href="${args.resetUrl}">Reset password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
+        }),
+    });
+
+    if (!response.ok) {
+        console.error("Failed to send password reset email:", await response.text());
+    }
+}
+
 // Initialize Polar client for payments
 const polarClient = new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN!,
@@ -19,10 +44,12 @@ export const authInstance = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
-        async sendResetPassword(data, request) {
-            // Send an email to the user with a link to reset their password
-            // data contains user object and token url
-            console.log("Reset password for", data.user.email);
+        minPasswordLength: 8,
+        async sendResetPassword(data, _request) {
+            const resetUrl = (data as { url?: unknown }).url;
+            const email = (data as { user?: { email?: unknown } }).user?.email;
+            if (typeof resetUrl !== "string" || typeof email !== "string") return;
+            await sendPasswordResetEmail({ to: email, resetUrl });
         },
     },
     socialProviders: {
@@ -71,32 +98,6 @@ export const authInstance = betterAuth({
             },
         }),
     ],
-    // Sync users to Convex after auth events
-    hooks: {
-        after: [
-            {
-                matcher: (context) => context.path.startsWith("/sign-up") || context.path.startsWith("/sign-in"),
-                handler: async (ctx) => {
-                    // Sync user to Convex after signup/signin
-                    if (ctx.context?.user) {
-                        try {
-                            await fetch(`${process.env.CONVEX_HTTP_URL}/webhooks/auth`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    event: "user.created",
-                                    user: ctx.context.user,
-                                }),
-                            });
-                        } catch (error) {
-                            console.error("Failed to sync user to Convex:", error);
-                        }
-                    }
-                    return ctx;
-                },
-            },
-        ],
-    },
 });
 
 /**

@@ -1,6 +1,9 @@
 /**
  * Rate Limiting Middleware
  * Token bucket algorithm with tier-based limits.
+ *
+ * PRODUCTION TODO: Replace with Redis-based rate limiting (@upstash/ratelimit or ioredis)
+ * Current implementation uses in-memory Map which will not scale across multiple instances.
  */
 import type { Context, Next } from 'hono';
 
@@ -31,24 +34,29 @@ interface RateLimitState {
     lastRefill: number;
     requestsToday: number;
     lastReset: number;
+    resetTime: number;
 }
 
 const rateLimitStore = new Map<string, RateLimitState>();
 
-// Clean up old entries periodically
-setInterval(
-    () => {
-        const now = Date.now();
-        const oneDayAgo = now - 24 * 60 * 60 * 1000;
+// Log warning about in-memory rate limiting on startup
+console.warn(
+    '⚠️  WARNING: Using in-memory rate limiting. This will NOT work correctly across multiple instances.'
+);
+console.warn(
+    '   For production, implement Redis-based rate limiting (@upstash/ratelimit or ioredis).'
+);
 
-        for (const [key, state] of rateLimitStore) {
-            if (state.lastRefill < oneDayAgo) {
-                rateLimitStore.delete(key);
-            }
+// Clean up expired entries every 60 seconds to prevent memory leaks
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, state] of rateLimitStore.entries()) {
+        // Remove entries that haven't been accessed in over 2 days
+        if (now - state.resetTime > 2 * 24 * 60 * 60 * 1000) {
+            rateLimitStore.delete(key);
         }
-    },
-    60 * 60 * 1000
-); // Clean every hour
+    }
+}, 60_000);
 
 /**
  * Get or create rate limit state for a user
@@ -66,6 +74,7 @@ function getRateLimitState(userId: string, tier: UserTier): RateLimitState {
             lastRefill: now,
             requestsToday: 0,
             lastReset: now,
+            resetTime: now,
         };
         rateLimitStore.set(key, state);
         return state;
@@ -85,6 +94,7 @@ function getRateLimitState(userId: string, tier: UserTier): RateLimitState {
 
     state.tokens = Math.min(limits.requestsPerMinute, state.tokens + tokensToAdd);
     state.lastRefill = now;
+    state.resetTime = now;
 
     return state;
 }
