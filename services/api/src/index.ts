@@ -65,6 +65,21 @@ app.use('*', async (c, next) => {
     );
 });
 
+// Validate CORS origins - only allow valid URLs
+const extraOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => {
+        if (!o) return false;
+        try {
+            const url = new URL(o);
+            return ['http:', 'https:'].includes(url.protocol);
+        } catch {
+            console.warn(`Invalid CORS origin ignored: ${o}`);
+            return false;
+        }
+    });
+
 app.use(
     '*',
     cors({
@@ -73,7 +88,7 @@ app.use(
             'https://aspendos.net',
             'https://yula.dev',
             'https://www.yula.dev',
-            ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : []),
+            ...extraOrigins,
         ],
         credentials: true,
     })

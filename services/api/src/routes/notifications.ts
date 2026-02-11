@@ -102,8 +102,25 @@ app.patch('/preferences', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
 
+    // Whitelist allowed preference fields
+    const BOOLEAN_FIELDS = ['pushEnabled', 'emailEnabled', 'inAppEnabled', 'quietHoursEnabled'] as const;
+    const TIME_FIELDS = ['quietHoursStart', 'quietHoursEnd'] as const;
+    const TIME_REGEX = /^\d{2}:\d{2}$/;
+
+    const sanitized: Record<string, boolean | string> = {};
+    for (const field of BOOLEAN_FIELDS) {
+        if (typeof body[field] === 'boolean') sanitized[field] = body[field];
+    }
+    for (const field of TIME_FIELDS) {
+        if (typeof body[field] === 'string' && TIME_REGEX.test(body[field])) sanitized[field] = body[field];
+    }
+
+    if (Object.keys(sanitized).length === 0) {
+        return c.json({ error: 'No valid preference fields provided' }, 400);
+    }
+
     try {
-        await updateNotificationPreferences(userId, body);
+        await updateNotificationPreferences(userId, sanitized);
         return c.json({ success: true });
     } catch (error) {
         console.error('[Notifications] Error updating preferences:', error);

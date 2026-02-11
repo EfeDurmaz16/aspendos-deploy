@@ -179,7 +179,7 @@ app.post('/dashboard/feedback', async (c) => {
 app.get('/', async (c) => {
     const userId = c.get('userId')!;
     const query = c.req.query('q') || '';
-    const limit = parseInt(c.req.query('limit') || '10', 10);
+    const limit = Math.min(parseInt(c.req.query('limit') || '10', 10) || 10, 100);
 
     if (query) {
         const memories = await openMemory.searchMemories(query, userId, { limit });
@@ -197,9 +197,20 @@ app.post('/', async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
 
-    const memory = await openMemory.addMemory(body.content, userId, {
-        tags: body.tags,
-        sector: body.sector || 'semantic',
+    if (!body.content || typeof body.content !== 'string' || body.content.trim().length === 0) {
+        return c.json({ error: 'content is required and must be a non-empty string' }, 400);
+    }
+
+    if (body.content.length > 10000) {
+        return c.json({ error: 'content must be 10,000 characters or less' }, 400);
+    }
+
+    const VALID_SECTORS = ['semantic', 'episodic', 'procedural', 'emotional'];
+    const sector = VALID_SECTORS.includes(body.sector) ? body.sector : 'semantic';
+
+    const memory = await openMemory.addMemory(body.content.trim(), userId, {
+        tags: Array.isArray(body.tags) ? body.tags.slice(0, 20).map(String) : undefined,
+        sector,
         metadata: body.metadata,
     });
 
@@ -213,8 +224,14 @@ app.post('/search', async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
 
-    const memories = await openMemory.searchMemories(body.query, userId, {
-        limit: body.limit || 5,
+    if (!body.query || typeof body.query !== 'string' || body.query.trim().length === 0) {
+        return c.json({ error: 'query is required and must be a non-empty string' }, 400);
+    }
+
+    const limit = Math.min(parseInt(body.limit) || 5, 50);
+
+    const memories = await openMemory.searchMemories(body.query.trim(), userId, {
+        limit,
     });
 
     return c.json({
