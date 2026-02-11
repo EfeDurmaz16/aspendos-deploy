@@ -12,7 +12,7 @@ import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
 import * as chatService from '../services/chat.service';
-import { getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
+import { extractMemoriesFromExchange, getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
 import { createReminder, detectCommitments, getPACSettings } from '../services/pac.service';
 import { getToolsForTier, type UserTier } from '../tools';
@@ -307,6 +307,11 @@ app.post(
                                 modelId
                             );
                         }
+
+                        // Auto-extract memories from conversation (fire-and-forget)
+                        extractMemoriesFromExchange(userId, content, text).catch(err =>
+                            console.error('[Memory] Auto-extraction failed:', err)
+                        );
                     },
                 });
 

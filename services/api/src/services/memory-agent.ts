@@ -14,6 +14,7 @@
 
 import { generateText } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
+import * as openMemory from './openmemory.service';
 
 // ============================================
 // TYPES
@@ -524,7 +525,32 @@ export async function consolidateMemories(
 
     preserved = memories.length - merged - decayed;
 
-    // Return consolidation plan (caller executes the mutations)
+    // Execute mutations: delete merged duplicates
+    const removedIds = new Set(toMerge.map(m => m.remove));
+    for (const id of removedIds) {
+        try {
+            await openMemory.deleteMemory(id);
+        } catch {
+            // Continue if individual delete fails
+        }
+    }
+
+    // Execute mutations: update salience for decayed memories
+    for (const { id, newSalience } of toDecay) {
+        if (removedIds.has(id)) continue; // Already removed
+        try {
+            if (newSalience <= 0) {
+                await openMemory.deleteMemory(id);
+            } else {
+                await openMemory.updateMemory(id, '', {
+                    metadata: { salience: newSalience },
+                });
+            }
+        } catch {
+            // Continue if individual update fails
+        }
+    }
+
     return { merged, decayed, preserved };
 }
 
@@ -546,6 +572,80 @@ function jaccardSimilarity(a: string, b: string): number {
 
     const union = wordsA.size + wordsB.size - intersection;
     return union > 0 ? intersection / union : 0;
+}
+
+// ============================================
+// AUTO-EXTRACTION: Learn from conversations
+// ============================================
+
+/**
+ * Extract memorable facts from a chat exchange.
+ * Runs after each conversation turn to automatically build the user's memory.
+ * This is a core moat: competitors require manual memory management,
+ * we learn passively from every conversation.
+ */
+export async function extractMemoriesFromExchange(
+    userId: string,
+    userMessage: string,
+    assistantResponse: string,
+): Promise<{ extracted: string[]; sector: string }[]> {
+    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY || '' });
+
+    // Skip extraction for very short exchanges
+    if (userMessage.length < 20 && assistantResponse.length < 50) return [];
+
+    try {
+        const { text } = await generateText({
+            model: groq('llama-3.1-8b-instant'),
+            maxTokens: 300,
+            temperature: 0,
+            prompt: `Extract personal facts, preferences, or skills from this conversation exchange. Only extract information about the USER, not general facts.
+
+User: "${userMessage.slice(0, 500)}"
+Assistant: "${assistantResponse.slice(0, 500)}"
+
+If there are memorable facts about the user, respond with JSON array:
+[{"fact":"<concise fact about the user>","sector":"semantic|episodic|procedural|emotional"}]
+
+If nothing memorable, respond with: []
+
+Examples of extractable facts:
+- "User prefers TypeScript over JavaScript" (semantic)
+- "User is building a startup in healthcare" (semantic)
+- "User felt frustrated about deployment issues" (emotional)
+- "User's workflow: writes tests before implementation" (procedural)
+
+JSON only:`,
+        });
+
+        const parsed = JSON.parse(text.trim());
+        if (!Array.isArray(parsed) || parsed.length === 0) return [];
+
+        const results: { extracted: string[]; sector: string }[] = [];
+        const validSectors = ['semantic', 'episodic', 'procedural', 'emotional'];
+
+        for (const item of parsed.slice(0, 3)) { // Max 3 facts per exchange
+            if (!item.fact || typeof item.fact !== 'string') continue;
+            if (item.fact.length < 5 || item.fact.length > 500) continue;
+
+            const sector = validSectors.includes(item.sector) ? item.sector : 'semantic';
+
+            // Store via OpenMemory
+            try {
+                await openMemory.addMemory(item.fact, userId, {
+                    sector,
+                    metadata: { source: 'auto_extract', confidence: 0.7 },
+                });
+                results.push({ extracted: [item.fact], sector });
+            } catch {
+                // Non-blocking
+            }
+        }
+
+        return results;
+    } catch {
+        return []; // Extraction is best-effort, never blocks the response
+    }
 }
 
 // Singleton instance
