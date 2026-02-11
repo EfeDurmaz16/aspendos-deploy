@@ -6,6 +6,7 @@
  */
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
+import { consolidateMemories } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
 
 const app = new Hono();
@@ -270,6 +271,39 @@ app.delete('/:id', async (c) => {
 
     await openMemory.deleteMemory(memoryId);
     return c.json({ success: true });
+});
+
+// ============================================
+// CONSOLIDATION (MOAT FEATURE)
+// ============================================
+
+/**
+ * POST /api/memory/consolidate - Run memory consolidation pipeline
+ *
+ * Deduplicates similar memories and applies temporal decay.
+ * This is a key differentiator: we don't just store memories,
+ * we intelligently maintain them like human memory does.
+ */
+app.post('/consolidate', async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        const memories = await openMemory.listMemories(userId, { limit: 500 });
+
+        const result = await consolidateMemories(userId, memories);
+
+        return c.json({
+            success: true,
+            consolidation: {
+                totalMemories: memories.length,
+                merged: result.merged,
+                decayed: result.decayed,
+                preserved: result.preserved,
+            },
+        });
+    } catch {
+        return c.json({ error: 'Consolidation failed' }, 500);
+    }
 });
 
 export default app;

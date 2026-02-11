@@ -83,9 +83,10 @@ export async function* createUnifiedStreamingCompletion(
             console.warn(`[HybridRouter] Model ${currentModel} failed:`, error);
 
             if (i === modelsToTry.length - 1) {
+                console.error('[HybridRouter] All models exhausted:', error);
                 yield {
                     type: 'error',
-                    content: `All models failed. Last error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                    content: 'All models are currently unavailable. Please try again.',
                 };
                 return;
             }
