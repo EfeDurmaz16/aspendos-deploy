@@ -345,9 +345,9 @@ export async function storeImportEntities(
 /**
  * Update entity selection
  */
-export async function updateEntitySelection(entityId: string, selected: boolean) {
+export async function updateEntitySelection(entityId: string, jobId: string, selected: boolean) {
     return prisma.importEntity.update({
-        where: { id: entityId },
+        where: { id: entityId, jobId },
         data: { selected },
     });
 }

@@ -278,7 +278,7 @@ app.post('/poll', async (c) => {
     // This endpoint should be called by a cron job
     // Verify it's an internal call (e.g., via API key or secret header)
     const cronSecret = c.req.header('x-cron-secret');
-    if (cronSecret !== process.env.CRON_SECRET) {
+    if (!process.env.CRON_SECRET || cronSecret !== process.env.CRON_SECRET) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 

@@ -33,7 +33,12 @@ export const auth = betterAuth({
             sameSite: 'lax',
         },
     },
-    trustedOrigins: ['http://localhost:3000', 'https://aspendos.net'],
+    trustedOrigins: [
+        'http://localhost:3000',
+        'https://aspendos.net',
+        'https://yula.dev',
+        'https://www.yula.dev',
+    ],
     plugins: [
         polar({
             client: polarClient,

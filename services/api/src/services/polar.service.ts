@@ -13,11 +13,8 @@ const POLAR_ACCESS_TOKEN = process.env.POLAR_ACCESS_TOKEN || '';
 const IS_SANDBOX = POLAR_ACCESS_TOKEN.startsWith('polar_sat_');
 const POLAR_API_URL = IS_SANDBOX ? 'https://sandbox-api.polar.sh/v1' : 'https://api.polar.sh/v1';
 
-console.log('Polar Enviroment:', IS_SANDBOX ? 'SANDBOX' : 'PRODUCTION');
-console.log(
-    'Polar Token Loaded:',
-    POLAR_ACCESS_TOKEN ? `${POLAR_ACCESS_TOKEN.substring(0, 4)}...` : 'NONE'
-);
+console.log('Polar Environment:', IS_SANDBOX ? 'SANDBOX' : 'PRODUCTION');
+console.log('Polar Token Loaded:', POLAR_ACCESS_TOKEN ? 'YES' : 'NONE');
 
 // Product IDs from Polar dashboard (monthly)
 const PRODUCT_IDS = {

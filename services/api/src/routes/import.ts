@@ -178,7 +178,7 @@ app.patch('/jobs/:id/entities/:entityId', async (c) => {
         return c.json({ error: 'selected must be a boolean' }, 400);
     }
 
-    await importService.updateEntitySelection(entityId, body.selected);
+    await importService.updateEntitySelection(entityId, jobId, body.selected);
 
     return c.json({ success: true });
 });
@@ -204,7 +204,7 @@ app.post('/jobs/:id/entities/bulk-select', async (c) => {
     }
 
     for (const entityId of entityIds) {
-        await importService.updateEntitySelection(entityId, selected);
+        await importService.updateEntitySelection(entityId, jobId, selected);
     }
 
     return c.json({ success: true, updated: entityIds.length });
