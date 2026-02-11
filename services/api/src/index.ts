@@ -111,12 +111,14 @@ app.use('*', async (c, next) => {
     if (!session) {
         c.set('user', null);
         c.set('session', null);
+        c.set('userId', null);
         await next();
         return;
     }
 
     c.set('user', session.user);
     c.set('session', session.session);
+    c.set('userId', session.user.id);
     await next();
 });
 
@@ -180,7 +182,7 @@ app.get('/api/rate-limit', (c) => {
 
     const user = c.get('user');
     const tier =
-        ((user as Record<string, unknown>)?.tier as 'STARTER' | 'PRO' | 'ULTRA') || 'STARTER';
+        ((user as Record<string, unknown>)?.tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA') || 'FREE';
 
     return c.json(getRateLimitStatus(userId, tier));
 });

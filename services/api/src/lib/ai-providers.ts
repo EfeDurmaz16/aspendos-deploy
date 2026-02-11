@@ -95,12 +95,19 @@ export type SupportedModelId = (typeof SUPPORTED_MODELS)[number]['id'];
 /**
  * Get models available for a specific tier
  */
-export function getModelsForTier(tier: 'STARTER' | 'PRO' | 'ULTRA') {
-    const tierOrder = { STARTER: 0, PRO: 1, ULTRA: 2 };
+export function getModelsForTier(tier: 'FREE' | 'STARTER' | 'PRO' | 'ULTRA') {
+    const tierOrder = { FREE: 0, STARTER: 1, PRO: 2, ULTRA: 3 };
     const userTierLevel = tierOrder[tier];
 
+    // FREE tier only gets gpt-4o-mini and gemini-flash
+    if (tier === 'FREE') {
+        return SUPPORTED_MODELS.filter((model) =>
+            ['openai/gpt-4o-mini', 'google/gemini-2.0-flash'].includes(model.id)
+        );
+    }
+
     return SUPPORTED_MODELS.filter((model) => {
-        const modelTierLevel = tierOrder[model.tier as keyof typeof tierOrder];
+        const modelTierLevel = tierOrder[model.tier as keyof typeof tierOrder] ?? 1;
         return modelTierLevel <= userTierLevel;
     });
 }
@@ -110,7 +117,7 @@ export function getModelsForTier(tier: 'STARTER' | 'PRO' | 'ULTRA') {
  */
 export function isModelAvailableForTier(
     modelId: string,
-    tier: 'STARTER' | 'PRO' | 'ULTRA'
+    tier: 'FREE' | 'STARTER' | 'PRO' | 'ULTRA'
 ): boolean {
     const availableModels = getModelsForTier(tier);
     return availableModels.some((m) => m.id === modelId);

@@ -191,7 +191,7 @@ export const currentTimeTool = tool({
 // TOOL SETS BY TIER
 // ============================================
 
-export type UserTier = 'STARTER' | 'PRO' | 'ULTRA';
+export type UserTier = 'FREE' | 'STARTER' | 'PRO' | 'ULTRA';
 
 /**
  * Get tools available for a user's tier

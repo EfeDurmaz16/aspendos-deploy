@@ -141,10 +141,10 @@ app.post(
 
         const { content, model_id, enable_thinking, stream: shouldStream } = validatedBody;
 
-        // Get user tier (default to STARTER if not available)
+        // Get user tier (default to FREE if not available)
         const user = c.get('user');
         const userTier: UserTier =
-            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'FREE';
 
         // Verify chat exists and belongs to user
         const chat = await chatService.getChat(chatId, userId);
@@ -299,14 +299,8 @@ app.post(
 
                 return response;
             } catch (error) {
-                console.error('[Chat] Streaming error:', error);
-                return c.json(
-                    {
-                        error: 'Failed to stream response',
-                        details: error instanceof Error ? error.message : 'Unknown error',
-                    },
-                    500
-                );
+                console.error('[Chat] Streaming error:', error instanceof Error ? error.message : 'Unknown');
+                return c.json({ error: 'Failed to stream response' }, 500);
             }
         }
 
@@ -342,14 +336,8 @@ app.post(
                 toolCalls: result.toolCalls,
             });
         } catch (error) {
-            console.error('[Chat] Generation error:', error);
-            return c.json(
-                {
-                    error: 'Failed to generate response',
-                    details: error instanceof Error ? error.message : 'Unknown error',
-                },
-                500
-            );
+            console.error('[Chat] Generation error:', error instanceof Error ? error.message : 'Unknown');
+            return c.json({ error: 'Failed to generate response' }, 500);
         }
     }
 );
@@ -369,7 +357,7 @@ app.post(
         const chatId = validatedParams.id;
         const user = c.get('user');
         const userTier: UserTier =
-            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'FREE';
 
         // Check ULTRA tier
         if (userTier !== 'ULTRA') {
