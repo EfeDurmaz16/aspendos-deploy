@@ -123,6 +123,19 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // Check daily cost ceiling to prevent runaway spend
+        if (user.billingAccount) {
+            const dailyUsed = user.billingAccount.creditUsed || 0;
+            const monthlyCredit = user.billingAccount.monthlyCredit || 0;
+            const dailyCeiling = monthlyCredit / 25; // ~monthly / 25 working days
+            if (dailyCeiling > 0 && dailyUsed >= monthlyCredit) {
+                return new Response(
+                    JSON.stringify({ error: 'Monthly token budget exhausted. Please upgrade or wait for reset.' }),
+                    { status: 403, headers: { 'Content-Type': 'application/json' } }
+                );
+            }
+        }
+
         // Check billing limits with atomic decrement to prevent race conditions
         if (user.billingAccount) {
             const result = await prisma.billingAccount.updateMany({

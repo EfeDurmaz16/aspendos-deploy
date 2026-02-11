@@ -173,6 +173,13 @@ app.get('/portal', requireAuth, async (c) => {
     return c.json({ portal_url: portalUrl });
 });
 
+// GET /api/billing/cost-ceiling - Check daily cost ceiling status
+app.get('/cost-ceiling', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const ceiling = await billingService.checkCostCeiling(userId);
+    return c.json(ceiling);
+});
+
 // ============================================
 // WEBHOOK (NO AUTH - uses signature verification)
 // ============================================

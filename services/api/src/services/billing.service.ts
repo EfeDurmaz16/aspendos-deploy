@@ -236,6 +236,50 @@ export async function resetMonthlyCredits(userId: string) {
 }
 
 /**
+ * Check if user has exceeded their daily cost ceiling.
+ * Prevents runaway API spend from bugs, loops, or abuse.
+ * Returns { allowed, dailySpend, dailyCeiling, percentUsed }
+ */
+export async function checkCostCeiling(userId: string): Promise<{
+    allowed: boolean;
+    dailySpend: number;
+    dailyCeiling: number;
+    percentUsed: number;
+    warning: boolean;
+}> {
+    const account = await getOrCreateBillingAccount(userId);
+    const tier = account.plan.toUpperCase() as TierName;
+    const config = getTierConfig(tier);
+
+    // Daily ceiling = monthly tokens / 25 working days (generous buffer)
+    const dailyCeilingKTokens = (config.monthlyTokens / 1000) / 25;
+
+    // Sum today's usage from credit logs
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const todaysLogs = await prisma.creditLog.findMany({
+        where: {
+            billingAccountId: account.id,
+            createdAt: { gte: startOfDay },
+            reason: 'model_inference',
+        },
+        select: { amount: true },
+    });
+
+    const dailySpend = todaysLogs.reduce((sum, log) => sum + Math.abs(log.amount), 0);
+    const percentUsed = dailyCeilingKTokens > 0 ? Math.round((dailySpend / dailyCeilingKTokens) * 100) : 0;
+
+    return {
+        allowed: dailySpend < dailyCeilingKTokens,
+        dailySpend: Math.round(dailySpend * 10) / 10,
+        dailyCeiling: Math.round(dailyCeilingKTokens * 10) / 10,
+        percentUsed,
+        warning: percentUsed >= 80, // Alert at 80%
+    };
+}
+
+/**
  * Get usage history for user
  */
 export async function getUsageHistory(userId: string, limit?: number) {

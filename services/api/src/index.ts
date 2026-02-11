@@ -303,6 +303,92 @@ app.get('/api/chat/shared/:token', async (c) => {
     return c.json(sharedChat);
 });
 
+// ============================================
+// GDPR DATA EXPORT (Art. 20 - Data Portability)
+// ============================================
+app.get('/api/export', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    try {
+        const { prisma } = await import('./lib/prisma');
+        const openMemory = await import('./services/openmemory.service');
+
+        // Fetch all user data in parallel
+        const [user, chats, memories, pacReminders, pacSettings, billingAccount, councilSessions, importJobs] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, name: true, email: true, createdAt: true, tier: true },
+            }),
+            prisma.chat.findMany({
+                where: { userId },
+                include: { messages: { select: { role: true, content: true, createdAt: true, modelUsed: true } } },
+                orderBy: { createdAt: 'desc' },
+            }),
+            openMemory.listMemories(userId, { limit: 10000 }),
+            prisma.pACReminder.findMany({
+                where: { userId },
+                select: { id: true, content: true, type: true, status: true, triggerAt: true, createdAt: true },
+            }),
+            prisma.pACSettings.findUnique({ where: { userId } }),
+            prisma.billingAccount.findUnique({
+                where: { userId },
+                select: { plan: true, creditUsed: true, monthlyCredit: true, chatsRemaining: true, createdAt: true },
+            }),
+            prisma.councilSession.findMany({
+                where: { userId },
+                include: { responses: { select: { persona: true, content: true, status: true } } },
+                take: 100,
+                orderBy: { createdAt: 'desc' },
+            }),
+            prisma.importJob.findMany({
+                where: { userId },
+                select: { id: true, source: true, status: true, totalItems: true, importedItems: true, createdAt: true },
+            }),
+        ]);
+
+        return c.json({
+            exportedAt: new Date().toISOString(),
+            format: 'YULA_EXPORT_V1',
+            user,
+            chats: chats.map(chat => ({
+                id: chat.id,
+                title: chat.title,
+                createdAt: chat.createdAt,
+                messages: chat.messages,
+            })),
+            memories: memories.map(m => ({
+                id: m.id,
+                content: m.content,
+                sector: m.sector,
+                createdAt: m.createdAt,
+            })),
+            reminders: pacReminders,
+            pacSettings: pacSettings ? {
+                enabled: pacSettings.enabled,
+                explicitEnabled: pacSettings.explicitEnabled,
+                implicitEnabled: pacSettings.implicitEnabled,
+                quietHoursStart: pacSettings.quietHoursStart,
+                quietHoursEnd: pacSettings.quietHoursEnd,
+            } : null,
+            billing: billingAccount,
+            councilSessions: councilSessions.map(s => ({
+                id: s.id,
+                query: s.query,
+                status: s.status,
+                selectedPersona: s.selectedPersona,
+                synthesis: s.synthesis,
+                createdAt: s.createdAt,
+                responses: s.responses,
+            })),
+            importHistory: importJobs,
+        });
+    } catch (error) {
+        console.error('[Export] Data export failed:', error);
+        return c.json({ error: 'Export failed' }, 500);
+    }
+});
+
 // API Routes
 app.route('/api/chat', chatRoutes);
 app.route('/api/council', councilRoutes);

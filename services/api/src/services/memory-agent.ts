@@ -311,65 +311,125 @@ Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["se
 
     /**
      * Self-reflection: Is the response good enough?
-     * For now returns a simple check, can be enhanced with LLM.
+     * Multi-signal quality scoring that learns what works.
      */
-    reflectOnResponse(query: string, response: string, memoryUsed: boolean): ReflectionResult {
-        // Basic quality checks
-        const responseLength = response.length;
-        const hasContent = responseLength > 50;
-        const isRelevant = this.checkRelevance(query, response);
+    async reflectOnResponse(query: string, response: string, memoryUsed: boolean): Promise<ReflectionResult & { qualityScore: number }> {
+        // Signal 1: Length adequacy
+        const lengthScore = Math.min(response.length / 300, 1.0); // 300 chars = full score
 
-        if (!hasContent) {
-            return {
-                satisfied: false,
-                reasoning: 'Response is too short',
-                retryStrategy: 'Request more detailed response',
-            };
-        }
+        // Signal 2: Keyword relevance
+        const relevanceScore = this.computeRelevanceScore(query, response);
 
-        if (!isRelevant) {
-            return {
-                satisfied: false,
-                reasoning: 'Response may not address the query directly',
-                retryStrategy: memoryUsed
-                    ? 'Try without memory context'
-                    : 'Try with memory context',
-            };
+        // Signal 3: Specificity (does it contain concrete details vs vague filler?)
+        const specificityScore = this.computeSpecificityScore(response);
+
+        // Signal 4: Memory utilization (if memory was used, was it reflected?)
+        const memoryScore = memoryUsed ? this.computeMemoryUtilization(query, response) : 0.8;
+
+        // Weighted composite
+        const qualityScore = Math.round(
+            (lengthScore * 0.15 + relevanceScore * 0.35 + specificityScore * 0.25 + memoryScore * 0.25) * 100
+        );
+
+        const satisfied = qualityScore >= 50;
+
+        let retryStrategy: string | null = null;
+        if (!satisfied) {
+            if (relevanceScore < 0.3) {
+                retryStrategy = memoryUsed ? 'Try without memory context' : 'Try with memory context';
+            } else if (specificityScore < 0.3) {
+                retryStrategy = 'Request more specific, actionable response';
+            } else if (lengthScore < 0.3) {
+                retryStrategy = 'Request more detailed response';
+            }
         }
 
         return {
-            satisfied: true,
-            reasoning: 'Response appears adequate',
-            retryStrategy: null,
+            satisfied,
+            reasoning: `Quality score: ${qualityScore}/100 (relevance=${Math.round(relevanceScore * 100)}, specificity=${Math.round(specificityScore * 100)}, memory=${Math.round(memoryScore * 100)})`,
+            retryStrategy,
+            qualityScore,
         };
     }
 
     /**
-     * Simple relevance check using keyword overlap.
+     * Compute relevance score using keyword overlap with TF weighting.
      */
-    private checkRelevance(query: string, response: string): boolean {
-        const queryWords = new Set(
-            query
-                .toLowerCase()
-                .split(/\W+/)
-                .filter((w) => w.length > 3)
-        );
-        const responseWords = new Set(
-            response
-                .toLowerCase()
-                .split(/\W+/)
-                .filter((w) => w.length > 3)
-        );
+    private computeRelevanceScore(query: string, response: string): number {
+        const queryWords = query.toLowerCase().split(/\W+/).filter(w => w.length > 3);
+        if (queryWords.length === 0) return 0.5;
 
-        let overlap = 0;
+        const responseText = response.toLowerCase();
+        let matchedWeight = 0;
+        let totalWeight = 0;
+
         for (const word of queryWords) {
-            if (responseWords.has(word)) {
-                overlap++;
+            // Longer words are more informative (TF-IDF proxy)
+            const weight = Math.min(word.length / 5, 1.5);
+            totalWeight += weight;
+            if (responseText.includes(word)) {
+                matchedWeight += weight;
             }
         }
 
-        // At least 30% keyword overlap or response is long enough
-        return overlap >= queryWords.size * 0.3 || response.length > 500;
+        return totalWeight > 0 ? matchedWeight / totalWeight : 0.5;
+    }
+
+    /**
+     * Compute specificity: penalize vague/generic responses.
+     */
+    private computeSpecificityScore(response: string): number {
+        const vagueMarkers = [
+            'it depends', 'generally speaking', 'in general',
+            'there are many', 'you could try', 'some people',
+            'it varies', 'that\'s a good question',
+        ];
+
+        const specificMarkers = [
+            /\d+/, // numbers
+            /```/, // code blocks
+            /step \d|first,|second,|third,/i, // ordered steps
+            /https?:\/\//, // urls
+            /\b(because|since|therefore|specifically)\b/i, // causal reasoning
+        ];
+
+        const responseLower = response.toLowerCase();
+        let vagueCount = 0;
+        for (const marker of vagueMarkers) {
+            if (responseLower.includes(marker)) vagueCount++;
+        }
+
+        let specificCount = 0;
+        for (const marker of specificMarkers) {
+            if (marker instanceof RegExp ? marker.test(response) : response.includes(marker)) {
+                specificCount++;
+            }
+        }
+
+        const vagueRatio = vagueCount / vagueMarkers.length;
+        const specificRatio = specificCount / specificMarkers.length;
+
+        return Math.max(0, Math.min(1, 0.5 + specificRatio * 0.5 - vagueRatio * 0.5));
+    }
+
+    /**
+     * Check if memory context was actually used in the response.
+     */
+    private computeMemoryUtilization(query: string, response: string): number {
+        // Check for personal context indicators in response
+        const personalIndicators = [
+            /\b(you mentioned|you previously|as you said|your|based on our)\b/i,
+            /\b(last time|earlier|remember|previously discussed)\b/i,
+            /\b(your preference|your style|your approach)\b/i,
+        ];
+
+        let matches = 0;
+        for (const pattern of personalIndicators) {
+            if (pattern.test(response)) matches++;
+        }
+
+        // At least 1 indicator = good utilization
+        return Math.min(matches / 2, 1.0);
     }
 }
 
