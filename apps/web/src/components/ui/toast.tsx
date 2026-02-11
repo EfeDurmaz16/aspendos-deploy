@@ -15,8 +15,6 @@ export interface Toast {
     open: boolean;
 }
 
-type ToastActionElement = React.ReactElement<any>;
-
 interface ToastContextType {
     toasts: Toast[];
     addToast: (toast: Omit<Toast, 'id' | 'open'>) => void;
@@ -34,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     const addToast = React.useCallback(
         (toast: Omit<Toast, 'id' | 'open'>) => {
-            const id = Math.random().toString(36).substr(2, 9);
+            const id = crypto.randomUUID();
             const newToast: Toast = { ...toast, id, open: true };
             setToasts((prev) => [...prev, newToast]);
 

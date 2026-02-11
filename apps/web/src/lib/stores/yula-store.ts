@@ -83,7 +83,7 @@ export const useMemoryStore = create<MemoryState>()(
             addNode: (nodeData) => {
                 const newNode: MemoryNode = {
                     ...nodeData,
-                    id: `mem_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+                    id: crypto.randomUUID(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 };
@@ -182,7 +182,7 @@ export const useChatStore = create<ChatState>()(
 
             createConversation: (mode = 'normal') => {
                 const newConversation: Conversation = {
-                    id: `conv_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+                    id: crypto.randomUUID(),
                     title: 'New Conversation',
                     messages: [],
                     mode,
@@ -199,7 +199,7 @@ export const useChatStore = create<ChatState>()(
             addMessage: (conversationId, messageData) => {
                 const newMessage: ChatMessage = {
                     ...messageData,
-                    id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+                    id: crypto.randomUUID(),
                     timestamp: new Date(),
                 };
                 set((state) => ({
@@ -267,7 +267,7 @@ export const usePACStore = create<PACState>()(
             addItem: (itemData) => {
                 const newItem: PACItem = {
                     ...itemData,
-                    id: `pac_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+                    id: crypto.randomUUID(),
                     status: 'pending',
                 };
                 set((state) => ({ items: [...state.items, newItem] }));

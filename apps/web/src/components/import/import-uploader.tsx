@@ -93,7 +93,7 @@ export function ImportUploader({
             const droppedFiles = Array.from(e.dataTransfer.files);
             processFiles(droppedFiles);
         },
-        [files, maxFiles]
+        [processFiles]
     );
 
     const handleFileSelect = React.useCallback(
@@ -105,7 +105,7 @@ export function ImportUploader({
                 fileInputRef.current.value = '';
             }
         },
-        [files, maxFiles]
+        [processFiles]
     );
 
     const processFiles = React.useCallback(
@@ -120,7 +120,7 @@ export function ImportUploader({
                 })
                 .map((file) => ({
                     file,
-                    id: `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                    id: `${file.name}-${crypto.randomUUID()}`,
                     source: detectSource(file.name),
                     status: 'pending' as const,
                 }));

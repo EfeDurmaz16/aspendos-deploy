@@ -58,7 +58,7 @@ function parseConversations(
                     ).length;
 
                     conversations.push({
-                        id: `${fileId}-${conv.id || Math.random().toString(36).slice(2)}`,
+                        id: `${fileId}-${conv.id || crypto.randomUUID()}`,
                         externalId: conv.id || '',
                         title: conv.title,
                         messageCount,
@@ -73,7 +73,7 @@ function parseConversations(
         } else if (source === 'CLAUDE' && Array.isArray(data)) {
             for (const conv of data) {
                 conversations.push({
-                    id: `${fileId}-${conv.uuid || Math.random().toString(36).slice(2)}`,
+                    id: `${fileId}-${conv.uuid || crypto.randomUUID()}`,
                     externalId: conv.uuid || '',
                     title: conv.name || 'Untitled',
                     messageCount: conv.chat_messages?.length || 0,

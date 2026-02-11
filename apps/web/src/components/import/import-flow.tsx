@@ -94,7 +94,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                                 : f
                         )
                     );
-                } catch (_parseError) {
+                } catch {
                     setFiles((prev) =>
                         prev.map((f) =>
                             f.id === uploadedFile.id
@@ -147,7 +147,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
             } else {
                 setError('No conversations found in the uploaded files');
             }
-        } catch (_err) {
+        } catch {
             setError('Failed to process files. Please check the format.');
         } finally {
             setIsProcessing(false);
@@ -208,7 +208,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
             }
 
             setStep('complete');
-        } catch (_err) {
+        } catch {
             setError('Import failed. Please try again.');
             setStep('preview');
         }
@@ -476,7 +476,7 @@ function parseConversations(
                     ).length;
 
                     conversations.push({
-                        id: `${fileId}-${conv.id || Math.random().toString(36).slice(2)}`,
+                        id: `${fileId}-${conv.id || crypto.randomUUID()}`,
                         externalId: conv.id || '',
                         title: conv.title,
                         messageCount,
@@ -492,7 +492,7 @@ function parseConversations(
             // Claude export format
             for (const conv of data) {
                 conversations.push({
-                    id: `${fileId}-${conv.uuid || Math.random().toString(36).slice(2)}`,
+                    id: `${fileId}-${conv.uuid || crypto.randomUUID()}`,
                     externalId: conv.uuid || '',
                     title: conv.name || 'Untitled',
                     messageCount: conv.chat_messages?.length || 0,
