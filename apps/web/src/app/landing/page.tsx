@@ -1,8 +1,8 @@
 'use client';
 
-import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Check, Plus, Play } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
@@ -341,21 +341,28 @@ function PricingSection() {
         {
             name: 'Free',
             price: '$0',
-            features: ['50 messages/day', 'Import up to 100 conversations', 'Basic PAC reminders'],
+            features: ['100 messages/month', 'Basic models (GPT-4o-mini, Gemini)', 'Basic memory', 'No Council sessions'],
             cta: 'Get Started',
             popular: false,
         },
         {
-            name: 'Pro',
+            name: 'Starter',
             price: '$20',
-            features: ['Unlimited messages', 'Unlimited imports', 'Full PAC with smart detection', '50 Council consultations/mo', 'Priority support'],
+            features: ['300 chats/month', '10 Council sessions/month', 'Basic models + Claude Haiku', '10 min voice/day', 'Email support'],
+            cta: 'Start Free Trial',
+            popular: false,
+        },
+        {
+            name: 'Pro',
+            price: '$49',
+            features: ['1,500 chats/month', '50 Council sessions/month', 'All models (GPT-4o, Claude, Gemini)', '60 min voice/day', 'Priority support'],
             cta: 'Start Free Trial',
             popular: true,
         },
         {
             name: 'Ultra',
-            price: '$50',
-            features: ['Everything in Pro', 'Unlimited Council sessions', 'API Access', 'Team collaboration (coming soon)', 'Custom AI personas'],
+            price: '$99',
+            features: ['5,000 chats/month', '200 Council sessions/month', 'All models + experimental', '180 min voice/day', 'Priority performance'],
             cta: 'Start Free Trial',
             popular: false,
         },
@@ -379,7 +386,7 @@ function PricingSection() {
                 </p>
 
                 {/* Pricing Cards */}
-                <div className="grid md:grid-cols-3 gap-6">
+                <div className="grid md:grid-cols-4 gap-6">
                     {plans.map((plan, i) => (
                         <div
                             key={i}

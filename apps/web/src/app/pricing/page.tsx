@@ -4,7 +4,6 @@ import {
     ArrowLeft,
     ArrowRight,
     CheckCircle,
-    Lightning,
     TrendUp,
 } from '@phosphor-icons/react';
 import Link from 'next/link';
@@ -13,7 +12,6 @@ import { Suspense, useState } from 'react';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/hooks/use-auth';
 import { checkout } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
@@ -22,26 +20,47 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 type BillingPeriod = 'weekly' | 'monthly' | 'annual';
 
 const PRICING_DATA = {
-    Starter: { weekly: 7, monthly: 20, annual: 200 },
-    Pro: { weekly: 15, monthly: 50, annual: 500 },
-    Ultra: { weekly: 30, monthly: 100, annual: 1000 },
+    Free: { weekly: 0, monthly: 0, annual: 0 },
+    Starter: { weekly: 7.5, monthly: 20, annual: 192 },
+    Pro: { weekly: 15, monthly: 49, annual: 468 },
+    Ultra: { weekly: 30, monthly: 99, annual: 948 },
 };
 
 const PRICING_TIERS = [
     {
+        name: 'Free',
+        description: 'Try YULA for free',
+        features: [
+            '100 messages/month',
+            'Basic models (GPT-4o-mini, Gemini Flash)',
+            'Basic memory',
+            'No Council sessions',
+            'Community support',
+        ],
+        limits: {
+            chats: 100,
+            voiceMinutes: 0,
+            councilSessions: 0,
+        },
+        cta: 'Get Started',
+        slug: 'free',
+        popular: false,
+    },
+    {
         name: 'Starter',
         description: 'For trying Aspendos and exploring AI',
         features: [
-            '~300 chats/month (~10/day)',
-            'GPT-5 Nano + 1 main model',
+            '300 chats/month (~10/day)',
+            'GPT-4o-mini, Claude Haiku, Gemini Flash',
             '10 min voice/day',
+            '10 Council sessions/month',
             'Basic memory across chats',
             'Email support',
         ],
         limits: {
             chats: 300,
             voiceMinutes: 10,
-            models: 1,
+            councilSessions: 10,
         },
         cta: 'Get Started',
         slug: 'starter',
@@ -51,9 +70,10 @@ const PRICING_TIERS = [
         name: 'Pro',
         description: 'Your daily AI operating system',
         features: [
-            '~1,500 chats/month (~50/day)',
-            'All models: GPT-5, Claude, Gemini',
+            '1,500 chats/month (~50/day)',
+            'All models: GPT-4o, Claude, Gemini',
             '60 min voice/day',
+            '50 Council sessions/month',
             'Advanced memory + search',
             'Multi-model comparison (2 at once)',
             'Priority routing',
@@ -62,7 +82,7 @@ const PRICING_TIERS = [
         limits: {
             chats: 1500,
             voiceMinutes: 60,
-            models: 4,
+            councilSessions: 50,
         },
         cta: 'Upgrade to Pro',
         slug: 'pro',
@@ -72,9 +92,10 @@ const PRICING_TIERS = [
         name: 'Ultra',
         description: 'For power users and teams',
         features: [
-            '5,000+ chats/month',
+            '5,000 chats/month',
             'All models + experimental',
             '180 min voice/day',
+            '200 Council sessions/month',
             'Full Memory Inspector',
             'Multi-model parallel (4 at once)',
             'Highest priority + performance',
@@ -83,7 +104,7 @@ const PRICING_TIERS = [
         limits: {
             chats: 5000,
             voiceMinutes: 180,
-            models: 10,
+            councilSessions: 200,
         },
         cta: 'Go Ultra',
         slug: 'ultra',
@@ -91,13 +112,9 @@ const PRICING_TIERS = [
     },
 ];
 
-// Mock usage data - in production would come from API
-const MOCK_USAGE = {
-    chatsThisMonth: 245,
-    voiceMinutesThisMonth: 35,
-    storageUsed: 2.4,
-    forecastedChatsEOM: 320,
-};
+// Usage data - would come from API in production
+// TODO: Replace with real API fetch
+const USAGE_UNAVAILABLE = true;
 
 function UsageBar({ current, limit, label }: { current: number; limit: number; label: string }) {
     const percentage = Math.min((current / limit) * 100, 100);
@@ -192,7 +209,7 @@ function PricingContent() {
                 )}
 
                 {/* Usage dashboard for signed-in users */}
-                {isSignedIn && (
+                {isSignedIn && !USAGE_UNAVAILABLE && (
                     <Card className="mb-12 bg-muted/30">
                         <CardContent className="p-6">
                             <div className="flex items-start justify-between mb-6">
@@ -202,27 +219,9 @@ function PricingContent() {
                                         Your Usage This Month
                                     </h3>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Forecasted to reach {MOCK_USAGE.forecastedChatsEOM} chats by end
-                                        of month
+                                        Usage data unavailable
                                     </p>
                                 </div>
-                                <Button variant="link" size="sm" asChild className="text-primary p-0 h-auto">
-                                    <Link href="/dashboard/usage">
-                                        View details →
-                                    </Link>
-                                </Button>
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <UsageBar
-                                    current={MOCK_USAGE.chatsThisMonth}
-                                    limit={1500}
-                                    label="Chats This Month"
-                                />
-                                <UsageBar
-                                    current={MOCK_USAGE.voiceMinutesThisMonth}
-                                    limit={60}
-                                    label="Voice Minutes This Month"
-                                />
                             </div>
                         </CardContent>
                     </Card>
@@ -314,7 +313,7 @@ function PricingContent() {
                                 </ul>
                             </CardContent>
                             <CardFooter>
-                                {tier.name === 'Starter' ? (
+                                {tier.name === 'Free' || tier.name === 'Starter' ? (
                                     <Button
                                         variant={tier.popular ? 'default' : 'outline'}
                                         className="w-full"

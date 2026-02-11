@@ -9,6 +9,12 @@ import { createEmbedding } from '@/lib/ai';
 // ============================================
 // This endpoint is called periodically (e.g., every 5 minutes via Upstash QStash or Vercel Cron)
 // to check if any proactive notifications should be sent to users.
+//
+// COST CONTROLS:
+// - Only processes users active in last 2 hours (not 24h) to reduce LLM calls
+// - Batch size limited to 25 users to control costs per cron run
+// - Skips users with no new messages since last check
+// - 6h deduplication window to avoid spam
 
 // Verify cron secret for security
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -20,16 +26,17 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('[PAC Cron] Starting heartbeat check...');
-
     try {
-        // Get users who have been active recently (last 24 hours)
+        const dedupSince = new Date(Date.now() - 6 * 60 * 60 * 1000); // 6h
+        const activityWindow = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2h (reduced from 24h for cost control)
+
+        // Get users who have been active recently (last 2 hours)
         const activeUsers = await prisma.user.findMany({
             where: {
                 messages: {
                     some: {
                         createdAt: {
-                            gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+                            gte: activityWindow,
                         },
                     },
                 },
@@ -38,10 +45,8 @@ export async function GET(req: NextRequest) {
                 id: true,
                 email: true,
             },
-            take: 100, // Process in batches
+            take: 25, // Reduced from 100 for cost control
         });
-
-        console.log(`[PAC Cron] Found ${activeUsers.length} active users`);
 
         const results: Array<{ userId: string; notifications: number }> = [];
 
@@ -59,42 +64,63 @@ export async function GET(req: NextRequest) {
                 let recentMemories: string[] = [];
                 try {
                     const queryEmbedding = await createEmbedding(
-                        recentMessages.map((m) => m.content).join(' ').slice(0, 1000)
+                        recentMessages.map((m: { content: string }) => m.content).join(' ').slice(0, 1000)
                     );
                     const searchResults = await searchConversations(user.id, queryEmbedding, 3);
-                    recentMemories = searchResults.map((r) => r.content);
+                    recentMemories = searchResults.map((r: { content: string }) => r.content);
                 } catch {
                     // Memory search failed, continue without
                 }
 
                 // Analyze context for PAC
                 const analysis = await analyzeContextForPAC(user.id, {
-                    recentMessages: recentMessages.map((m) => `${m.role}: ${m.content.slice(0, 200)}`),
+                    recentMessages: recentMessages.map(
+                        (m: { role: string; content: string }) => `${m.role}: ${m.content.slice(0, 200)}`
+                    ),
                     recentMemories,
                     currentTime: new Date(),
                 });
 
                 if (analysis.shouldNotify && analysis.items.length > 0) {
-                    console.log(`[PAC Cron] User ${user.id}: ${analysis.items.length} notifications`);
-
-                    // Store PAC items for delivery
-                    // In production, you would push these to a notification queue
-                    // For now, we log them
+                    // Store PAC items as in-app notifications (deduped)
+                    let createdCount = 0;
                     for (const item of analysis.items) {
-                        console.log(`[PAC] ${item.type.toUpperCase()}: ${item.title}`);
-                        console.log(`      ${item.description}`);
-                        console.log(`      Priority: ${item.priority}`);
-                        console.log(`      Reason: ${item.triggerReason}`);
+                        const existing = await prisma.notificationLog.findFirst({
+                            where: {
+                                userId: user.id,
+                                title: item.title,
+                                createdAt: { gte: dedupSince },
+                            },
+                            select: { id: true },
+                        });
+
+                        if (existing) continue;
+
+                        await prisma.notificationLog.create({
+                            data: {
+                                userId: user.id,
+                                type: `PAC_${item.type.toUpperCase()}`,
+                                title: item.title,
+                                message: item.description,
+                                channel: 'in_app',
+                                status: 'pending',
+                                metadata: {
+                                    priority: item.priority,
+                                    triggerReason: item.triggerReason,
+                                },
+                            },
+                        });
+                        createdCount++;
                     }
 
-                    results.push({ userId: user.id, notifications: analysis.items.length });
+                    if (createdCount > 0) {
+                        results.push({ userId: user.id, notifications: createdCount });
+                    }
                 }
             } catch (error) {
                 console.error(`[PAC Cron] Error processing user ${user.id}:`, error);
             }
         }
-
-        console.log(`[PAC Cron] Completed. Generated ${results.reduce((acc, r) => acc + r.notifications, 0)} notifications`);
 
         return NextResponse.json({
             success: true,
