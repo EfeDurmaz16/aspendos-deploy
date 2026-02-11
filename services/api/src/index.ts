@@ -132,18 +132,13 @@ app.onError((err, c) => {
     return c.json({ error: 'Internal Server Error' }, 500);
 });
 
-// Health check
+// Health check (no internal details exposed)
 app.get('/health', (c) =>
     c.json({
         status: 'ok',
         service: 'api',
         version: '0.3.0',
         timestamp: new Date().toISOString(),
-        mcp: {
-            initialized: getConnectedMCPServers().length > 0,
-            servers: getConnectedMCPServers(),
-            status: getMCPStatus(),
-        },
     })
 );
 
@@ -161,7 +156,7 @@ app.get('/api/models', (c) => {
 
 // Models for specific tier
 app.get('/api/models/tier/:tier', (c) => {
-    const tier = c.req.param('tier').toUpperCase() as 'STARTER' | 'PRO' | 'ULTRA';
+    const tier = c.req.param('tier').toUpperCase() as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA';
     const models = getModelsForTier(tier);
     return c.json({
         tier,

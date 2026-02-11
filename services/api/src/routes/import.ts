@@ -35,6 +35,13 @@ app.post('/jobs', async (c) => {
         return c.json({ error: 'content is required' }, 400);
     }
 
+    // Limit import size to prevent OOM (50MB JSON max)
+    const MAX_IMPORT_SIZE = 50 * 1024 * 1024;
+    const contentSize = JSON.stringify(content).length;
+    if (contentSize > MAX_IMPORT_SIZE) {
+        return c.json({ error: 'Import file too large. Maximum 50MB.' }, 413);
+    }
+
     try {
         // Create job
         const job = await importService.createImportJob(
@@ -98,7 +105,7 @@ app.post('/jobs', async (c) => {
  */
 app.get('/jobs', async (c) => {
     const userId = c.get('userId')!;
-    const limit = parseInt(c.req.query('limit') || '20', 10);
+    const limit = Math.min(parseInt(c.req.query('limit') || '20', 10) || 20, 50);
 
     const jobs = await importService.listImportJobs(userId, limit);
 
