@@ -219,7 +219,7 @@ app.post('/', async (c) => {
 });
 
 /**
- * POST /api/memory/search - Semantic search
+ * POST /api/memory/search - Semantic search with optional sector filtering
  */
 app.post('/search', async (c) => {
     const userId = c.get('userId')!;
@@ -229,15 +229,31 @@ app.post('/search', async (c) => {
         return c.json({ error: 'query is required and must be a non-empty string' }, 400);
     }
 
-    const limit = Math.min(parseInt(body.limit) || 5, 50);
+    if (body.query.length > 2000) {
+        return c.json({ error: 'query must be 2,000 characters or less' }, 400);
+    }
 
-    const memories = await openMemory.searchMemories(body.query.trim(), userId, {
-        limit,
+    const limit = Math.min(parseInt(body.limit) || 5, 50);
+    const VALID_SECTORS = ['semantic', 'episodic', 'procedural', 'emotional', 'reflective'];
+    const sector = VALID_SECTORS.includes(body.sector) ? body.sector : undefined;
+
+    let memories = await openMemory.searchMemories(body.query.trim(), userId, {
+        limit: sector ? limit * 2 : limit, // Fetch more if filtering by sector
     });
+
+    // Filter by sector if specified
+    if (sector) {
+        memories = memories.filter(m => m.sector === sector).slice(0, limit);
+    }
 
     return c.json({
         memories,
         traces: memories.map((m) => m.trace).filter(Boolean),
+        meta: {
+            query: body.query.trim(),
+            sector: sector || 'all',
+            count: memories.length,
+        },
     });
 });
 

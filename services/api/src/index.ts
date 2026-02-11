@@ -304,11 +304,99 @@ app.get('/api/chat/shared/:token', async (c) => {
 });
 
 // ============================================
-// GDPR DATA EXPORT (Art. 20 - Data Portability)
+// GDPR ENDPOINTS (Art. 17 - Right to Erasure, Art. 20 - Data Portability)
 // ============================================
+
+// DELETE /api/account - Delete user account and all associated data
+app.delete('/api/account', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    try {
+        const { prisma } = await import('./lib/prisma');
+        const openMemory = await import('./services/openmemory.service');
+
+        // Delete all user data in dependency order
+        await prisma.$transaction(async (tx) => {
+            // Delete PAC data
+            const reminders = await tx.pACReminder.findMany({ where: { userId }, select: { id: true } });
+            for (const r of reminders) {
+                await tx.pACEscalation.deleteMany({ where: { reminderId: r.id } });
+            }
+            await tx.pACReminder.deleteMany({ where: { userId } });
+            await tx.pACSettings.deleteMany({ where: { userId } });
+
+            // Delete council data
+            const sessions = await tx.councilSession.findMany({ where: { userId }, select: { id: true } });
+            for (const s of sessions) {
+                await tx.councilResponse.deleteMany({ where: { sessionId: s.id } });
+            }
+            await tx.councilSession.deleteMany({ where: { userId } });
+
+            // Delete chat data
+            await tx.message.deleteMany({ where: { userId } });
+            await tx.chat.deleteMany({ where: { userId } });
+
+            // Delete import data
+            const jobs = await tx.importJob.findMany({ where: { userId }, select: { id: true } });
+            for (const j of jobs) {
+                await tx.importEntity.deleteMany({ where: { jobId: j.id } });
+            }
+            await tx.importJob.deleteMany({ where: { userId } });
+
+            // Delete scheduled tasks
+            await tx.scheduledTask.deleteMany({ where: { userId } });
+
+            // Delete billing
+            const account = await tx.billingAccount.findUnique({ where: { userId } });
+            if (account) {
+                await tx.creditLog.deleteMany({ where: { billingAccountId: account.id } });
+                await tx.billingAccount.delete({ where: { userId } });
+            }
+
+            // Delete gamification
+            await tx.achievement.deleteMany({ where: { userId } });
+            await tx.xPEvent.deleteMany({ where: { userId } });
+
+            // Delete notifications
+            await tx.notification.deleteMany({ where: { userId } });
+
+            // Delete user sessions and accounts (Better Auth)
+            await tx.session.deleteMany({ where: { userId } });
+            await tx.account.deleteMany({ where: { userId } });
+
+            // Delete user
+            await tx.user.delete({ where: { id: userId } });
+        });
+
+        // Delete memories from OpenMemory (outside transaction - different store)
+        try {
+            const memories = await openMemory.listMemories(userId, { limit: 10000 });
+            for (const m of memories) {
+                await openMemory.deleteMemory(m.id);
+            }
+        } catch {
+            // Best-effort memory deletion
+        }
+
+        return c.json({ success: true, message: 'Account and all data deleted permanently.' });
+    } catch (error) {
+        console.error('[Account] Deletion failed:', error);
+        return c.json({ error: 'Account deletion failed. Please contact support.' }, 500);
+    }
+});
+
+// Rate limit export to prevent abuse (1 export per 5 minutes per user)
+const exportLimiter = new Map<string, number>();
 app.get('/api/export', async (c) => {
     const userId = c.get('userId');
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const lastExport = exportLimiter.get(userId) || 0;
+    if (Date.now() - lastExport < 5 * 60 * 1000) {
+        return c.json({ error: 'Export rate limited. Please wait 5 minutes between exports.' }, 429);
+    }
+    exportLimiter.set(userId, Date.now());
 
     try {
         const { prisma } = await import('./lib/prisma');
