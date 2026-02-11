@@ -10,6 +10,7 @@ import { getModel, isModelAvailableForTier } from '../lib/ai-providers';
 import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
+import * as billingService from '../services/billing.service';
 import * as chatService from '../services/chat.service';
 import { getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
@@ -160,6 +161,23 @@ app.post(
             return c.json({ error: 'Model not available for your tier' }, 403);
         }
 
+        // Check chat and token quotas before processing
+        const [hasChats, hasTokenBudget] = await Promise.all([
+            billingService.hasChatsRemaining(userId),
+            billingService.hasTokens(userId, 1000), // Rough minimum estimate
+        ]);
+
+        if (!hasChats) {
+            return c.json({ error: 'Monthly chat limit reached. Please upgrade your plan.' }, 403);
+        }
+
+        if (!hasTokenBudget) {
+            return c.json({ error: 'Monthly token limit reached. Please upgrade your plan.' }, 403);
+        }
+
+        // Decrement chat quota
+        await billingService.recordChatUsage(userId);
+
         // Save user message to database
         await chatService.createMessage({
             chatId,
@@ -271,9 +289,19 @@ app.post(
                             role: 'assistant',
                             content: text,
                             modelUsed: modelId,
-                            tokensIn: usage?.totalTokens,
-                            tokensOut: usage?.totalTokens,
+                            tokensIn: usage?.promptTokens,
+                            tokensOut: usage?.completionTokens,
                         });
+
+                        // Record token usage for billing
+                        if (usage?.promptTokens || usage?.completionTokens) {
+                            await billingService.recordTokenUsage(
+                                userId,
+                                usage.promptTokens || 0,
+                                usage.completionTokens || 0,
+                                modelId
+                            );
+                        }
                     },
                 });
 
@@ -324,14 +352,22 @@ app.post(
                 role: 'assistant',
                 content: result.text,
                 modelUsed: modelId,
-                tokensIn: result.usage?.totalTokens,
-                tokensOut: result.usage?.totalTokens,
+                tokensIn: result.usage?.promptTokens,
+                tokensOut: result.usage?.completionTokens,
             });
+
+            // Record token usage for billing
+            if (result.usage?.promptTokens || result.usage?.completionTokens) {
+                await billingService.recordTokenUsage(
+                    userId,
+                    result.usage.promptTokens || 0,
+                    result.usage.completionTokens || 0,
+                    modelId
+                );
+            }
 
             return c.json({
                 message: assistantMessage,
-                decision,
-                memoriesUsed,
                 usage: result.usage,
                 toolCalls: result.toolCalls,
             });
