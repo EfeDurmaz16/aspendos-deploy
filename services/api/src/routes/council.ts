@@ -108,6 +108,11 @@ app.get('/sessions/:id/stream', async (c) => {
         return c.json({ error: 'Session not found' }, 404);
     }
 
+    // Check token budget for 4 parallel persona calls (~2400 tokens total)
+    if (!(await billingService.hasTokens(userId, 2400))) {
+        return c.json({ error: 'Insufficient token budget for council session' }, 403);
+    }
+
     // Set up SSE headers
     c.header('Content-Type', 'text/event-stream');
     c.header('Cache-Control', 'no-cache');
@@ -168,6 +173,18 @@ app.get('/sessions/:id/stream', async (c) => {
 
         // Update session status
         await councilService.updateSessionStatus(sessionId);
+
+        // Meter token usage for all 4 persona LLM calls
+        // Each persona: ~200 input tokens (system + query) + up to 500 output tokens
+        const personaCount = completed.size;
+        if (personaCount > 0) {
+            await billingService.recordTokenUsage(
+                userId,
+                personaCount * 200,  // estimated input tokens
+                personaCount * 400,  // estimated output tokens (avg < maxTokens 500)
+                'council-parallel'
+            );
+        }
 
         // Send completion event
         await stream.write(`data: ${JSON.stringify({ type: 'complete' })}\n\n`);

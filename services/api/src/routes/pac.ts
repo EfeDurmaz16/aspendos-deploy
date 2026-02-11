@@ -170,7 +170,32 @@ app.patch('/settings', async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
 
-    const settings = await pacService.updatePACSettings(userId, body);
+    // Whitelist and validate allowed fields
+    const BOOLEAN_FIELDS = [
+        'enabled', 'explicitEnabled', 'implicitEnabled',
+        'pushEnabled', 'emailEnabled', 'quietHoursEnabled',
+        'escalationEnabled', 'digestEnabled',
+    ] as const;
+    const TIME_FIELDS = ['quietHoursStart', 'quietHoursEnd', 'digestTime'] as const;
+    const TIME_REGEX = /^\d{2}:\d{2}$/;
+
+    const sanitized: Record<string, boolean | string> = {};
+    for (const field of BOOLEAN_FIELDS) {
+        if (field in body && typeof body[field] === 'boolean') {
+            sanitized[field] = body[field];
+        }
+    }
+    for (const field of TIME_FIELDS) {
+        if (field in body && typeof body[field] === 'string' && TIME_REGEX.test(body[field])) {
+            sanitized[field] = body[field];
+        }
+    }
+
+    if (Object.keys(sanitized).length === 0) {
+        return c.json({ error: 'No valid settings provided' }, 400);
+    }
+
+    const settings = await pacService.updatePACSettings(userId, sanitized);
 
     return c.json({
         success: true,
