@@ -15,16 +15,16 @@ export async function getOrCreateBillingAccount(userId: string): Promise<Billing
 
     if (existing) return existing;
 
-    // New users start on STARTER
-    const starterConfig = getTierConfig('STARTER');
+    // New users start on FREE
+    const freeConfig = getTierConfig('FREE');
 
     return prisma.billingAccount.create({
         data: {
             userId,
-            plan: 'starter',
-            monthlyCredit: starterConfig.monthlyTokens / 1000, // Store in K tokens
-            chatsRemaining: starterConfig.monthlyChats,
-            voiceMinutesRemaining: starterConfig.dailyVoiceMinutes * 30,
+            plan: 'free',
+            monthlyCredit: freeConfig.monthlyTokens / 1000, // Store in K tokens
+            chatsRemaining: freeConfig.monthlyChats,
+            voiceMinutesRemaining: freeConfig.dailyVoiceMinutes * 30,
         },
     });
 }
@@ -155,6 +155,39 @@ export async function hasChatsRemaining(userId: string): Promise<boolean> {
 }
 
 /**
+ * Check if user has voice minutes remaining
+ */
+export async function hasVoiceMinutes(userId: string): Promise<boolean> {
+    const account = await getOrCreateBillingAccount(userId);
+    return (account.voiceMinutesRemaining || 0) > 0;
+}
+
+/**
+ * Record voice usage (decrement voice minutes)
+ */
+export async function recordVoiceUsage(userId: string, durationMinutes: number) {
+    const account = await getOrCreateBillingAccount(userId);
+
+    await prisma.creditLog.create({
+        data: {
+            billingAccountId: account.id,
+            amount: Math.round(-durationMinutes * 100) / 100,
+            reason: 'voice_usage',
+            metadata: {
+                duration_minutes: durationMinutes,
+            },
+        },
+    });
+
+    await prisma.billingAccount.updateMany({
+        where: { userId, voiceMinutesRemaining: { gt: 0 } },
+        data: {
+            voiceMinutesRemaining: { decrement: Math.ceil(durationMinutes) },
+        },
+    });
+}
+
+/**
  * Upgrade user to new tier
  */
 export async function upgradeTier(userId: string, newPlan: 'starter' | 'pro' | 'ultra') {
@@ -224,6 +257,7 @@ export async function getUsageHistory(userId: string, limit?: number) {
  */
 export function getTierComparison() {
     return {
+        free: TIER_CONFIG.FREE,
         starter: TIER_CONFIG.STARTER,
         pro: TIER_CONFIG.PRO,
         ultra: TIER_CONFIG.ULTRA,

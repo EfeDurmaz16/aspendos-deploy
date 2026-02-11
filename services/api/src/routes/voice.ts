@@ -5,6 +5,7 @@
 import { Hono } from 'hono';
 import OpenAI from 'openai';
 import { requireAuth } from '../middleware/auth';
+import { hasVoiceMinutes, recordVoiceUsage } from '../services/billing.service';
 
 const app = new Hono();
 
@@ -25,6 +26,13 @@ function getOpenAI(): OpenAI {
 
 // POST /api/voice/transcribe - Transcribe audio to text
 app.post('/transcribe', async (c) => {
+    const userId = c.get('userId')!;
+
+    // Check voice minutes quota
+    if (!(await hasVoiceMinutes(userId))) {
+        return c.json({ error: 'Voice minutes quota exceeded. Please upgrade your plan.' }, 403);
+    }
+
     try {
         const body = await c.req.parseBody();
         const audioFile = body.audio;
@@ -47,9 +55,13 @@ app.post('/transcribe', async (c) => {
             response_format: 'json',
         });
 
+        // Estimate duration from file size (~16KB/s for typical audio)
+        const estimatedMinutes = audioFile.size / 16000 / 60;
+        await recordVoiceUsage(userId, Math.max(estimatedMinutes, 0.1));
+
         return c.json({
             text: transcription.text,
-            duration: (audioFile as File & { size: number }).size / 16000, // Rough estimate
+            duration: audioFile.size / 16000,
         });
     } catch (error) {
         console.error('[Voice] Transcription error:', error instanceof Error ? error.message : 'Unknown');
@@ -63,6 +75,13 @@ const MAX_TTS_TEXT_LENGTH = 4096; // OpenAI TTS limit
 
 // POST /api/voice/synthesize - Convert text to speech
 app.post('/synthesize', async (c) => {
+    const userId = c.get('userId')!;
+
+    // Check voice minutes quota
+    if (!(await hasVoiceMinutes(userId))) {
+        return c.json({ error: 'Voice minutes quota exceeded. Please upgrade your plan.' }, 403);
+    }
+
     const body = await c.req.json();
     const { text, voice = 'alloy' } = body;
 
@@ -88,6 +107,10 @@ app.post('/synthesize', async (c) => {
         // Get audio as ArrayBuffer
         const audioBuffer = await mp3.arrayBuffer();
 
+        // Estimate TTS duration (~150 words/min, ~5 chars/word)
+        const estimatedMinutes = text.length / 750;
+        await recordVoiceUsage(userId, Math.max(estimatedMinutes, 0.1));
+
         // Return audio as base64
         const base64Audio = Buffer.from(audioBuffer).toString('base64');
 
@@ -104,6 +127,13 @@ app.post('/synthesize', async (c) => {
 
 // POST /api/voice/synthesize/stream - Stream text-to-speech response
 app.post('/synthesize/stream', async (c) => {
+    const userId = c.get('userId')!;
+
+    // Check voice minutes quota
+    if (!(await hasVoiceMinutes(userId))) {
+        return c.json({ error: 'Voice minutes quota exceeded. Please upgrade your plan.' }, 403);
+    }
+
     const body = await c.req.json();
     const { text, voice = 'alloy' } = body;
 
@@ -125,6 +155,10 @@ app.post('/synthesize/stream', async (c) => {
             voice: voice,
             input: text,
         });
+
+        // Meter voice usage
+        const estimatedMinutes = text.length / 750;
+        await recordVoiceUsage(userId, Math.max(estimatedMinutes, 0.1));
 
         // Stream the audio response
         const audioStream = response.body;
@@ -148,6 +182,13 @@ app.post('/synthesize/stream', async (c) => {
 
 // POST /api/voice/token - Generate ephemeral token for Gemini Live
 app.post('/token', async (c) => {
+    const userId = c.get('userId')!;
+
+    // Check voice minutes quota before issuing token
+    if (!(await hasVoiceMinutes(userId))) {
+        return c.json({ error: 'Voice minutes quota exceeded. Please upgrade your plan.' }, 403);
+    }
+
     try {
         if (!process.env.GEMINI_API_KEY) {
             return c.json({ error: 'GEMINI_API_KEY is not configured' }, 500);
