@@ -24,6 +24,25 @@ app.post('/subscribe', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
 
+    // Validate push subscription fields
+    if (!body.endpoint || typeof body.endpoint !== 'string') {
+        return c.json({ error: 'endpoint is required' }, 400);
+    }
+    try {
+        const url = new URL(body.endpoint);
+        if (!['https:'].includes(url.protocol)) {
+            return c.json({ error: 'endpoint must be HTTPS' }, 400);
+        }
+    } catch {
+        return c.json({ error: 'endpoint must be a valid URL' }, 400);
+    }
+    if (!body.keys?.p256dh || !body.keys?.auth ||
+        typeof body.keys.p256dh !== 'string' || typeof body.keys.auth !== 'string') {
+        return c.json({ error: 'keys.p256dh and keys.auth are required' }, 400);
+    }
+    const ALLOWED_DEVICE_TYPES = ['web', 'android', 'ios'];
+    const deviceType = ALLOWED_DEVICE_TYPES.includes(body.deviceType) ? body.deviceType : 'web';
+
     try {
         await registerPushSubscription(userId, {
             endpoint: body.endpoint,
@@ -31,7 +50,7 @@ app.post('/subscribe', requireAuth, async (c) => {
                 p256dh: body.keys.p256dh,
                 auth: body.keys.auth,
             },
-            deviceType: body.deviceType || 'web',
+            deviceType,
         });
 
         return c.json({ success: true }, 201);

@@ -26,8 +26,9 @@ const app = new Hono<{ Variables: Variables }>();
  */
 app.get('/usage', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const interval = c.req.query('interval') || 'day'; // day, week, month
-    const limit = parseInt(c.req.query('limit') || '30', 10);
+    const rawInterval = c.req.query('interval') || 'day';
+    const interval = ['day', 'week', 'month'].includes(rawInterval) ? rawInterval : 'day';
+    const limit = Math.min(parseInt(c.req.query('limit') || '30', 10) || 30, 90);
 
     try {
         // Get all messages for this user
@@ -122,7 +123,7 @@ app.get('/usage', requireAuth, async (c) => {
  */
 app.get('/messages', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const limit = parseInt(c.req.query('limit') || '30', 10);
+    const limit = Math.min(parseInt(c.req.query('limit') || '30', 10) || 30, 90);
 
     try {
         const messages = await prisma.message.findMany({
@@ -194,7 +195,7 @@ app.get('/messages', requireAuth, async (c) => {
  */
 app.get('/models', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const days = parseInt(c.req.query('days') || '30', 10);
+    const days = Math.min(parseInt(c.req.query('days') || '30', 10) || 30, 365);
 
     try {
         // Calculate date threshold
