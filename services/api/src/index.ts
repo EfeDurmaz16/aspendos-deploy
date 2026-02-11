@@ -137,6 +137,42 @@ app.use('*', async (c, next) => {
     await next();
 });
 
+// CSRF protection: verify Origin header on state-changing requests
+const ALLOWED_ORIGINS = new Set([
+    'http://localhost:3000',
+    'https://aspendos.net',
+    'https://yula.dev',
+    'https://www.yula.dev',
+    ...extraOrigins,
+]);
+
+app.use('*', async (c, next) => {
+    const method = c.req.method;
+    // Only check state-changing methods
+    if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        return next();
+    }
+
+    // Skip CSRF check for webhook endpoints (they use signature verification)
+    const path = c.req.path;
+    if (path.startsWith('/api/auth/') || path.includes('/webhook') || path === '/health') {
+        return next();
+    }
+
+    // Skip for CRON endpoints (they use secret header)
+    if (path.startsWith('/api/scheduler')) {
+        return next();
+    }
+
+    const origin = c.req.header('origin');
+    // If Origin header is present, validate it
+    if (origin && !ALLOWED_ORIGINS.has(origin)) {
+        return c.json({ error: 'Forbidden' }, 403);
+    }
+
+    return next();
+});
+
 // Apply rate limiting
 app.use('*', rateLimit());
 

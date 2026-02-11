@@ -323,21 +323,142 @@ export function isInQuietHours(
 }
 
 /**
- * Get PAC statistics
+ * Get PAC statistics with behavioral learning insights
  */
 export async function getPACStats(userId: string) {
-    const [total, pending, completed, snoozed] = await Promise.all([
+    const [total, pending, completed, snoozed, dismissed] = await Promise.all([
         prisma.pACReminder.count({ where: { userId } }),
         prisma.pACReminder.count({ where: { userId, status: 'PENDING' } }),
         prisma.pACReminder.count({ where: { userId, status: 'ACKNOWLEDGED' } }),
         prisma.pACReminder.count({ where: { userId, status: 'SNOOZED' } }),
+        prisma.pACReminder.count({ where: { userId, status: 'DISMISSED' } }),
     ]);
+
+    // Behavioral learning: compute effectiveness metrics
+    const effectiveness = await computeEffectiveness(userId);
 
     return {
         total,
         pending,
         completed,
         snoozed,
+        dismissed,
         completionRate: total > 0 ? (completed / total) * 100 : 0,
+        effectiveness,
+    };
+}
+
+// ============================================
+// BEHAVIORAL LEARNING
+// ============================================
+
+interface EffectivenessMetrics {
+    engagementRate: number;        // % of reminders acknowledged (not dismissed)
+    avgResponseTimeMin: number;    // avg time between trigger and response
+    optimalHour: number | null;    // best hour for delivery
+    implicitAccuracy: number;      // % of implicit reminders that were useful
+    snoozeRate: number;            // how often user delays
+    recommendation: string;        // actionable insight
+}
+
+/**
+ * Compute PAC effectiveness from user's historical behavior.
+ * This is the behavioral learning engine that makes PAC smarter over time.
+ * Competitors just send reminders; we learn WHEN and HOW to send them.
+ */
+async function computeEffectiveness(userId: string): Promise<EffectivenessMetrics> {
+    const reminders = await prisma.pACReminder.findMany({
+        where: {
+            userId,
+            status: { in: ['ACKNOWLEDGED', 'DISMISSED', 'SNOOZED'] },
+        },
+        select: {
+            type: true,
+            status: true,
+            triggerAt: true,
+            respondedAt: true,
+            createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 200, // Look at last 200 interactions
+    });
+
+    if (reminders.length === 0) {
+        return {
+            engagementRate: 0,
+            avgResponseTimeMin: 0,
+            optimalHour: null,
+            implicitAccuracy: 0,
+            snoozeRate: 0,
+            recommendation: 'Not enough data yet. Keep using PAC reminders.',
+        };
+    }
+
+    // Engagement rate
+    const acknowledged = reminders.filter(r => r.status === 'ACKNOWLEDGED').length;
+    const engagementRate = (acknowledged / reminders.length) * 100;
+
+    // Average response time
+    const responseTimes = reminders
+        .filter(r => r.respondedAt && r.triggerAt)
+        .map(r => (r.respondedAt!.getTime() - r.triggerAt.getTime()) / (1000 * 60));
+    const avgResponseTimeMin = responseTimes.length > 0
+        ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+        : 0;
+
+    // Find optimal hour (when user most often acknowledges)
+    const hourCounts = new Map<number, { ack: number; total: number }>();
+    for (const r of reminders) {
+        const hour = r.triggerAt.getHours();
+        const curr = hourCounts.get(hour) || { ack: 0, total: 0 };
+        curr.total++;
+        if (r.status === 'ACKNOWLEDGED') curr.ack++;
+        hourCounts.set(hour, curr);
+    }
+
+    let optimalHour: number | null = null;
+    let bestRate = 0;
+    for (const [hour, counts] of hourCounts) {
+        if (counts.total >= 3) { // Need at least 3 samples
+            const rate = counts.ack / counts.total;
+            if (rate > bestRate) {
+                bestRate = rate;
+                optimalHour = hour;
+            }
+        }
+    }
+
+    // Implicit accuracy
+    const implicitReminders = reminders.filter(r => r.type === 'IMPLICIT');
+    const implicitAck = implicitReminders.filter(r => r.status === 'ACKNOWLEDGED').length;
+    const implicitAccuracy = implicitReminders.length > 0
+        ? (implicitAck / implicitReminders.length) * 100
+        : 0;
+
+    // Snooze rate
+    const snoozed = reminders.filter(r => r.status === 'SNOOZED').length;
+    const snoozeRate = (snoozed / reminders.length) * 100;
+
+    // Generate recommendation
+    let recommendation = '';
+    if (engagementRate < 30) {
+        recommendation = 'Low engagement. Consider reducing reminder frequency or switching to explicit-only mode.';
+    } else if (snoozeRate > 50) {
+        recommendation = `High snooze rate. Try scheduling reminders around ${optimalHour !== null ? `${optimalHour}:00` : 'your most active hours'}.`;
+    } else if (implicitAccuracy < 40 && implicitReminders.length > 5) {
+        recommendation = 'Implicit detection accuracy is low. Consider disabling implicit reminders.';
+    } else if (engagementRate > 70) {
+        recommendation = 'Great engagement! PAC is working well for you.';
+    } else {
+        recommendation = 'Moderate engagement. PAC is learning your patterns.';
+    }
+
+    return {
+        engagementRate: Math.round(engagementRate * 10) / 10,
+        avgResponseTimeMin: Math.round(avgResponseTimeMin * 10) / 10,
+        optimalHour,
+        implicitAccuracy: Math.round(implicitAccuracy * 10) / 10,
+        snoozeRate: Math.round(snoozeRate * 10) / 10,
+        recommendation,
     };
 }

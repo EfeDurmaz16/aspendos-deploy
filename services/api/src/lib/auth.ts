@@ -5,7 +5,6 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 
 // Initialize Polar client
-// Initialize Polar client
 const accessToken = process.env.POLAR_ACCESS_TOKEN || '';
 const isSandbox = accessToken.startsWith('polar_sat_');
 
@@ -20,18 +19,34 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
-        requireEmailVerification: false, // Set to true when you have email configured
+        requireEmailVerification: process.env.NODE_ENV === 'production',
         minPasswordLength: 8,
         maxPasswordLength: 128,
         autoSignIn: true,
+        // Revoke all other sessions when password changes (security best practice)
+        revokeSessionsOnPasswordReset: true,
+        sendResetPassword: async ({ user, url }) => {
+            // TODO: Integrate email provider (Resend/SendGrid)
+            console.log(`[Auth] Password reset requested for ${user.id}, url: ${url}`);
+        },
+    },
+    account: {
+        accountLinking: {
+            enabled: false, // Disable by default for security
+        },
     },
     session: {
-        expiresIn: 60 * 60 * 24 * 30, // 30 days
+        expiresIn: 60 * 60 * 24 * 7, // 7 days (reduced from 30 for security)
         updateAge: 60 * 60 * 24, // Update every day
         cookie: {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
+            httpOnly: true,
         },
+    },
+    rateLimit: {
+        window: 60, // 1 minute window
+        max: 10, // max 10 auth attempts per minute
     },
     trustedOrigins: [
         'http://localhost:3000',

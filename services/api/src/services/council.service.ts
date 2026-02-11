@@ -333,15 +333,25 @@ Please synthesize these perspectives into a balanced recommendation.`,
 }
 
 /**
- * Get council statistics
+ * Get council statistics with quality insights
  */
 export async function getCouncilStats(userId: string) {
-    const [totalSessions, selectedCounts] = await Promise.all([
+    const [totalSessions, selectedCounts, latencyStats] = await Promise.all([
         prisma.councilSession.count({ where: { userId } }),
         prisma.councilSession.groupBy({
             by: ['selectedPersona'],
             where: { userId, selectedPersona: { not: null } },
             _count: { selectedPersona: true },
+        }),
+        prisma.councilResponse.aggregate({
+            where: {
+                session: { userId },
+                status: 'COMPLETED',
+                latencyMs: { not: null },
+            },
+            _avg: { latencyMs: true },
+            _min: { latencyMs: true },
+            _max: { latencyMs: true },
         }),
     ]);
 
@@ -352,8 +362,109 @@ export async function getCouncilStats(userId: string) {
         }
     }
 
+    // Compute quality insights
+    const qualityInsights = computeCouncilInsights(preferenceMap, totalSessions);
+
     return {
         totalSessions,
         preferences: preferenceMap,
+        latency: {
+            avgMs: Math.round(latencyStats._avg.latencyMs || 0),
+            minMs: latencyStats._min.latencyMs || 0,
+            maxMs: latencyStats._max.latencyMs || 0,
+        },
+        insights: qualityInsights,
+    };
+}
+
+// ============================================
+// COUNCIL QUALITY SCORING & LEARNING
+// ============================================
+
+interface CouncilInsights {
+    dominantPersona: string | null;
+    diversityScore: number;       // 0-100, how evenly distributed selections are
+    recommendation: string;
+    personaScores: Record<string, number>; // preference score per persona
+}
+
+/**
+ * Compute quality insights from Council usage patterns.
+ * Learns which perspectives the user values most and provides
+ * actionable recommendations. This is a moat differentiator -
+ * competitors show 4 answers, we learn which thinking style matches the user.
+ */
+function computeCouncilInsights(
+    preferences: Record<string, number>,
+    totalSessions: number,
+): CouncilInsights {
+    const personas = Object.keys(COUNCIL_PERSONAS) as PersonaType[];
+    const totalSelections = Object.values(preferences).reduce((a, b) => a + b, 0);
+
+    if (totalSelections === 0) {
+        return {
+            dominantPersona: null,
+            diversityScore: 0,
+            recommendation: 'Start selecting preferred responses to help Council learn your thinking style.',
+            personaScores: {},
+        };
+    }
+
+    // Find dominant persona
+    let dominantPersona: string | null = null;
+    let maxCount = 0;
+    for (const [persona, count] of Object.entries(preferences)) {
+        if (count > maxCount) {
+            maxCount = count;
+            dominantPersona = persona;
+        }
+    }
+
+    // Shannon diversity index (normalized to 0-100)
+    // Higher = more evenly distributed = user values diverse perspectives
+    let entropy = 0;
+    for (const persona of personas) {
+        const p = (preferences[persona] || 0) / totalSelections;
+        if (p > 0) {
+            entropy -= p * Math.log2(p);
+        }
+    }
+    const maxEntropy = Math.log2(personas.length); // log2(4) = 2
+    const diversityScore = Math.round((entropy / maxEntropy) * 100);
+
+    // Compute preference scores (0-100)
+    const personaScores: Record<string, number> = {};
+    for (const persona of personas) {
+        personaScores[persona] = totalSelections > 0
+            ? Math.round(((preferences[persona] || 0) / totalSelections) * 100)
+            : 0;
+    }
+
+    // Generate recommendation
+    let recommendation = '';
+    const dominantName = dominantPersona
+        ? COUNCIL_PERSONAS[dominantPersona as PersonaType]?.name
+        : null;
+
+    if (diversityScore > 80) {
+        recommendation = 'You value diverse perspectives equally. Council is providing balanced value.';
+    } else if (diversityScore > 50) {
+        recommendation = `You tend toward ${dominantName || 'one perspective'}, but still appreciate variety. Good balance.`;
+    } else if (maxCount > totalSelections * 0.6) {
+        recommendation = `You strongly prefer ${dominantName || 'one perspective'}. Consider why other viewpoints don't resonate.`;
+    } else {
+        recommendation = 'Keep selecting preferred responses to help Council learn your style.';
+    }
+
+    // If user rarely uses Council, note that
+    if (totalSessions > 0 && totalSelections < totalSessions * 0.3) {
+        recommendation += ' Tip: Selecting preferred responses helps us improve recommendations.';
+    }
+
+    return {
+        dominantPersona,
+        diversityScore,
+        recommendation,
+        personaScores,
     };
 }
