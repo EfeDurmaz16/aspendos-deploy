@@ -9,6 +9,7 @@ import type { TierName } from '../config/tiers';
 import { getLimit } from '../config/tiers';
 import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
+import * as billingService from '../services/billing.service';
 import type { PersonaType } from '../services/council.service';
 import * as councilService from '../services/council.service';
 
@@ -266,8 +267,17 @@ app.post('/sessions/:id/synthesize', async (c) => {
         return c.json({ error: 'Session not found' }, 404);
     }
 
+    // Check token budget before synthesis (uses gpt-4o)
+    if (!(await billingService.hasTokens(userId, 2000))) {
+        return c.json({ error: 'Insufficient token budget for synthesis' }, 403);
+    }
+
     try {
         const synthesis = await councilService.generateSynthesis(sessionId);
+
+        // Meter synthesis tokens (estimate: ~600 output + ~800 input for context)
+        await billingService.recordTokenUsage(userId, 800, 600, 'openai/gpt-4o');
+
         return c.json({ synthesis });
     } catch (_error) {
         return c.json({ error: 'Failed to generate synthesis' }, 500);

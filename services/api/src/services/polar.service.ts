@@ -340,21 +340,23 @@ async function handleSubscriptionCanceled(data: PolarWebhookEvent['data']) {
 
     if (!account) return;
 
-    // Downgrade to starter
-    const starterConfig = getTierConfig('STARTER');
+    // Downgrade to FREE
+    const freeConfig = getTierConfig('FREE');
 
     await prisma.billingAccount.update({
         where: { id: account.id },
         data: {
             status: 'canceled',
-            plan: 'starter',
-            monthlyCredit: starterConfig.monthlyTokens / 1000,
+            plan: 'free',
+            monthlyCredit: freeConfig.monthlyTokens / 1000,
+            chatsRemaining: freeConfig.monthlyChats,
+            voiceMinutesRemaining: freeConfig.dailyVoiceMinutes * 30,
         },
     });
 
     await prisma.user.update({
         where: { id: account.userId },
-        data: { tier: 'STARTER' },
+        data: { tier: 'FREE' },
     });
 }
 
