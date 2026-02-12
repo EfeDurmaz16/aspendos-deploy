@@ -7,18 +7,19 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockPrisma = vi.hoisted(() => ({
-    chat: {
-        findMany: vi.fn(),
-    },
-    memory: {
-        findMany: vi.fn(),
+vi.mock('@aspendos/db', () => ({
+    prisma: {
+        chat: {
+            findMany: vi.fn(),
+        },
+        memory: {
+            findMany: vi.fn(),
+        },
     },
 }));
 
-vi.mock('@aspendos/db', () => ({
-    prisma: mockPrisma,
-}));
+import { prisma } from '@aspendos/db';
+const mockPrisma = prisma as any;
 
 vi.mock('../../middleware/auth', () => ({
     requireAuth: vi.fn((c, next) => next()),

@@ -51,6 +51,9 @@ import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
 import voiceRoutes from './routes/voice';
 import workspaceRoutes from './routes/workspace';
+import complianceRoutes from './routes/user-compliance';
+import securityRoutes from './routes/security';
+import systemRoutes from './routes/system';
 import { getOpenAPISpec } from './lib/openapi-spec';
 
 // Validate environment variables on startup
@@ -1815,6 +1818,9 @@ app.route('/api/api-keys', apiKeysRoutes);
 app.route('/api/templates', promptTemplatesRoutes);
 app.route('/api/search', searchRoutes);
 app.route('/api/workspace', workspaceRoutes);
+app.route('/api/compliance', complianceRoutes);
+app.route('/api/security', securityRoutes);
+app.route('/api/system', systemRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);

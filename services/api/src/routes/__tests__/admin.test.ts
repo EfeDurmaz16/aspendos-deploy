@@ -7,35 +7,36 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockPrisma = vi.hoisted(() => ({
-    user: {
-        findMany: vi.fn(),
-        findUnique: vi.fn(),
-        update: vi.fn(),
-        count: vi.fn(),
-    },
-    chat: {
-        count: vi.fn(),
-    },
-    message: {
-        findFirst: vi.fn(),
-        count: vi.fn(),
-        aggregate: vi.fn(),
-        groupBy: vi.fn(),
-    },
-    memory: {
-        count: vi.fn(),
-    },
-    auditLog: {
-        findMany: vi.fn(),
-        count: vi.fn(),
-        create: vi.fn(),
+vi.mock('@aspendos/db', () => ({
+    prisma: {
+        user: {
+            findMany: vi.fn(),
+            findUnique: vi.fn(),
+            update: vi.fn(),
+            count: vi.fn(),
+        },
+        chat: {
+            count: vi.fn(),
+        },
+        message: {
+            findFirst: vi.fn(),
+            count: vi.fn(),
+            aggregate: vi.fn(),
+            groupBy: vi.fn(),
+        },
+        memory: {
+            count: vi.fn(),
+        },
+        auditLog: {
+            findMany: vi.fn(),
+            count: vi.fn(),
+            create: vi.fn(),
+        },
     },
 }));
 
-vi.mock('@aspendos/db', () => ({
-    prisma: mockPrisma,
-}));
+import { prisma } from '@aspendos/db';
+const mockPrisma = prisma as any;
 
 vi.mock('../../lib/audit-log', () => ({
     auditLog: vi.fn(),
