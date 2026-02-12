@@ -204,3 +204,34 @@ export function isModelAvailableForTier(
     const availableModels = getModelsForTier(tier);
     return availableModels.some((m) => m.id === modelId);
 }
+
+/**
+ * Smart model routing: downgrade expensive models for simple queries
+ * @param requestedModelId - The model the user requested
+ * @param userMessage - The user's message content
+ * @returns Model ID to actually use (downgraded if appropriate)
+ */
+export function getSmartModelId(requestedModelId: string, userMessage: string): string {
+    // Only downgrade for short, simple messages
+    if (userMessage.length >= 50) {
+        return requestedModelId;
+    }
+
+    // Simple pattern matching for greetings, acknowledgments, single words
+    const simplePatterns =
+        /^(hi|hello|hey|thanks|thank you|ok|okay|yes|no|sure|yep|nope|cool|great|nice|good|bye|goodbye|k)$/i;
+
+    if (!simplePatterns.test(userMessage.trim())) {
+        return requestedModelId;
+    }
+
+    // Downgrade map for simple queries
+    const downgrades: Record<string, string> = {
+        'openai/gpt-4o': 'openai/gpt-4o-mini',
+        'anthropic/claude-sonnet-4-20250514': 'anthropic/claude-3-5-haiku-20241022',
+        'anthropic/claude-opus-4-20250514': 'anthropic/claude-sonnet-4-20250514',
+        'google/gemini-2.5-pro-preview-05-06': 'google/gemini-2.0-flash',
+    };
+
+    return downgrades[requestedModelId] || requestedModelId;
+}

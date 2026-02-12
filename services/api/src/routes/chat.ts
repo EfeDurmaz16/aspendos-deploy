@@ -6,7 +6,12 @@
 
 import { generateText, stepCountIs, streamText } from 'ai';
 import { Hono } from 'hono';
-import { getModel, getModelWithFallback, isModelAvailableForTier } from '../lib/ai-providers';
+import {
+    getModel,
+    getModelWithFallback,
+    getSmartModelId,
+    isModelAvailableForTier,
+} from '../lib/ai-providers';
 import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
@@ -199,8 +204,11 @@ app.post(
         // Determine model to use
         const modelId = model_id || chat.modelPreference || 'openai/gpt-4o-mini';
 
+        // Apply smart model routing (downgrade expensive models for simple queries)
+        const smartModelId = getSmartModelId(modelId, content);
+
         // Validate model is available for user's tier
-        if (!isModelAvailableForTier(modelId, userTier)) {
+        if (!isModelAvailableForTier(smartModelId, userTier)) {
             return c.json({ error: 'Model not available for your tier' }, 403);
         }
 
@@ -326,7 +334,7 @@ app.post(
         if (shouldStream) {
             try {
                 // Use fallback-aware model resolution (auto-switches provider if circuit breaker is open)
-                const { model: resolvedModel, actualModelId } = getModelWithFallback(modelId);
+                const { model: resolvedModel, actualModelId } = getModelWithFallback(smartModelId);
 
                 const result = streamText({
                     model: resolvedModel,
@@ -426,7 +434,7 @@ app.post(
         try {
             // Use fallback-aware model resolution
             const { model: resolvedModel, actualModelId: nonStreamModelId } =
-                getModelWithFallback(modelId);
+                getModelWithFallback(smartModelId);
 
             const result = await generateText({
                 model: resolvedModel,
