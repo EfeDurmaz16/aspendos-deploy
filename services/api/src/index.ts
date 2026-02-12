@@ -25,6 +25,10 @@ import { endpointRateLimit } from './middleware/endpoint-rate-limit';
 import { idempotency } from './middleware/idempotency';
 import { metricsMiddleware } from './middleware/metrics';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
+import { botProtection } from './middleware/bot-protection';
+import { correlationIdMiddleware } from './middleware/correlation-id';
+import { featureHealthMiddleware } from './middleware/feature-health';
+import { payloadLimits } from './middleware/payload-limits';
 import { sanitizeBody } from './middleware/sanitize';
 import { requestTimeout } from './middleware/timeout';
 import {
@@ -51,6 +55,7 @@ import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
 import voiceRoutes from './routes/voice';
 import workspaceRoutes from './routes/workspace';
+import adminBackupsRoutes from './routes/admin-backups';
 import complianceRoutes from './routes/user-compliance';
 import securityRoutes from './routes/security';
 import systemRoutes from './routes/system';
@@ -84,6 +89,9 @@ app.use('*', logger());
 
 // Tracing middleware (must be early to track all requests)
 app.use('*', tracingMiddleware());
+
+// Correlation ID middleware (right after tracing for trace propagation)
+app.use('*', correlationIdMiddleware());
 
 // Metrics middleware (must be early to track all requests)
 app.use('*', metricsMiddleware());
@@ -173,6 +181,9 @@ app.use(
 // Input sanitization middleware
 app.use('*', sanitizeBody());
 
+// Bot protection middleware (blocks automated abuse)
+app.use('*', botProtection());
+
 // API versioning middleware
 app.use('/api/*', apiVersion());
 
@@ -181,6 +192,9 @@ app.use('*', compression());
 
 // Cache control middleware (Cache-Control headers, ETag support)
 app.use('*', cacheControl());
+
+// Feature health middleware (X-Degraded-Features header)
+app.use('*', featureHealthMiddleware());
 
 // Sentry error handling middleware
 app.use('*', async (c, next) => {
@@ -1803,6 +1817,7 @@ app.post('/api/jobs/retry/:jobId', (c) => {
 
 // API Routes
 app.route('/api/admin', adminRoutes);
+app.route('/api/admin/backups', adminBackupsRoutes);
 app.route('/api/chat', chatRoutes);
 app.route('/api/council', councilRoutes);
 app.route('/api/import', importRoutes);
