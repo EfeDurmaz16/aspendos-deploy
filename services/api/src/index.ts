@@ -1114,6 +1114,175 @@ app.get('/api/consent', async (c) => {
     }
 });
 
+// ============================================
+// NPS / CSAT FEEDBACK (PMF Measurement)
+// ============================================
+
+// POST /api/feedback/nps - Submit NPS score
+app.post('/api/feedback/nps', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    try {
+        const body = await c.req.json();
+        const score = Number(body.score);
+        const comment = typeof body.comment === 'string' ? body.comment.slice(0, 1000) : '';
+
+        if (!Number.isInteger(score) || score < 0 || score > 10) {
+            return c.json({ error: 'Score must be an integer between 0 and 10' }, 400);
+        }
+
+        const { prisma } = await import('./lib/prisma');
+
+        // Rate limit: 1 NPS per user per day
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const existing = await prisma.notification.findFirst({
+            where: { userId, type: 'NPS_RESPONSE', createdAt: { gte: startOfDay } },
+        });
+        if (existing) {
+            return c.json({ error: 'Already submitted NPS today' }, 429);
+        }
+
+        // Store as notification record (reusing existing table)
+        await prisma.notification.create({
+            data: {
+                userId,
+                type: 'NPS_RESPONSE',
+                title: `NPS: ${score}`,
+                body: comment || `Score: ${score}/10`,
+                read: true, // Not a user-facing notification
+                metadata: { score, comment, submittedAt: new Date().toISOString() },
+            },
+        });
+
+        await auditLog({ userId, action: 'NPS_SUBMIT', resource: 'feedback', metadata: { score } });
+
+        return c.json({ success: true, score });
+    } catch (error) {
+        console.error('[NPS] Submission failed:', error);
+        return c.json({ error: 'Failed to submit feedback' }, 500);
+    }
+});
+
+// GET /api/feedback/nps/summary - Aggregate NPS score
+app.get('/api/feedback/nps/summary', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    try {
+        const { prisma } = await import('./lib/prisma');
+
+        // Get all NPS responses (admin could see all, users see own)
+        const responses = await prisma.notification.findMany({
+            where: { type: 'NPS_RESPONSE' },
+            select: { metadata: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            take: 1000,
+        });
+
+        let promoters = 0;
+        let passives = 0;
+        let detractors = 0;
+        const scores: number[] = [];
+
+        for (const r of responses) {
+            const meta = r.metadata as { score?: number } | null;
+            const score = meta?.score;
+            if (typeof score !== 'number') continue;
+            scores.push(score);
+            if (score >= 9) promoters++;
+            else if (score >= 7) passives++;
+            else detractors++;
+        }
+
+        const total = promoters + passives + detractors;
+        const npsScore = total > 0 ? Math.round(((promoters - detractors) / total) * 100) : 0;
+
+        return c.json({
+            npsScore,
+            totalResponses: total,
+            distribution: { promoters, passives, detractors },
+            avgScore:
+                scores.length > 0
+                    ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+                    : 0,
+        });
+    } catch (error) {
+        console.error('[NPS] Summary failed:', error);
+        return c.json({ error: 'Failed to fetch NPS summary' }, 500);
+    }
+});
+
+// ============================================
+// CHURN RE-ENGAGEMENT (Scheduler endpoint)
+// ============================================
+
+// POST /api/scheduler/reengage - Trigger re-engagement for churning users (cron job)
+app.post('/api/scheduler/reengage', async (c) => {
+    // Verify cron secret
+    const cronSecret = c.req.header('x-cron-secret');
+    if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    try {
+        const { prisma } = await import('./lib/prisma');
+
+        // Find users who haven't sent a message in 7+ days but were active before
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+        // Get users with recent activity (30d) but no activity in last 7d
+        const activeUsers = await prisma.message.groupBy({
+            by: ['userId'],
+            where: {
+                role: 'user',
+                createdAt: { gte: thirtyDaysAgo },
+            },
+            having: { userId: { _count: { gte: 5 } } },
+        });
+
+        let reengaged = 0;
+        for (const user of activeUsers) {
+            // Check if they have recent activity
+            const recentMessage = await prisma.message.findFirst({
+                where: { userId: user.userId, role: 'user', createdAt: { gte: sevenDaysAgo } },
+            });
+
+            if (recentMessage) continue; // Still active, skip
+
+            // Check if we already sent a re-engagement this week
+            const existingNotification = await prisma.notification.findFirst({
+                where: {
+                    userId: user.userId,
+                    type: 'REENGAGEMENT',
+                    createdAt: { gte: sevenDaysAgo },
+                },
+            });
+
+            if (existingNotification) continue; // Already notified
+
+            // Create re-engagement notification
+            await prisma.notification.create({
+                data: {
+                    userId: user.userId,
+                    type: 'REENGAGEMENT',
+                    title: 'We miss you!',
+                    body: "It's been a while since we chatted. I've been thinking about some topics from our last conversation...",
+                    read: false,
+                },
+            });
+            reengaged++;
+        }
+
+        return c.json({ success: true, reengagedUsers: reengaged });
+    } catch (error) {
+        console.error('[Reengage] Failed:', error);
+        return c.json({ error: 'Re-engagement failed' }, 500);
+    }
+});
+
 // API Routes
 app.route('/api/chat', chatRoutes);
 app.route('/api/council', councilRoutes);
