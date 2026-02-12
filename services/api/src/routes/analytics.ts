@@ -117,6 +117,153 @@ app.get('/usage', requireAuth, async (c) => {
 });
 
 /**
+ * GET /api/analytics/usage/summary - High-level usage summary
+ *
+ * Returns a concise summary of token usage for the current billing period:
+ * - Total cost this billing period
+ * - Most used model
+ * - Average tokens per message
+ * - Messages sent today/this week/this month
+ */
+app.get('/usage/summary', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        const now = new Date();
+
+        // Calculate billing period start (first day of current month)
+        const billingPeriodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        billingPeriodStart.setHours(0, 0, 0, 0);
+
+        // Calculate today start
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+
+        // Calculate week start (7 days ago)
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - 7);
+        weekStart.setHours(0, 0, 0, 0);
+
+        // Get messages for this billing period
+        const billingPeriodMessages = await prisma.message.findMany({
+            where: {
+                userId,
+                role: 'assistant',
+                createdAt: {
+                    gte: billingPeriodStart,
+                },
+            },
+            select: {
+                tokensIn: true,
+                tokensOut: true,
+                costUsd: true,
+                modelUsed: true,
+                createdAt: true,
+            },
+        });
+
+        // Calculate total cost for billing period
+        const totalCostThisPeriod = billingPeriodMessages.reduce(
+            (sum, msg) => sum + msg.costUsd,
+            0
+        );
+
+        // Calculate total tokens for billing period
+        const totalTokensIn = billingPeriodMessages.reduce((sum, msg) => sum + msg.tokensIn, 0);
+        const totalTokensOut = billingPeriodMessages.reduce((sum, msg) => sum + msg.tokensOut, 0);
+
+        // Find most used model
+        const modelCounts = new Map<string, number>();
+        for (const msg of billingPeriodMessages) {
+            const model = msg.modelUsed || 'unknown';
+            modelCounts.set(model, (modelCounts.get(model) || 0) + 1);
+        }
+
+        let mostUsedModel = 'none';
+        let maxCount = 0;
+        for (const [model, count] of modelCounts.entries()) {
+            if (count > maxCount) {
+                maxCount = count;
+                mostUsedModel = model;
+            }
+        }
+
+        // Calculate average tokens per message
+        const avgTokensPerMessage =
+            billingPeriodMessages.length > 0
+                ? Math.round((totalTokensIn + totalTokensOut) / billingPeriodMessages.length)
+                : 0;
+
+        // Count messages for different time periods
+        const [messagesToday, messagesThisWeek, messagesThisMonth] = await Promise.all([
+            prisma.message.count({
+                where: {
+                    userId,
+                    role: 'user',
+                    createdAt: {
+                        gte: todayStart,
+                    },
+                },
+            }),
+            prisma.message.count({
+                where: {
+                    userId,
+                    role: 'user',
+                    createdAt: {
+                        gte: weekStart,
+                    },
+                },
+            }),
+            prisma.message.count({
+                where: {
+                    userId,
+                    role: 'user',
+                    createdAt: {
+                        gte: billingPeriodStart,
+                    },
+                },
+            }),
+        ]);
+
+        // Get cost breakdown by model
+        const costByModel = new Map<string, number>();
+        for (const msg of billingPeriodMessages) {
+            const model = msg.modelUsed || 'unknown';
+            costByModel.set(model, (costByModel.get(model) || 0) + msg.costUsd);
+        }
+
+        const costBreakdown = Array.from(costByModel.entries())
+            .map(([model, cost]) => ({
+                model,
+                costUsd: cost,
+            }))
+            .sort((a, b) => b.costUsd - a.costUsd);
+
+        return c.json({
+            billingPeriod: {
+                start: billingPeriodStart,
+                end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
+            },
+            totalCostThisPeriod,
+            totalTokensIn,
+            totalTokensOut,
+            totalTokens: totalTokensIn + totalTokensOut,
+            mostUsedModel,
+            avgTokensPerMessage,
+            messages: {
+                today: messagesToday,
+                thisWeek: messagesThisWeek,
+                thisMonth: messagesThisMonth,
+            },
+            costBreakdown,
+        });
+    } catch (error) {
+        console.error('[Analytics] Error fetching usage summary:', error);
+        return c.json({ error: 'Failed to fetch usage summary' }, 500);
+    }
+});
+
+/**
  * GET /api/analytics/messages - Message count over time
  *
  * Returns count of messages per day with breakdown by user vs assistant.
