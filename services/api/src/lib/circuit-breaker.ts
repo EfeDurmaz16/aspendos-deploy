@@ -19,6 +19,7 @@ export class CircuitBreaker {
     private state: CircuitState = 'CLOSED';
     private failureCount = 0;
     private lastFailureTime = 0;
+    private halfOpenAttempted = false;
     private options: CircuitBreakerOptions;
 
     constructor(options: CircuitBreakerOptions) {
@@ -29,9 +30,21 @@ export class CircuitBreaker {
         if (this.state === 'OPEN') {
             if (Date.now() - this.lastFailureTime > this.options.resetTimeout) {
                 this.state = 'HALF_OPEN';
+                this.halfOpenAttempted = false;
             } else {
                 throw new Error(`Circuit breaker OPEN for ${this.options.name}`);
             }
+        }
+
+        // In HALF_OPEN, only allow one probe request
+        if (this.state === 'HALF_OPEN' && this.halfOpenAttempted) {
+            throw new Error(
+                `Circuit breaker HALF_OPEN for ${this.options.name}, probe in progress`
+            );
+        }
+
+        if (this.state === 'HALF_OPEN') {
+            this.halfOpenAttempted = true;
         }
 
         try {
@@ -46,6 +59,7 @@ export class CircuitBreaker {
 
     private onSuccess() {
         this.failureCount = 0;
+        this.halfOpenAttempted = false;
         this.state = 'CLOSED';
     }
 

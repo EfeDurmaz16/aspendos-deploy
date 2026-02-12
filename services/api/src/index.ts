@@ -38,19 +38,40 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+// Track shutdown state
+let isShuttingDown = false;
+
 // Middleware
 app.use('*', logger());
+
+// Reject requests during shutdown
+app.use('*', async (c, next) => {
+    if (isShuttingDown) {
+        return c.json({ error: 'Server is shutting down', code: 'SERVICE_UNAVAILABLE' }, 503);
+    }
+    return next();
+});
 
 // Request timeout middleware (30 seconds)
 app.use('*', requestTimeout(30000));
 
-// Security Headers (Helmet-style) + API Versioning
+// Security Headers (Helmet-style) + API Versioning + Request Timing
 app.use('*', async (c, next) => {
     // Generate request ID for tracing
     const requestId = crypto.randomUUID();
     c.set('requestId', requestId);
 
+    // Add request timing
+    const start = Date.now();
     await next();
+    const duration = Date.now() - start;
+
+    // Log slow requests (over 5 seconds)
+    if (duration > 5000) {
+        console.warn(
+            `[${requestId}] Slow request: ${c.req.method} ${c.req.path} took ${duration}ms`
+        );
+    }
 
     // API Versioning Headers
     c.header('X-API-Version', '1.0.0');
@@ -227,8 +248,11 @@ app.use('*', rateLimit());
 
 // Global error handler with structured error handling
 app.onError((err, c) => {
-    Sentry.captureException(err);
-    console.error('Unhandled error:', err);
+    const requestId = c.get('requestId') || 'unknown';
+    Sentry.captureException(err, {
+        tags: { requestId },
+    });
+    console.error(`[${requestId}] Unhandled error:`, err);
 
     // Handle JSON parse errors
     if (err instanceof SyntaxError && 'body' in err) {
@@ -663,6 +687,13 @@ app.on(['POST', 'GET'], '/api/auth/*', (c) => {
 
 // Public: Get shared chat by token (no auth required, rate limited by IP)
 const sharedChatLimiter = new Map<string, { count: number; resetAt: number }>();
+// Clean up expired entries every 60 seconds
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of sharedChatLimiter.entries()) {
+        if (entry.resetAt <= now) sharedChatLimiter.delete(key);
+    }
+}, 60_000);
 app.get('/api/chat/shared/:token', async (c) => {
     // Simple IP-based rate limit: 30 requests per minute
     const ip = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
@@ -788,6 +819,13 @@ app.delete('/api/account', async (c) => {
 
 // Rate limit export to prevent abuse (1 export per 5 minutes per user)
 const exportLimiter = new Map<string, number>();
+// Clean up expired entries every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, ts] of exportLimiter.entries()) {
+        if (now - ts > 5 * 60 * 1000) exportLimiter.delete(key);
+    }
+}, 5 * 60_000);
 app.get('/api/export', async (c) => {
     const userId = c.get('userId');
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
@@ -974,7 +1012,16 @@ async function startServer() {
 
     // Graceful shutdown
     const shutdown = async () => {
+        if (isShuttingDown) return; // Prevent double shutdown
+        isShuttingDown = true;
         console.log('\n🛑 Shutting down gracefully...');
+
+        // Stop accepting new connections
+        server.close();
+
+        // Give in-flight requests time to complete
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+
         try {
             await closeMCPClients();
             console.log('✅ MCP clients closed');

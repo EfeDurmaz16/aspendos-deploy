@@ -148,11 +148,13 @@ app.get('/sessions/:id/stream', async (c) => {
             councilService.streamPersonaResponse(sessionId, persona, session.query)
         );
 
-        // Track completion and actual token usage
+        // Track completion and per-persona token usage for accurate billing
         const completed = new Set<PersonaType>();
         const activeStreams = new Map<PersonaType, AsyncGenerator>();
-        let totalPromptTokens = 0;
-        let totalCompletionTokens = 0;
+        const perPersonaUsage = new Map<
+            PersonaType,
+            { promptTokens: number; completionTokens: number }
+        >();
 
         personas.forEach((persona, i) => {
             activeStreams.set(persona, streams[i]);
@@ -181,10 +183,12 @@ app.get('/sessions/:id/stream', async (c) => {
                         `data: ${JSON.stringify({ persona, type: 'persona_chunk', content })}\n\n`
                     );
                 } else if (type === 'done') {
-                    // Accumulate actual token usage from each persona
+                    // Track per-persona token usage for accurate billing
                     if (usage) {
-                        totalPromptTokens += usage.promptTokens;
-                        totalCompletionTokens += usage.completionTokens;
+                        perPersonaUsage.set(persona, {
+                            promptTokens: usage.promptTokens,
+                            completionTokens: usage.completionTokens,
+                        });
                     }
                     await stream.write(
                         `data: ${JSON.stringify({ persona, type: 'persona_complete', latencyMs })}\n\n`
@@ -203,14 +207,18 @@ app.get('/sessions/:id/stream', async (c) => {
         // Update session status
         await councilService.updateSessionStatus(sessionId);
 
-        // Meter actual token usage from all persona LLM calls
-        if (totalPromptTokens > 0 || totalCompletionTokens > 0) {
-            await billingService.recordTokenUsage(
-                userId,
-                totalPromptTokens,
-                totalCompletionTokens,
-                'council-parallel'
-            );
+        // Meter actual token usage per-persona with real model IDs
+        // Each persona maps to a real model (gpt-4o, claude-3-5-sonnet, gemini-flash, gpt-4o-mini)
+        for (const [persona, usage] of perPersonaUsage) {
+            const personaDef = councilService.COUNCIL_PERSONAS[persona];
+            if (personaDef && (usage.promptTokens > 0 || usage.completionTokens > 0)) {
+                await billingService.recordTokenUsage(
+                    userId,
+                    usage.promptTokens,
+                    usage.completionTokens,
+                    personaDef.modelId
+                );
+            }
         }
 
         // Send completion event
@@ -294,6 +302,23 @@ app.post('/sessions/:id/select', async (c) => {
     }
 
     await councilService.selectResponse(sessionId, userId, persona);
+
+    // MOAT: Council→Preference learning
+    // Track which personas users prefer to personalize future council sessions.
+    // Competitors show equal-weight responses; we learn and adapt.
+    try {
+        const session = await councilService.getCouncilSession(sessionId, userId);
+        if (session) {
+            const openMemory = await import('../services/openmemory.service');
+            await openMemory.addMemory(
+                `Preferred AI persona "${persona}" for query type: ${session.query.slice(0, 100)}`,
+                userId,
+                { sector: 'procedural', metadata: { source: 'council_preference', persona } }
+            );
+        }
+    } catch {
+        // Non-blocking
+    }
 
     return c.json({ success: true });
 });

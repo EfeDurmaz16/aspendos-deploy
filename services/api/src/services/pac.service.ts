@@ -483,9 +483,24 @@ async function computeEffectiveness(userId: string): Promise<EffectivenessMetric
         };
     }
 
-    // Engagement rate
-    const acknowledged = reminders.filter((r) => r.status === 'ACKNOWLEDGED').length;
-    const engagementRate = (acknowledged / reminders.length) * 100;
+    // Apply recency weighting: recent interactions count more
+    const now = Date.now();
+    const DECAY_HALF_LIFE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+
+    function recencyWeight(createdAt: Date): number {
+        const age = now - createdAt.getTime();
+        return 0.5 ** (age / DECAY_HALF_LIFE_MS);
+    }
+
+    // Weighted engagement rate
+    let weightedAck = 0;
+    let weightedTotal = 0;
+    for (const r of reminders) {
+        const w = recencyWeight(r.createdAt);
+        weightedTotal += w;
+        if (r.status === 'ACKNOWLEDGED') weightedAck += w;
+    }
+    const engagementRate = weightedTotal > 0 ? (weightedAck / weightedTotal) * 100 : 0;
 
     // Average response time
     const responseTimes = reminders
@@ -496,21 +511,22 @@ async function computeEffectiveness(userId: string): Promise<EffectivenessMetric
             ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
             : 0;
 
-    // Find optimal hour (when user most often acknowledges)
+    // Find optimal hour (when user most often acknowledges) with recency weighting
     const hourCounts = new Map<number, { ack: number; total: number }>();
     for (const r of reminders) {
         const hour = r.triggerAt.getHours();
+        const w = recencyWeight(r.createdAt);
         const curr = hourCounts.get(hour) || { ack: 0, total: 0 };
-        curr.total++;
-        if (r.status === 'ACKNOWLEDGED') curr.ack++;
+        curr.total += w;
+        if (r.status === 'ACKNOWLEDGED') curr.ack += w;
         hourCounts.set(hour, curr);
     }
 
     let optimalHour: number | null = null;
     let bestRate = 0;
-    for (const [hour, counts] of hourCounts) {
+    for (const [hour, counts] of Array.from(hourCounts.entries())) {
         if (counts.total >= 3) {
-            // Need at least 3 samples
+            // Need at least 3 weighted samples
             const rate = counts.ack / counts.total;
             if (rate > bestRate) {
                 bestRate = rate;
@@ -519,21 +535,22 @@ async function computeEffectiveness(userId: string): Promise<EffectivenessMetric
         }
     }
 
-    // Find best day of week (0=Sunday, 6=Saturday)
+    // Find best day of week (0=Sunday, 6=Saturday) with recency weighting
     const dayCounts = new Map<number, { ack: number; total: number }>();
     for (const r of reminders) {
         const day = r.triggerAt.getDay();
+        const w = recencyWeight(r.createdAt);
         const curr = dayCounts.get(day) || { ack: 0, total: 0 };
-        curr.total++;
-        if (r.status === 'ACKNOWLEDGED') curr.ack++;
+        curr.total += w;
+        if (r.status === 'ACKNOWLEDGED') curr.ack += w;
         dayCounts.set(day, curr);
     }
 
     let bestDayOfWeek: number | null = null;
     let bestDayRate = 0;
-    for (const [day, counts] of dayCounts) {
+    for (const [day, counts] of Array.from(dayCounts.entries())) {
         if (counts.total >= 3) {
-            // Need at least 3 samples
+            // Need at least 3 weighted samples
             const rate = counts.ack / counts.total;
             if (rate > bestDayRate) {
                 bestDayRate = rate;

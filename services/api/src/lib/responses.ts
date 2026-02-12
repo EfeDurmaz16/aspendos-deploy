@@ -4,6 +4,8 @@
  * Provides consistent error and success response formats across all API routes.
  */
 
+import type { Context } from 'hono';
+
 export interface ErrorResponse {
     error: {
         code: string;
@@ -16,35 +18,20 @@ export interface SuccessResponse<T> {
     data: T;
 }
 
+type StatusCode = 200 | 201 | 400 | 401 | 403 | 404 | 408 | 409 | 413 | 429 | 500 | 503;
+
 /**
- * Create a standardized error response
- *
- * @param code - Error code (e.g., "NOT_FOUND", "VALIDATION_ERROR")
- * @param message - Human-readable error message
- * @param status - HTTP status code
- * @returns Object with error and status
+ * Standardized error response format across all API routes.
  */
-export function errorResponse(code: string, message: string, status: number) {
-    return {
-        error: {
-            code,
-            message,
-        },
-        status,
-    };
+export function errorResponse(c: Context, status: StatusCode, code: string, message: string) {
+    return c.json({ error: { code, message } }, status);
 }
 
 /**
- * Create a standardized success response
- *
- * @param data - Response data
- * @returns Object with success flag and data
+ * Standardized success response.
  */
-export function successResponse<T>(data: T): SuccessResponse<T> {
-    return {
-        success: true,
-        data,
-    };
+export function successResponse<T>(c: Context, data: T, status: 200 | 201 = 200) {
+    return c.json(data, status);
 }
 
 // Common error codes

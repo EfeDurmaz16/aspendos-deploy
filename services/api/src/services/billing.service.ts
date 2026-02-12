@@ -6,17 +6,22 @@ import { type BillingAccount, prisma, type Tier } from '@aspendos/db';
 import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
 
 /**
- * Per-model pricing in USD per 1K tokens
+ * Per-model pricing in USD per 1M tokens (industry standard)
  * Used for actual cost tracking and billing transparency
  */
-const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-    'openai/gpt-4o': { input: 0.0025, output: 0.01 },
-    'openai/gpt-4o-mini': { input: 0.00015, output: 0.0006 },
-    'anthropic/claude-3.5-sonnet': { input: 0.003, output: 0.015 },
-    'anthropic/claude-3-haiku': { input: 0.00025, output: 0.00125 },
-    'groq/llama-3.3-70b': { input: 0.00059, output: 0.00079 },
-    'groq/llama-3.1-8b': { input: 0.00005, output: 0.00008 },
-    'google/gemini-2.0-flash': { input: 0.0001, output: 0.0004 },
+const MODEL_PRICING: Record<string, { promptPer1M: number; completionPer1M: number }> = {
+    'openai/gpt-4o': { promptPer1M: 2.5, completionPer1M: 10.0 },
+    'openai/gpt-4o-mini': { promptPer1M: 0.15, completionPer1M: 0.6 },
+    'anthropic/claude-sonnet-4-20250514': { promptPer1M: 3.0, completionPer1M: 15.0 },
+    'anthropic/claude-3.5-sonnet': { promptPer1M: 3.0, completionPer1M: 15.0 },
+    'anthropic/claude-3-5-haiku-20241022': { promptPer1M: 0.8, completionPer1M: 4.0 },
+    'anthropic/claude-3-haiku': { promptPer1M: 0.25, completionPer1M: 1.25 },
+    'groq/llama-3.3-70b-versatile': { promptPer1M: 0.59, completionPer1M: 0.79 },
+    'groq/llama-3.3-70b': { promptPer1M: 0.59, completionPer1M: 0.79 },
+    'groq/llama-3.1-8b': { promptPer1M: 0.05, completionPer1M: 0.08 },
+    'google/gemini-2.0-flash': { promptPer1M: 0.1, completionPer1M: 0.4 },
+    'deepseek/deepseek-chat': { promptPer1M: 0.14, completionPer1M: 0.28 },
+    'xai/grok-2': { promptPer1M: 2.0, completionPer1M: 10.0 },
 };
 
 /**
@@ -102,7 +107,7 @@ export async function getBillingStatus(userId: string) {
 }
 
 /**
- * Record token usage
+ * Record token usage (atomic transaction to prevent race conditions)
  */
 export async function recordTokenUsage(
     userId: string,
@@ -111,41 +116,86 @@ export async function recordTokenUsage(
     modelId: string,
     metadata?: Record<string, unknown>
 ) {
-    const account = await getOrCreateBillingAccount(userId);
     const totalTokens = tokensIn + tokensOut;
     const creditsUsed = totalTokens / 1000; // Store in K tokens
 
-    // Calculate actual USD cost based on model pricing
+    // Calculate actual USD cost based on model pricing (per 1M tokens)
     const pricing = MODEL_PRICING[modelId];
     let usdCost = 0;
     if (pricing) {
-        const inputCost = (tokensIn / 1000) * pricing.input;
-        const outputCost = (tokensOut / 1000) * pricing.output;
+        const inputCost = (tokensIn * pricing.promptPer1M) / 1_000_000;
+        const outputCost = (tokensOut * pricing.completionPer1M) / 1_000_000;
         usdCost = inputCost + outputCost;
+    } else {
+        // Default conservative pricing for unknown models (per 1M tokens)
+        usdCost = (tokensIn * 1.0 + tokensOut * 3.0) / 1_000_000;
     }
 
-    // Create credit log
-    await prisma.creditLog.create({
-        data: {
-            billingAccountId: account.id,
-            amount: -Math.ceil(creditsUsed), // Negative for usage, ceil to prevent sub-1K queries being free
-            reason: 'model_inference',
-            metadata: {
-                model: modelId,
-                tokens_in: tokensIn,
-                tokens_out: tokensOut,
-                usd_cost: usdCost,
-                ...metadata,
-            },
-        },
-    });
+    // Atomic transaction to prevent race conditions on credit balance
+    await prisma.$transaction(async (tx) => {
+        const account = await tx.billingAccount.findUnique({ where: { userId } });
+        if (!account) {
+            // Create account if it doesn't exist
+            const freeConfig = getTierConfig('FREE');
+            const newAccount = await tx.billingAccount.create({
+                data: {
+                    userId,
+                    plan: 'free',
+                    monthlyCredit: freeConfig.monthlyTokens / 1000,
+                    chatsRemaining: freeConfig.monthlyChats,
+                    voiceMinutesRemaining: freeConfig.dailyVoiceMinutes * 30,
+                },
+            });
 
-    // Update account credit used
-    await prisma.billingAccount.update({
-        where: { id: account.id },
-        data: {
-            creditUsed: { increment: creditsUsed },
-        },
+            // Create credit log
+            await tx.creditLog.create({
+                data: {
+                    billingAccountId: newAccount.id,
+                    amount: -Math.ceil(creditsUsed), // Negative for usage, ceil to prevent sub-1K queries being free
+                    reason: 'model_inference',
+                    metadata: {
+                        model: modelId,
+                        tokens_in: tokensIn,
+                        tokens_out: tokensOut,
+                        usd_cost: usdCost,
+                        ...metadata,
+                    },
+                },
+            });
+
+            // Update credit used
+            await tx.billingAccount.update({
+                where: { id: newAccount.id },
+                data: {
+                    creditUsed: { increment: creditsUsed },
+                },
+            });
+            return;
+        }
+
+        // Update credit used atomically
+        await tx.billingAccount.update({
+            where: { userId },
+            data: {
+                creditUsed: { increment: creditsUsed },
+            },
+        });
+
+        // Create credit log entry
+        await tx.creditLog.create({
+            data: {
+                billingAccountId: account.id,
+                amount: -Math.ceil(creditsUsed), // Negative for usage, ceil to prevent sub-1K queries being free
+                reason: 'model_inference',
+                metadata: {
+                    model: modelId,
+                    tokens_in: tokensIn,
+                    tokens_out: tokensOut,
+                    usd_cost: usdCost,
+                    ...metadata,
+                },
+            },
+        });
     });
 }
 

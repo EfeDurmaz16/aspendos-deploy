@@ -2,17 +2,21 @@ import type { Context, Next } from 'hono';
 
 /**
  * Request timeout middleware.
- * Prevents hung requests from consuming server resources.
+ * Uses Promise.race to actually abort hung requests.
  */
 export function requestTimeout(ms: number = 30000) {
-    return async (_c: Context, next: Next) => {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), ms);
+    return async (c: Context, next: Next) => {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Request timeout')), ms);
+        });
 
         try {
-            await next();
-        } finally {
-            clearTimeout(timeout);
+            await Promise.race([next(), timeoutPromise]);
+        } catch (error) {
+            if (error instanceof Error && error.message === 'Request timeout') {
+                return c.json({ error: 'Request timeout', code: 'REQUEST_TIMEOUT' }, 408);
+            }
+            throw error;
         }
     };
 }

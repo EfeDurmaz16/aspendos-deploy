@@ -4,6 +4,7 @@
  * Handles importing chat history from ChatGPT and Claude exports.
  */
 import { Hono } from 'hono';
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 import * as importService from '../services/import.service';
 
@@ -26,7 +27,10 @@ function detectImportFormat(content: unknown): 'CHATGPT' | 'CLAUDE' | null {
 
     // Claude format: Object with conversations array
     if (typeof content === 'object' && content !== null) {
-        if ('conversations' in content && Array.isArray((content as Record<string, unknown>).conversations)) {
+        if (
+            'conversations' in content &&
+            Array.isArray((content as Record<string, unknown>).conversations)
+        ) {
             return 'CLAUDE';
         }
         // Alternative Claude format with chat_messages
@@ -54,7 +58,7 @@ function sanitizeImportContent(obj: unknown, depth = 0): unknown {
     }
 
     if (Array.isArray(obj)) {
-        return obj.slice(0, 50_000).map(item => sanitizeImportContent(item, depth + 1));
+        return obj.slice(0, 50_000).map((item) => sanitizeImportContent(item, depth + 1));
     }
 
     if (typeof obj === 'object' && obj !== null) {
@@ -102,7 +106,12 @@ app.post('/jobs', async (c) => {
 
     if (!source) {
         if (!detectedFormat) {
-            return c.json({ error: 'Could not auto-detect format. Please specify source as CHATGPT or CLAUDE.' }, 400);
+            return c.json(
+                {
+                    error: 'Could not auto-detect format. Please specify source as CHATGPT or CLAUDE.',
+                },
+                400
+            );
         }
         source = detectedFormat;
     } else if (!['CHATGPT', 'CLAUDE'].includes(source)) {
@@ -136,7 +145,7 @@ app.post('/jobs', async (c) => {
             } else {
                 conversations = importService.parseClaudeExport(sanitizedContent);
             }
-        } catch (parseError) {
+        } catch (_parseError) {
             await importService.updateImportJobStatus(job.id, 'FAILED', 'Failed to parse file');
             return c.json({ error: 'Failed to parse file format' }, 400);
         }
@@ -158,25 +167,28 @@ app.post('/jobs', async (c) => {
         // Return job with preview data
         const jobWithEntities = await importService.getImportJob(job.id, userId);
 
-        return c.json({
-            job: {
-                id: jobWithEntities!.id,
-                source: jobWithEntities!.source,
-                status: jobWithEntities!.status,
-                totalItems: jobWithEntities!.totalItems,
-                fileName: jobWithEntities!.fileName,
+        return c.json(
+            {
+                job: {
+                    id: jobWithEntities!.id,
+                    source: jobWithEntities!.source,
+                    status: jobWithEntities!.status,
+                    totalItems: jobWithEntities!.totalItems,
+                    fileName: jobWithEntities!.fileName,
+                },
+                preview: jobWithEntities!.entities.map((e) => ({
+                    id: e.id,
+                    externalId: e.externalId,
+                    title: e.title,
+                    messageCount: (e.content as { messages: unknown[] })?.messages?.length || 0,
+                    source: (e.content as { source: string })?.source,
+                    createdAt: (e.content as { createdAt: string })?.createdAt,
+                    updatedAt: (e.content as { updatedAt: string })?.updatedAt,
+                    selected: e.selected,
+                })),
             },
-            preview: jobWithEntities!.entities.map((e) => ({
-                id: e.id,
-                externalId: e.externalId,
-                title: e.title,
-                messageCount: (e.content as { messages: unknown[] })?.messages?.length || 0,
-                source: (e.content as { source: string })?.source,
-                createdAt: (e.content as { createdAt: string })?.createdAt,
-                updatedAt: (e.content as { updatedAt: string })?.updatedAt,
-                selected: e.selected,
-            })),
-        }, 201);
+            201
+        );
     } catch (error) {
         console.error('Import job creation failed:', error);
         return c.json({ error: 'Failed to create import job' }, 500);
@@ -322,6 +334,44 @@ app.post('/jobs/:id/execute', async (c) => {
 
     try {
         const result = await importService.executeImport(jobId, userId, selectedIds);
+
+        // MOAT: Import→Memory bridge
+        // Imported conversations become searchable memories, making YULA
+        // more valuable the more data users import. Competitors just store chats.
+        try {
+            const openMemory = await import('../services/openmemory.service');
+            // Extract key memories from imported content
+            const importedEntities = await prisma.importEntity.findMany({
+                where: { jobId: job.id, status: 'completed' },
+                take: 50,
+                select: { content: true, title: true },
+            });
+            for (const entity of importedEntities) {
+                // content is Prisma Json type - extract text from structure
+                const content = entity.content as Record<string, unknown> | null;
+                if (!content) continue;
+                const messages = content.messages as
+                    | Array<{ role?: string; content?: string }>
+                    | undefined;
+                if (messages && messages.length > 0) {
+                    const firstUserMsg = messages.find((m) => m.role === 'user');
+                    const summary = [
+                        entity.title ? `Topic: ${entity.title}` : '',
+                        firstUserMsg?.content ? firstUserMsg.content.slice(0, 500) : '',
+                    ]
+                        .filter(Boolean)
+                        .join(' - ');
+                    if (summary.length > 20) {
+                        await openMemory.addMemory(summary.slice(0, 2000), userId, {
+                            sector: 'episodic',
+                            metadata: { source: 'import', jobId: job.id },
+                        });
+                    }
+                }
+            }
+        } catch {
+            // Non-blocking: import succeeded even if memory bridge fails
+        }
 
         return c.json({
             success: true,
