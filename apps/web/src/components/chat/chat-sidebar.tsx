@@ -1,14 +1,36 @@
 'use client';
 
-import { ChatCircle, CircleNotch, DotsThree, Plus, MagnifyingGlass, Star, Trash, Pencil } from '@phosphor-icons/react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useUser } from '@/hooks/use-auth';
-import { cn } from '@/lib/utils';
-import { ContextMenuChat } from '@/components/chat/context-menu-chat';
-import { toast } from 'sonner';
+import {
+    Brain,
+    ChatCircle,
+    CircleNotch,
+    CreditCard,
+    Gear,
+    MagnifyingGlass,
+    Moon,
+    Plus,
+    SignOut,
+    Star,
+    Sun,
+    UsersThree,
+} from '@phosphor-icons/react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { useState } from 'react';
+import { ContextMenuChat } from '@/components/chat/context-menu-chat';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth, useUser } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
 
 interface Chat {
     id: string;
@@ -39,10 +61,14 @@ export function ChatSidebar({
     isLoading = false,
 }: ChatSidebarProps) {
     const { user } = useUser();
+    const { signOut } = useAuth();
+    const router = useRouter();
+    const pathname = usePathname();
+    const { theme, setTheme } = useTheme();
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filter chats by search
-    const filteredChats = chats.filter(chat =>
+    const filteredChats = chats.filter((chat) =>
         chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -50,19 +76,19 @@ export function ChatSidebar({
     const groupedChats = groupChatsByDate(filteredChats);
 
     return (
-        <div className="h-full flex flex-col bg-background/95 backdrop-blur-xl">
+        <div className="h-full flex flex-col bg-background">
             {/* Header */}
-            <div className="h-14 flex items-center px-4 border-b border-border/50">
+            <div className="h-14 flex items-center px-4 border-b border-border">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                        <span className="text-primary-foreground font-bold text-sm">A</span>
+                    <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
+                        <span className="text-background font-bold text-sm">Y</span>
                     </div>
-                    <span className="font-semibold text-foreground tracking-tight">Aspendos</span>
+                    <span className="font-semibold text-foreground tracking-tight">YULA</span>
                 </div>
             </div>
 
             {/* New Chat Button */}
-            <div className="p-4">
+            <div className="p-4 pb-2">
                 <Button
                     onClick={onNewChat}
                     className="w-full justify-start gap-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm h-11 rounded-xl text-sm"
@@ -71,6 +97,34 @@ export function ChatSidebar({
                     New Chat
                 </Button>
             </div>
+
+            {/* Navigation */}
+            <nav className="px-4 pb-2 space-y-1">
+                <Link
+                    href="/council"
+                    className={cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
+                        pathname?.startsWith('/council')
+                            ? 'bg-muted text-foreground font-medium'
+                            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    )}
+                >
+                    <UsersThree className="size-4" />
+                    Council
+                </Link>
+                <Link
+                    href="/memory"
+                    className={cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
+                        pathname?.startsWith('/memory')
+                            ? 'bg-muted text-foreground font-medium'
+                            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    )}
+                >
+                    <Brain className="size-4" />
+                    Memory
+                </Link>
+            </nav>
 
             {/* Search */}
             <div className="px-4 pb-4">
@@ -94,7 +148,10 @@ export function ChatSidebar({
                         </div>
                     ) : Object.keys(groupedChats).length === 0 ? (
                         <div className="text-center py-8 px-4">
-                            <ChatCircle className="size-10 text-muted-foreground/30 mx-auto mb-3" weight="duotone" />
+                            <ChatCircle
+                                className="size-10 text-muted-foreground/30 mx-auto mb-3"
+                                weight="duotone"
+                            />
                             <p className="text-sm text-muted-foreground">
                                 {searchQuery ? 'No matching chats' : 'No conversations yet'}
                             </p>
@@ -109,13 +166,13 @@ export function ChatSidebar({
                                     {groupChats.map((chat) => (
                                         <ContextMenuChat
                                             key={chat.id}
-                                            chat={{ id: chat.id, title: chat.title || 'Untitled', isPinned: chat.isPinned }}
-                                            onEditTitle={onEditChatTitle || ((id, title) => {
-                                                toast.info('Edit title coming soon');
-                                            })}
-                                            onDelete={onDeleteChat || ((id) => {
-                                                toast.info('Delete coming soon');
-                                            })}
+                                            chat={{
+                                                id: chat.id,
+                                                title: chat.title || 'Untitled',
+                                                isPinned: chat.isPinned,
+                                            }}
+                                            onEditTitle={onEditChatTitle}
+                                            onDelete={onDeleteChat}
                                             onOpenInNewTab={(id) => {
                                                 window.open(`/chat/${id}`, '_blank');
                                             }}
@@ -123,22 +180,33 @@ export function ChatSidebar({
                                             <button
                                                 onClick={() => onSelectChat?.(chat.id)}
                                                 className={cn(
-                                                    'w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all group',
+                                                    'w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors group',
                                                     chat.id === currentChatId
-                                                        ? 'bg-accent text-accent-foreground'
+                                                        ? 'bg-muted text-foreground font-medium'
                                                         : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                                                 )}
                                             >
                                                 <ChatCircle
                                                     className={cn(
                                                         'size-5 flex-shrink-0 transition-colors',
-                                                        chat.id === currentChatId ? 'text-accent-foreground' : 'text-muted-foreground/60'
+                                                        chat.id === currentChatId
+                                                            ? 'text-foreground'
+                                                            : 'text-muted-foreground/60'
                                                     )}
-                                                    weight={chat.id === currentChatId ? 'fill' : 'regular'}
+                                                    weight={
+                                                        chat.id === currentChatId
+                                                            ? 'fill'
+                                                            : 'regular'
+                                                    }
                                                 />
-                                                <span className="truncate flex-1 text-sm">{chat.title || 'Untitled'}</span>
+                                                <span className="truncate flex-1 text-sm">
+                                                    {chat.title || 'Untitled'}
+                                                </span>
                                                 {chat.isPinned && (
-                                                    <Star className="size-3 text-amber-500" weight="fill" />
+                                                    <Star
+                                                        className="size-3 text-amber-500"
+                                                        weight="fill"
+                                                    />
                                                 )}
                                             </button>
                                         </ContextMenuChat>
@@ -151,7 +219,7 @@ export function ChatSidebar({
             </ScrollArea>
 
             {/* User Footer */}
-            <div className="h-14 border-t border-border/50 flex items-center px-3 justify-between bg-muted/30">
+            <div className="h-14 border-t border-border flex items-center px-3 justify-between">
                 <div className="flex items-center gap-2">
                     {user?.imageUrl ? (
                         <img
@@ -171,9 +239,48 @@ export function ChatSidebar({
                         <span className="text-[10px] text-muted-foreground">Pro Plan</span>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground">
-                    <DotsThree className="size-4" weight="bold" />
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-muted-foreground"
+                        >
+                            <Gear className="size-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" side="top" className="w-48">
+                        <DropdownMenuItem
+                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                        >
+                            {theme === 'dark' ? (
+                                <Sun className="size-4 mr-2" />
+                            ) : (
+                                <Moon className="size-4 mr-2" />
+                            )}
+                            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => router.push('/settings')}>
+                            <Gear className="size-4 mr-2" />
+                            Settings
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/billing')}>
+                            <CreditCard className="size-4 mr-2" />
+                            Billing
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={async () => {
+                                await signOut();
+                                router.push('/landing');
+                            }}
+                        >
+                            <SignOut className="size-4 mr-2" />
+                            Sign out
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
     );

@@ -52,11 +52,15 @@ export async function analyzeContextForPAC(
     const contextParts: string[] = [];
 
     if (recentContext.recentMessages?.length) {
-        contextParts.push(`Recent conversation:\n${recentContext.recentMessages.slice(-5).join('\n')}`);
+        contextParts.push(
+            `Recent conversation:\n${recentContext.recentMessages.slice(-5).join('\n')}`
+        );
     }
 
     if (recentContext.recentMemories?.length) {
-        contextParts.push(`Relevant memories:\n${recentContext.recentMemories.slice(-3).join('\n')}`);
+        contextParts.push(
+            `Relevant memories:\n${recentContext.recentMemories.slice(-3).join('\n')}`
+        );
     }
 
     contextParts.push(`Current time: ${currentTime.toISOString()}`);

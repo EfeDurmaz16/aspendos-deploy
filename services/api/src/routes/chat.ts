@@ -6,13 +6,25 @@
 
 import { generateText, stepCountIs, streamText } from 'ai';
 import { Hono } from 'hono';
-import { getModel, isModelAvailableForTier } from '../lib/ai-providers';
+import {
+    getModel,
+    getModelWithFallback,
+    getSmartModelId,
+    isModelAvailableForTier,
+} from '../lib/ai-providers';
 import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
+import * as billingService from '../services/billing.service';
+import { maybeCreateSpendingNotification } from '../services/billing.service';
 import * as chatService from '../services/chat.service';
-import { getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
+import {
+    extractMemoriesFromExchange,
+    getMemoryAgent,
+    type MemoryDecision,
+} from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
+import { createReminder, detectCommitments, getPACSettings } from '../services/pac.service';
 import { getToolsForTier, type UserTier } from '../tools';
 import {
     chatIdParamSchema,
@@ -39,7 +51,44 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
-// Apply auth middleware to all routes
+// Idempotency cache: prevents duplicate message creation on retry
+// Key: idempotency key, Value: { timestamp, chatId }
+const idempotencyCache = new Map<string, { timestamp: number; chatId: string }>();
+// Clean up expired entries every 5 minutes (keys valid for 10 minutes)
+setInterval(() => {
+    const cutoff = Date.now() - 10 * 60 * 1000;
+    for (const [key, entry] of idempotencyCache.entries()) {
+        if (entry.timestamp < cutoff) idempotencyCache.delete(key);
+    }
+}, 5 * 60_000);
+
+// ============================================
+// PUBLIC ROUTES (no auth required)
+// ============================================
+
+// GET /api/chat/shared/:token - Access a shared chat (no auth required)
+// IMPORTANT: This route must come before auth middleware and /:id routes
+app.get('/shared/:token', async (c) => {
+    const token = c.req.param('token');
+
+    if (!token || token.length < 10) {
+        return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid share token' } }, 400);
+    }
+
+    const sharedChat = await chatService.getSharedChat(token);
+
+    if (!sharedChat) {
+        return c.json({ error: { code: 'NOT_FOUND', message: 'Shared chat not found' } }, 404);
+    }
+
+    return c.json(sharedChat);
+});
+
+// ============================================
+// AUTHENTICATED ROUTES (auth required)
+// ============================================
+
+// Apply auth middleware to all subsequent routes
 app.use('*', requireAuth);
 
 // GET /api/chat - List all chats for user
@@ -67,6 +116,11 @@ app.post('/', validateBody(createChatSchema), async (c) => {
     // Ensure user exists
     await chatService.getOrCreateUser(userId, user.email, user.name);
 
+    // Check chat quota before creating
+    if (!(await billingService.hasChatsRemaining(userId))) {
+        return c.json({ error: 'Monthly chat limit reached. Please upgrade your plan.' }, 403);
+    }
+
     const chat = await chatService.createChat({
         userId,
         title: validatedBody.title,
@@ -85,7 +139,7 @@ app.get('/:id', validateParams(chatIdParamSchema), async (c) => {
     const chat = await chatService.getChatWithMessages(chatId, userId);
 
     if (!chat) {
-        return c.json({ error: 'Chat not found' }, 404);
+        return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
     }
 
     return c.json(chat);
@@ -140,24 +194,74 @@ app.post(
 
         const { content, model_id, enable_thinking, stream: shouldStream } = validatedBody;
 
-        // Get user tier (default to STARTER if not available)
+        // Input length guard: prevent abuse and runaway API costs
+        const MAX_MESSAGE_LENGTH = 32_000; // ~8K tokens
+        if (content.length > MAX_MESSAGE_LENGTH) {
+            return c.json(
+                {
+                    error: `Message too long (${content.length} chars). Maximum ${MAX_MESSAGE_LENGTH} characters.`,
+                    code: 'MESSAGE_TOO_LONG',
+                },
+                413
+            );
+        }
+
+        // Idempotency: reject duplicate requests within 10-minute window
+        const idempotencyKey = c.req.header('Idempotency-Key');
+        if (idempotencyKey) {
+            const existing = idempotencyCache.get(idempotencyKey);
+            if (existing && existing.chatId === chatId) {
+                return c.json({ error: 'Duplicate request', code: 'IDEMPOTENCY_CONFLICT' }, 409);
+            }
+            idempotencyCache.set(idempotencyKey, { timestamp: Date.now(), chatId });
+        }
+
+        // Get user tier (default to FREE if not available)
         const user = c.get('user');
         const userTier: UserTier =
-            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'FREE';
 
         // Verify chat exists and belongs to user
         const chat = await chatService.getChat(chatId, userId);
         if (!chat) {
-            return c.json({ error: 'Chat not found' }, 404);
+            return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
         }
 
         // Determine model to use
         const modelId = model_id || chat.modelPreference || 'openai/gpt-4o-mini';
 
+        // Apply smart model routing (downgrade expensive models for simple queries)
+        const smartModelId = getSmartModelId(modelId, content);
+
         // Validate model is available for user's tier
-        if (!isModelAvailableForTier(modelId, userTier)) {
+        if (!isModelAvailableForTier(smartModelId, userTier)) {
             return c.json({ error: 'Model not available for your tier' }, 403);
         }
+
+        // Check chat, token quotas, and daily cost ceiling before processing
+        const [hasChats, hasTokenBudget, costCeiling] = await Promise.all([
+            billingService.hasChatsRemaining(userId),
+            billingService.hasTokens(userId, 1000), // Rough minimum estimate
+            billingService.checkCostCeiling(userId),
+        ]);
+
+        if (!hasChats) {
+            return c.json({ error: 'Monthly chat limit reached. Please upgrade your plan.' }, 403);
+        }
+
+        if (!hasTokenBudget) {
+            return c.json({ error: 'Monthly token limit reached. Please upgrade your plan.' }, 403);
+        }
+
+        if (!costCeiling.allowed) {
+            return c.json(
+                { error: 'Daily spending limit reached. Try again tomorrow or upgrade your plan.' },
+                403
+            );
+        }
+
+        // Decrement chat quota
+        await billingService.recordChatUsage(userId);
 
         // Save user message to database
         await chatService.createMessage({
@@ -167,8 +271,29 @@ app.post(
             content,
         });
 
+        // ========================================
+        // PAC: DETECT COMMITMENTS IN USER MESSAGE
+        // ========================================
+        try {
+            const pacSettings = await getPACSettings(userId);
+            if (pacSettings.enabled) {
+                const commitments = detectCommitments(content);
+                for (const commitment of commitments) {
+                    if (
+                        (commitment.type === 'EXPLICIT' && pacSettings.explicitEnabled) ||
+                        (commitment.type === 'IMPLICIT' && pacSettings.implicitEnabled)
+                    ) {
+                        await createReminder(userId, commitment, chatId);
+                    }
+                }
+            }
+        } catch (pacError) {
+            console.error('[PAC] Commitment detection failed:', pacError);
+            // Non-blocking - continue with chat
+        }
+
         // Auto-generate title if this is the first message
-        const existingMessages = await chatService.getMessages(chatId);
+        const existingMessages = await chatService.getMessages(chatId, undefined, userId);
         if (existingMessages.length === 1) {
             await chatService.autoGenerateTitle(chatId, content);
         }
@@ -234,24 +359,70 @@ app.post(
         // ========================================
         if (shouldStream) {
             try {
+                // Use fallback-aware model resolution (auto-switches provider if circuit breaker is open)
+                const { model: resolvedModel, actualModelId } = getModelWithFallback(smartModelId);
+
                 const result = streamText({
-                    model: getModel(modelId),
+                    model: resolvedModel,
                     system: systemPrompt,
                     messages: history,
                     tools: allTools,
                     stopWhen: stepCountIs(5), // Allow up to 5 tool calls
                     temperature: 0.7,
                     onFinish: async ({ text, usage }) => {
-                        // Save assistant message to database
+                        // Save assistant message to database (track actual model used for transparency)
                         await chatService.createMessage({
                             chatId,
                             userId,
                             role: 'assistant',
                             content: text,
-                            modelUsed: modelId,
-                            tokensIn: usage?.totalTokens,
-                            tokensOut: usage?.totalTokens,
+                            modelUsed: actualModelId,
+                            tokensIn: usage?.promptTokens,
+                            tokensOut: usage?.completionTokens,
                         });
+
+                        // Record token usage for billing (bill for actual model, not requested)
+                        if (usage?.promptTokens || usage?.completionTokens) {
+                            await billingService.recordTokenUsage(
+                                userId,
+                                usage.promptTokens || 0,
+                                usage.completionTokens || 0,
+                                actualModelId
+                            );
+                            // Proactive spending alert (fire-and-forget)
+                            maybeCreateSpendingNotification(userId).catch(() => {});
+                        }
+
+                        // Auto-extract memories from conversation (fire-and-forget)
+                        // Only for PRO+ tiers to control API costs
+                        if (userTier === 'PRO' || userTier === 'ULTRA') {
+                            extractMemoriesFromExchange(userId, content, text).catch((err) =>
+                                console.error('[Memory] Auto-extraction failed:', err)
+                            );
+                        }
+
+                        // Self-reflection: score response quality (fire-and-forget)
+                        // Only for ULTRA tier - most expensive quality feedback loop
+                        if (userTier === 'ULTRA') {
+                            getMemoryAgent()
+                                .reflectOnResponse(content, text, decision.useMemory)
+                                .then((reflection) => {
+                                    if (!reflection.satisfied) {
+                                        console.warn(
+                                            `[Quality] Low score ${reflection.qualityScore}/100 for query "${content.slice(0, 60)}..." - ${reflection.retryStrategy || 'no strategy'}`
+                                        );
+                                    }
+                                })
+                                .catch(() => {
+                                    /* non-blocking */
+                                });
+                        }
+
+                        // MOAT: Routing feedback loop
+                        // The routing decision (useMemory, queryType, sectors) is captured in X-Memory-Decision header.
+                        // User feedback (thumbs up/down) on the message links back to this routing choice.
+                        // Over time, we learn: which routing decisions lead to quality responses.
+                        // This is a compounding advantage: competitors route once, we learn and improve routing.
                     },
                 });
 
@@ -277,14 +448,9 @@ app.post(
 
                 return response;
             } catch (error) {
-                console.error('[Chat] Streaming error:', error);
-                return c.json(
-                    {
-                        error: 'Failed to stream response',
-                        details: error instanceof Error ? error.message : 'Unknown error',
-                    },
-                    500
-                );
+                const errMsg = error instanceof Error ? error.message : 'Unknown';
+                console.error('[Chat] Streaming error:', errMsg);
+                return c.json(classifyAIError(errMsg), classifyAIErrorStatus(errMsg));
             }
         }
 
@@ -292,8 +458,12 @@ app.post(
         // NON-STREAMING RESPONSE
         // ========================================
         try {
+            // Use fallback-aware model resolution
+            const { model: resolvedModel, actualModelId: nonStreamModelId } =
+                getModelWithFallback(smartModelId);
+
             const result = await generateText({
-                model: getModel(modelId),
+                model: resolvedModel,
                 system: systemPrompt,
                 messages: history,
                 tools: allTools,
@@ -301,33 +471,38 @@ app.post(
                 temperature: 0.7,
             });
 
-            // Save assistant message
+            // Save assistant message (track actual model used)
             const assistantMessage = await chatService.createMessage({
                 chatId,
                 userId,
                 role: 'assistant',
                 content: result.text,
-                modelUsed: modelId,
-                tokensIn: result.usage?.totalTokens,
-                tokensOut: result.usage?.totalTokens,
+                modelUsed: nonStreamModelId,
+                tokensIn: result.usage?.promptTokens,
+                tokensOut: result.usage?.completionTokens,
             });
+
+            // Record token usage for billing (bill for actual model)
+            if (result.usage?.promptTokens || result.usage?.completionTokens) {
+                await billingService.recordTokenUsage(
+                    userId,
+                    result.usage.promptTokens || 0,
+                    result.usage.completionTokens || 0,
+                    nonStreamModelId
+                );
+                // Proactive spending alert (fire-and-forget)
+                maybeCreateSpendingNotification(userId).catch(() => {});
+            }
 
             return c.json({
                 message: assistantMessage,
-                decision,
-                memoriesUsed,
                 usage: result.usage,
                 toolCalls: result.toolCalls,
             });
         } catch (error) {
-            console.error('[Chat] Generation error:', error);
-            return c.json(
-                {
-                    error: 'Failed to generate response',
-                    details: error instanceof Error ? error.message : 'Unknown error',
-                },
-                500
-            );
+            const errMsg = error instanceof Error ? error.message : 'Unknown';
+            console.error('[Chat] Generation error:', errMsg);
+            return c.json(classifyAIError(errMsg), classifyAIErrorStatus(errMsg));
         }
     }
 );
@@ -347,7 +522,7 @@ app.post(
         const chatId = validatedParams.id;
         const user = c.get('user');
         const userTier: UserTier =
-            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'STARTER';
+            ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'FREE';
 
         // Check ULTRA tier
         if (userTier !== 'ULTRA') {
@@ -357,10 +532,15 @@ app.post(
         // Verify chat exists
         const chat = await chatService.getChat(chatId, userId);
         if (!chat) {
-            return c.json({ error: 'Chat not found' }, 404);
+            return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
         }
 
         const { content, models } = validatedBody;
+
+        // Check token budget (estimate: models.length * 1000 tokens each)
+        if (!(await billingService.hasTokens(userId, models.length * 1000))) {
+            return c.json({ error: 'Insufficient token budget for multi-model comparison' }, 403);
+        }
 
         // Save user message
         await chatService.createMessage({
@@ -371,7 +551,7 @@ app.post(
         });
 
         // Get message history
-        const messages = await chatService.getMessages(chatId);
+        const messages = await chatService.getMessages(chatId, undefined, userId);
         const history: Message[] = messages.map((m) => ({
             role: m.role as 'user' | 'assistant',
             content: m.content,
@@ -391,10 +571,10 @@ app.post(
                         text: result.text,
                         usage: result.usage,
                     };
-                } catch (error) {
+                } catch (_error) {
                     return {
                         modelId,
-                        error: error instanceof Error ? error.message : 'Unknown error',
+                        error: 'Model generation failed',
                     };
                 }
             })
@@ -409,6 +589,19 @@ app.post(
                 error: 'Failed to generate response',
             };
         });
+
+        // Meter token usage for each successful model call
+        for (const resp of responses) {
+            if ('usage' in resp && resp.usage) {
+                const usage = resp.usage as { promptTokens?: number; completionTokens?: number };
+                await billingService.recordTokenUsage(
+                    userId,
+                    usage.promptTokens || 0,
+                    usage.completionTokens || 0,
+                    resp.modelId
+                );
+            }
+        }
 
         return c.json({ responses });
     }
@@ -487,15 +680,24 @@ app.post(
         const validatedBody = c.get('validatedBody') as { fromMessageId?: string };
         const chatId = validatedParams.id;
 
+        // Check chat quota before forking
+        if (!(await billingService.hasChatsRemaining(userId))) {
+            return c.json({ error: 'Monthly chat limit reached. Please upgrade your plan.' }, 403);
+        }
+
         try {
             const newChat = await chatService.forkChat(chatId, userId, validatedBody.fromMessageId);
             return c.json(newChat, 201);
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to fork chat';
-            if (message.includes('not found')) {
-                return c.json({ error: message }, 404);
+            console.error(
+                '[Chat] Fork failed:',
+                error instanceof Error ? error.message : 'Unknown'
+            );
+            const msg = error instanceof Error ? error.message : '';
+            if (msg.includes('not found')) {
+                return c.json({ error: 'Chat or message not found' }, 404);
             }
-            return c.json({ error: message }, 500);
+            return c.json({ error: 'Failed to fork chat' }, 500);
         }
     }
 );
@@ -510,11 +712,15 @@ app.post('/:id/share', validateParams(chatIdParamSchema), async (c) => {
         const token = await chatService.createShareToken(chatId, userId);
         return c.json({ token, url: `/chat/shared/${token}` });
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to create share token';
-        if (message.includes('not found')) {
-            return c.json({ error: message }, 404);
+        console.error(
+            '[Chat] Share token creation failed:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
+        const msg = error instanceof Error ? error.message : '';
+        if (msg.includes('not found')) {
+            return c.json({ error: 'Chat not found' }, 404);
         }
-        return c.json({ error: message }, 500);
+        return c.json({ error: 'Failed to create share token' }, 500);
     }
 });
 
@@ -528,12 +734,124 @@ app.delete('/:id/share', validateParams(chatIdParamSchema), async (c) => {
         await chatService.revokeShareToken(chatId, userId);
         return c.json({ success: true });
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to revoke share token';
-        if (message.includes('not found')) {
-            return c.json({ error: message }, 404);
+        console.error(
+            '[Chat] Share token revoke failed:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
+        const msg = error instanceof Error ? error.message : '';
+        if (msg.includes('not found')) {
+            return c.json({ error: 'Chat not found' }, 404);
         }
-        return c.json({ error: message }, 500);
+        return c.json({ error: 'Failed to revoke share token' }, 500);
     }
+});
+
+// ============================================
+// AI ERROR CLASSIFICATION
+// ============================================
+
+/**
+ * Classify AI provider errors into structured error codes.
+ * Helps frontend show appropriate messaging and retry logic.
+ */
+function classifyAIError(message: string): { error: string; code: string; retryable: boolean } {
+    const lower = message.toLowerCase();
+
+    if (lower.includes('rate limit') || lower.includes('429') || lower.includes('too many')) {
+        return {
+            error: 'AI provider rate limited. Please wait a moment and try again.',
+            code: 'RATE_LIMITED',
+            retryable: true,
+        };
+    }
+    if (lower.includes('context') && (lower.includes('long') || lower.includes('length'))) {
+        return {
+            error: 'Conversation too long for this model. Try starting a new chat or a shorter message.',
+            code: 'CONTEXT_TOO_LONG',
+            retryable: false,
+        };
+    }
+    if (lower.includes('unavailable') || lower.includes('all ai providers')) {
+        return {
+            error: 'AI providers are temporarily unavailable. Please try again shortly.',
+            code: 'PROVIDER_UNAVAILABLE',
+            retryable: true,
+        };
+    }
+    if (lower.includes('timeout') || lower.includes('aborted')) {
+        return {
+            error: 'Request timed out. Please try again with a shorter message.',
+            code: 'TIMEOUT',
+            retryable: true,
+        };
+    }
+    if (lower.includes('invalid') && lower.includes('key')) {
+        return {
+            error: 'AI provider configuration error. Please contact support.',
+            code: 'CONFIG_ERROR',
+            retryable: false,
+        };
+    }
+
+    return {
+        error: 'Failed to generate response. Please try again.',
+        code: 'PROVIDER_ERROR',
+        retryable: true,
+    };
+}
+
+function classifyAIErrorStatus(message: string): number {
+    const lower = message.toLowerCase();
+    if (lower.includes('rate limit') || lower.includes('429')) return 429;
+    if (lower.includes('context') && lower.includes('long')) return 413;
+    if (lower.includes('unavailable') || lower.includes('all ai providers')) return 503;
+    if (lower.includes('timeout') || lower.includes('aborted')) return 504;
+    return 500;
+}
+
+// GET /api/chat/:id/export - Export chat in Markdown or JSON
+app.get('/:id/export', validateParams(chatIdParamSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const validatedParams = c.get('validatedParams') as { id: string };
+    const chatId = validatedParams.id;
+    const format = (c.req.query('format') || 'markdown') as string;
+
+    const chat = await chatService.getChatWithMessages(chatId, userId);
+    if (!chat) {
+        return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
+    }
+
+    if (format === 'json') {
+        return c.json(chat, 200, {
+            'Content-Disposition': `attachment; filename="chat-${chatId}.json"`,
+        });
+    }
+
+    // Markdown format
+    const lines: string[] = [
+        `# ${chat.title || 'Untitled Chat'}`,
+        '',
+        `**Model:** ${chat.modelPreference || 'default'}`,
+        `**Created:** ${chat.createdAt}`,
+        `**Messages:** ${chat.messages?.length || 0}`,
+        '',
+        '---',
+        '',
+    ];
+
+    for (const msg of chat.messages || []) {
+        const role = msg.role === 'user' ? 'You' : 'YULA';
+        lines.push(`### ${role}`);
+        lines.push('');
+        lines.push(msg.content || '');
+        lines.push('');
+    }
+
+    const markdown = lines.join('\n');
+    return c.text(markdown, 200, {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Content-Disposition': `attachment; filename="chat-${chatId}.md"`,
+    });
 });
 
 export default app;

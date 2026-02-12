@@ -5,7 +5,9 @@
  * Parses conversation formats, stores in database, and indexes for search.
  */
 
+import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma';
+import * as importParsers from './import-parsers';
 import * as openMemory from './openmemory.service';
 
 // Types for parsed conversations
@@ -21,7 +23,7 @@ export interface ParsedConversation {
     messages: ParsedMessage[];
     createdAt: Date;
     updatedAt: Date;
-    source: 'CHATGPT' | 'CLAUDE';
+    source: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
 }
 
 /**
@@ -29,7 +31,7 @@ export interface ParsedConversation {
  */
 export async function createImportJob(
     userId: string,
-    source: 'CHATGPT' | 'CLAUDE',
+    source: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY',
     fileName: string,
     fileSize: number
 ) {
@@ -57,9 +59,7 @@ export async function updateImportJobStatus(
         data: {
             status,
             errorMessage: error,
-            ...(status === 'COMPLETED' || status === 'FAILED'
-                ? { completedAt: new Date() }
-                : {}),
+            ...(status === 'COMPLETED' || status === 'FAILED' ? { completedAt: new Date() } : {}),
         },
     });
 }
@@ -116,7 +116,7 @@ export function parseChatGPTExport(data: unknown): ParsedConversation[] {
         if (messages.length === 0) continue;
 
         conversations.push({
-            externalId: conv.id || `chatgpt-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            externalId: conv.id || `chatgpt-${randomUUID()}`,
             title: conv.title,
             messages,
             createdAt: new Date((conv.create_time || 0) * 1000),
@@ -158,7 +158,10 @@ function findChatGPTRoot(mapping: Record<string, ChatGPTNode>): string | null {
  * Recursively traverse the message tree to reconstruct linear conversation.
  * Follows the first child at each level (main thread).
  */
-function traverseChatGPTTree(mapping: Record<string, ChatGPTNode>, nodeId: string): ParsedMessage[] {
+function traverseChatGPTTree(
+    mapping: Record<string, ChatGPTNode>,
+    nodeId: string
+): ParsedMessage[] {
     const node = mapping[nodeId];
     if (!node) return [];
 
@@ -259,7 +262,7 @@ export function parseClaudeExport(data: unknown): ParsedConversation[] {
         }
 
         conversations.push({
-            externalId: conv.uuid || `claude-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            externalId: conv.uuid || `claude-${randomUUID()}`,
             title: conv.name || 'Untitled Conversation',
             messages,
             createdAt: new Date(conv.created_at),
@@ -309,12 +312,64 @@ function parseClaudeMessage(msg: ClaudeMessage, convCreatedAt?: string): ParsedM
 }
 
 /**
+ * Parse Gemini export format
+ *
+ * Gemini exports conversations as JSON with entries array.
+ * Uses the import-parsers module for parsing logic.
+ */
+export function parseGeminiExport(data: unknown): ParsedConversation[] {
+    const conversations: ParsedConversation[] = [];
+
+    // Convert data to JSON string for parser
+    const jsonString = JSON.stringify(data);
+    const parsed = importParsers.parseGeminiExport(jsonString);
+
+    for (const conv of parsed) {
+        conversations.push({
+            externalId: `gemini-${randomUUID()}`,
+            title: conv.title,
+            messages: conv.messages,
+            createdAt: conv.messages[0]?.createdAt || new Date(),
+            updatedAt: conv.messages[conv.messages.length - 1]?.createdAt || new Date(),
+            source: 'GEMINI',
+        });
+    }
+
+    return conversations;
+}
+
+/**
+ * Parse Perplexity export format
+ *
+ * Perplexity exports threads with messages.
+ * Citations are stripped from content.
+ * Uses the import-parsers module for parsing logic.
+ */
+export function parsePerplexityExport(data: unknown): ParsedConversation[] {
+    const conversations: ParsedConversation[] = [];
+
+    // Convert data to JSON string for parser
+    const jsonString = JSON.stringify(data);
+    const parsed = importParsers.parsePerplexityExport(jsonString);
+
+    for (const conv of parsed) {
+        conversations.push({
+            externalId: `perplexity-${randomUUID()}`,
+            title: conv.title,
+            messages: conv.messages,
+            createdAt: conv.messages[0]?.createdAt || new Date(),
+            updatedAt: conv.messages[conv.messages.length - 1]?.createdAt || new Date(),
+            source: 'PERPLEXITY',
+        });
+    }
+
+    return conversations;
+}
+
+/**
  * Store parsed entities for preview
  */
-export async function storeImportEntities(
-    jobId: string,
-    conversations: ParsedConversation[]
-) {
+export async function storeImportEntities(jobId: string, conversations: ParsedConversation[]) {
     const entities = conversations.map((conv) => ({
         jobId,
         type: 'CONVERSATION' as const,
@@ -344,9 +399,9 @@ export async function storeImportEntities(
 /**
  * Update entity selection
  */
-export async function updateEntitySelection(entityId: string, selected: boolean) {
+export async function updateEntitySelection(entityId: string, jobId: string, selected: boolean) {
     return prisma.importEntity.update({
-        where: { id: entityId },
+        where: { id: entityId, jobId },
         data: { selected },
     });
 }
@@ -411,20 +466,16 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
                 .join('\n\n')
                 .slice(0, 10000); // Limit size
 
-            await openMemory.addMemory(
-                memoryContent,
-                userId,
-                {
-                    sector: 'episodic',
-                    metadata: {
-                        type: 'imported_conversation',
-                        source: content.source,
-                        title: entity.title,
-                        chatId: chat.id,
-                        importJobId: jobId,
-                    },
-                }
-            );
+            await openMemory.addMemory(memoryContent, userId, {
+                sector: 'episodic',
+                metadata: {
+                    type: 'imported_conversation',
+                    source: content.source,
+                    title: entity.title,
+                    chatId: chat.id,
+                    importJobId: jobId,
+                },
+            });
 
             // Mark entity as imported
             await prisma.importEntity.update({
@@ -452,6 +503,14 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
         importedCount === 0 ? 'No entities were imported' : undefined
     );
 
+    // MOAT: Extract memories from imported conversations (fire-and-forget)
+    // This creates massive value: we don't just import history, we learn from it
+    if (importedCount > 0) {
+        extractMemoriesFromImport(userId, jobId).catch((error) => {
+            console.error('Memory extraction from import failed (non-blocking):', error);
+        });
+    }
+
     return {
         total: entities.length,
         imported: importedCount,
@@ -475,4 +534,106 @@ export async function getImportStats(userId: string) {
         totalJobs: jobs,
         totalImported: totalImported._sum.importedItems || 0,
     };
+}
+
+/**
+ * MOAT: Extract memories from imported conversations.
+ * This is a massive differentiator: when users import from ChatGPT/Claude,
+ * we don't just store conversations - we LEARN from them.
+ * Competitors just import; we build intelligence from imports.
+ */
+export async function extractMemoriesFromImport(userId: string, jobId: string): Promise<number> {
+    const entities = await prisma.importEntity.findMany({
+        where: {
+            jobId,
+            imported: true,
+            type: 'CONVERSATION',
+        },
+        take: 100, // Process max 100 conversations per import
+    });
+
+    if (entities.length === 0) return 0;
+
+    let memoriesCreated = 0;
+    const maxMemoriesPerImport = 50; // Cap to prevent abuse
+
+    for (const entity of entities) {
+        if (memoriesCreated >= maxMemoriesPerImport) break;
+
+        try {
+            const content = entity.content as {
+                messages: ParsedMessage[];
+                source: string;
+                createdAt: string;
+            };
+
+            if (!content.messages || content.messages.length === 0) continue;
+
+            // Extract a brief summary of the conversation
+            const userMessages = content.messages
+                .filter((m) => m.role === 'user')
+                .map((m) => m.content)
+                .join(' ');
+
+            const assistantMessages = content.messages
+                .filter((m) => m.role === 'assistant')
+                .map((m) => m.content)
+                .join(' ');
+
+            // Create a summary: first user message + topics discussed
+            const firstUserMsg = content.messages.find((m) => m.role === 'user')?.content || '';
+            const summary = `${entity.title || 'Imported conversation'}: ${firstUserMsg.slice(0, 200)}`;
+
+            // Store as episodic memory
+            await openMemory.addMemory(summary, userId, {
+                sector: 'episodic',
+                metadata: {
+                    source: 'import_extraction',
+                    importJobId: jobId,
+                    originalSource: content.source,
+                    chatId: entity.chatId,
+                    messageCount: content.messages.length,
+                },
+            });
+
+            memoriesCreated++;
+
+            // Extract key topics/themes from longer conversations
+            if (content.messages.length >= 10 && memoriesCreated < maxMemoriesPerImport) {
+                // Look for technical terms, repeated topics
+                const allText = `${userMessages} ${assistantMessages}`.toLowerCase();
+                const technicalPatterns = [
+                    /\b(typescript|javascript|python|react|node|api|database|sql)\b/g,
+                    /\b(architecture|design|pattern|implementation|algorithm)\b/g,
+                    /\b(learn|study|understand|explain|how to)\b/g,
+                ];
+
+                for (const pattern of technicalPatterns) {
+                    const matches = allText.match(pattern);
+                    if (matches && matches.length >= 3) {
+                        const topic = matches[0];
+                        await openMemory.addMemory(
+                            `User discussed ${topic} in imported conversation from ${content.source}`,
+                            userId,
+                            {
+                                sector: 'semantic',
+                                metadata: {
+                                    source: 'import_extraction',
+                                    importJobId: jobId,
+                                    topic,
+                                },
+                            }
+                        );
+                        memoriesCreated++;
+                        break; // Only one semantic memory per conversation
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Failed to extract memories from entity ${entity.id}:`, error);
+            // Continue with next entity
+        }
+    }
+
+    return memoriesCreated;
 }

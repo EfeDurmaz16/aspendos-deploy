@@ -5,11 +5,27 @@
  */
 import { Hono } from 'hono';
 import { stream } from 'hono/streaming';
+import type { TierName } from '../config/tiers';
+import { getLimit } from '../config/tiers';
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
-import * as councilService from '../services/council.service';
+import { validateBody, validateParams } from '../middleware/validate';
+import * as billingService from '../services/billing.service';
 import type { PersonaType } from '../services/council.service';
+import * as councilService from '../services/council.service';
+import {
+    createCouncilSessionSchema,
+    selectPersonaSchema,
+    sessionIdParamSchema,
+} from '../validation/council.schema';
 
-const app = new Hono();
+type Variables = {
+    validatedBody?: unknown;
+    validatedQuery?: unknown;
+    validatedParams?: unknown;
+};
+
+const app = new Hono<{ Variables: Variables }>();
 
 // All routes require authentication
 app.use('*', requireAuth);
@@ -20,31 +36,79 @@ app.use('*', requireAuth);
  * Returns a streaming response with all 4 personas responding in parallel.
  * Format: Server-Sent Events (SSE)
  */
-app.post('/sessions', async (c) => {
+app.post('/sessions', validateBody(createCouncilSessionSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const { query } = c.get('validatedBody') as { query: string };
 
-    const { query } = body;
+    // Check council session limit based on user's tier
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { tier: true },
+    });
 
-    if (!query || typeof query !== 'string') {
-        return c.json({ error: 'query is required' }, 400);
+    if (!user) {
+        return c.json({ error: { code: 'NOT_FOUND', message: 'User not found' } }, 404);
+    }
+
+    const tier = (user.tier || 'FREE') as TierName;
+    const monthlyLimit = getLimit(tier, 'monthlyCouncilSessions');
+
+    // Check if Council is available for this tier
+    if (monthlyLimit === 0) {
+        return c.json(
+            {
+                error: 'Council requires Starter tier or above',
+                tier,
+                upgradeRequired: true,
+            },
+            403
+        );
+    }
+
+    // Count council sessions this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const sessionsThisMonth = await prisma.councilSession.count({
+        where: {
+            userId,
+            createdAt: {
+                gte: startOfMonth,
+            },
+        },
+    });
+
+    if (sessionsThisMonth >= monthlyLimit) {
+        return c.json(
+            {
+                error: 'Council session limit reached',
+                limit: monthlyLimit,
+                used: sessionsThisMonth,
+                tier,
+            },
+            403
+        );
     }
 
     // Create session
     const session = await councilService.createCouncilSession(userId, query);
 
     // Return session info for streaming endpoint
-    return c.json({
-        sessionId: session.id,
-        streamUrl: `/api/council/sessions/${session.id}/stream`,
-        personas: Object.entries(councilService.COUNCIL_PERSONAS).map(([key, def]) => ({
-            id: key,
-            name: def.name,
-            role: def.role,
-            color: def.color,
-            modelId: def.modelId,
-        })),
-    }, 201);
+    return c.json(
+        {
+            sessionId: session.id,
+            streamUrl: `/api/council/sessions/${session.id}/stream`,
+            personas: Object.entries(councilService.COUNCIL_PERSONAS).map(([key, def]) => ({
+                id: key,
+                name: def.name,
+                role: def.role,
+                color: def.color,
+                modelId: def.modelId,
+            })),
+        },
+        201
+    );
 });
 
 /**
@@ -52,14 +116,19 @@ app.post('/sessions', async (c) => {
  *
  * Server-Sent Events stream with parallel responses.
  */
-app.get('/sessions/:id/stream', async (c) => {
+app.get('/sessions/:id/stream', validateParams(sessionIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const sessionId = c.req.param('id');
+    const { id: sessionId } = c.get('validatedParams') as { id: string };
 
     // Verify session belongs to user
     const session = await councilService.getCouncilSession(sessionId, userId);
     if (!session) {
-        return c.json({ error: 'Session not found' }, 404);
+        return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
+    }
+
+    // Check token budget for 4 parallel persona calls (~2400 tokens total)
+    if (!(await billingService.hasTokens(userId, 2400))) {
+        return c.json({ error: 'Insufficient token budget for council session' }, 403);
     }
 
     // Set up SSE headers
@@ -68,16 +137,26 @@ app.get('/sessions/:id/stream', async (c) => {
     c.header('Connection', 'keep-alive');
 
     return stream(c, async (stream) => {
-        const personas: PersonaType[] = ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
+        // Use DB-stored persona ordering (learned from user preferences)
+        // Session responses are created in preference order during createCouncilSession()
+        const dbResponses = session.responses || [];
+        const personas: PersonaType[] =
+            dbResponses.length > 0
+                ? dbResponses.map((r) => r.persona as PersonaType)
+                : ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
 
         // Create streaming generators for each persona
         const streams = personas.map((persona) =>
             councilService.streamPersonaResponse(sessionId, persona, session.query)
         );
 
-        // Track completion
+        // Track completion and per-persona token usage for accurate billing
         const completed = new Set<PersonaType>();
         const activeStreams = new Map<PersonaType, AsyncGenerator>();
+        const perPersonaUsage = new Map<
+            PersonaType,
+            { promptTokens: number; completionTokens: number }
+        >();
 
         personas.forEach((persona, i) => {
             activeStreams.set(persona, streams[i]);
@@ -99,13 +178,20 @@ app.get('/sessions/:id/stream', async (c) => {
                     continue;
                 }
 
-                const { type, content, latencyMs } = result.value;
+                const { type, content, latencyMs, usage } = result.value;
 
                 if (type === 'text') {
                     await stream.write(
                         `data: ${JSON.stringify({ persona, type: 'persona_chunk', content })}\n\n`
                     );
                 } else if (type === 'done') {
+                    // Track per-persona token usage for accurate billing
+                    if (usage) {
+                        perPersonaUsage.set(persona, {
+                            promptTokens: usage.promptTokens,
+                            completionTokens: usage.completionTokens,
+                        });
+                    }
                     await stream.write(
                         `data: ${JSON.stringify({ persona, type: 'persona_complete', latencyMs })}\n\n`
                     );
@@ -123,6 +209,20 @@ app.get('/sessions/:id/stream', async (c) => {
         // Update session status
         await councilService.updateSessionStatus(sessionId);
 
+        // Meter actual token usage per-persona with real model IDs
+        // Each persona maps to a real model (gpt-4o, claude-3-5-sonnet, gemini-flash, gpt-4o-mini)
+        for (const [persona, usage] of perPersonaUsage) {
+            const personaDef = councilService.COUNCIL_PERSONAS[persona];
+            if (personaDef && (usage.promptTokens > 0 || usage.completionTokens > 0)) {
+                await billingService.recordTokenUsage(
+                    userId,
+                    usage.promptTokens,
+                    usage.completionTokens,
+                    personaDef.modelId
+                );
+            }
+        }
+
         // Send completion event
         await stream.write(`data: ${JSON.stringify({ type: 'complete' })}\n\n`);
     });
@@ -133,7 +233,7 @@ app.get('/sessions/:id/stream', async (c) => {
  */
 app.get('/sessions', async (c) => {
     const userId = c.get('userId')!;
-    const limit = parseInt(c.req.query('limit') || '20', 10);
+    const limit = Math.min(parseInt(c.req.query('limit') || '20', 10) || 20, 50);
 
     const sessions = await councilService.listCouncilSessions(userId, limit);
 
@@ -156,14 +256,14 @@ app.get('/sessions', async (c) => {
 /**
  * GET /api/council/sessions/:id - Get session details
  */
-app.get('/sessions/:id', async (c) => {
+app.get('/sessions/:id', validateParams(sessionIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const sessionId = c.req.param('id');
+    const { id: sessionId } = c.get('validatedParams') as { id: string };
 
     const session = await councilService.getCouncilSession(sessionId, userId);
 
     if (!session) {
-        return c.json({ error: 'Session not found' }, 404);
+        return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
     }
 
     return c.json({
@@ -191,41 +291,83 @@ app.get('/sessions/:id', async (c) => {
 /**
  * POST /api/council/sessions/:id/select - Select preferred response
  */
-app.post('/sessions/:id/select', async (c) => {
-    const userId = c.get('userId')!;
-    const sessionId = c.req.param('id');
-    const body = await c.req.json();
+app.post(
+    '/sessions/:id/select',
+    validateParams(sessionIdParamSchema),
+    validateBody(selectPersonaSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { id: sessionId } = c.get('validatedParams') as { id: string };
+        const { persona } = c.get('validatedBody') as { persona: PersonaType };
 
-    const { persona } = body;
+        await councilService.selectResponse(sessionId, userId, persona);
 
-    const validPersonas: PersonaType[] = ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
-    if (!persona || !validPersonas.includes(persona)) {
-        return c.json({ error: 'Invalid persona' }, 400);
+        // MOAT: Council→Preference learning (PRO+ only to control costs)
+        try {
+            const councilUser = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { tier: true },
+            });
+            const councilTier = (councilUser?.tier || 'FREE') as string;
+            if (councilTier === 'PRO' || councilTier === 'ULTRA') {
+                const session = await councilService.getCouncilSession(sessionId, userId);
+                if (session) {
+                    const openMemory = await import('../services/openmemory.service');
+                    await openMemory.addMemory(
+                        `Preferred AI persona "${persona}" for query type: ${session.query.slice(0, 100)}`,
+                        userId,
+                        {
+                            sector: 'procedural',
+                            metadata: { source: 'council_preference', persona },
+                        }
+                    );
+                }
+            }
+        } catch {
+            // Non-blocking
+        }
+
+        return c.json({ success: true });
     }
-
-    await councilService.selectResponse(sessionId, userId, persona);
-
-    return c.json({ success: true });
-});
+);
 
 /**
  * POST /api/council/sessions/:id/synthesize - Generate synthesis
  */
-app.post('/sessions/:id/synthesize', async (c) => {
+app.post('/sessions/:id/synthesize', validateParams(sessionIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const sessionId = c.req.param('id');
+    const { id: sessionId } = c.get('validatedParams') as { id: string };
 
     // Verify session belongs to user
     const session = await councilService.getCouncilSession(sessionId, userId);
     if (!session) {
-        return c.json({ error: 'Session not found' }, 404);
+        return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
+    }
+
+    // Check token budget before synthesis (uses gpt-4o)
+    if (!(await billingService.hasTokens(userId, 2000))) {
+        return c.json({ error: 'Insufficient token budget for synthesis' }, 403);
     }
 
     try {
-        const synthesis = await councilService.generateSynthesis(sessionId);
-        return c.json({ synthesis });
-    } catch (error) {
-        return c.json({ error: 'Failed to generate synthesis' }, 500);
+        const result = await councilService.generateSynthesis(sessionId);
+
+        // Meter actual synthesis token usage
+        if (result.usage.promptTokens > 0 || result.usage.completionTokens > 0) {
+            await billingService.recordTokenUsage(
+                userId,
+                result.usage.promptTokens,
+                result.usage.completionTokens,
+                'openai/gpt-4o'
+            );
+        }
+
+        return c.json({ synthesis: result.text });
+    } catch (_error) {
+        return c.json(
+            { error: { code: 'INTERNAL_ERROR', message: 'Failed to generate synthesis' } },
+            500
+        );
     }
 });
 

@@ -3,6 +3,7 @@
  * Handles billing status, checkout, and Polar webhooks.
  */
 import { Hono } from 'hono';
+import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
@@ -16,6 +17,40 @@ type Variables = {
 };
 
 const app = new Hono<{ Variables: Variables }>();
+
+// Failed webhook retry queue with exponential backoff
+const webhookRetryQueue: Array<{
+    payload: string;
+    attempt: number;
+    nextRetryAt: number;
+}> = [];
+const MAX_RETRY_ATTEMPTS = 3;
+
+// Process retry queue every 30 seconds
+setInterval(async () => {
+    const now = Date.now();
+    const ready = webhookRetryQueue.filter((w) => w.nextRetryAt <= now);
+    for (const item of ready) {
+        try {
+            const event = JSON.parse(item.payload);
+            await polarService.handleWebhook(event);
+            // Remove from queue on success
+            const idx = webhookRetryQueue.indexOf(item);
+            if (idx > -1) webhookRetryQueue.splice(idx, 1);
+            console.log(`[Webhook] Retry attempt ${item.attempt} succeeded`);
+        } catch (_error) {
+            item.attempt++;
+            if (item.attempt >= MAX_RETRY_ATTEMPTS) {
+                const idx = webhookRetryQueue.indexOf(item);
+                if (idx > -1) webhookRetryQueue.splice(idx, 1);
+                console.error(`[Webhook] Failed after ${MAX_RETRY_ATTEMPTS} attempts, dropping`);
+            } else {
+                // Exponential backoff: 30s, 120s, 480s
+                item.nextRetryAt = now + 30000 * 4 ** (item.attempt - 1);
+            }
+        }
+    }
+}, 30_000);
 
 // ============================================
 // AUTHENTICATED ROUTES
@@ -87,14 +122,41 @@ app.post('/checkout', requireAuth, validateBody(createCheckoutSchema), async (c)
 
     const { plan, cycle, success_url, cancel_url } = validatedBody;
 
+    // Validate redirect URLs to prevent open redirect attacks
+    const ALLOWED_REDIRECT_HOSTS = ['yula.dev', 'www.yula.dev', 'localhost', 'localhost:3000'];
+    const validateRedirectUrl = (url: string | undefined): string | undefined => {
+        if (!url) return undefined;
+        try {
+            const parsed = new URL(url);
+            if (!ALLOWED_REDIRECT_HOSTS.includes(parsed.host)) {
+                return undefined;
+            }
+            return url;
+        } catch {
+            return undefined;
+        }
+    };
+
+    const safeSuccessUrl =
+        validateRedirectUrl(success_url) || `${process.env.FRONTEND_URL}/billing/success`;
+    const safeCancelUrl = validateRedirectUrl(cancel_url);
+
     try {
         const { checkoutUrl, checkoutId } = await polarService.createCheckout({
             userId,
             email: user.email,
             plan,
             cycle,
-            successUrl: success_url || `${process.env.FRONTEND_URL}/billing/success`,
-            cancelUrl: cancel_url,
+            successUrl: safeSuccessUrl,
+            cancelUrl: safeCancelUrl,
+        });
+
+        // Audit log the checkout creation
+        await auditLog({
+            userId,
+            action: 'CHECKOUT_CREATE',
+            resource: 'subscription',
+            metadata: { plan, cycle, checkoutId },
         });
 
         return c.json({
@@ -125,6 +187,14 @@ app.post('/cancel', requireAuth, async (c) => {
     try {
         await polarService.cancelSubscription(billingAccount.subscriptionId);
 
+        // Audit log the subscription cancellation
+        await auditLog({
+            userId,
+            action: 'SUBSCRIPTION_CANCEL',
+            resource: 'subscription',
+            metadata: { subscriptionId: billingAccount.subscriptionId },
+        });
+
         return c.json({
             success: true,
             message: 'Subscription will be canceled at the end of the billing period',
@@ -150,6 +220,41 @@ app.get('/portal', requireAuth, async (c) => {
     return c.json({ portal_url: portalUrl });
 });
 
+// GET /api/billing/cost-ceiling - Check daily cost ceiling status
+app.get('/cost-ceiling', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const ceiling = await billingService.checkCostCeiling(userId);
+    return c.json(ceiling);
+});
+
+// GET /api/billing/cost-summary - Get cost breakdown by model and day
+app.get('/cost-summary', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const summary = await billingService.getCostSummary(userId);
+    return c.json(summary);
+});
+
+// GET /api/billing/spending-alerts - Get spending alerts for user
+app.get('/spending-alerts', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const alerts = await billingService.getSpendingAlerts(userId);
+    return c.json(alerts);
+});
+
+// GET /api/billing/unit-economics - Get per-user unit economics (admin/self)
+app.get('/unit-economics', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const economics = await billingService.getUnitEconomics(userId);
+    return c.json(economics);
+});
+
+// GET /api/billing/projection - Get end-of-month cost projection
+app.get('/projection', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const projection = await billingService.getCostProjection(userId);
+    return c.json(projection);
+});
+
 // ============================================
 // WEBHOOK (NO AUTH - uses signature verification)
 // ============================================
@@ -162,13 +267,14 @@ app.post('/webhook', async (c) => {
     // Get raw body for signature verification
     const rawBody = await c.req.text();
 
-    // Verify signature
-    if (webhookSecret && signature) {
-        const isValid = polarService.verifyWebhookSignature(rawBody, signature, webhookSecret);
-        if (!isValid) {
-            console.error('Invalid webhook signature');
-            return c.json({ error: 'Invalid signature' }, 401);
-        }
+    // Fail-closed: reject webhooks if secret is not configured
+    if (!webhookSecret) {
+        console.error('POLAR_WEBHOOK_SECRET is not configured - rejecting webhook');
+        return c.json({ error: 'Webhook not configured' }, 500);
+    }
+    if (!signature || !polarService.verifyWebhookSignature(rawBody, signature, webhookSecret)) {
+        console.error('Invalid webhook signature');
+        return c.json({ error: 'Invalid signature' }, 401);
     }
 
     try {
@@ -179,7 +285,16 @@ app.post('/webhook', async (c) => {
         return c.json({ received: true });
     } catch (error) {
         console.error('Webhook processing error:', error);
-        return c.json({ error: 'Webhook processing failed' }, 500);
+        // Queue for retry with exponential backoff
+        if (webhookRetryQueue.length < 100) {
+            // Prevent memory leak
+            webhookRetryQueue.push({
+                payload: rawBody,
+                attempt: 1,
+                nextRetryAt: Date.now() + 30_000,
+            });
+        }
+        return c.json({ error: 'Webhook processing failed, queued for retry' }, 500);
     }
 });
 

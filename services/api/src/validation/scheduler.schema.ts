@@ -17,7 +17,7 @@ export const toneSchema = z.enum(['friendly', 'professional', 'encouraging']);
  * Scheduled task creation schema
  */
 export const createScheduledTaskSchema = z.object({
-    chatId: z.string().uuid('chatId must be a valid UUID'),
+    chatId: z.string().min(1, 'chatId is required'),
     triggerAt: z.string().min(1, 'triggerAt is required'),
     intent: z
         .string()
@@ -44,7 +44,7 @@ export const rescheduleTaskSchema = z.object({
  * Execute task schema (webhook)
  */
 export const executeTaskSchema = z.object({
-    taskId: z.string().uuid('taskId must be a valid UUID'),
+    taskId: z.string().min(1, 'taskId is required'),
 });
 
 /**
@@ -52,6 +52,6 @@ export const executeTaskSchema = z.object({
  */
 export const getTasksQuerySchema = z.object({
     status: z.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED']).optional(),
-    chatId: z.string().uuid().optional(),
+    chatId: z.string().min(1).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
 });

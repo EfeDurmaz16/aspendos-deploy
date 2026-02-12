@@ -5,53 +5,53 @@
  * All AI generation uses streamText and generateText.
  */
 
-// Provider configuration
-export {
-    openai,
-    anthropic,
-    groq,
-    getModel,
-    getRouterModel,
-    getFallbackRouterModel,
-    MODEL_REGISTRY,
-    FALLBACK_CHAIN,
-    DEFAULT_MODEL,
-    DEFAULT_ROUTER_MODEL,
-    DEFAULT_CODING_MODEL,
-    DEFAULT_FAST_MODEL,
-    type ModelId,
-    type ProviderType,
-    type ModelConfig,
-} from './providers';
-
-// Text generation (streamText / generateText)
-export {
-    createStreamingCompletion,
-    createCompletion,
-    createRouterCompletion,
-    createCodingCompletion,
-    createFastCompletion,
-    type GenerateOptions,
-    type StreamChunk,
-    type GenerateResult,
-} from './generate';
-
-// Routing
-export {
-    routeUserMessage,
-    fastRoute,
-    needsMemorySearch,
-    isGreeting,
-    AVAILABLE_TOOLS,
-    type RouteDecision,
-    type ToolName,
-} from './router';
-
 // Embeddings
 export { createEmbedding, createEmbeddings, getEmbeddingDimension } from './embeddings';
 
+// Text generation (streamText / generateText)
+export {
+    createCodingCompletion,
+    createCompletion,
+    createFastCompletion,
+    createRouterCompletion,
+    createStreamingCompletion,
+    type GenerateOptions,
+    type GenerateResult,
+    type StreamChunk,
+} from './generate';
+// Hybrid pipeline
+export {
+    createUnifiedStreamingCompletion,
+    executeHybridRoute,
+    type HybridRouteResult,
+} from './hybrid';
 // Memory extraction
 export { extractMemoryInsights, summarizeConversation } from './memory';
-
-// Hybrid pipeline
-export { executeHybridRoute, createUnifiedStreamingCompletion, type HybridRouteResult } from './hybrid';
+// Provider configuration
+export {
+    anthropic,
+    DEFAULT_CODING_MODEL,
+    DEFAULT_FAST_MODEL,
+    DEFAULT_MODEL,
+    DEFAULT_ROUTER_MODEL,
+    FALLBACK_CHAIN,
+    getFallbackRouterModel,
+    getModel,
+    getRouterModel,
+    groq,
+    MODEL_REGISTRY,
+    type ModelConfig,
+    type ModelId,
+    openai,
+    type ProviderType,
+} from './providers';
+// Routing
+export {
+    AVAILABLE_TOOLS,
+    fastRoute,
+    isGreeting,
+    needsMemorySearch,
+    type RouteDecision,
+    routeUserMessage,
+    type ToolName,
+} from './router';

@@ -1,9 +1,9 @@
 'use client';
 
+import { Brain, CheckCircle, Lightbulb, Scales, ShieldCheck, Warning } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Scales, CheckCircle, Brain, Lightbulb, ShieldCheck, Warning } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import type { CouncilVerdict as CouncilVerdictType, CouncilPersona } from '@/stores/yula-store';
+import type { CouncilPersona, CouncilVerdict as CouncilVerdictType } from '@/stores/yula-store';
 import { personaDefinitions } from './use-council';
 
 interface CouncilVerdictProps {
@@ -20,7 +20,8 @@ const personaIcons: Record<CouncilPersona, typeof Brain> = {
 };
 
 export function CouncilVerdictCard({ verdict, onAccept, onAskAgain }: CouncilVerdictProps) {
-    const confidencePercent = Math.round(verdict.confidence * 100);
+    const hasConfidence = verdict.confidence !== undefined && verdict.confidence !== null;
+    const confidencePercent = hasConfidence ? Math.round((verdict.confidence as number) * 100) : 0;
 
     return (
         <motion.div
@@ -46,23 +47,25 @@ export function CouncilVerdictCard({ verdict, onAccept, onAskAgain }: CouncilVer
                     </motion.div>
                     <div>
                         <h2 className="text-xl font-semibold text-white">Council Verdict</h2>
-                        <div className="mt-1 flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                                <div
-                                    className={cn(
-                                        'h-2 w-2 rounded-full',
-                                        confidencePercent >= 80
-                                            ? 'bg-emerald-400'
-                                            : confidencePercent >= 60
-                                                ? 'bg-amber-400'
-                                                : 'bg-red-400'
-                                    )}
-                                />
-                                <span className="text-sm text-zinc-400">
-                                    {confidencePercent}% consensus confidence
-                                </span>
+                        {hasConfidence && (
+                            <div className="mt-1 flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                    <div
+                                        className={cn(
+                                            'h-2 w-2 rounded-full',
+                                            confidencePercent >= 80
+                                                ? 'bg-emerald-400'
+                                                : confidencePercent >= 60
+                                                  ? 'bg-amber-400'
+                                                  : 'bg-red-400'
+                                        )}
+                                    />
+                                    <span className="text-sm text-zinc-400">
+                                        {confidencePercent}% consensus confidence
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -99,7 +102,17 @@ export function CouncilVerdictCard({ verdict, onAccept, onAskAgain }: CouncilVer
                                     key={persona}
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: (['logic', 'creative', 'prudent', 'devils-advocate'] as CouncilPersona[]).indexOf(persona) * 0.1 }}
+                                    transition={{
+                                        delay:
+                                            (
+                                                [
+                                                    'logic',
+                                                    'creative',
+                                                    'prudent',
+                                                    'devils-advocate',
+                                                ] as CouncilPersona[]
+                                            ).indexOf(persona) * 0.1,
+                                    }}
                                     className="flex gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3"
                                 >
                                     <div

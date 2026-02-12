@@ -7,11 +7,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    ONBOARDING_STEPS,
-    STEP_ORDER,
-    SPOTLIGHT_TARGETS,
     getSpotlightTarget,
+    ONBOARDING_STEPS,
     type OnboardingStep,
+    SPOTLIGHT_TARGETS,
+    STEP_ORDER,
 } from '../onboarding-store';
 
 // ==========================================
@@ -140,7 +140,7 @@ describe('SPOTLIGHT_TARGETS Configuration', () => {
     it('should have valid CSS selectors', () => {
         SPOTLIGHT_TARGETS.forEach((target) => {
             // Should be a valid selector string starting with [, ., or #
-            expect(target.selector).toMatch(/^[\[\.#]/);
+            expect(target.selector).toMatch(/^[[.#]/);
         });
     });
 

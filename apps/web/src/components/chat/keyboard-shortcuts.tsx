@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Keyboard, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +46,7 @@ export function KeyboardShortcuts() {
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     'fixed bottom-4 right-4 z-50 size-10 rounded-full shadow-lg',
-                    'bg-background/80 backdrop-blur border border-border',
+                    'bg-background border border-border',
                     'hover:bg-accent hover:text-accent-foreground',
                     isOpen && 'bg-accent'
                 )}
@@ -60,7 +60,7 @@ export function KeyboardShortcuts() {
                 <div
                     className={cn(
                         'fixed bottom-16 right-4 z-50 w-72 rounded-lg shadow-xl',
-                        'bg-background/95 backdrop-blur border border-border',
+                        'bg-background border border-border',
                         'animate-in fade-in slide-in-from-bottom-2 duration-200'
                     )}
                 >

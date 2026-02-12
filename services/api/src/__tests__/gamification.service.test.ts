@@ -5,12 +5,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    LEVELS,
     ACHIEVEMENTS,
-    XP_ACTIONS,
     getLevelForXp,
     getNextLevel,
     getXpProgress,
+    LEVELS,
+    XP_ACTIONS,
 } from '../services/gamification.service';
 
 // ==========================================
@@ -220,7 +220,14 @@ describe('ACHIEVEMENTS Configuration', () => {
     });
 
     it('should have valid categories', () => {
-        const validCategories = ['onboarding', 'engagement', 'streaks', 'mastery', 'social', 'secret'];
+        const validCategories = [
+            'onboarding',
+            'engagement',
+            'streaks',
+            'mastery',
+            'social',
+            'secret',
+        ];
         achievementValues.forEach((achievement) => {
             expect(validCategories).toContain(achievement.category);
         });

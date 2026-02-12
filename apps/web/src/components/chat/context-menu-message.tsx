@@ -1,5 +1,7 @@
 'use client';
 
+import { Copy, Edit, Forward, RefreshCw, Reply, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
     ContextMenu,
     ContextMenuContent,
@@ -7,8 +9,6 @@ import {
     ContextMenuSeparator,
     ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Copy, Reply, RefreshCw, Edit, Forward, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface ContextMenuMessageProps {
     children: React.ReactNode;

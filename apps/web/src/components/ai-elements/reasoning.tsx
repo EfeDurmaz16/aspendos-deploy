@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronRight, Brain, Loader2 } from 'lucide-react';
+import { Brain, ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface ReasoningProps {
     children?: React.ReactNode;
@@ -72,9 +72,7 @@ export function ReasoningTrigger({ isOpen, onToggle, isStreaming }: ReasoningTri
             ) : (
                 <Brain className="size-4" />
             )}
-            <span className="text-sm font-medium">
-                {isStreaming ? 'Thinking...' : 'Reasoning'}
-            </span>
+            <span className="text-sm font-medium">{isStreaming ? 'Thinking...' : 'Reasoning'}</span>
             {isOpen ? (
                 <ChevronDown className="size-4 ml-auto" />
             ) : (

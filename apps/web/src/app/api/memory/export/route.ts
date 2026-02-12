@@ -17,9 +17,6 @@ export async function GET() {
         return NextResponse.json(exportData);
     } catch (error) {
         console.error('[API /memory/export] Error:', error);
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Export failed' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Export failed' }, { status: 500 });
     }
 }

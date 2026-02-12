@@ -31,7 +31,6 @@ interface MemoryUsed {
 
 interface StreamingMessageProps {
     message: ChatMessage & { memoriesUsed?: MemoryUsed[] };
-    isCurrentUser?: boolean;
     onFeedback?: (messageId: string, feedback: 'up' | 'down') => void;
 }
 
@@ -70,15 +69,19 @@ function MessageActions({
     );
 
     return (
-        <div className="flex items-center gap-1 mt-2 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border opacity-0 group-hover:opacity-100 transition-opacity">
             {/* Copy button */}
             <button
                 onClick={handleCopy}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
                 aria-label={copied ? 'Copied to clipboard' : 'Copy message'}
             >
                 {copied ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" aria-hidden="true" />
+                    <Check
+                        className="w-3.5 h-3.5 text-emerald-500"
+                        weight="bold"
+                        aria-hidden="true"
+                    />
                 ) : (
                     <Copy className="w-3.5 h-3.5" weight="duotone" aria-hidden="true" />
                 )}
@@ -88,13 +91,17 @@ function MessageActions({
             <AudioPlayer text={content} className="ml-1" />
 
             {/* Feedback buttons */}
-            <div className="flex items-center gap-0.5 ml-auto" role="group" aria-label="Response feedback">
+            <div
+                className="flex items-center gap-0.5 ml-auto"
+                role="group"
+                aria-label="Response feedback"
+            >
                 <button
                     onClick={() => handleFeedback('up')}
                     className={`p-1.5 rounded-lg transition-all ${
                         feedback === 'up'
                             ? 'text-emerald-500 bg-emerald-500/15 ring-1 ring-emerald-500/30'
-                            : 'text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                            : 'text-muted-foreground hover:text-emerald-600 hover:bg-muted'
                     }`}
                     aria-label="Mark as good response"
                     aria-pressed={feedback === 'up'}
@@ -110,7 +117,7 @@ function MessageActions({
                     className={`p-1.5 rounded-lg transition-all ${
                         feedback === 'down'
                             ? 'text-rose-500 bg-rose-500/15 ring-1 ring-rose-500/30'
-                            : 'text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'
+                            : 'text-muted-foreground hover:text-rose-600 hover:bg-muted'
                     }`}
                     aria-label="Mark as bad response"
                     aria-pressed={feedback === 'down'}
@@ -153,10 +160,10 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
     if (!memories || memories.length === 0) return null;
 
     return (
-        <div className="mt-3 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50">
+        <div className="mt-3 pt-2 border-t border-border">
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors w-full"
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
             >
                 <Brain className="w-3.5 h-3.5" />
                 <span>{memories.length} memories used</span>
@@ -176,7 +183,7 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
                         return (
                             <div
                                 key={memory.id}
-                                className="bg-white/40 dark:bg-zinc-800/60 backdrop-blur rounded-lg p-3 text-xs border border-zinc-200/50 dark:border-zinc-700/50 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+                                className="bg-card rounded-lg p-3 text-xs border border-border hover:border-border transition-all"
                                 style={{ animationDelay: `${idx * 50}ms` }}
                             >
                                 <div className="flex items-center gap-2 mb-1.5">
@@ -184,14 +191,14 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
                                         className={`w-3.5 h-3.5 ${sectorColor}`}
                                         weight="duotone"
                                     />
-                                    <span className="uppercase tracking-wide font-medium text-zinc-700 dark:text-zinc-300">
+                                    <span className="uppercase tracking-wide font-medium text-foreground">
                                         {memory.sector}
                                     </span>
-                                    <span className="ml-auto font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                    <span className="ml-auto font-mono text-xs font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                                         {Math.round(memory.confidence * 100)}%
                                     </span>
                                 </div>
-                                <p className="text-zinc-700 dark:text-zinc-300 line-clamp-2 text-[11px]">
+                                <p className="text-foreground line-clamp-2 text-[11px]">
                                     {memory.content}
                                 </p>
                             </div>
@@ -218,15 +225,15 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="mt-3 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50">
+        <div className="mt-3 pt-2 border-t border-border">
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors w-full"
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
             >
-                <Sparkle className="w-3.5 h-3.5 text-amber-500" weight="fill" />
+                <Sparkle className="w-3.5 h-3.5 text-primary" weight="fill" />
                 <span>AI Decision: {decision.queryType.replace('_', ' ')}</span>
                 {decision.useMemory && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[10px] uppercase">
+                    <span className="ml-1 px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded text-[10px] uppercase">
                         Memory
                     </span>
                 )}
@@ -238,29 +245,26 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
             </button>
 
             {isExpanded && (
-                <div className="mt-2 bg-white/40 dark:bg-zinc-800/60 backdrop-blur rounded-lg p-3 text-xs space-y-2 border border-amber-200/30 dark:border-amber-700/30 animate-fade-up">
-                    <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                        {decision.reasoning}
-                    </p>
+                <div className="mt-2 bg-card rounded-lg p-3 text-xs space-y-2 border border-border animate-fade-up">
+                    <p className="text-foreground leading-relaxed">{decision.reasoning}</p>
                     {decision.sectors.length > 0 && (
-                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-amber-200/20 dark:border-amber-700/20">
-                            <span className="text-zinc-600 dark:text-zinc-400 font-semibold">
-                                Sectors:
-                            </span>
+                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
+                            <span className="text-muted-foreground font-semibold">Sectors:</span>
                             <div className="flex flex-wrap gap-1">
                                 {decision.sectors.map((sector) => {
                                     const SectorIcon = SECTOR_ICONS[sector] || Brain;
-                                    const sectorColor = SECTOR_COLORS[sector] || 'text-zinc-500';
+                                    const sectorColor =
+                                        SECTOR_COLORS[sector] || 'text-muted-foreground';
                                     return (
                                         <span
                                             key={sector}
-                                            className="flex items-center gap-1 bg-zinc-100/60 dark:bg-zinc-700/40 px-1.5 py-0.5 rounded text-[10px]"
+                                            className="flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded text-[10px]"
                                         >
                                             <SectorIcon
                                                 className={`w-3 h-3 ${sectorColor}`}
                                                 weight="duotone"
                                             />
-                                            <span className="text-zinc-700 dark:text-zinc-300 font-medium">
+                                            <span className="text-foreground font-medium">
                                                 {sector}
                                             </span>
                                         </span>
@@ -289,11 +293,7 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
  * - Metadata display (model, tokens, cost)
  * - Memories used display (collapsible)
  */
-function StreamingMessageComponent({
-    message,
-    isCurrentUser = false,
-    onFeedback,
-}: StreamingMessageProps) {
+function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProps) {
     const isUser = message.role === 'user';
 
     return (
@@ -304,8 +304,8 @@ function StreamingMessageComponent({
             <div
                 className={`max-w-[85%] rounded-2xl px-4 py-3 transition-all ${
                     isUser
-                        ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-50 dark:to-zinc-100 text-white dark:text-zinc-900 shadow-md'
-                        : 'bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all'
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'bg-muted border border-border shadow-sm hover:shadow-md hover:border-border transition-all'
                 }`}
                 aria-live={message.streaming ? 'polite' : 'off'}
                 aria-atomic="false"
@@ -354,23 +354,23 @@ function StreamingMessageComponent({
 
                 {/* Metadata */}
                 {message.metadata && !message.streaming && (
-                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-zinc-200/20 dark:border-zinc-700/50 text-xs text-zinc-600 dark:text-zinc-400 flex-wrap">
+                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border text-xs text-muted-foreground flex-wrap">
                         {message.metadata.model && (
-                            <span className="font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded text-zinc-700 dark:text-zinc-300">
+                            <span className="font-mono bg-muted px-2 py-1 rounded text-foreground">
                                 {message.metadata.model}
                             </span>
                         )}
                         {message.metadata.tokensIn !== undefined &&
                             message.metadata.tokensOut !== undefined && (
                                 <span className="flex items-center gap-1">
-                                    <span className="text-zinc-500">|</span>
+                                    <span className="text-muted-foreground">|</span>
                                     <span className="font-mono">
                                         {message.metadata.tokensIn}→{message.metadata.tokensOut}
                                     </span>
                                 </span>
                             )}
                         {message.metadata.costUsd !== undefined && message.metadata.costUsd > 0 && (
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                            <span className="font-semibold text-emerald-600">
                                 ${message.metadata.costUsd.toFixed(5)}
                             </span>
                         )}
@@ -388,20 +388,24 @@ function StreamingMessageComponent({
 
                 {/* Streaming indicator */}
                 {message.streaming && !message.content && (
-                    <div className="flex items-center gap-1" role="status" aria-label="AI is typing">
+                    <div
+                        className="flex items-center gap-1"
+                        role="status"
+                        aria-label="AI is typing"
+                    >
                         <span className="sr-only">AI is typing a response</span>
                         <span
-                            className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
+                            className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
                             style={{ animationDelay: '0ms' }}
                             aria-hidden="true"
                         />
                         <span
-                            className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
+                            className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
                             style={{ animationDelay: '150ms' }}
                             aria-hidden="true"
                         />
                         <span
-                            className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
+                            className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
                             style={{ animationDelay: '300ms' }}
                             aria-hidden="true"
                         />

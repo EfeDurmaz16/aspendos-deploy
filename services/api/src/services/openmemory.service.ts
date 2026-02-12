@@ -6,16 +6,56 @@
  */
 
 import { Memory } from 'openmemory-js';
+import { breakers } from '../lib/circuit-breaker';
 
 // Initialize OpenMemory client
 const mem = new Memory();
+
+/**
+ * Graceful degradation wrapper for Qdrant operations.
+ * If Qdrant is down, return fallback value instead of throwing.
+ */
+async function withQdrantFallback<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+    try {
+        return await breakers.qdrant.execute(fn);
+    } catch (error) {
+        console.warn(
+            '[Qdrant] Service unavailable, using fallback:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
+        return fallback;
+    }
+}
 
 // ============================================
 // TYPES (matching OpenMemory response format)
 // ============================================
 
-// @ts-expect-error - Accessing internal DB module to fix missing delete/update methods
 import { q } from 'openmemory-js/dist/core/db';
+
+/**
+ * Apply recency boost to search results.
+ * Newer memories get a small score boost, creating a "living memory" effect.
+ * This is a moat differentiator: competitors return static results,
+ * we surface recent context that's more likely to be relevant.
+ */
+function applyRecencyBoost(
+    results: Array<{ id: string; score: number; createdAt?: string; [key: string]: unknown }>,
+    boostFactor = 0.1
+): typeof results {
+    const now = Date.now();
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+    return results
+        .map((r) => {
+            if (!r.createdAt) return r;
+            const ageMs = now - new Date(r.createdAt).getTime();
+            // Boost ranges from 0 to boostFactor, linear decay over 30 days
+            const boost = Math.max(0, boostFactor * (1 - ageMs / THIRTY_DAYS_MS));
+            return { ...r, score: r.score + boost };
+        })
+        .sort((a, b) => b.score - a.score);
+}
 
 export interface MemoryResult {
     id: string;
@@ -52,14 +92,28 @@ export async function addMemory(
         metadata?: Record<string, unknown>;
     }
 ): Promise<MemoryResult> {
-    const result = await mem.add(content, {
-        user_id: userId,
-        tags: options?.tags,
-        metadata: {
-            sector: options?.sector,
-            ...options?.metadata,
-        },
-    });
+    const result = await withQdrantFallback(
+        async () =>
+            await mem.add(content, {
+                user_id: userId,
+                tags: options?.tags,
+                metadata: {
+                    sector: options?.sector,
+                    ...options?.metadata,
+                },
+            }),
+        {
+            id: `fallback-${Date.now()}`,
+            content,
+            user_id: userId,
+            salience: 1.0,
+            created_at: new Date().toISOString(),
+            metadata: {
+                sector: options?.sector,
+                ...options?.metadata,
+            },
+        }
+    );
 
     return {
         id: result.id,
@@ -82,21 +136,35 @@ export async function searchMemories(
         threshold?: number;
     }
 ): Promise<MemoryResult[]> {
-    const results = await mem.search(query, {
-        user_id: userId,
-        limit: options?.limit || 5,
-    });
+    const results = await withQdrantFallback(
+        async () =>
+            await mem.search(query, {
+                user_id: userId,
+                limit: options?.limit || 5,
+            }),
+        []
+    );
 
-    return results.map((r) => ({
+    const mapped = results.map((r) => ({
         id: r.id,
         content: r.content,
         sector: ((r.metadata as Record<string, unknown>)?.sector as string) || 'semantic',
         salience: r.salience || 0,
+        score: r.salience || 0,
         createdAt: r.created_at,
         metadata: r.metadata,
         isPinned: !!(r.metadata as Record<string, unknown>)?.isPinned,
         trace: r.trace,
     }));
+
+    // Apply recency boost to surface recent context
+    const boosted = applyRecencyBoost(mapped);
+
+    // Remove the score field and return as MemoryResult[]
+    return boosted.map((item) => {
+        const { score: _score, ...rest } = item;
+        return rest as MemoryResult;
+    });
 }
 
 /**
@@ -109,10 +177,14 @@ export async function listMemories(
         offset?: number;
     }
 ): Promise<MemoryResult[]> {
-    const results = await mem.search('', {
-        user_id: userId,
-        limit: options?.limit || 50,
-    });
+    const results = await withQdrantFallback(
+        async () =>
+            await mem.search('', {
+                user_id: userId,
+                limit: options?.limit || 50,
+            }),
+        []
+    );
 
     return results.map((r) => ({
         id: r.id,
@@ -202,6 +274,21 @@ export async function getMemoryStats(userId: string): Promise<MemoryStats> {
         bySector,
         avgSalience: memories.length > 0 ? totalSalience / memories.length : 0,
     };
+}
+
+/**
+ * Verify that a memory belongs to a specific user (IDOR prevention)
+ */
+export async function verifyMemoryOwnership(memoryId: string, userId: string): Promise<boolean> {
+    try {
+        const memData = await q.get_mem.get(memoryId);
+        if (!memData) return false;
+        const meta = memData.meta ? JSON.parse(memData.meta) : {};
+        // OpenMemory stores user_id in the memory record or metadata
+        return memData.user_id === userId || meta.user_id === userId;
+    } catch {
+        return false;
+    }
 }
 
 /**

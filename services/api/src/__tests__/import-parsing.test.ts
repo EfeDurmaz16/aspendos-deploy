@@ -4,6 +4,7 @@
  * Standalone tests for parsing ChatGPT and Claude export formats.
  * These tests don't require any database or service dependencies.
  */
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 // ==========================================
@@ -68,7 +69,7 @@ function parseChatGPTExport(data: unknown): ParsedConversation[] {
         messages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
         conversations.push({
-            externalId: conv.id || `chatgpt-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            externalId: conv.id || `chatgpt-${randomUUID()}`,
             title: conv.title,
             messages,
             createdAt: new Date((conv.create_time || 0) * 1000),
@@ -118,7 +119,7 @@ function parseClaudeExport(data: unknown): ParsedConversation[] {
         }
 
         conversations.push({
-            externalId: conv.uuid || `claude-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            externalId: conv.uuid || `claude-${randomUUID()}`,
             title: conv.name || 'Untitled Conversation',
             messages,
             createdAt: new Date(conv.created_at),
@@ -352,7 +353,7 @@ describe('parseChatGPTExport', () => {
 
         const result = parseChatGPTExport(mockExport);
 
-        expect(result[0].externalId).toMatch(/^chatgpt-\d+-[a-z0-9]+$/);
+        expect(result[0].externalId).toMatch(/^chatgpt-[0-9a-f-]{36}$/);
     });
 });
 
@@ -476,7 +477,7 @@ describe('parseClaudeExport', () => {
 
         const result = parseClaudeExport(mockExport);
 
-        expect(result[0].externalId).toMatch(/^claude-\d+-[a-z0-9]+$/);
+        expect(result[0].externalId).toMatch(/^claude-[0-9a-f-]{36}$/);
     });
 
     it('should skip messages without sender or text', () => {
@@ -634,9 +635,7 @@ describe('ParsedConversation Type', () => {
                 name: 'Test',
                 created_at: '2024-01-15T10:00:00Z',
                 updated_at: '2024-01-15T11:00:00Z',
-                chat_messages: [
-                    { sender: 'human', text: 'Hello' },
-                ],
+                chat_messages: [{ sender: 'human', text: 'Hello' }],
             },
         ];
 

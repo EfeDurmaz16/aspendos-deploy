@@ -4,10 +4,24 @@
  * Handles reminder management and settings.
  */
 import { Hono } from 'hono';
+import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateParams } from '../middleware/validate';
 import * as pacService from '../services/pac.service';
+import {
+    detectCommitmentsSchema,
+    reminderIdParamSchema,
+    snoozeReminderSchema,
+    updatePACSettingsSchema,
+} from '../validation/pac.schema';
 
-const app = new Hono();
+type Variables = {
+    validatedBody?: unknown;
+    validatedQuery?: unknown;
+    validatedParams?: unknown;
+};
+
+const app = new Hono<{ Variables: Variables }>();
 
 // All routes require authentication
 app.use('*', requireAuth);
@@ -15,15 +29,12 @@ app.use('*', requireAuth);
 /**
  * POST /api/pac/detect - Detect commitments in a message
  */
-app.post('/detect', async (c) => {
+app.post('/detect', validateBody(detectCommitmentsSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
-
-    const { message, conversationId, messageId } = body;
-
-    if (!message || typeof message !== 'string') {
-        return c.json({ error: 'message is required' }, 400);
-    }
+    const { message, conversationId } = c.get('validatedBody') as {
+        message: string;
+        conversationId?: string;
+    };
 
     // Get user settings
     const settings = await pacService.getPACSettings(userId);
@@ -45,12 +56,7 @@ app.post('/detect', async (c) => {
     // Create reminders for detected commitments
     const createdReminders = [];
     for (const commitment of filteredCommitments) {
-        const reminder = await pacService.createReminder(
-            userId,
-            commitment,
-            conversationId,
-            messageId
-        );
+        const reminder = await pacService.createReminder(userId, commitment, conversationId);
         createdReminders.push(reminder);
     }
 
@@ -72,7 +78,7 @@ app.post('/detect', async (c) => {
  */
 app.get('/reminders', async (c) => {
     const userId = c.get('userId')!;
-    const limit = parseInt(c.req.query('limit') || '20', 10);
+    const limit = Math.min(parseInt(c.req.query('limit') || '20', 10) || 20, 50);
 
     const reminders = await pacService.getPendingReminders(userId, limit);
 
@@ -85,8 +91,7 @@ app.get('/reminders', async (c) => {
             priority: r.priority,
             triggerAt: r.triggerAt,
             snoozeCount: r.snoozeCount,
-            conversationId: r.conversation?.id,
-            conversationTitle: r.conversation?.title,
+            conversationId: r.chatId,
             createdAt: r.createdAt,
         })),
     });
@@ -95,9 +100,9 @@ app.get('/reminders', async (c) => {
 /**
  * PATCH /api/pac/reminders/:id/complete - Mark reminder as complete
  */
-app.patch('/reminders/:id/complete', async (c) => {
+app.patch('/reminders/:id/complete', validateParams(reminderIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const reminderId = c.req.param('id');
+    const { id: reminderId } = c.get('validatedParams') as { id: string };
 
     await pacService.completeReminder(reminderId, userId);
 
@@ -107,9 +112,9 @@ app.patch('/reminders/:id/complete', async (c) => {
 /**
  * PATCH /api/pac/reminders/:id/dismiss - Dismiss a reminder
  */
-app.patch('/reminders/:id/dismiss', async (c) => {
+app.patch('/reminders/:id/dismiss', validateParams(reminderIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const reminderId = c.req.param('id');
+    const { id: reminderId } = c.get('validatedParams') as { id: string };
 
     await pacService.dismissReminder(reminderId, userId);
 
@@ -119,24 +124,23 @@ app.patch('/reminders/:id/dismiss', async (c) => {
 /**
  * PATCH /api/pac/reminders/:id/snooze - Snooze a reminder
  */
-app.patch('/reminders/:id/snooze', async (c) => {
-    const userId = c.get('userId')!;
-    const reminderId = c.req.param('id');
-    const body = await c.req.json();
+app.patch(
+    '/reminders/:id/snooze',
+    validateParams(reminderIdParamSchema),
+    validateBody(snoozeReminderSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { id: reminderId } = c.get('validatedParams') as { id: string };
+        const { minutes } = c.get('validatedBody') as { minutes: number };
 
-    const { minutes } = body;
+        const result = await pacService.snoozeReminder(reminderId, userId, minutes);
 
-    if (typeof minutes !== 'number' || minutes <= 0) {
-        return c.json({ error: 'minutes must be a positive number' }, 400);
+        return c.json({
+            success: true,
+            newTriggerAt: result.newTriggerAt,
+        });
     }
-
-    const result = await pacService.snoozeReminder(reminderId, userId, minutes);
-
-    return c.json({
-        success: true,
-        newTriggerAt: result.newTriggerAt,
-    });
-});
+);
 
 /**
  * GET /api/pac/settings - Get PAC settings
@@ -166,11 +170,23 @@ app.get('/settings', async (c) => {
 /**
  * PATCH /api/pac/settings - Update PAC settings
  */
-app.patch('/settings', async (c) => {
+app.patch('/settings', validateBody(updatePACSettingsSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const validatedBody = c.get('validatedBody') as Record<string, boolean | string>;
 
-    const settings = await pacService.updatePACSettings(userId, body);
+    if (Object.keys(validatedBody).length === 0) {
+        return c.json({ error: 'No valid settings provided' }, 400);
+    }
+
+    const settings = await pacService.updatePACSettings(userId, validatedBody);
+
+    // Audit log the settings update
+    await auditLog({
+        userId,
+        action: 'SETTINGS_UPDATE',
+        resource: 'pac_settings',
+        metadata: validatedBody,
+    });
 
     return c.json({
         success: true,

@@ -7,3 +7,5 @@
 /public/sw.js.map
 /public/swe-worker-*.js
 /public/swe-worker-*.js.map
+
+.env.local

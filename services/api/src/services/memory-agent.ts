@@ -6,10 +6,15 @@
  *
  * Features:
  * - Query classification (7 types)
- * - Memory usage decision (matrix + LLM fallback)
+ * - Memory usage decision (matrix + LLM fallback via Groq)
  * - Sector selection (5 sectors)
  * - Self-reflection on response quality
+ * - Memory consolidation pipeline (dedup + decay)
  */
+
+import { createGroq } from '@ai-sdk/groq';
+import { generateText } from 'ai';
+import * as openMemory from './openmemory.service';
 
 // ============================================
 // TYPES
@@ -142,8 +147,65 @@ const CLASSIFICATION_PATTERNS: { pattern: RegExp; type: QueryType }[] = [
 // ============================================
 
 export class MemoryDecisionAgent {
-    constructor(_llmEndpoint?: string) {
-        // llmEndpoint parameter reserved for future LLM-based decision logic
+    private groq = createGroq({ apiKey: process.env.GROQ_API_KEY || '' });
+
+    /**
+     * Classify query type using LLM when pattern matching fails.
+     * Uses Groq Llama for sub-100ms inference.
+     */
+    async classifyWithLLM(query: string): Promise<{
+        type: QueryType;
+        confidence: number;
+        useMemory: boolean;
+        sectors: MemorySector[];
+    }> {
+        try {
+            const { text } = await generateText({
+                model: this.groq('llama-3.1-8b-instant'),
+                maxTokens: 100,
+                temperature: 0,
+                prompt: `Classify this user query into exactly one category and decide if the user's personal memory/history would help answer it better.
+
+Categories: general_knowledge, technical_advice, debugging, personal_reflection, code_review, learning, creative
+
+Query: "${query.slice(0, 300)}"
+
+Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["semantic"|"episodic"|"procedural"|"emotional"|"reflective"]}`,
+            });
+
+            const parsed = JSON.parse(text.trim());
+            const validTypes = Object.values(QueryType).filter((t) => t !== 'unknown');
+            const type = validTypes.includes(parsed.type)
+                ? (parsed.type as QueryType)
+                : QueryType.UNKNOWN;
+            const validSectors: MemorySector[] = [
+                'episodic',
+                'semantic',
+                'procedural',
+                'emotional',
+                'reflective',
+            ];
+            const sectors = Array.isArray(parsed.sectors)
+                ? (parsed.sectors as string[])
+                      .filter((s): s is MemorySector => validSectors.includes(s as MemorySector))
+                      .slice(0, 3)
+                : SECTOR_MAP[type];
+
+            return {
+                type,
+                confidence: type !== QueryType.UNKNOWN ? 0.85 : 0.5,
+                useMemory: parsed.useMemory !== false,
+                sectors,
+            };
+        } catch {
+            // LLM call failed - fall back to safe defaults
+            return {
+                type: QueryType.UNKNOWN,
+                confidence: 0.4,
+                useMemory: true,
+                sectors: ['semantic', 'procedural'],
+            };
+        }
     }
 
     /**
@@ -199,18 +261,17 @@ export class MemoryDecisionAgent {
             };
         }
 
-        // If matrix says null (unknown), ask LLM
+        // If matrix says null (unknown), ask LLM for intelligent classification
         if (useMemory === null) {
-            // For now, default to using memory for unknown queries
-            // In production, would call LLM here
+            const llmResult = await this.classifyWithLLM(query);
             return {
-                useMemory: true,
-                reasoning: `Query type unknown, defaulting to memory usage for safety`,
-                sectors: SECTOR_MAP[type],
+                useMemory: llmResult.useMemory,
+                reasoning: `LLM classified as '${llmResult.type}' (confidence: ${llmResult.confidence})`,
+                sectors: llmResult.sectors,
                 threshold: 0.7,
-                cost: 0.0001,
-                queryType: type,
-                confidence: 0.6,
+                cost: 0.0001, // ~100 tokens on Groq Llama = negligible
+                queryType: llmResult.type,
+                confidence: llmResult.confidence,
             };
         }
 
@@ -262,65 +323,452 @@ export class MemoryDecisionAgent {
 
     /**
      * Self-reflection: Is the response good enough?
-     * For now returns a simple check, can be enhanced with LLM.
+     * Multi-signal quality scoring that learns what works.
      */
-    reflectOnResponse(query: string, response: string, memoryUsed: boolean): ReflectionResult {
-        // Basic quality checks
-        const responseLength = response.length;
-        const hasContent = responseLength > 50;
-        const isRelevant = this.checkRelevance(query, response);
+    async reflectOnResponse(
+        query: string,
+        response: string,
+        memoryUsed: boolean
+    ): Promise<ReflectionResult & { qualityScore: number }> {
+        // Signal 1: Length adequacy
+        const lengthScore = Math.min(response.length / 300, 1.0); // 300 chars = full score
 
-        if (!hasContent) {
-            return {
-                satisfied: false,
-                reasoning: 'Response is too short',
-                retryStrategy: 'Request more detailed response',
-            };
-        }
+        // Signal 2: Keyword relevance
+        const relevanceScore = this.computeRelevanceScore(query, response);
 
-        if (!isRelevant) {
-            return {
-                satisfied: false,
-                reasoning: 'Response may not address the query directly',
-                retryStrategy: memoryUsed
+        // Signal 3: Specificity (does it contain concrete details vs vague filler?)
+        const specificityScore = this.computeSpecificityScore(response);
+
+        // Signal 4: Memory utilization (if memory was used, was it reflected?)
+        const memoryScore = memoryUsed ? this.computeMemoryUtilization(query, response) : 0.8;
+
+        // Weighted composite
+        const qualityScore = Math.round(
+            (lengthScore * 0.15 +
+                relevanceScore * 0.35 +
+                specificityScore * 0.25 +
+                memoryScore * 0.25) *
+                100
+        );
+
+        const satisfied = qualityScore >= 50;
+
+        let retryStrategy: string | null = null;
+        if (!satisfied) {
+            if (relevanceScore < 0.3) {
+                retryStrategy = memoryUsed
                     ? 'Try without memory context'
-                    : 'Try with memory context',
-            };
+                    : 'Try with memory context';
+            } else if (specificityScore < 0.3) {
+                retryStrategy = 'Request more specific, actionable response';
+            } else if (lengthScore < 0.3) {
+                retryStrategy = 'Request more detailed response';
+            }
         }
 
         return {
-            satisfied: true,
-            reasoning: 'Response appears adequate',
-            retryStrategy: null,
+            satisfied,
+            reasoning: `Quality score: ${qualityScore}/100 (relevance=${Math.round(relevanceScore * 100)}, specificity=${Math.round(specificityScore * 100)}, memory=${Math.round(memoryScore * 100)})`,
+            retryStrategy,
+            qualityScore,
         };
     }
 
     /**
-     * Simple relevance check using keyword overlap.
+     * Compute relevance score using keyword overlap with TF weighting.
      */
-    private checkRelevance(query: string, response: string): boolean {
-        const queryWords = new Set(
-            query
-                .toLowerCase()
-                .split(/\W+/)
-                .filter((w) => w.length > 3)
-        );
-        const responseWords = new Set(
-            response
-                .toLowerCase()
-                .split(/\W+/)
-                .filter((w) => w.length > 3)
-        );
+    private computeRelevanceScore(query: string, response: string): number {
+        const queryWords = query
+            .toLowerCase()
+            .split(/\W+/)
+            .filter((w) => w.length > 3);
+        if (queryWords.length === 0) return 0.5;
 
-        let overlap = 0;
+        const responseText = response.toLowerCase();
+        let matchedWeight = 0;
+        let totalWeight = 0;
+
         for (const word of queryWords) {
-            if (responseWords.has(word)) {
-                overlap++;
+            // Longer words are more informative (TF-IDF proxy)
+            const weight = Math.min(word.length / 5, 1.5);
+            totalWeight += weight;
+            if (responseText.includes(word)) {
+                matchedWeight += weight;
             }
         }
 
-        // At least 30% keyword overlap or response is long enough
-        return overlap >= queryWords.size * 0.3 || response.length > 500;
+        return totalWeight > 0 ? matchedWeight / totalWeight : 0.5;
+    }
+
+    /**
+     * Compute specificity: penalize vague/generic responses.
+     */
+    private computeSpecificityScore(response: string): number {
+        const vagueMarkers = [
+            'it depends',
+            'generally speaking',
+            'in general',
+            'there are many',
+            'you could try',
+            'some people',
+            'it varies',
+            "that's a good question",
+        ];
+
+        const specificMarkers = [
+            /\d+/, // numbers
+            /```/, // code blocks
+            /step \d|first,|second,|third,/i, // ordered steps
+            /https?:\/\//, // urls
+            /\b(because|since|therefore|specifically)\b/i, // causal reasoning
+        ];
+
+        const responseLower = response.toLowerCase();
+        let vagueCount = 0;
+        for (const marker of vagueMarkers) {
+            if (responseLower.includes(marker)) vagueCount++;
+        }
+
+        let specificCount = 0;
+        for (const marker of specificMarkers) {
+            if (marker instanceof RegExp ? marker.test(response) : response.includes(marker)) {
+                specificCount++;
+            }
+        }
+
+        const vagueRatio = vagueCount / vagueMarkers.length;
+        const specificRatio = specificCount / specificMarkers.length;
+
+        return Math.max(0, Math.min(1, 0.5 + specificRatio * 0.5 - vagueRatio * 0.5));
+    }
+
+    /**
+     * Check if memory context was actually used in the response.
+     */
+    private computeMemoryUtilization(_query: string, response: string): number {
+        // Check for personal context indicators in response
+        const personalIndicators = [
+            /\b(you mentioned|you previously|as you said|your|based on our)\b/i,
+            /\b(last time|earlier|remember|previously discussed)\b/i,
+            /\b(your preference|your style|your approach)\b/i,
+        ];
+
+        let matches = 0;
+        for (const pattern of personalIndicators) {
+            if (pattern.test(response)) matches++;
+        }
+
+        // At least 1 indicator = good utilization
+        return Math.min(matches / 2, 1.0);
+    }
+}
+
+// ============================================
+// MEMORY CONSOLIDATION PIPELINE
+// ============================================
+
+export interface ConsolidationResult {
+    merged: number;
+    decayed: number;
+    preserved: number;
+    consolidationScore: number; // NEW: Quality metric (0-100)
+}
+
+/**
+ * Memory consolidation pipeline with sector-aware deduplication and temporal decay.
+ * 1. Dedup: Merge memories with high semantic similarity (grouped by sector)
+ * 2. Decay: Reduce salience of old, unreinforced memories (30+ days threshold)
+ * 3. Preserve: Pin important memories from deletion
+ * 4. Score: Track consolidation quality improvements
+ *
+ * This is a key moat differentiator - competitors store memories,
+ * we intelligently consolidate them like human memory does.
+ */
+export async function consolidateMemories(
+    _userId: string,
+    memories: Array<{
+        id: string;
+        content: string;
+        sector?: string;
+        salience?: number;
+        createdAt?: string;
+    }>,
+    options?: { decayRate?: number; similarityThreshold?: number; maxAge?: number }
+): Promise<ConsolidationResult> {
+    const decayRate = options?.decayRate ?? 0.05; // 5% daily decay
+    const similarityThreshold = options?.similarityThreshold ?? 0.85;
+    const maxAgeDays = options?.maxAge ?? 30; // 30 days max for low-access memories
+
+    let merged = 0;
+    let decayed = 0;
+    let preserved = 0;
+
+    const now = Date.now();
+    const totalMemories = memories.length;
+
+    // Phase 1: Group memories by sector for efficient comparison
+    // Better similarity detection: only compare within same sector
+    const bySector = new Map<string, typeof memories>();
+    for (const mem of memories) {
+        const sector = mem.sector || 'semantic';
+        if (!bySector.has(sector)) bySector.set(sector, []);
+        bySector.get(sector)!.push(mem);
+    }
+
+    // Phase 2: Find duplicates using word-level Jaccard similarity (sector-aware)
+    const toMerge: Array<{ keep: string; remove: string }> = [];
+
+    for (const [, sectorMemories] of bySector) {
+        for (let i = 0; i < sectorMemories.length; i++) {
+            for (let j = i + 1; j < sectorMemories.length; j++) {
+                const similarity = jaccardSimilarity(
+                    sectorMemories[i].content,
+                    sectorMemories[j].content
+                );
+                if (similarity >= similarityThreshold) {
+                    // Keep the one with higher salience
+                    const keepI =
+                        (sectorMemories[i].salience || 0) >= (sectorMemories[j].salience || 0);
+                    toMerge.push({
+                        keep: keepI ? sectorMemories[i].id : sectorMemories[j].id,
+                        remove: keepI ? sectorMemories[j].id : sectorMemories[i].id,
+                    });
+                }
+            }
+        }
+    }
+    merged = toMerge.length;
+
+    // Phase 3: Apply temporal decay with 30-day threshold for low-access memories
+    const toDecay: Array<{ id: string; newSalience: number }> = [];
+    for (const mem of memories) {
+        if (!mem.createdAt) continue;
+        const ageMs = now - new Date(mem.createdAt).getTime();
+        const ageDays = ageMs / (1000 * 60 * 60 * 24);
+
+        // Memories older than 30 days with low salience should decay
+        if (ageDays > maxAgeDays && (mem.salience || 0) < 0.3) {
+            // Mark for decay (will be cleaned up by background job)
+            toDecay.push({ id: mem.id, newSalience: 0 });
+            decayed++;
+        } else if (ageDays > 7) {
+            // Apply gradual decay
+            const decayFactor = Math.max(0.1, 1 - (decayRate * ageDays) / 30);
+            const newSalience = (mem.salience || 0.5) * decayFactor;
+            if (newSalience < (mem.salience || 0.5)) {
+                toDecay.push({ id: mem.id, newSalience });
+                decayed++;
+            }
+        } else {
+            preserved++;
+        }
+    }
+
+    preserved = memories.length - merged - decayed;
+
+    // Execute mutations: delete merged duplicates
+    const removedIds = new Set(toMerge.map((m) => m.remove));
+    for (const id of removedIds) {
+        try {
+            await openMemory.deleteMemory(id);
+        } catch {
+            // Continue if individual delete fails
+        }
+    }
+
+    // Execute mutations: update salience for decayed memories
+    for (const { id, newSalience } of toDecay) {
+        if (removedIds.has(id)) continue; // Already removed
+        try {
+            if (newSalience <= 0) {
+                await openMemory.deleteMemory(id);
+            } else {
+                await openMemory.updateMemory(id, '', {
+                    metadata: { salience: newSalience },
+                });
+            }
+        } catch {
+            // Continue if individual update fails
+        }
+    }
+
+    // Phase 4: Compute consolidation score
+    // Higher score = more efficient memory set (fewer duplicates, better signal/noise)
+    const consolidationScore = computeConsolidationScore(totalMemories, merged, decayed, preserved);
+
+    return { merged, decayed, preserved, consolidationScore };
+}
+
+/**
+ * Compute consolidation quality score (0-100).
+ * Higher = better consolidation (removed noise, kept signal).
+ */
+function computeConsolidationScore(
+    total: number,
+    merged: number,
+    decayed: number,
+    preserved: number
+): number {
+    if (total === 0) return 0;
+
+    // Reward duplicate removal and decay of stale memories
+    const deduplicationBonus = (merged / total) * 40; // Up to 40 points for dedup
+    const decayBonus = (decayed / total) * 30; // Up to 30 points for decay
+    const preservationBonus = (preserved / total) * 30; // Up to 30 points for keeping good memories
+
+    return Math.min(100, Math.round(deduplicationBonus + decayBonus + preservationBonus));
+}
+
+/**
+ * Word-level Jaccard similarity for deduplication.
+ * Fast O(n) comparison without embedding calls.
+ */
+function jaccardSimilarity(a: string, b: string): number {
+    const wordsA = new Set(
+        a
+            .toLowerCase()
+            .split(/\W+/)
+            .filter((w) => w.length > 2)
+    );
+    const wordsB = new Set(
+        b
+            .toLowerCase()
+            .split(/\W+/)
+            .filter((w) => w.length > 2)
+    );
+
+    if (wordsA.size === 0 && wordsB.size === 0) return 1;
+    if (wordsA.size === 0 || wordsB.size === 0) return 0;
+
+    let intersection = 0;
+    for (const word of wordsA) {
+        if (wordsB.has(word)) intersection++;
+    }
+
+    const union = wordsA.size + wordsB.size - intersection;
+    return union > 0 ? intersection / union : 0;
+}
+
+// ============================================
+// AUTO-EXTRACTION: Learn from conversations
+// ============================================
+
+/**
+ * Extract memorable facts from a chat exchange.
+ * Runs after each conversation turn to automatically build the user's memory.
+ * This is a core moat: competitors require manual memory management,
+ * we learn passively from every conversation.
+ */
+export async function extractMemoriesFromExchange(
+    userId: string,
+    userMessage: string,
+    assistantResponse: string
+): Promise<{ extracted: string[]; sector: string }[]> {
+    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY || '' });
+
+    // Skip extraction for very short exchanges
+    if (userMessage.length < 20 && assistantResponse.length < 50) return [];
+
+    try {
+        const { text } = await generateText({
+            model: groq('llama-3.1-8b-instant'),
+            maxTokens: 300,
+            temperature: 0,
+            prompt: `Extract personal facts, preferences, or skills from this conversation exchange. Only extract information about the USER, not general facts.
+
+User: "${userMessage.slice(0, 500)}"
+Assistant: "${assistantResponse.slice(0, 500)}"
+
+If there are memorable facts about the user, respond with JSON array:
+[{"fact":"<concise fact about the user>","sector":"semantic|episodic|procedural|emotional"}]
+
+If nothing memorable, respond with: []
+
+Examples of extractable facts:
+- "User prefers TypeScript over JavaScript" (semantic)
+- "User is building a startup in healthcare" (semantic)
+- "User felt frustrated about deployment issues" (emotional)
+- "User's workflow: writes tests before implementation" (procedural)
+
+JSON only:`,
+        });
+
+        const parsed = JSON.parse(text.trim());
+        if (!Array.isArray(parsed) || parsed.length === 0) return [];
+
+        const results: { extracted: string[]; sector: string }[] = [];
+        const validSectors = ['semantic', 'episodic', 'procedural', 'emotional'];
+
+        for (const item of parsed.slice(0, 3)) {
+            // Max 3 facts per exchange
+            if (!item.fact || typeof item.fact !== 'string') continue;
+            if (item.fact.length < 5 || item.fact.length > 500) continue;
+
+            const sector = validSectors.includes(item.sector) ? item.sector : 'semantic';
+
+            // Store via OpenMemory
+            try {
+                await openMemory.addMemory(item.fact, userId, {
+                    sector,
+                    metadata: { source: 'auto_extract', confidence: 0.7 },
+                });
+                results.push({ extracted: [item.fact], sector });
+            } catch {
+                // Non-blocking
+            }
+        }
+
+        return results;
+    } catch {
+        return []; // Extraction is best-effort, never blocks the response
+    }
+}
+
+/**
+ * Check if user's memory needs automated consolidation.
+ * Triggers consolidation when memory count exceeds threshold.
+ * This prevents unbounded memory growth and keeps the memory set high-quality.
+ */
+export async function shouldAutoConsolidate(userId: string): Promise<boolean> {
+    try {
+        const memories = await openMemory.listMemories(userId, { limit: 1 });
+        // Trigger consolidation at 500+ memories (checked via total count if available)
+        // For now, use a simple heuristic: if we have memories, periodically consolidate
+        const lastConsolidation = autoConsolidationTracker.get(userId);
+        const CONSOLIDATION_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once per day max
+        if (lastConsolidation && Date.now() - lastConsolidation < CONSOLIDATION_INTERVAL_MS) {
+            return false;
+        }
+        return memories.length > 0;
+    } catch {
+        return false;
+    }
+}
+
+// Track last consolidation time per user (in-memory, resets on deploy)
+const autoConsolidationTracker = new Map<string, number>();
+
+/**
+ * Run automated consolidation if needed (fire-and-forget).
+ * Called after memory operations to keep the memory set clean.
+ */
+export async function maybeAutoConsolidate(userId: string): Promise<void> {
+    if (!(await shouldAutoConsolidate(userId))) return;
+
+    autoConsolidationTracker.set(userId, Date.now());
+
+    try {
+        const memories = await openMemory.listMemories(userId, { limit: 200 });
+        if (memories.length >= 50) {
+            const result = await consolidateMemories(userId, memories);
+            if (result.merged > 0 || result.decayed > 0) {
+                console.log(
+                    `[Memory] Auto-consolidation for ${userId}: merged=${result.merged}, decayed=${result.decayed}, score=${result.consolidationScore}`
+                );
+            }
+        }
+    } catch (error) {
+        console.error('[Memory] Auto-consolidation failed:', error);
     }
 }
 

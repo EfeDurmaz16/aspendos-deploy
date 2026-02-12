@@ -1,19 +1,19 @@
 'use client';
 
-import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-    Bell,
-    Clock,
-    Check,
-    X,
     AlarmClock,
-    ChevronRight,
+    Bell,
     CalendarClock,
+    Check,
+    ChevronRight,
+    Clock,
     Sparkles,
+    X,
 } from 'lucide-react';
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 /**
  * YULA OS PAC Notification Component
@@ -106,17 +106,13 @@ export function PACNotification({
                 <div
                     className={cn(
                         'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
-                        isOverdue
-                            ? 'bg-rose-100 dark:bg-rose-900/30'
-                            : 'bg-feature-pac/10'
+                        isOverdue ? 'bg-rose-100 dark:bg-rose-900/30' : 'bg-feature-pac/10'
                     )}
                 >
                     <Bell
                         className={cn(
                             'w-5 h-5',
-                            isOverdue
-                                ? 'text-rose-600 dark:text-rose-400'
-                                : 'text-feature-pac'
+                            isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-feature-pac'
                         )}
                     />
                 </div>
@@ -271,9 +267,7 @@ export function PACNotificationList({
                 <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-3">
                     <CalendarClock className="w-6 h-6 text-zinc-400" />
                 </div>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    No pending reminders
-                </p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">No pending reminders</p>
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
                     YULA will notify you when you make commitments
                 </p>
@@ -308,13 +302,7 @@ interface PACToastProps {
     onExpand: () => void;
 }
 
-export function PACToast({
-    reminder,
-    onComplete,
-    onDismiss,
-    onSnooze,
-    onExpand,
-}: PACToastProps) {
+export function PACToast({ reminder, onComplete, onDismiss, onSnooze, onExpand }: PACToastProps) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -355,18 +343,10 @@ export function PACToast({
                         <Check className="w-3 h-3 mr-1" />
                         Done
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onSnooze(reminder.id, 60)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => onSnooze(reminder.id, 60)}>
                         1h
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onExpand}
-                    >
+                    <Button variant="ghost" size="sm" onClick={onExpand}>
                         <ChevronRight className="w-4 h-4" />
                     </Button>
                 </div>

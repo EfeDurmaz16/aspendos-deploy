@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 
 interface NavLink {
     label: string;
@@ -33,34 +34,55 @@ interface ResponsiveHeroBannerProps {
 }
 
 const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
-    logoUrl = "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/febf2421-4a9a-42d6-871d-ff4f9518021c_1600w.png",
-    backgroundImageUrl = "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/0e2dbea0-c0a9-413f-a57b-af279633c0df_3840w.jpg",
+    logoUrl = 'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/febf2421-4a9a-42d6-871d-ff4f9518021c_1600w.png',
+    backgroundImageUrl:
+        _backgroundImageUrl = 'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/0e2dbea0-c0a9-413f-a57b-af279633c0df_3840w.jpg',
     navLinks = [
-        { label: "Home", href: "#", isActive: true },
-        { label: "Missions", href: "#" },
-        { label: "Destinations", href: "#" },
-        { label: "Technology", href: "#" },
-        { label: "Book Flight", href: "#" }
+        { label: 'Home', href: '#', isActive: true },
+        { label: 'Missions', href: '#' },
+        { label: 'Destinations', href: '#' },
+        { label: 'Technology', href: '#' },
+        { label: 'Book Flight', href: '#' },
     ],
-    ctaButtonText = "Reserve Seat",
-    ctaButtonHref = "#",
-    badgeLabel = "New",
-    badgeText = "First Commercial Flight to Mars 2026",
-    title = "Journey Beyond Earth",
-    titleLine2 = "Into the Cosmos",
-    description = "Experience the cosmos like never before. Our advanced spacecraft and cutting-edge technology make interplanetary travel accessible, safe, and unforgettable.",
-    primaryButtonText = "Book Your Journey",
-    primaryButtonHref = "#",
-    secondaryButtonText = "Watch Launch",
-    secondaryButtonHref = "#",
-    partnersTitle = "Partnering with leading space agencies worldwide",
+    ctaButtonText = 'Reserve Seat',
+    ctaButtonHref = '#',
+    badgeLabel = 'New',
+    badgeText = 'First Commercial Flight to Mars 2026',
+    title = 'Journey Beyond Earth',
+    titleLine2 = 'Into the Cosmos',
+    description = 'Experience the cosmos like never before. Our advanced spacecraft and cutting-edge technology make interplanetary travel accessible, safe, and unforgettable.',
+    primaryButtonText = 'Book Your Journey',
+    primaryButtonHref = '#',
+    secondaryButtonText = 'Watch Launch',
+    secondaryButtonHref = '#',
+    partnersTitle = 'Partnering with leading space agencies worldwide',
     partners = [
-        { logoUrl: "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/f7466370-2832-4fdd-84c2-0932bb0dd850_800w.png", href: "#" },
-        { logoUrl: "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/0a9a71ec-268b-4689-a510-56f57e9d4f13_1600w.png", href: "#" },
-        { logoUrl: "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/a9ed4369-748a-49f8-9995-55d6c876bbff_1600w.png", href: "#" },
-        { logoUrl: "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/0d8966a4-8525-4e11-9d5d-2d7390b2c798_1600w.png", href: "#" },
-        { logoUrl: "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/2ed33c8b-b8b2-4176-967f-3d785fed07d8_1600w.png", href: "#" }
-    ]
+        {
+            logoUrl:
+                'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/f7466370-2832-4fdd-84c2-0932bb0dd850_800w.png',
+            href: '#',
+        },
+        {
+            logoUrl:
+                'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/0a9a71ec-268b-4689-a510-56f57e9d4f13_1600w.png',
+            href: '#',
+        },
+        {
+            logoUrl:
+                'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/a9ed4369-748a-49f8-9995-55d6c876bbff_1600w.png',
+            href: '#',
+        },
+        {
+            logoUrl:
+                'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/0d8966a4-8525-4e11-9d5d-2d7390b2c798_1600w.png',
+            href: '#',
+        },
+        {
+            logoUrl:
+                'https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/2ed33c8b-b8b2-4176-967f-3d785fed07d8_1600w.png',
+            href: '#',
+        },
+    ],
 }) => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -84,8 +106,11 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                                     <a
                                         key={index}
                                         href={link.href}
-                                        className={`px-3 py-2 text-sm font-medium hover:text-zinc-900 dark:hover:text-white font-sans transition-colors ${link.isActive ? 'text-zinc-900 dark:text-white font-semibold' : 'text-zinc-600 dark:text-zinc-400'
-                                            }`}
+                                        className={`px-3 py-2 text-sm font-medium hover:text-zinc-900 dark:hover:text-white font-sans transition-colors ${
+                                            link.isActive
+                                                ? 'text-zinc-900 dark:text-white font-semibold'
+                                                : 'text-zinc-600 dark:text-zinc-400'
+                                        }`}
                                     >
                                         {link.label}
                                     </a>
@@ -95,7 +120,18 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                                     className="ml-1 inline-flex items-center gap-2 rounded-full bg-zinc-900 dark:bg-zinc-50 px-3.5 py-2 text-sm font-medium text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 font-sans transition-colors"
                                 >
                                     {ctaButtonText}
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="h-4 w-4"
+                                    >
                                         <path d="M7 7h10v10" />
                                         <path d="M7 17 17 7" />
                                     </svg>
@@ -109,7 +145,18 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                             aria-expanded={mobileMenuOpen}
                             aria-label="Toggle menu"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-white/90">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="h-5 w-5 text-white/90"
+                            >
                                 <path d="M4 5h16" />
                                 <path d="M4 12h16" />
                                 <path d="M4 19h16" />
@@ -147,7 +194,18 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                                 className="inline-flex items-center gap-2 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-sm font-medium text-white dark:text-zinc-900 bg-zinc-900 dark:bg-white rounded-full py-3 px-5 font-sans transition-colors shadow-lg"
                             >
                                 {primaryButtonText}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="h-4 w-4"
+                                >
                                     <path d="M5 12h14" />
                                     <path d="m12 5 7 7-7 7" />
                                 </svg>
@@ -157,7 +215,18 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                                 className="inline-flex items-center gap-2 rounded-full bg-transparent px-5 py-3 text-sm font-medium text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 font-sans transition-colors"
                             >
                                 {secondaryButtonText}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="w-4 h-4"
+                                >
                                     <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />
                                 </svg>
                             </a>

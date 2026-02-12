@@ -1,14 +1,7 @@
 'use client';
 
-import {
-    House,
-    ChatCircle,
-    Brain,
-    Tag,
-    User,
-    Compass
-} from '@phosphor-icons/react';
-import { useRouter, usePathname } from 'next/navigation';
+import { Brain, ChatCircle, Compass, House, Tag, User } from '@phosphor-icons/react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Dock } from '@/components/ui/dock';
 
 import { SkyToggle } from '@/components/ui/sky-toggle';

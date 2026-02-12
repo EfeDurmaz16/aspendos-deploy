@@ -89,10 +89,10 @@ export default function StyleguidePage() {
                     {/* Zinc Grayscale */}
                     <div className="mb-10">
                         <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-4">
-                            Zinc Grayscale
+                            Gray Scale
                         </h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-3">
-                            {Object.entries(colors.zinc).map(([name, value]) => (
+                            {Object.entries(colors.gray).map(([name, value]) => (
                                 <ColorSwatch
                                     key={name}
                                     name={name}
@@ -147,23 +147,18 @@ export default function StyleguidePage() {
                             Model Provider Accents
                         </h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
-                            {Object.entries(colors.modelProviders).map(([provider, vals]) => (
-                                <div key={provider} className="flex flex-col gap-2">
-                                    <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 capitalize">
-                                        {provider}
+                            {Object.entries(colors.models).map(([model, color]) => (
+                                <div key={model} className="flex flex-col gap-2">
+                                    <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                                        {model}
                                     </span>
-                                    <div
-                                        className="h-12 rounded-lg flex items-center justify-center"
-                                        style={{ backgroundColor: vals.background }}
-                                    >
+                                    <div className="h-12 rounded-lg flex items-center justify-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                                         <div
                                             className="w-6 h-6 rounded-full"
-                                            style={{ backgroundColor: vals.primary }}
+                                            style={{ backgroundColor: color }}
                                         />
                                     </div>
-                                    <span className="font-mono text-xs text-zinc-500">
-                                        {vals.primary}
-                                    </span>
+                                    <span className="font-mono text-xs text-zinc-500">{color}</span>
                                 </div>
                             ))}
                         </div>
@@ -224,13 +219,14 @@ export default function StyleguidePage() {
                                     <span
                                         className="text-zinc-900 dark:text-zinc-50"
                                         style={{
-                                            fontFamily: style.fontFamily,
+                                            fontFamily: typography.fontFamily.sans,
                                             fontSize: style.fontSize,
                                             fontWeight: style.fontWeight,
-                                            lineHeight: (style as { lineHeight?: number })
-                                                .lineHeight,
-                                            letterSpacing: (style as { letterSpacing?: string })
-                                                .letterSpacing,
+                                            lineHeight: style.lineHeight,
+                                            letterSpacing:
+                                                'letterSpacing' in style
+                                                    ? style.letterSpacing
+                                                    : undefined,
                                         }}
                                     >
                                         {name.includes('code')
@@ -370,7 +366,6 @@ export default function StyleguidePage() {
                             <tbody>
                                 {(
                                     [
-                                        { name: 'xs', target: 'Mobile portrait' },
                                         { name: 'sm', target: 'Mobile landscape' },
                                         { name: 'md', target: 'Tablet' },
                                         { name: 'lg', target: 'Small desktop' },

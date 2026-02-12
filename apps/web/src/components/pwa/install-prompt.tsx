@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Download } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { usePWA } from '@/hooks/use-pwa';
 

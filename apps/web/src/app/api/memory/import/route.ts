@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import {
+    type AspendosExport,
     detectExportFormat,
-    parseChatGPTExport,
-    parseClaudeExport,
     importAspendosExport,
     ingestConversations,
-    type AspendosExport,
+    parseChatGPTExport,
+    parseClaudeExport,
 } from '@/lib/memory/ingest';
 
 /**
@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
 
         if (format === 'unknown') {
             return NextResponse.json(
-                { error: 'Unknown export format. Please upload a ChatGPT, Claude, or Aspendos export file.' },
+                {
+                    error: 'Unknown export format. Please upload a ChatGPT, Claude, or Aspendos export file.',
+                },
                 { status: 400 }
             );
         }
@@ -68,9 +70,6 @@ export async function POST(req: NextRequest) {
         });
     } catch (error) {
         console.error('[API /memory/import] Error:', error);
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Import failed' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Import failed' }, { status: 500 });
     }
 }

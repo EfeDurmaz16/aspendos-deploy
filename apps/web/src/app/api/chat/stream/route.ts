@@ -1,8 +1,8 @@
 import { prisma } from '@aspendos/db';
 import type { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { createEmbedding, createUnifiedStreamingCompletion, executeHybridRoute } from '@/lib/ai';
 import { auth } from '@/lib/auth';
-import { createEmbedding, executeHybridRoute, createUnifiedStreamingCompletion } from '@/lib/ai';
 import { storeConversationEmbedding } from '@/lib/services/qdrant';
 
 // ============================================
@@ -62,16 +62,31 @@ export async function POST(req: NextRequest) {
             message,
             model,
             chatId,
-            temperature = 0.7,
-            maxTokens = 4000,
+            temperature: rawTemperature = 0.7,
+            maxTokens: rawMaxTokens = 4000,
             skipRouter = false,
         } = body;
+
+        // Clamp user-controlled parameters to safe bounds
+        const temperature = Math.max(0, Math.min(2, Number(rawTemperature) || 0.7));
+        const maxTokens = Math.min(Math.max(1, Math.floor(Number(rawMaxTokens) || 4000)), 8000);
 
         if (!message?.trim()) {
             return new Response(JSON.stringify({ error: 'Message is required' }), {
                 status: 400,
                 headers: { 'Content-Type': 'application/json' },
             });
+        }
+
+        // Cap input message length to prevent cost runaway (32K chars ~ 8K tokens)
+        if (message.length > 32000) {
+            return new Response(
+                JSON.stringify({ error: 'Message too long. Maximum 32,000 characters.' }),
+                {
+                    status: 400,
+                    headers: { 'Content-Type': 'application/json' },
+                }
+            );
         }
 
         // Get user from database
@@ -87,10 +102,23 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // Check billing limits
-        if (user.billingAccount && user.billingAccount.chatsRemaining <= 0) {
+        // ========================================
+        // MODEL-TIER GATING
+        // ========================================
+        const TIER_ALLOWED_MODELS: Record<string, string[]> = {
+            FREE: ['gpt-4o-mini', 'gemini-flash', 'gemini-2.0-flash'],
+            STARTER: ['gpt-4o-mini', 'claude-3-haiku', 'gemini-flash', 'gemini-2.0-flash'],
+            PRO: [], // Empty array = all models allowed
+            ULTRA: [], // Empty array = all models allowed
+        };
+
+        const userTier = user.tier || 'FREE';
+        const allowedModels = TIER_ALLOWED_MODELS[userTier];
+
+        // If user explicitly requests a model, validate tier access
+        if (model && allowedModels.length > 0 && !allowedModels.includes(model)) {
             return new Response(
-                JSON.stringify({ error: 'Chat limit reached. Please upgrade your plan.' }),
+                JSON.stringify({ error: 'Model not available on your plan. Please upgrade.' }),
                 {
                     status: 403,
                     headers: { 'Content-Type': 'application/json' },
@@ -98,16 +126,66 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Get recent messages for context
+        // Check daily cost ceiling to prevent runaway spend
+        if (user.billingAccount) {
+            const dailyUsed = user.billingAccount.creditUsed || 0;
+            const monthlyCredit = user.billingAccount.monthlyCredit || 0;
+            const dailyCeiling = monthlyCredit / 25; // ~monthly / 25 working days
+            if (dailyCeiling > 0 && dailyUsed >= monthlyCredit) {
+                return new Response(
+                    JSON.stringify({
+                        error: 'Monthly token budget exhausted. Please upgrade or wait for reset.',
+                    }),
+                    { status: 403, headers: { 'Content-Type': 'application/json' } }
+                );
+            }
+        }
+
+        // Check billing limits with atomic decrement to prevent race conditions
+        if (user.billingAccount) {
+            const result = await prisma.billingAccount.updateMany({
+                where: { userId: user.id, chatsRemaining: { gt: 0 } },
+                data: { chatsRemaining: { decrement: 1 } },
+            });
+            if (result.count === 0) {
+                return new Response(
+                    JSON.stringify({ error: 'Chat limit reached. Please upgrade your plan.' }),
+                    {
+                        status: 403,
+                        headers: { 'Content-Type': 'application/json' },
+                    }
+                );
+            }
+        }
+
+        // Get recent messages for context (with IDOR protection)
         let recentMessages: string[] = [];
         if (chatId) {
+            // Verify chat ownership before accessing messages
+            const chatOwnership = await prisma.chat.findFirst({
+                where: { id: chatId, userId: session.userId },
+                select: { id: true },
+            });
+
+            if (!chatOwnership) {
+                return new Response(JSON.stringify({ error: 'Chat not found or access denied' }), {
+                    status: 403,
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            }
+
             const recent = await prisma.message.findMany({
-                where: { chatId },
+                where: { chatId, userId: session.userId },
                 orderBy: { createdAt: 'desc' },
                 take: 6,
                 select: { role: true, content: true },
             });
-            recentMessages = recent.reverse().map((m) => `${m.role}: ${m.content.slice(0, 200)}`);
+            recentMessages = recent
+                .reverse()
+                .map(
+                    (m: { role: string; content: string }) =>
+                        `${m.role}: ${m.content.slice(0, 200)}`
+                );
         }
 
         const sse = createSSEEncoder();
@@ -133,9 +211,11 @@ export async function POST(req: NextRequest) {
                             content: `Route: ${decision.type}`,
                             metadata: {
                                 decision: decision.type,
-                                model: decision.type === 'direct_reply' || decision.type === 'rag_search'
-                                    ? (decision as { model: string }).model
-                                    : undefined,
+                                model:
+                                    decision.type === 'direct_reply' ||
+                                    decision.type === 'rag_search'
+                                        ? (decision as { model: string }).model
+                                        : undefined,
                                 reason: decision.reason,
                             },
                         })
@@ -165,10 +245,19 @@ export async function POST(req: NextRequest) {
                             ? `You are Aspendos, a helpful AI assistant with persistent memory. You have context from previous conversations:\n\n${memoryContext}\n\nUse this context naturally when relevant.`
                             : 'You are Aspendos, a helpful AI assistant with persistent memory across conversations.';
 
-                        const selectedModel = (decision as { model: string }).model || 'gpt-4o-mini';
+                        let selectedModel = (decision as { model: string }).model || 'gpt-4o-mini';
+
+                        // Override model if user's tier doesn't allow it
+                        if (allowedModels.length > 0 && !allowedModels.includes(selectedModel)) {
+                            selectedModel = 'gpt-4o-mini';
+                        }
+
                         usedModel = selectedModel;
 
-                        const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+                        const messages: {
+                            role: 'system' | 'user' | 'assistant';
+                            content: string;
+                        }[] = [
                             { role: 'system', content: systemPrompt },
                             { role: 'user', content: message },
                         ];
@@ -208,7 +297,11 @@ export async function POST(req: NextRequest) {
                         }
                     } else if (decision.type === 'tool_call') {
                         // Handle tool calls
-                        const toolDecision = decision as { tool: string; params: Record<string, unknown>; reason: string };
+                        const toolDecision = decision as {
+                            tool: string;
+                            params: Record<string, unknown>;
+                            reason: string;
+                        };
                         fullContent = `[Tool call requested: ${toolDecision.tool}]\n\nThis feature is being implemented. Tool: ${toolDecision.tool}, Params: ${JSON.stringify(toolDecision.params)}`;
                         usedModel = 'system';
 
@@ -219,19 +312,47 @@ export async function POST(req: NextRequest) {
                             })
                         );
                     } else if (decision.type === 'proactive_schedule') {
-                        // Handle proactive scheduling
-                        const scheduleDecision = decision as { schedule: { time: string; action: string }; reason: string };
-                        fullContent = `[Proactive reminder scheduled]\n\nI'll remind you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.\n\n(PAC system will handle this notification)`;
-                        usedModel = 'system';
+                        // Handle proactive scheduling - connect to real PAC queue
+                        const scheduleDecision = decision as {
+                            schedule: { time: string; action: string };
+                            reason: string;
+                        };
 
+                        // Attempt to schedule via PAC service
+                        try {
+                            const apiBase =
+                                process.env.NEXT_PUBLIC_API_URL ||
+                                process.env.API_URL ||
+                                'http://localhost:8080';
+                            const pacResponse = await fetch(`${apiBase}/api/pac/reminders`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    Cookie: req.headers.get('cookie') || '',
+                                },
+                                body: JSON.stringify({
+                                    content: scheduleDecision.schedule.action,
+                                    triggerAt: scheduleDecision.schedule.time,
+                                    type: 'EXPLICIT',
+                                }),
+                            });
+
+                            if (pacResponse.ok) {
+                                fullContent = `I've scheduled a reminder for you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.\n\nYou'll be notified when it's time.`;
+                            } else {
+                                fullContent = `I tried to schedule a reminder for "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}, but the scheduling service returned an error. Please try setting the reminder manually.`;
+                            }
+                        } catch {
+                            fullContent = `I'll remind you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.\n\nNote: The reminder service is temporarily unavailable. Please set a manual reminder as backup.`;
+                        }
+
+                        usedModel = 'system';
                         controller.enqueue(
                             sse.encode({
                                 type: 'text',
                                 content: fullContent,
                             })
                         );
-
-                        // TODO: Store in PAC queue
                     }
 
                     // ========================================
@@ -240,64 +361,87 @@ export async function POST(req: NextRequest) {
                     controller.enqueue(sse.done());
 
                     // Store message and update billing (async)
-                    const tokensIn = Math.ceil(message.length / 4);
-                    const tokensOut = Math.ceil(fullContent.length / 4);
+                    // Approximate token count: ~3.5 chars/token for English, ~2 for code/multilingual
+                    const charsPerToken = /[\u0080-\uffff]/.test(message) ? 2 : 3.5;
+                    const tokensIn = Math.ceil(message.length / charsPerToken);
+                    const tokensOut = Math.ceil(fullContent.length / charsPerToken);
+
+                    // Calculate approximate cost based on model and tokens
+                    const costPerInputToken = usedModel.includes('gpt-4o-mini')
+                        ? 0.00000015
+                        : usedModel.includes('gpt-4o')
+                          ? 0.0000025
+                          : usedModel.includes('claude')
+                            ? 0.000003
+                            : usedModel.includes('gemini')
+                              ? 0.0000001
+                              : 0.000001;
+                    const costPerOutputToken = costPerInputToken * 4;
+                    const estimatedCost =
+                        tokensIn * costPerInputToken + tokensOut * costPerOutputToken;
 
                     if (chatId) {
-                        prisma.message
-                            .createMany({
-                                data: [
-                                    { chatId, userId: user.id, role: 'user', content: message },
-                                    {
-                                        chatId,
-                                        userId: user.id,
-                                        role: 'assistant',
-                                        content: fullContent,
-                                        modelUsed: usedModel,
-                                        tokensIn,
-                                        tokensOut,
-                                    },
-                                ],
-                            })
-                            .catch((err) => console.error('[Chat] Failed to save messages:', err));
-
-                        prisma.chat
-                            .update({
-                                where: { id: chatId },
-                                data: { updatedAt: new Date() },
-                            })
-                            .catch(() => {});
+                        // Batch DB writes in a transaction for data consistency
+                        prisma
+                            .$transaction([
+                                prisma.message.createMany({
+                                    data: [
+                                        { chatId, userId: user.id, role: 'user', content: message },
+                                        {
+                                            chatId,
+                                            userId: user.id,
+                                            role: 'assistant',
+                                            content: fullContent,
+                                            modelUsed: usedModel,
+                                            tokensIn,
+                                            tokensOut,
+                                            costUsd: estimatedCost,
+                                        },
+                                    ],
+                                }),
+                                prisma.chat.updateMany({
+                                    where: { id: chatId, userId: user.id },
+                                    data: { updatedAt: new Date() },
+                                }),
+                            ])
+                            .catch((err: unknown) =>
+                                console.error('[Chat] Failed to save messages:', err)
+                            );
                     }
 
-                    // Store conversation embedding
-                    try {
-                        const exchangeText = `User: ${message}\nAssistant: ${fullContent.slice(0, 500)}`;
-                        const exchangeEmbedding = await createEmbedding(exchangeText);
+                    // Fire-and-forget: don't block response on embedding
+                    void (async () => {
+                        try {
+                            const exchangeText = `User: ${message}\nAssistant: ${fullContent.slice(0, 500)}`;
+                            const exchangeEmbedding = await createEmbedding(exchangeText);
 
-                        await storeConversationEmbedding({
-                            id: uuidv4(),
-                            vector: exchangeEmbedding,
-                            userId: user.id,
-                            conversationId: chatId || 'unknown',
-                            messageId: uuidv4(),
-                            content: exchangeText,
-                            role: 'exchange',
-                        });
-                    } catch (error) {
-                        console.warn('[Chat] Failed to store embedding:', error);
-                    }
+                            await storeConversationEmbedding({
+                                id: uuidv4(),
+                                vector: exchangeEmbedding,
+                                userId: user.id,
+                                conversationId: chatId || 'unknown',
+                                messageId: uuidv4(),
+                                content: exchangeText,
+                                role: 'exchange',
+                            });
+                        } catch (error) {
+                            console.error('Background embedding failed:', error);
+                        }
+                    })();
 
-                    // Update billing
+                    // Update credit usage in K-tokens (consistent with billing service)
                     if (user.billingAccount) {
+                        const kTokensUsed = Math.ceil((tokensIn + tokensOut) / 1000);
                         prisma.billingAccount
                             .update({
                                 where: { userId: user.id },
                                 data: {
-                                    chatsRemaining: { decrement: 1 },
-                                    creditUsed: { increment: tokensIn + tokensOut },
+                                    creditUsed: { increment: kTokensUsed },
                                 },
                             })
-                            .catch((err) => console.error('[Chat] Failed to update billing:', err));
+                            .catch((err: unknown) =>
+                                console.error('[Chat] Failed to update billing credit:', err)
+                            );
                     }
 
                     controller.close();
@@ -306,7 +450,7 @@ export async function POST(req: NextRequest) {
                     controller.enqueue(
                         sse.encode({
                             type: 'error',
-                            content: error instanceof Error ? error.message : 'Streaming failed',
+                            content: 'Streaming failed',
                         })
                     );
                     controller.close();

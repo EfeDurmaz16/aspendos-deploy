@@ -21,8 +21,10 @@ export const metadata: Metadata = generatePageMetadata(
 const perplexityData: CompetitorData = {
     name: 'Perplexity',
     slug: 'perplexity',
-    tagline: 'YULA offers deep conversational AI with persistent memory, while Perplexity focuses on quick search answers. Get the best of both worlds.',
-    description: 'Perplexity is an AI-powered search engine that provides concise answers with citations from web sources.',
+    tagline:
+        'YULA offers deep conversational AI with persistent memory, while Perplexity focuses on quick search answers. Get the best of both worlds.',
+    description:
+        'Perplexity is an AI-powered search engine that provides concise answers with citations from web sources.',
     logoColor: 'bg-teal-500',
     strengths: [
         'Excellent for quick research with citations',

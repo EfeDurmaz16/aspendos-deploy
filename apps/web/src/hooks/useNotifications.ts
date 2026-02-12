@@ -261,7 +261,6 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 
         eventSource.onopen = () => {
             setIsSSEConnected(true);
-            console.log('[SSE] Connected to notification stream');
         };
 
         eventSource.onerror = (err) => {
@@ -275,10 +274,6 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
                 }
             }, 5000);
         };
-
-        eventSource.addEventListener('connected', (e) => {
-            console.log('[SSE] Server confirmed connection:', e.data);
-        });
 
         eventSource.addEventListener('heartbeat', () => {
             // Connection still alive
@@ -322,7 +317,16 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
     }, []);
 
     const markNotificationAsRead = useCallback(async (taskId: string) => {
-        // TODO: Send to backend to update notification log
+        // Persist to backend
+        try {
+            await fetch('/api/notifications', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId, status: 'read' }),
+            });
+        } catch {
+            // Best-effort persistence - still remove from UI
+        }
         setNotifications((prev) => prev.filter((n) => n.taskId !== taskId));
     }, []);
 

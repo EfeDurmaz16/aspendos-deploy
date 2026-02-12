@@ -35,9 +35,20 @@ export async function GET() {
 
         const billing = user.billingAccount;
 
+        // Tier-based chat limits for accurate usage calculation
+        const TIER_CHAT_LIMITS: Record<string, number> = {
+            FREE: 100,
+            STARTER: 300,
+            PRO: 1500,
+            ULTRA: 5000,
+        };
+        const tierChatLimit = TIER_CHAT_LIMITS[user.tier] || 300;
+
         // Calculate usage percentages
         const tokenUsagePercent = Math.round((billing.creditUsed / billing.monthlyCredit) * 100);
-        const chatsUsagePercent = Math.round(((300 - billing.chatsRemaining) / 300) * 100); // Approx based on starter
+        const chatsUsagePercent = Math.round(
+            ((tierChatLimit - billing.chatsRemaining) / tierChatLimit) * 100
+        );
 
         // Days until reset
         const now = new Date();
@@ -77,17 +88,24 @@ export async function GET() {
             },
 
             subscription: {
-                polarCustomerId: billing.polarCustomerId,
-                subscriptionId: billing.subscriptionId,
+                hasSubscription: !!(billing.polarCustomerId && billing.subscriptionId),
             },
 
-            recentActivity: billing.creditHistory.map((log) => ({
-                id: log.id,
-                amount: log.amount,
-                reason: log.reason,
-                metadata: log.metadata,
-                createdAt: log.createdAt,
-            })),
+            recentActivity: billing.creditHistory.map(
+                (log: {
+                    id: string;
+                    amount: number;
+                    reason: string;
+                    metadata: unknown;
+                    createdAt: Date;
+                }) => ({
+                    id: log.id,
+                    amount: log.amount,
+                    reason: log.reason,
+                    metadata: log.metadata,
+                    createdAt: log.createdAt,
+                })
+            ),
         });
     } catch (error) {
         console.error('[API /billing] Error:', error);

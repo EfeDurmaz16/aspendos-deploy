@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
+// biome-ignore lint/suspicious/noShadowRestrictedNames: Next.js error boundary convention
 export default function Error({
     error,
     reset,
@@ -41,7 +42,7 @@ export default function Error({
 
                 {/* Error Message */}
                 <div className="space-y-2">
-                    <h1 className="text-2xl font-semibold font-[var(--font-playfair)] text-foreground">
+                    <h1 className="text-2xl font-semibold text-foreground tracking-tight">
                         Something went wrong
                     </h1>
                     <p className="text-muted-foreground">
@@ -56,7 +57,7 @@ export default function Error({
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button onClick={reset} variant="primary" size="default">
+                    <Button onClick={reset} variant="default" size="default">
                         Try Again
                     </Button>
                     <Button asChild variant="secondary" size="default">

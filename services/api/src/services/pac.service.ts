@@ -37,9 +37,9 @@ const IMPLICIT_PATTERNS = [
 
 // Time pattern extraction
 const TIME_PATTERNS = [
-    { pattern: /in (\d+) minutes?/i, extract: (m: RegExpMatchArray) => parseInt(m[1]) },
-    { pattern: /in (\d+) hours?/i, extract: (m: RegExpMatchArray) => parseInt(m[1]) * 60 },
-    { pattern: /in (\d+) days?/i, extract: (m: RegExpMatchArray) => parseInt(m[1]) * 60 * 24 },
+    { pattern: /in (\d+) minutes?/i, extract: (m: RegExpMatchArray) => parseInt(m[1], 10) },
+    { pattern: /in (\d+) hours?/i, extract: (m: RegExpMatchArray) => parseInt(m[1], 10) * 60 },
+    { pattern: /in (\d+) days?/i, extract: (m: RegExpMatchArray) => parseInt(m[1], 10) * 60 * 24 },
     { pattern: /tomorrow/i, extract: () => 24 * 60 },
     { pattern: /next week/i, extract: () => 7 * 24 * 60 },
     { pattern: /(?:this |tonight|this evening)/i, extract: () => 8 * 60 }, // ~8 hours
@@ -111,25 +111,89 @@ function extractTimeOffset(text: string): number {
 }
 
 /**
- * Create a reminder
+ * Adjust trigger time toward user's optimal hour and day-of-week (feedback loop).
+ * Only nudges implicit reminders by up to 2 hours toward the learned best hour.
+ * Skips weekends if user never acknowledges on weekends.
+ * Explicit reminders respect the user's exact request.
+ */
+function adjustToOptimalHour(
+    triggerAt: Date,
+    optimalHour: number | null,
+    bestDayOfWeek: number | null,
+    type: ReminderType
+): Date {
+    if (type === 'EXPLICIT') return triggerAt;
+
+    const adjusted = new Date(triggerAt);
+
+    // Day-of-week adjustment: skip weekends if user prefers weekdays
+    if (bestDayOfWeek !== null) {
+        const currentDay = adjusted.getDay();
+        const isWeekend = currentDay === 0 || currentDay === 6;
+        const bestIsWeekday = bestDayOfWeek >= 1 && bestDayOfWeek <= 5;
+
+        // If reminder falls on weekend but user prefers weekdays, shift to Monday
+        if (isWeekend && bestIsWeekday) {
+            const daysUntilMonday = currentDay === 0 ? 1 : 2; // Sunday -> 1 day, Saturday -> 2 days
+            adjusted.setDate(adjusted.getDate() + daysUntilMonday);
+        }
+    }
+
+    // Hour adjustment: nudge toward optimal hour
+    if (optimalHour !== null) {
+        const triggerHour = adjusted.getHours();
+        const diff = optimalHour - triggerHour;
+
+        // Only nudge if within +-4 hours and the nudge is meaningful (>= 1hr)
+        if (Math.abs(diff) >= 1 && Math.abs(diff) <= 4) {
+            // Nudge up to 2 hours toward optimal
+            const nudgeHours = Math.sign(diff) * Math.min(Math.abs(diff), 2);
+            adjusted.setHours(adjusted.getHours() + nudgeHours);
+        }
+    }
+
+    // Don't move into the past
+    if (adjusted.getTime() > Date.now()) return adjusted;
+
+    return triggerAt;
+}
+
+/**
+ * Create a reminder with behavioral learning adjustment
  */
 export async function createReminder(
     userId: string,
     commitment: DetectedCommitment,
-    conversationId?: string,
-    messageId?: string
+    chatId?: string
 ) {
+    // Close the feedback loop: adjust implicit reminder timing toward optimal hour and day
+    let adjustedTriggerAt = commitment.triggerAt;
+    if (commitment.type === 'IMPLICIT') {
+        try {
+            const effectiveness = await computeEffectiveness(userId);
+            adjustedTriggerAt = adjustToOptimalHour(
+                commitment.triggerAt,
+                effectiveness.optimalHour,
+                effectiveness.bestDayOfWeek,
+                commitment.type
+            );
+        } catch {
+            // If effectiveness computation fails, use original time
+        }
+    }
+
+    const priorityMap: Record<string, number> = { LOW: 30, MEDIUM: 50, HIGH: 80 };
     return prisma.pACReminder.create({
         data: {
             userId,
             type: commitment.type,
             content: commitment.content,
-            triggerAt: commitment.triggerAt,
-            priority: commitment.priority,
+            triggerAt: adjustedTriggerAt,
+            priority: priorityMap[commitment.priority] || 50,
             status: 'PENDING',
-            confidence: commitment.confidence,
-            conversationId,
-            messageId,
+            source: commitment.type === 'EXPLICIT' ? 'explicit' : 'implicit',
+            sourceText: commitment.content,
+            chatId,
         },
     });
 }
@@ -145,11 +209,6 @@ export async function getPendingReminders(userId: string, limit = 20) {
         },
         orderBy: [{ triggerAt: 'asc' }],
         take: limit,
-        include: {
-            conversation: {
-                select: { id: true, title: true },
-            },
-        },
     });
 }
 
@@ -168,9 +227,6 @@ export async function getDueReminders(limit = 100) {
             user: {
                 select: { id: true, email: true, name: true },
             },
-            conversation: {
-                select: { id: true, title: true },
-            },
         },
     });
 }
@@ -179,13 +235,35 @@ export async function getDueReminders(limit = 100) {
  * Complete a reminder
  */
 export async function completeReminder(reminderId: string, userId: string) {
-    return prisma.pACReminder.updateMany({
+    const result = await prisma.pACReminder.updateMany({
         where: { id: reminderId, userId },
         data: {
-            status: 'COMPLETED',
-            completedAt: new Date(),
+            status: 'ACKNOWLEDGED',
+            respondedAt: new Date(),
+            responseType: 'acknowledged',
         },
     });
+
+    // MOAT: Cross-system feedback loop (PAC → Memory)
+    // When user completes a reminder, extract episodic memory about the action.
+    // This creates compounding advantage: PAC completion enriches Memory.
+    // Competitors have separate reminder and memory systems; ours learn from each other.
+    try {
+        const reminder = await prisma.pACReminder.findFirst({
+            where: { id: reminderId, userId },
+        });
+        if (reminder) {
+            const openMemory = await import('./openmemory.service');
+            await openMemory.addMemory(`Completed task: ${reminder.content}`, userId, {
+                sector: 'episodic',
+                metadata: { source: 'pac_completion', reminderId },
+            });
+        }
+    } catch {
+        /* non-blocking cross-system bridge */
+    }
+
+    return result;
 }
 
 /**
@@ -196,7 +274,8 @@ export async function dismissReminder(reminderId: string, userId: string) {
         where: { id: reminderId, userId },
         data: {
             status: 'DISMISSED',
-            dismissedAt: new Date(),
+            respondedAt: new Date(),
+            responseType: 'dismissed',
         },
     });
 }
@@ -228,9 +307,10 @@ export async function snoozeReminder(reminderId: string, userId: string, minutes
     await prisma.pACEscalation.create({
         data: {
             reminderId,
-            type: 'SNOOZE',
-            previousTriggerAt: reminder.triggerAt,
-            newTriggerAt,
+            level: 1,
+            channel: 'in_app',
+            scheduledAt: newTriggerAt,
+            status: 'pending',
         },
     });
 
@@ -254,7 +334,6 @@ export async function getPACSettings(userId: string) {
                 implicitEnabled: true,
                 pushEnabled: true,
                 emailEnabled: false,
-                quietHoursEnabled: false,
                 quietHoursStart: '22:00',
                 quietHoursEnd: '08:00',
                 escalationEnabled: true,
@@ -278,7 +357,6 @@ export async function updatePACSettings(
         implicitEnabled: boolean;
         pushEnabled: boolean;
         emailEnabled: boolean;
-        quietHoursEnabled: boolean;
         quietHoursStart: string;
         quietHoursEnd: string;
         escalationEnabled: boolean;
@@ -296,7 +374,6 @@ export async function updatePACSettings(
             implicitEnabled: settings.implicitEnabled ?? true,
             pushEnabled: settings.pushEnabled ?? true,
             emailEnabled: settings.emailEnabled ?? false,
-            quietHoursEnabled: settings.quietHoursEnabled ?? false,
             quietHoursStart: settings.quietHoursStart ?? '22:00',
             quietHoursEnd: settings.quietHoursEnd ?? '08:00',
             escalationEnabled: settings.escalationEnabled ?? true,
@@ -309,10 +386,11 @@ export async function updatePACSettings(
 /**
  * Check if in quiet hours
  */
-export function isInQuietHours(
-    settings: { quietHoursEnabled: boolean; quietHoursStart: string; quietHoursEnd: string }
-): boolean {
-    if (!settings.quietHoursEnabled) return false;
+export function isInQuietHours(settings: {
+    quietHoursStart?: string;
+    quietHoursEnd?: string;
+}): boolean {
+    if (!settings.quietHoursStart || !settings.quietHoursEnd) return false;
 
     const now = new Date();
     const [startHour, startMin] = settings.quietHoursStart.split(':').map(Number);
@@ -332,21 +410,188 @@ export function isInQuietHours(
 }
 
 /**
- * Get PAC statistics
+ * Get PAC statistics with behavioral learning insights
  */
 export async function getPACStats(userId: string) {
-    const [total, pending, completed, snoozed] = await Promise.all([
+    const [total, pending, completed, snoozed, dismissed] = await Promise.all([
         prisma.pACReminder.count({ where: { userId } }),
         prisma.pACReminder.count({ where: { userId, status: 'PENDING' } }),
-        prisma.pACReminder.count({ where: { userId, status: 'COMPLETED' } }),
+        prisma.pACReminder.count({ where: { userId, status: 'ACKNOWLEDGED' } }),
         prisma.pACReminder.count({ where: { userId, status: 'SNOOZED' } }),
+        prisma.pACReminder.count({ where: { userId, status: 'DISMISSED' } }),
     ]);
+
+    // Behavioral learning: compute effectiveness metrics
+    const effectiveness = await computeEffectiveness(userId);
 
     return {
         total,
         pending,
         completed,
         snoozed,
+        dismissed,
         completionRate: total > 0 ? (completed / total) * 100 : 0,
+        effectiveness,
+    };
+}
+
+// ============================================
+// BEHAVIORAL LEARNING
+// ============================================
+
+interface EffectivenessMetrics {
+    engagementRate: number; // % of reminders acknowledged (not dismissed)
+    avgResponseTimeMin: number; // avg time between trigger and response
+    optimalHour: number | null; // best hour for delivery
+    bestDayOfWeek: number | null; // best day of week (0=Sunday, 6=Saturday)
+    implicitAccuracy: number; // % of implicit reminders that were useful
+    snoozeRate: number; // how often user delays
+    recommendation: string; // actionable insight
+}
+
+/**
+ * Compute PAC effectiveness from user's historical behavior.
+ * This is the behavioral learning engine that makes PAC smarter over time.
+ * Competitors just send reminders; we learn WHEN and HOW to send them.
+ */
+async function computeEffectiveness(userId: string): Promise<EffectivenessMetrics> {
+    const reminders = await prisma.pACReminder.findMany({
+        where: {
+            userId,
+            status: { in: ['ACKNOWLEDGED', 'DISMISSED', 'SNOOZED'] },
+        },
+        select: {
+            type: true,
+            status: true,
+            triggerAt: true,
+            respondedAt: true,
+            createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 200, // Look at last 200 interactions
+    });
+
+    if (reminders.length === 0) {
+        return {
+            engagementRate: 0,
+            avgResponseTimeMin: 0,
+            optimalHour: null,
+            bestDayOfWeek: null,
+            implicitAccuracy: 0,
+            snoozeRate: 0,
+            recommendation: 'Not enough data yet. Keep using PAC reminders.',
+        };
+    }
+
+    // Apply recency weighting: recent interactions count more
+    const now = Date.now();
+    const DECAY_HALF_LIFE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+
+    function recencyWeight(createdAt: Date): number {
+        const age = now - createdAt.getTime();
+        return 0.5 ** (age / DECAY_HALF_LIFE_MS);
+    }
+
+    // Weighted engagement rate
+    let weightedAck = 0;
+    let weightedTotal = 0;
+    for (const r of reminders) {
+        const w = recencyWeight(r.createdAt);
+        weightedTotal += w;
+        if (r.status === 'ACKNOWLEDGED') weightedAck += w;
+    }
+    const engagementRate = weightedTotal > 0 ? (weightedAck / weightedTotal) * 100 : 0;
+
+    // Average response time
+    const responseTimes = reminders
+        .filter((r) => r.respondedAt && r.triggerAt)
+        .map((r) => (r.respondedAt!.getTime() - r.triggerAt.getTime()) / (1000 * 60));
+    const avgResponseTimeMin =
+        responseTimes.length > 0
+            ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+            : 0;
+
+    // Find optimal hour (when user most often acknowledges) with recency weighting
+    const hourCounts = new Map<number, { ack: number; total: number }>();
+    for (const r of reminders) {
+        const hour = r.triggerAt.getHours();
+        const w = recencyWeight(r.createdAt);
+        const curr = hourCounts.get(hour) || { ack: 0, total: 0 };
+        curr.total += w;
+        if (r.status === 'ACKNOWLEDGED') curr.ack += w;
+        hourCounts.set(hour, curr);
+    }
+
+    let optimalHour: number | null = null;
+    let bestRate = 0;
+    for (const [hour, counts] of Array.from(hourCounts.entries())) {
+        if (counts.total >= 3) {
+            // Need at least 3 weighted samples
+            const rate = counts.ack / counts.total;
+            if (rate > bestRate) {
+                bestRate = rate;
+                optimalHour = hour;
+            }
+        }
+    }
+
+    // Find best day of week (0=Sunday, 6=Saturday) with recency weighting
+    const dayCounts = new Map<number, { ack: number; total: number }>();
+    for (const r of reminders) {
+        const day = r.triggerAt.getDay();
+        const w = recencyWeight(r.createdAt);
+        const curr = dayCounts.get(day) || { ack: 0, total: 0 };
+        curr.total += w;
+        if (r.status === 'ACKNOWLEDGED') curr.ack += w;
+        dayCounts.set(day, curr);
+    }
+
+    let bestDayOfWeek: number | null = null;
+    let bestDayRate = 0;
+    for (const [day, counts] of Array.from(dayCounts.entries())) {
+        if (counts.total >= 3) {
+            // Need at least 3 weighted samples
+            const rate = counts.ack / counts.total;
+            if (rate > bestDayRate) {
+                bestDayRate = rate;
+                bestDayOfWeek = day;
+            }
+        }
+    }
+
+    // Implicit accuracy
+    const implicitReminders = reminders.filter((r) => r.type === 'IMPLICIT');
+    const implicitAck = implicitReminders.filter((r) => r.status === 'ACKNOWLEDGED').length;
+    const implicitAccuracy =
+        implicitReminders.length > 0 ? (implicitAck / implicitReminders.length) * 100 : 0;
+
+    // Snooze rate
+    const snoozed = reminders.filter((r) => r.status === 'SNOOZED').length;
+    const snoozeRate = (snoozed / reminders.length) * 100;
+
+    // Generate recommendation
+    let recommendation = '';
+    if (engagementRate < 30) {
+        recommendation =
+            'Low engagement. Consider reducing reminder frequency or switching to explicit-only mode.';
+    } else if (snoozeRate > 50) {
+        recommendation = `High snooze rate. Try scheduling reminders around ${optimalHour !== null ? `${optimalHour}:00` : 'your most active hours'}.`;
+    } else if (implicitAccuracy < 40 && implicitReminders.length > 5) {
+        recommendation =
+            'Implicit detection accuracy is low. Consider disabling implicit reminders.';
+    } else if (engagementRate > 70) {
+        recommendation = 'Great engagement! PAC is working well for you.';
+    } else {
+        recommendation = 'Moderate engagement. PAC is learning your patterns.';
+    }
+
+    return {
+        engagementRate: Math.round(engagementRate * 10) / 10,
+        avgResponseTimeMin: Math.round(avgResponseTimeMin * 10) / 10,
+        optimalHour,
+        bestDayOfWeek,
+        implicitAccuracy: Math.round(implicitAccuracy * 10) / 10,
+        snoozeRate: Math.round(snoozeRate * 10) / 10,
+        recommendation,
     };
 }

@@ -1,46 +1,125 @@
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { nextCookies } from "better-auth/next-js";
-import { passkey } from "@better-auth/passkey";
-import { prisma } from "@aspendos/db";
-import { headers } from "next/headers";
+import { prisma } from '@aspendos/db';
+import { passkey } from '@better-auth/passkey';
+import { polar } from '@polar-sh/better-auth';
+import { Polar } from '@polar-sh/sdk';
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { nextCookies } from 'better-auth/next-js';
+import { headers } from 'next/headers';
+
+async function sendPasswordResetEmail(args: { to: string; resetUrl: string }) {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.RESEND_FROM;
+
+    if (!apiKey || !from) return;
+
+    const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            from,
+            to: args.to,
+            subject: 'Reset your YULA password',
+            html: `<p>Reset your password by clicking the link below:</p><p><a href="${args.resetUrl}">Reset password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
+        }),
+    });
+
+    if (!response.ok) {
+        console.error('Failed to send password reset email:', await response.text());
+    }
+}
+
+// Initialize Polar client for payments
+const polarClient = new Polar({
+    accessToken: process.env.POLAR_ACCESS_TOKEN!,
+    server: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+});
 
 export const authInstance = betterAuth({
     database: prismaAdapter(prisma, {
-        provider: "postgresql",
+        provider: 'postgresql',
     }),
     emailAndPassword: {
         enabled: true,
-        async sendResetPassword(data, request) {
-            // Send an email to the user with a link to reset their password
-            // data contains user object and token url
-            console.log("Reset password for", data.user.email);
+        requireEmailVerification: process.env.NODE_ENV === 'production',
+        minPasswordLength: 8,
+        maxPasswordLength: 128,
+        autoSignIn: true,
+        revokeSessionsOnPasswordReset: true,
+        async sendResetPassword(data, _request) {
+            const resetUrl = (data as { url?: unknown }).url;
+            const email = (data as { user?: { email?: unknown } }).user?.email;
+            if (typeof resetUrl !== 'string' || typeof email !== 'string') return;
+            await sendPasswordResetEmail({ to: email, resetUrl });
         },
+    },
+    account: {
+        accountLinking: {
+            enabled: false,
+        },
+    },
+    session: {
+        expiresIn: 60 * 60 * 24 * 7, // 7 days
+        updateAge: 60 * 60 * 24, // Update session token daily
+        cookie: {
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax' as const,
+            httpOnly: true,
+        },
+    },
+    rateLimit: {
+        window: 60, // 1 minute window
+        max: 10, // max 10 auth attempts per minute
     },
     socialProviders: {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         },
         github: {
             clientId: process.env.GITHUB_CLIENT_ID!,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET!
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
         },
         facebook: {
             clientId: process.env.FACEBOOK_CLIENT_ID!,
-            clientSecret: process.env.FACEBOOK_CLIENT_SECRET!
+            clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
         },
         apple: {
             clientId: process.env.APPLE_CLIENT_ID!,
-            clientSecret: process.env.APPLE_CLIENT_SECRET!
-        }
+            clientSecret: process.env.APPLE_CLIENT_SECRET!,
+        },
     },
     plugins: [
         passkey(),
         nextCookies(),
+        // Polar plugin for payments
+        polar({
+            client: polarClient,
+            createCustomerOnSignUp: true,
+            enableCustomerPortal: true,
+            checkout: {
+                enabled: true,
+                products: [
+                    {
+                        productId: process.env.POLAR_PRO_PRODUCT_ID!,
+                        slug: 'pro',
+                    },
+                    {
+                        productId: process.env.POLAR_ULTRA_PRODUCT_ID!,
+                        slug: 'ultra',
+                    },
+                ],
+                successUrl: '/chat?upgraded=true',
+                cancelUrl: '/pricing',
+            },
+            webhooks: {
+                secret: process.env.POLAR_WEBHOOK_SECRET!,
+            },
+        }),
     ],
-    /** if no database is provided, the user data will be stored in memory.
-     * Make sure to provide a database to persist user data **/
 });
 
 /**

@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bell,
-    Lightbulb,
-    Warning,
     Brain,
-    Clock,
-    Check,
-    X,
     CaretDown,
     CaretRight,
+    Check,
+    Clock,
+    Lightbulb,
+    Warning,
+    X,
 } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import type { PACItem, PACItemType } from '@/lib/pac/types';
+import { cn } from '@/lib/utils';
 
 // ============================================
 // TYPE STYLES
@@ -27,46 +27,6 @@ const typeStyles: Record<PACItemType, { icon: typeof Bell; color: string; bgColo
     alert: { icon: Warning, color: 'text-red-400', bgColor: 'bg-red-500/10' },
     insight: { icon: Brain, color: 'text-amber-300', bgColor: 'bg-amber-400/10' },
 };
-
-// ============================================
-// MOCK DATA (for demo)
-// ============================================
-
-const mockPACItems: PACItem[] = [
-    {
-        id: '1',
-        userId: 'demo',
-        type: 'reminder',
-        title: 'Review PR #42',
-        description: 'You mentioned wanting to review the authentication PR today.',
-        scheduledFor: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'pending',
-        priority: 'medium',
-        createdAt: new Date(),
-    },
-    {
-        id: '2',
-        userId: 'demo',
-        type: 'suggestion',
-        title: 'Take a break',
-        description: "You've been coding for 2 hours. Consider a short break.",
-        scheduledFor: new Date(),
-        status: 'pending',
-        priority: 'low',
-        createdAt: new Date(),
-    },
-    {
-        id: '3',
-        userId: 'demo',
-        type: 'insight',
-        title: 'Pattern detected',
-        description: 'You often ask about React patterns. Check out the new hooks guide.',
-        scheduledFor: new Date(),
-        status: 'pending',
-        priority: 'low',
-        createdAt: new Date(),
-    },
-];
 
 // ============================================
 // PAC ITEM COMPONENT
@@ -144,9 +104,31 @@ interface PACNotificationsProps {
     onToggleCollapse?: () => void;
 }
 
-export function PACNotifications({ className, collapsed = false, onToggleCollapse }: PACNotificationsProps) {
-    const [items, setItems] = useState<PACItem[]>(mockPACItems);
+export function PACNotifications({
+    className,
+    collapsed = false,
+    onToggleCollapse,
+}: PACNotificationsProps) {
+    const [items, setItems] = useState<PACItem[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(true);
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const response = await fetch('/api/notifications');
+                if (response.ok) {
+                    const data = await response.json();
+                    setItems(data.notifications || []);
+                }
+            } catch (error) {
+                console.error('Failed to fetch PAC notifications:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchNotifications();
+    }, []);
 
     const pendingItems = items.filter((item) => item.status === 'pending');
     const urgentCount = pendingItems.filter((item) => item.priority === 'high').length;
@@ -201,10 +183,7 @@ export function PACNotifications({ className, collapsed = false, onToggleCollaps
 
     return (
         <aside
-            className={cn(
-                'w-72 border-r border-zinc-800 bg-zinc-900/50 flex flex-col',
-                className
-            )}
+            className={cn('w-72 border-r border-zinc-800 bg-zinc-900/50 flex flex-col', className)}
         >
             {/* Header */}
             <div className="p-3 border-b border-zinc-800">
@@ -243,29 +222,40 @@ export function PACNotifications({ className, collapsed = false, onToggleCollaps
             {/* Items */}
             {isExpanded && (
                 <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                    <AnimatePresence>
-                        {pendingItems.length > 0 ? (
-                            pendingItems.map((item) => (
-                                <PACItemCard
-                                    key={item.id}
-                                    item={item}
-                                    onDismiss={handleDismiss}
-                                    onSnooze={handleSnooze}
-                                    onAct={handleAct}
-                                />
-                            ))
-                        ) : (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-center py-8 text-zinc-500"
-                            >
-                                <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">No pending notifications</p>
-                                <p className="text-xs mt-1">We'll nudge you when needed</p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    {loading ? (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-center py-8 text-zinc-500"
+                        >
+                            <Bell className="h-8 w-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                            <p className="text-sm">Loading notifications...</p>
+                        </motion.div>
+                    ) : (
+                        <AnimatePresence>
+                            {pendingItems.length > 0 ? (
+                                pendingItems.map((item) => (
+                                    <PACItemCard
+                                        key={item.id}
+                                        item={item}
+                                        onDismiss={handleDismiss}
+                                        onSnooze={handleSnooze}
+                                        onAct={handleAct}
+                                    />
+                                ))
+                            ) : (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="text-center py-8 text-zinc-500"
+                                >
+                                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">No notifications yet</p>
+                                    <p className="text-xs mt-1">We'll nudge you when needed</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    )}
                 </div>
             )}
         </aside>

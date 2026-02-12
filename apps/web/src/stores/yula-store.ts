@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 // =============================================================================
 // Types
@@ -210,12 +210,24 @@ export const useYulaStore = create<YulaStore>()(
 
             openOmnibar: () =>
                 set((state) => ({
-                    omnibar: { ...state.omnibar, isOpen: true, query: '', results: [], selectedIndex: 0 },
+                    omnibar: {
+                        ...state.omnibar,
+                        isOpen: true,
+                        query: '',
+                        results: [],
+                        selectedIndex: 0,
+                    },
                 })),
 
             closeOmnibar: () =>
                 set((state) => ({
-                    omnibar: { ...state.omnibar, isOpen: false, query: '', results: [], selectedIndex: 0 },
+                    omnibar: {
+                        ...state.omnibar,
+                        isOpen: false,
+                        query: '',
+                        results: [],
+                        selectedIndex: 0,
+                    },
                 })),
 
             toggleOmnibar: () => {

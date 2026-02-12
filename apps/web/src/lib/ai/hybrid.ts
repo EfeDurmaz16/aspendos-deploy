@@ -6,10 +6,10 @@
  */
 
 import { streamText } from 'ai';
-import { getModel, getFallbackModels, MODEL_REGISTRY, type ModelId } from './providers';
-import { routeUserMessage, fastRoute, type RouteDecision } from './router';
-import { createEmbedding } from './embeddings';
 import { searchMemories } from '../services/qdrant';
+import { createEmbedding } from './embeddings';
+import { getFallbackModels, getModel, MODEL_REGISTRY, type ModelId } from './providers';
+import { fastRoute, type RouteDecision, routeUserMessage } from './router';
 
 // ============================================
 // TYPES
@@ -53,7 +53,8 @@ export async function* createUnifiedStreamingCompletion(
         const currentModel = modelsToTry[i];
 
         if (i > 0) {
-            const displayName = MODEL_REGISTRY[currentModel as ModelId]?.displayName || currentModel;
+            const displayName =
+                MODEL_REGISTRY[currentModel as ModelId]?.displayName || currentModel;
             yield {
                 type: 'fallback',
                 content: `Switching to ${displayName}...`,
@@ -83,9 +84,10 @@ export async function* createUnifiedStreamingCompletion(
             console.warn(`[HybridRouter] Model ${currentModel} failed:`, error);
 
             if (i === modelsToTry.length - 1) {
+                console.error('[HybridRouter] All models exhausted:', error);
                 yield {
                     type: 'error',
-                    content: `All models failed. Last error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                    content: 'All models are currently unavailable. Please try again.',
                 };
                 return;
             }
@@ -133,11 +135,17 @@ export async function executeHybridRoute(
         }
     }
 
-    // 2. If RAG search or direct reply, fetch memories
+    // 2. Fetch memories only when relevant (skip for greetings and general knowledge)
     let memoryContext = '';
     let memories: Array<{ content: string; score: number }> = [];
 
-    if (decision.type === 'rag_search' || decision.type === 'direct_reply') {
+    const skipMemoryReasons = [
+        'Fast route: simple greeting',
+        'Router fallback - defaulting to direct reply',
+    ];
+    const shouldSkipMemory = skipMemoryReasons.some((r) => decision.reason?.includes(r));
+
+    if (!shouldSkipMemory && (decision.type === 'rag_search' || decision.type === 'direct_reply')) {
         try {
             const queryText =
                 decision.type === 'rag_search'

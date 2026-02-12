@@ -2,6 +2,8 @@
  * Chat Database Service
  * Handles CRUD operations for chats and messages using Prisma.
  */
+
+import { randomBytes } from 'node:crypto';
 import { type Chat, type Message, type Prisma, prisma, type User } from '@aspendos/db';
 
 // ============================================
@@ -32,7 +34,7 @@ export async function getOrCreateUser(
     if (byEmail) return byEmail;
 
     // User should exist if session is valid - this is an error case
-    throw new Error(`User not found: ${userId} / ${email}`);
+    throw new Error('Authenticated user not found in database');
 }
 
 /**
@@ -187,11 +189,18 @@ export async function createMessage(input: CreateMessageInput): Promise<Message>
 }
 
 /**
- * Get messages for a chat
+ * Get messages for a chat (with optional userId for defense-in-depth ownership check)
  */
-export async function getMessages(chatId: string, limit?: number): Promise<Message[]> {
+export async function getMessages(
+    chatId: string,
+    limit?: number,
+    userId?: string
+): Promise<Message[]> {
     return prisma.message.findMany({
-        where: { chatId },
+        where: {
+            chatId,
+            ...(userId ? { chat: { userId } } : {}),
+        },
         orderBy: { createdAt: 'asc' },
         take: limit,
     });
@@ -313,16 +322,11 @@ export async function createShareToken(chatId: string, userId: string): Promise<
     // Generate a random token
     const token = generateRandomToken(32);
 
-    // Store the share token in chat metadata or a separate table
-    // For simplicity, we'll use the chat's description field temporarily
-    // In production, you'd want a dedicated ChatShare table
     await prisma.chat.update({
         where: { id: chatId },
         data: {
-            description: JSON.stringify({
-                shareToken: token,
-                sharedAt: new Date().toISOString(),
-            }),
+            shareToken: token,
+            sharedAt: new Date(),
         },
     });
 
@@ -333,13 +337,8 @@ export async function createShareToken(chatId: string, userId: string): Promise<
  * Get a shared chat by token (public access)
  */
 export async function getSharedChat(token: string) {
-    // Find chat with matching share token in description
-    const chats = await prisma.chat.findMany({
-        where: {
-            description: {
-                contains: token,
-            },
-        },
+    const chat = await prisma.chat.findUnique({
+        where: { shareToken: token },
         include: {
             messages: {
                 orderBy: { createdAt: 'asc' },
@@ -353,25 +352,19 @@ export async function getSharedChat(token: string) {
         },
     });
 
-    // Verify the token matches
-    for (const chat of chats) {
-        try {
-            const meta = JSON.parse(chat.description || '{}');
-            if (meta.shareToken === token) {
-                return {
-                    id: chat.id,
-                    title: chat.title,
-                    messages: chat.messages.map((m) => ({
-                        id: m.id,
-                        role: m.role,
-                        content: m.content,
-                        createdAt: m.createdAt,
-                    })),
-                    author: chat.user?.name || 'Anonymous',
-                    sharedAt: meta.sharedAt,
-                };
-            }
-        } catch {}
+    if (chat) {
+        return {
+            id: chat.id,
+            title: chat.title,
+            messages: chat.messages.map((m) => ({
+                id: m.id,
+                role: m.role,
+                content: m.content,
+                createdAt: m.createdAt,
+            })),
+            author: chat.user?.name || 'Anonymous',
+            sharedAt: chat.sharedAt?.toISOString(),
+        };
     }
 
     return null;
@@ -388,16 +381,12 @@ export async function revokeShareToken(chatId: string, userId: string): Promise<
 
     await prisma.chat.update({
         where: { id: chatId },
-        data: { description: null },
+        data: { shareToken: null, sharedAt: null },
     });
 }
 
-// Helper to generate random token
+// Helper to generate cryptographically secure random token
 function generateRandomToken(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    // Use crypto.randomBytes for secure token generation
+    return randomBytes(length).toString('base64url').slice(0, length);
 }

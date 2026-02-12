@@ -1,7 +1,7 @@
 'use client';
 
+import { CircleNotch, Sparkle } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Sparkle, CircleNotch } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import type { CouncilPersona } from '@/stores/yula-store';
 import { personaDefinitions } from './use-council';
@@ -60,8 +60,8 @@ export function CouncilDeliberation({
                                 isComplete
                                     ? 'border-white/20 bg-white/5'
                                     : isActive
-                                        ? 'border-white/10 bg-white/[0.02]'
-                                        : 'border-white/5 bg-transparent'
+                                      ? 'border-white/10 bg-white/[0.02]'
+                                      : 'border-white/5 bg-transparent'
                             )}
                         >
                             {/* Status indicator */}
@@ -113,7 +113,10 @@ export function CouncilDeliberation({
                             <div className="text-center">
                                 <p
                                     className="text-sm font-medium"
-                                    style={{ color: isComplete || isActive ? definition.color : '#71717a' }}
+                                    style={{
+                                        color:
+                                            isComplete || isActive ? definition.color : '#71717a',
+                                    }}
                                 >
                                     {definition.name}
                                 </p>
@@ -130,7 +133,9 @@ export function CouncilDeliberation({
             <div className="mt-6">
                 <div className="mb-2 flex items-center justify-between text-xs text-zinc-500">
                     <span>Deliberation Progress</span>
-                    <span>{Math.round((completedPersonas.length / allPersonas.length) * 100)}%</span>
+                    <span>
+                        {Math.round((completedPersonas.length / allPersonas.length) * 100)}%
+                    </span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
                     <motion.div

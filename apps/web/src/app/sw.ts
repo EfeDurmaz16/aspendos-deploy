@@ -56,7 +56,21 @@ const serwist = new Serwist({
                 ],
             }),
         },
-        // API calls - Network First (fresh data preferred)
+        // API calls - Network Only for auth-sensitive endpoints (NEVER cache)
+        {
+            matcher: /\/api\/(auth|billing|webhooks|cron|chat\/stream)/i,
+            handler: new NetworkFirst({
+                cacheName: 'api-no-cache',
+                networkTimeoutSeconds: 15,
+                plugins: [
+                    new ExpirationPlugin({
+                        maxEntries: 0,
+                        maxAgeSeconds: 1,
+                    }),
+                ],
+            }),
+        },
+        // API calls - Network First for non-sensitive endpoints
         {
             matcher: /\/api\//i,
             handler: new NetworkFirst({
@@ -66,19 +80,6 @@ const serwist = new Serwist({
                     new ExpirationPlugin({
                         maxEntries: 50,
                         maxAgeSeconds: 60 * 5, // 5 minutes
-                    }),
-                ],
-            }),
-        },
-        // Chat data - Stale While Revalidate (show cached, update in background)
-        {
-            matcher: /\/api\/chat/i,
-            handler: new StaleWhileRevalidate({
-                cacheName: 'chat-cache',
-                plugins: [
-                    new ExpirationPlugin({
-                        maxEntries: 30,
-                        maxAgeSeconds: 60 * 60, // 1 hour
                     }),
                 ],
             }),
@@ -108,17 +109,3 @@ self.addEventListener('message', (event: MessageEvent) => {
         self.skipWaiting();
     }
 });
-
-// Background sync for failed requests (when back online)
-// Note: SyncEvent types may not be available in all TypeScript configurations
-self.addEventListener('sync', (event: Event & { tag?: string; waitUntil?: (promise: Promise<void>) => void }) => {
-    if (event.tag === 'sync-pending-requests' && event.waitUntil) {
-        event.waitUntil(syncPendingRequests());
-    }
-});
-
-async function syncPendingRequests() {
-    // Get pending requests from IndexedDB and retry them
-    console.log('[SW] Syncing pending requests...');
-    // Implementation will be added with offline storage
-}

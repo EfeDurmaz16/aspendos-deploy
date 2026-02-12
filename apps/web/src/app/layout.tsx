@@ -1,51 +1,31 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, DM_Sans, JetBrains_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
-import { ThemeProvider } from '@/components/theme-provider';
-import { cn } from '@/lib/utils';
-import { SiteDock } from '@/components/layout/site-dock';
-import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
 import { SkipLink } from '@/components/accessibility/skip-link';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
+import { ThemeProvider } from '@/components/theme-provider';
+import { CookieConsent } from '@/components/ui/cookie-consent';
 import { baseMetadata } from '@/lib/seo/metadata';
 import {
-    organizationSchema,
-    websiteSchema,
-    softwareAppSchema,
     faqSchema,
+    organizationSchema,
     serializeSchema,
+    softwareAppSchema,
+    websiteSchema,
 } from '@/lib/seo/structured-data';
-
-const playfairDisplay = Playfair_Display({
-    subsets: ['latin'],
-    variable: '--font-playfair',
-    display: 'swap',
-    weight: ['400', '500', '600', '700'],
-});
-
-const dmSans = DM_Sans({
-    subsets: ['latin'],
-    variable: '--font-dm-sans',
-    display: 'swap',
-    weight: ['400', '500', '600', '700'],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-    subsets: ['latin'],
-    variable: '--font-mono',
-    display: 'swap',
-});
+import { cn } from '@/lib/utils';
 
 // Comprehensive metadata for SEO and GEO
 export const metadata: Metadata = {
     ...baseMetadata,
 };
 
-// Viewport configuration - YULA warm theme colors
+// Viewport configuration - Clean neutral theme colors
 export const viewport: Viewport = {
     themeColor: [
-        { media: '(prefers-color-scheme: light)', color: '#F5F0E8' },
-        { media: '(prefers-color-scheme: dark)', color: '#2D2926' },
+        { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
+        { media: '(prefers-color-scheme: dark)', color: '#0d0d0d' },
     ],
     width: 'device-width',
     initialScale: 1,
@@ -70,10 +50,6 @@ export default function RootLayout({
                 <meta name="apple-mobile-web-app-title" content="YULA" />
                 <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
 
-                {/* Preconnect to critical origins for performance */}
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-
                 {/* DNS prefetch for API and external services */}
                 <link rel="dns-prefetch" href="https://api.yula.dev" />
                 <link rel="dns-prefetch" href="https://api.openai.com" />
@@ -87,11 +63,7 @@ export default function RootLayout({
                 >
                     {serializeSchema(organizationSchema)}
                 </Script>
-                <Script
-                    id="website-schema"
-                    type="application/ld+json"
-                    strategy="afterInteractive"
-                >
+                <Script id="website-schema" type="application/ld+json" strategy="afterInteractive">
                     {serializeSchema(websiteSchema)}
                 </Script>
                 <Script
@@ -101,34 +73,24 @@ export default function RootLayout({
                 >
                     {serializeSchema(softwareAppSchema)}
                 </Script>
-                <Script
-                    id="faq-schema"
-                    type="application/ld+json"
-                    strategy="afterInteractive"
-                >
+                <Script id="faq-schema" type="application/ld+json" strategy="afterInteractive">
                     {serializeSchema(faqSchema)}
                 </Script>
             </head>
-            <body
-                className={cn(
-                    playfairDisplay.variable,
-                    dmSans.variable,
-                    jetbrainsMono.variable,
-                    'antialiased min-h-screen bg-background'
-                )}
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
-            >
+            <body className={cn('antialiased min-h-screen bg-background')}>
                 {/* Accessibility: Skip to main content link */}
                 <SkipLink />
 
                 <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
                     <OfflineBanner />
-                    <main id="main-content" tabIndex={-1}>
-                        {children}
-                    </main>
-                    <SiteDock />
+                    <ErrorBoundary>
+                        <main id="main-content" tabIndex={-1}>
+                            {children}
+                        </main>
+                    </ErrorBoundary>
                     <InstallPrompt />
                     <UpdatePrompt />
+                    <CookieConsent />
                 </ThemeProvider>
             </body>
         </html>

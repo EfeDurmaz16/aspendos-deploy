@@ -13,11 +13,8 @@ const POLAR_ACCESS_TOKEN = process.env.POLAR_ACCESS_TOKEN || '';
 const IS_SANDBOX = POLAR_ACCESS_TOKEN.startsWith('polar_sat_');
 const POLAR_API_URL = IS_SANDBOX ? 'https://sandbox-api.polar.sh/v1' : 'https://api.polar.sh/v1';
 
-console.log('Polar Enviroment:', IS_SANDBOX ? 'SANDBOX' : 'PRODUCTION');
-console.log(
-    'Polar Token Loaded:',
-    POLAR_ACCESS_TOKEN ? `${POLAR_ACCESS_TOKEN.substring(0, 4)}...` : 'NONE'
-);
+console.log('Polar Environment:', IS_SANDBOX ? 'SANDBOX' : 'PRODUCTION');
+console.log('Polar Token Loaded:', POLAR_ACCESS_TOKEN ? 'YES' : 'NONE');
 
 // Product IDs from Polar dashboard (monthly)
 const PRODUCT_IDS = {
@@ -340,21 +337,23 @@ async function handleSubscriptionCanceled(data: PolarWebhookEvent['data']) {
 
     if (!account) return;
 
-    // Downgrade to starter
-    const starterConfig = getTierConfig('STARTER');
+    // Downgrade to FREE
+    const freeConfig = getTierConfig('FREE');
 
     await prisma.billingAccount.update({
         where: { id: account.id },
         data: {
             status: 'canceled',
-            plan: 'starter',
-            monthlyCredit: starterConfig.monthlyTokens / 1000,
+            plan: 'free',
+            monthlyCredit: freeConfig.monthlyTokens / 1000,
+            chatsRemaining: freeConfig.monthlyChats,
+            voiceMinutesRemaining: freeConfig.dailyVoiceMinutes * 30,
         },
     });
 
     await prisma.user.update({
         where: { id: account.userId },
-        data: { tier: 'STARTER' },
+        data: { tier: 'FREE' },
     });
 }
 

@@ -1,24 +1,24 @@
 'use client';
 
-import * as React from "react"
-import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { motion } from 'framer-motion';
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
 interface DockProps {
-    className?: string
+    className?: string;
     items: {
-        icon: React.ElementType
-        label: string
-        onClick?: () => void
-        href?: string
-    }[]
+        icon: React.ElementType;
+        label: string;
+        onClick?: () => void;
+        href?: string;
+    }[];
 }
 
 interface DockIconButtonProps {
-    icon: React.ElementType
-    label: string
-    onClick?: () => void
-    className?: string
+    icon: React.ElementType;
+    label: string;
+    onClick?: () => void;
+    className?: string;
 }
 
 const floatingAnimation = {
@@ -28,10 +28,10 @@ const floatingAnimation = {
         transition: {
             duration: 4,
             repeat: Infinity,
-            ease: "easeInOut" as const
-        }
-    }
-} satisfies import("framer-motion").Variants;
+            ease: 'easeInOut' as const,
+        },
+    },
+} satisfies import('framer-motion').Variants;
 
 const DockIconButton = React.forwardRef<HTMLButtonElement, DockIconButtonProps>(
     ({ icon: Icon, label, onClick, className }, ref) => {
@@ -42,26 +42,31 @@ const DockIconButton = React.forwardRef<HTMLButtonElement, DockIconButtonProps>(
                 whileTap={{ scale: 0.95 }}
                 onClick={onClick}
                 className={cn(
-                    "relative group p-3 rounded-lg",
-                    "hover:bg-accent hover:text-accent-foreground transition-colors",
+                    'relative group p-3 rounded-lg',
+                    'hover:bg-accent hover:text-accent-foreground transition-colors',
                     className
                 )}
             >
-                <Icon className="w-6 h-6 text-foreground/80 group-hover:text-foreground" weight="duotone" />
-                <span className={cn(
-                    "absolute -top-10 left-1/2 -translate-x-1/2",
-                    "px-2 py-1 rounded text-xs",
-                    "bg-popover text-popover-foreground border shadow-sm",
-                    "opacity-0 group-hover:opacity-100",
-                    "transition-opacity whitespace-nowrap pointer-events-none"
-                )}>
+                <Icon
+                    className="w-6 h-6 text-foreground/80 group-hover:text-foreground"
+                    weight="duotone"
+                />
+                <span
+                    className={cn(
+                        'absolute -top-10 left-1/2 -translate-x-1/2',
+                        'px-2 py-1 rounded text-xs',
+                        'bg-popover text-popover-foreground border shadow-sm',
+                        'opacity-0 group-hover:opacity-100',
+                        'transition-opacity whitespace-nowrap pointer-events-none'
+                    )}
+                >
                     {label}
                 </span>
             </motion.button>
-        )
+        );
     }
-)
-DockIconButton.displayName = "DockIconButton"
+);
+DockIconButton.displayName = 'DockIconButton';
 
 const Dock = React.forwardRef<HTMLDivElement, DockProps & { children?: React.ReactNode }>(
     ({ items, className, children }, ref) => {
@@ -95,11 +100,11 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps & { children?: React.Rea
                     animate={{
                         opacity: isVisible ? 1 : 0,
                         y: isVisible ? 0 : 20,
-                        pointerEvents: isVisible ? 'auto' : 'none'
+                        pointerEvents: isVisible ? 'auto' : 'none',
                     }}
-                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                     className={cn(
-                        "fixed bottom-6 left-0 right-0 z-50 flex items-center justify-center pointer-events-none",
+                        'fixed bottom-6 left-0 right-0 z-50 flex items-center justify-center pointer-events-none',
                         className
                     )}
                 >
@@ -109,10 +114,10 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps & { children?: React.Rea
                             animate="animate"
                             variants={floatingAnimation}
                             className={cn(
-                                "flex items-center gap-2 p-3 rounded-2xl",
-                                "backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl",
-                                "bg-white/40 dark:bg-black/40",
-                                "hover:shadow-3xl transition-shadow duration-300 ring-1 ring-black/5"
+                                'flex items-center gap-2 p-3 rounded-2xl',
+                                'backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl',
+                                'bg-white/40 dark:bg-black/40',
+                                'hover:shadow-3xl transition-shadow duration-300 ring-1 ring-black/5'
                             )}
                         >
                             {items.map((item) => (
@@ -128,9 +133,9 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps & { children?: React.Rea
                     </div>
                 </motion.div>
             </>
-        )
+        );
     }
-)
-Dock.displayName = "Dock"
+);
+Dock.displayName = 'Dock';
 
-export { Dock }
+export { Dock };

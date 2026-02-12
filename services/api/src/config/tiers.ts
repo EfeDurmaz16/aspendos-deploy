@@ -4,11 +4,56 @@
  */
 
 export const TIER_CONFIG = {
+    FREE: {
+        // Pricing
+        monthlyPrice: 0,
+        weeklyPrice: 0,
+        annualPrice: 0,
+
+        // Chat & Token Limits
+        monthlyChats: 100,
+        monthlyTokens: 100_000, // 100K tokens
+
+        // Models
+        supportedModels: ['gpt-4o-mini', 'gemini-flash'],
+        multiModel: false,
+        multiModelLimit: 0,
+
+        // Voice
+        dailyVoiceMinutes: 0,
+
+        // Media
+        monthlyImageGenerations: 0,
+        monthlyVideoMinutes: 0,
+
+        // Memory
+        memoryLevel: 'basic',
+        memoryInspector: false,
+
+        // Agents
+        customAgents: false,
+        agentTemplates: false,
+
+        // Council
+        monthlyCouncilSessions: 0,
+
+        // Priority
+        routingPriority: 'low',
+
+        // Support
+        supportLevel: 'community',
+
+        // Description
+        tagline: 'Try YULA for free',
+        description:
+            'Get started with AI chat, basic memory, and limited imports. Perfect for trying YULA before committing.',
+    },
+
     STARTER: {
         // Pricing
-        monthlyPrice: 19.99,
+        monthlyPrice: 20,
         weeklyPrice: 7.5,
-        annualPrice: 191.88, // ~$16/mo (20% discount)
+        annualPrice: 192, // ~$16/mo (20% discount)
 
         // Chat & Token Limits
         monthlyChats: 300, // ~10/day
@@ -34,6 +79,9 @@ export const TIER_CONFIG = {
         customAgents: false,
         agentTemplates: false,
 
+        // Council
+        monthlyCouncilSessions: 10,
+
         // Priority
         routingPriority: 'standard',
 
@@ -48,9 +96,9 @@ export const TIER_CONFIG = {
 
     PRO: {
         // Pricing
-        monthlyPrice: 49.0,
+        monthlyPrice: 49,
         weeklyPrice: 15.0,
-        annualPrice: 468.0, // ~$39/mo (20% discount)
+        annualPrice: 468, // ~$39/mo (20% discount)
 
         // Chat & Token Limits
         monthlyChats: 1500, // ~50/day
@@ -76,6 +124,9 @@ export const TIER_CONFIG = {
         customAgents: true,
         agentTemplates: true,
 
+        // Council
+        monthlyCouncilSessions: 50,
+
         // Priority
         routingPriority: 'medium',
 
@@ -90,9 +141,9 @@ export const TIER_CONFIG = {
 
     ULTRA: {
         // Pricing
-        monthlyPrice: 99.0,
+        monthlyPrice: 99,
         weeklyPrice: 30.0,
-        annualPrice: 948.0, // ~$79/mo (20% discount)
+        annualPrice: 948, // ~$79/mo (20% discount)
 
         // Chat & Token Limits
         monthlyChats: 5000, // ~166/day (practically unlimited)
@@ -119,6 +170,9 @@ export const TIER_CONFIG = {
         customAgents: true,
         agentTemplates: true,
         betaFeatures: true,
+
+        // Council
+        monthlyCouncilSessions: 200,
 
         // Priority
         routingPriority: 'highest', // Lowest latency

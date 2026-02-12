@@ -1,15 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { getSetting, setSetting } from '@/lib/offline/database';
 import {
     AVAILABLE_MODELS,
-    type ModelId,
-    type ModelLoadProgress,
     formatMessagesForLocalModel,
     getOfflineSystemPrompt,
     localAI,
+    type ModelId,
+    type ModelLoadProgress,
 } from '@/lib/offline/local-ai';
-import { getSetting, setSetting } from '@/lib/offline/database';
 
 export interface LocalAIState {
     isSupported: boolean;
@@ -39,22 +39,6 @@ export function useLocalAI() {
         currentModel: null,
         error: null,
     });
-
-    // Check WebGPU support on mount
-    useEffect(() => {
-        localAI.isSupported().then((supported) => {
-            setState((prev) => ({ ...prev, isSupported: supported }));
-
-            // If supported, check for previously loaded model
-            if (supported) {
-                getSetting<ModelId>('localAIModel').then((savedModel) => {
-                    if (savedModel) {
-                        loadModel(savedModel);
-                    }
-                });
-            }
-        });
-    }, []);
 
     // Load a model
     const loadModel = useCallback(async (modelId: ModelId) => {
@@ -93,6 +77,22 @@ export function useLocalAI() {
             }));
         }
     }, []);
+
+    // Check WebGPU support on mount
+    useEffect(() => {
+        localAI.isSupported().then((supported) => {
+            setState((prev) => ({ ...prev, isSupported: supported }));
+
+            // If supported, check for previously loaded model
+            if (supported) {
+                getSetting<ModelId>('localAIModel').then((savedModel) => {
+                    if (savedModel) {
+                        loadModel(savedModel);
+                    }
+                });
+            }
+        });
+    }, [loadModel]);
 
     // Unload the current model
     const unloadModel = useCallback(async () => {

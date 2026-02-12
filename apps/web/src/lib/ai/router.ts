@@ -62,6 +62,23 @@ Respond ONLY with valid JSON in this exact format:
 interface RoutingContext {
     recentMessages?: string[];
     userPreferences?: Record<string, unknown>;
+    userTier?: 'FREE' | 'STARTER' | 'PRO' | 'ULTRA';
+}
+
+// Tier-aware model selection: don't route to models the user can't access
+const TIER_MODEL_MAP: Record<string, string[]> = {
+    FREE: ['gpt-4o-mini', 'gemini-flash', 'gemini-2.0-flash'],
+    STARTER: ['gpt-4o-mini', 'claude-3-haiku-20240307', 'gemini-flash', 'gemini-2.0-flash'],
+    PRO: [], // all models
+    ULTRA: [], // all models
+};
+
+function constrainModelToTier(model: string, tier?: string): string {
+    if (!tier) return model;
+    const allowed = TIER_MODEL_MAP[tier];
+    if (!allowed || allowed.length === 0) return model; // PRO/ULTRA = all
+    if (allowed.includes(model)) return model;
+    return 'gpt-4o-mini'; // Fallback to free-tier model
 }
 
 /**
@@ -94,10 +111,37 @@ export async function routeUserMessage(
             throw new Error('Empty response from router');
         }
 
-        // Parse JSON response
+        // Parse and validate JSON response
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]) as RouteDecision;
+            const raw = JSON.parse(jsonMatch[0]);
+
+            // Runtime validation: ensure type is one of the valid decision types
+            const VALID_ROUTE_TYPES = [
+                'direct_reply',
+                'rag_search',
+                'tool_call',
+                'proactive_schedule',
+            ];
+            if (!raw || typeof raw !== 'object' || !VALID_ROUTE_TYPES.includes(raw.type)) {
+                throw new Error(`Invalid route type from LLM: ${raw?.type}`);
+            }
+
+            // Sanitize string fields to prevent injection
+            const decision: RouteDecision = {
+                ...raw,
+                type: raw.type,
+                reason:
+                    typeof raw.reason === 'string'
+                        ? raw.reason.slice(0, 500)
+                        : 'No reason provided',
+            } as RouteDecision;
+
+            // Constrain model to user's tier
+            if ('model' in decision && decision.model) {
+                decision.model = constrainModelToTier(decision.model, context?.userTier);
+            }
+            return decision;
         }
 
         throw new Error('No JSON found in router response');
@@ -120,7 +164,16 @@ export async function routeUserMessage(
             if (content) {
                 const jsonMatch = content.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
-                    return JSON.parse(jsonMatch[0]) as RouteDecision;
+                    const raw = JSON.parse(jsonMatch[0]);
+                    const VALID_ROUTE_TYPES = [
+                        'direct_reply',
+                        'rag_search',
+                        'tool_call',
+                        'proactive_schedule',
+                    ];
+                    if (raw && typeof raw === 'object' && VALID_ROUTE_TYPES.includes(raw.type)) {
+                        return raw as RouteDecision;
+                    }
                 }
             }
         } catch (fallbackError) {

@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-    HardDrives,
-    Wallet,
-    CheckCircle,
     Bell,
+    Brain,
+    CheckCircle,
+    CurrencyDollar,
+    HardDrives,
     Lightning,
     Spinner,
-    Brain,
-    CurrencyDollar,
+    Wallet,
 } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useState } from 'react';
 
 type DemoPhase =
     | 'idle'
@@ -37,7 +37,7 @@ export default function InvestorDemoPage() {
     const [walletBalance, setWalletBalance] = useState(247.5);
 
     const addMessage = useCallback((role: Message['role'], content: string) => {
-        setMessages(prev => [
+        setMessages((prev) => [
             ...prev,
             {
                 id: `msg-${Date.now()}`,
@@ -51,8 +51,8 @@ export default function InvestorDemoPage() {
     const streamText = useCallback(async (text: string, speed = 30) => {
         setStreamingText('');
         for (let i = 0; i < text.length; i++) {
-            await new Promise(resolve => setTimeout(resolve, speed));
-            setStreamingText(prev => prev + text[i]);
+            await new Promise((resolve) => setTimeout(resolve, speed));
+            setStreamingText((prev) => prev + text[i]);
         }
         return text;
     }, []);
@@ -68,17 +68,17 @@ export default function InvestorDemoPage() {
 
         // Phase 1: Thinking
         setPhase('thinking');
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
         // Phase 2: Wallet Check
         setPhase('wallet_check');
         addMessage('system', 'Checking wallet balance...');
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        await new Promise((resolve) => setTimeout(resolve, 1200));
 
         // Phase 3: Provisioning
         setPhase('provisioning');
         addMessage('system', 'Connecting to Sardis Cloud...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Phase 4: Confirmed - Stream the response
         setPhase('confirmed');
@@ -101,7 +101,7 @@ Would you like me to configure CI/CD pipelines for this server?`;
         setStreamingText('');
 
         // Phase 5: PAC Notification (3 seconds later)
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         setPhase('pac_notification');
         setShowPacNotification(true);
     }, [addMessage, streamText]);
@@ -118,12 +118,15 @@ Would you like me to configure CI/CD pipelines for this server?`;
     const handleShutDown = useCallback(async () => {
         setPacAction('shutdown');
         // Simulate server shutdown
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
         setShowPacNotification(false);
         // Add confirmation message
-        addMessage('system', 'Server sardis-deploy-prod-01 has been shut down. You saved $2.88/day.');
+        addMessage(
+            'system',
+            'Server sardis-deploy-prod-01 has been shut down. You saved $2.88/day.'
+        );
         // Update wallet to show no ongoing charges
-        setWalletBalance(prev => prev + 2.88);
+        setWalletBalance((prev) => prev + 2.88);
     }, [addMessage]);
 
     const handleKeepRunning = useCallback(() => {
@@ -182,7 +185,7 @@ Would you like me to configure CI/CD pipelines for this server?`;
                 {/* Chat Messages */}
                 <div className="space-y-4">
                     <AnimatePresence mode="popLayout">
-                        {messages.map(msg => (
+                        {messages.map((msg) => (
                             <motion.div
                                 key={msg.id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -265,13 +268,22 @@ Would you like me to configure CI/CD pipelines for this server?`;
                                     icon={<Brain className="w-4 h-4" />}
                                     label="Thinking"
                                     active={phase === 'thinking'}
-                                    done={['wallet_check', 'provisioning', 'confirmed', 'pac_notification'].includes(phase)}
+                                    done={[
+                                        'wallet_check',
+                                        'provisioning',
+                                        'confirmed',
+                                        'pac_notification',
+                                    ].includes(phase)}
                                 />
                                 <StatusStep
                                     icon={<Wallet className="w-4 h-4" />}
                                     label="Wallet"
                                     active={phase === 'wallet_check'}
-                                    done={['provisioning', 'confirmed', 'pac_notification'].includes(phase)}
+                                    done={[
+                                        'provisioning',
+                                        'confirmed',
+                                        'pac_notification',
+                                    ].includes(phase)}
                                 />
                                 <StatusStep
                                     icon={<HardDrives className="w-4 h-4" />}
@@ -307,7 +319,9 @@ Would you like me to configure CI/CD pipelines for this server?`;
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-sm font-semibold text-amber-400">PAC Alert</span>
+                                        <span className="text-sm font-semibold text-amber-400">
+                                            PAC Alert
+                                        </span>
                                         <span className="text-xs text-zinc-500">Just now</span>
                                     </div>
                                     <p className="text-sm text-zinc-300 mb-3">
@@ -325,7 +339,9 @@ Would you like me to configure CI/CD pipelines for this server?`;
                                             disabled={pacAction !== 'pending'}
                                             className="px-3 py-1.5 bg-amber-500 text-black text-sm font-medium rounded-lg hover:bg-amber-400 transition-colors disabled:opacity-50"
                                         >
-                                            {pacAction === 'shutdown' ? 'Shutting down...' : 'Shut Down'}
+                                            {pacAction === 'shutdown'
+                                                ? 'Shutting down...'
+                                                : 'Shut Down'}
                                         </button>
                                         <button
                                             onClick={handleKeepRunning}
@@ -369,7 +385,9 @@ function StatusStep({
             >
                 {done ? <CheckCircle weight="bold" className="w-4 h-4" /> : icon}
             </div>
-            <span className={`text-xs ${active || done ? 'text-white' : 'text-zinc-500'}`}>{label}</span>
+            <span className={`text-xs ${active || done ? 'text-white' : 'text-zinc-500'}`}>
+                {label}
+            </span>
         </div>
     );
 }

@@ -1,29 +1,28 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    AlertCircle,
+    ArrowLeft,
+    ArrowRight,
+    CheckCircle2,
+    Download,
+    Eye,
+    Loader2,
+    Upload,
+} from 'lucide-react';
 import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
 } from '@/components/ui/dialog';
-import { ImportUploader, type UploadedFile } from './import-uploader';
+import { cn } from '@/lib/utils';
 import { ImportPreview, type ParsedConversation } from './import-preview';
-import {
-    Upload,
-    Eye,
-    Download,
-    CheckCircle2,
-    ArrowLeft,
-    ArrowRight,
-    Loader2,
-    AlertCircle,
-    X,
-} from 'lucide-react';
+import { ImportUploader, type UploadedFile } from './import-uploader';
 
 /**
  * YULA OS Import Flow Component
@@ -53,6 +52,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
     const [progress, setProgress] = React.useState<ImportProgress>({ current: 0, total: 0 });
     const [error, setError] = React.useState<string | null>(null);
     const [isProcessing, setIsProcessing] = React.useState(false);
+    const [jobId, setJobId] = React.useState<string | null>(null);
 
     const handleFilesSelected = React.useCallback((newFiles: UploadedFile[]) => {
         setFiles((prev) => [...prev, ...newFiles]);
@@ -69,9 +69,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
 
         try {
             // Update file statuses to validating
-            setFiles((prev) =>
-                prev.map((f) => ({ ...f, status: 'validating' as const }))
-            );
+            setFiles((prev) => prev.map((f) => ({ ...f, status: 'validating' as const })));
 
             const parsedConversations: ParsedConversation[] = [];
 
@@ -96,7 +94,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                                 : f
                         )
                     );
-                } catch (parseError) {
+                } catch {
                     setFiles((prev) =>
                         prev.map((f) =>
                             f.id === uploadedFile.id
@@ -113,11 +111,43 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
 
             if (parsedConversations.length > 0) {
                 setConversations(parsedConversations);
+
+                // Create backend import job
+                try {
+                    const firstFile = files[0];
+                    const content = await firstFile.file.text();
+                    const json = JSON.parse(content);
+
+                    const response = await fetch(
+                        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/import/jobs`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                                source:
+                                    firstFile.source === 'UNKNOWN' ? 'CHATGPT' : firstFile.source,
+                                fileName: firstFile.file.name,
+                                fileSize: firstFile.file.size,
+                                content: json,
+                            }),
+                        }
+                    );
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        setJobId(data.job.id);
+                    }
+                } catch (err) {
+                    console.error('Failed to create import job:', err);
+                    // Continue with client-side preview even if backend fails
+                }
+
                 setStep('preview');
             } else {
                 setError('No conversations found in the uploaded files');
             }
-        } catch (err) {
+        } catch {
             setError('Failed to process files. Please check the format.');
         } finally {
             setIsProcessing(false);
@@ -125,9 +155,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
     }, [files]);
 
     const handleSelectionChange = React.useCallback((id: string, selected: boolean) => {
-        setConversations((prev) =>
-            prev.map((c) => (c.id === id ? { ...c, selected } : c))
-        );
+        setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, selected } : c)));
     }, []);
 
     const handleSelectAll = React.useCallback(() => {
@@ -144,24 +172,47 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
         setProgress({ current: 0, total: selectedConvs.length });
 
         try {
-            // Simulate import process
-            for (let i = 0; i < selectedConvs.length; i++) {
-                setProgress({
-                    current: i + 1,
-                    total: selectedConvs.length,
-                    currentTitle: selectedConvs[i].title,
-                });
+            if (jobId) {
+                // Use backend API
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL || ''}/api/import/jobs/${jobId}/execute`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            selectedIds: conversations.filter((e) => e.selected).map((e) => e.id),
+                        }),
+                    }
+                );
 
-                // TODO: Replace with actual API call
-                await new Promise((resolve) => setTimeout(resolve, 100));
+                if (!response.ok) {
+                    throw new Error('Import failed');
+                }
+
+                const data = await response.json();
+                setProgress({
+                    current: data.result.imported,
+                    total: data.result.total,
+                });
+            } else {
+                // Fallback: simulate if no backend job
+                for (let i = 0; i < selectedConvs.length; i++) {
+                    setProgress({
+                        current: i + 1,
+                        total: selectedConvs.length,
+                        currentTitle: selectedConvs[i].title,
+                    });
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                }
             }
 
             setStep('complete');
-        } catch (err) {
+        } catch {
             setError('Import failed. Please try again.');
             setStep('preview');
         }
-    }, [conversations]);
+    }, [conversations, jobId]);
 
     const handleClose = React.useCallback(() => {
         onOpenChange(false);
@@ -172,6 +223,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
             setConversations([]);
             setProgress({ current: 0, total: 0 });
             setError(null);
+            setJobId(null);
         }, 300);
     }, [onOpenChange]);
 
@@ -230,7 +282,9 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                                         <div
                                             className={cn(
                                                 'flex-1 h-0.5 rounded',
-                                                isPast ? 'bg-feature-import' : 'bg-zinc-200 dark:bg-zinc-800'
+                                                isPast
+                                                    ? 'bg-feature-import'
+                                                    : 'bg-zinc-200 dark:bg-zinc-800'
                                             )}
                                         />
                                     )}
@@ -320,7 +374,11 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                             >
                                 <div className="relative w-20 h-20 mb-6">
                                     <div className="absolute inset-0 rounded-full border-4 border-zinc-200 dark:border-zinc-800" />
-                                    <svg className="absolute inset-0 w-20 h-20 -rotate-90">
+                                    <svg
+                                        className="absolute inset-0 w-20 h-20 -rotate-90"
+                                        role="img"
+                                        aria-label="Import progress"
+                                    >
                                         <circle
                                             cx="40"
                                             cy="40"
@@ -376,7 +434,12 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                                     <Button variant="outline" onClick={handleClose}>
                                         Close
                                     </Button>
-                                    <Button variant="import" onClick={() => window.location.href = '/memory'}>
+                                    <Button
+                                        variant="import"
+                                        onClick={() => {
+                                            window.location.href = '/memory';
+                                        }}
+                                    >
                                         View Memory
                                         <ArrowRight className="w-4 h-4 ml-2" />
                                     </Button>
@@ -413,7 +476,7 @@ function parseConversations(
                     ).length;
 
                     conversations.push({
-                        id: `${fileId}-${conv.id || Math.random().toString(36).slice(2)}`,
+                        id: `${fileId}-${conv.id || crypto.randomUUID()}`,
                         externalId: conv.id || '',
                         title: conv.title,
                         messageCount,
@@ -429,7 +492,7 @@ function parseConversations(
             // Claude export format
             for (const conv of data) {
                 conversations.push({
-                    id: `${fileId}-${conv.uuid || Math.random().toString(36).slice(2)}`,
+                    id: `${fileId}-${conv.uuid || crypto.randomUUID()}`,
                     externalId: conv.uuid || '',
                     title: conv.name || 'Untitled',
                     messageCount: conv.chat_messages?.length || 0,
@@ -462,7 +525,10 @@ function getFirstUserMessage(mapping: Record<string, unknown>): string | undefin
                 'content' in node.message &&
                 (node.message as { content: { parts?: string[] } }).content?.parts?.[0]
             ) {
-                return (node.message as { content: { parts: string[] } }).content.parts[0].slice(0, 200);
+                return (node.message as { content: { parts: string[] } }).content.parts[0].slice(
+                    0,
+                    200
+                );
             }
         }
     } catch {

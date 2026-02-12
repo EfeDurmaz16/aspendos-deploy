@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-    type SyncResult,
     getPendingCount,
     hasPendingChanges,
     performFullSync,
     quickSync,
+    type SyncResult,
 } from '@/lib/offline/sync-service';
 import { usePWA } from './use-pwa';
 
@@ -59,7 +59,7 @@ export function useSync(authToken: string | null) {
                 }
             });
         }
-    }, [isOnline, authToken]);
+    }, [isOnline, authToken, performQuickSync]);
 
     // Full sync - fetch all data from server
     const performFullSyncAction = useCallback(async () => {

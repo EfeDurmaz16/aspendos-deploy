@@ -45,7 +45,6 @@ class MCPClient {
         for (const tool of server.tools) {
             const toolId = `${server.name}:${tool.name}`;
             this.tools.set(toolId, tool);
-            console.log(`[MCP] Registered tool: ${toolId}`);
         }
     }
 
@@ -138,16 +137,22 @@ const webSearchTool: MCPTool = {
         type: 'object',
         properties: {
             query: { type: 'string', description: 'Search query' },
-            num_results: { type: 'number', description: 'Number of results to return (default: 5)' },
+            num_results: {
+                type: 'number',
+                description: 'Number of results to return (default: 5)',
+            },
         },
         required: ['query'],
     },
     execute: async (params) => {
-        // Placeholder - integrate with actual search API
         return {
-            success: true,
-            content: `[Web search placeholder] Query: ${params.query}`,
-            metadata: { resultsCount: 0 },
+            success: false,
+            content:
+                'Web search is currently unavailable. Please try again later or rephrase your question.',
+            metadata: {
+                resultsCount: 0,
+                query: params.query,
+            },
         };
     },
 };
@@ -192,13 +197,53 @@ const calculatorTool: MCPTool = {
     },
     execute: async (params) => {
         try {
-            // Safe evaluation using Function constructor
             const expression = String(params.expression);
-            // Only allow numbers, operators, parentheses, and math functions
-            if (!/^[\d\s+\-*/().%^]+$/.test(expression)) {
+            // Strict allowlist: only digits, operators, parentheses, decimal points, spaces
+            if (!/^[\d\s+\-*/().%]+$/.test(expression)) {
                 throw new Error('Invalid characters in expression');
             }
-            const result = Function(`'use strict'; return (${expression})`)();
+            // Safe arithmetic evaluation without Function/eval
+            const tokens = expression.match(/(\d+\.?\d*|[+\-*/()%])/g);
+            if (!tokens) throw new Error('Empty expression');
+            // Use a simple recursive descent parser for safety
+            let pos = 0;
+            const peek = () => tokens[pos];
+            const consume = () => tokens[pos++];
+            const parseNum = (): number => {
+                if (peek() === '(') {
+                    consume();
+                    const v = parseExpr();
+                    consume();
+                    return v;
+                }
+                if (peek() === '-') {
+                    consume();
+                    return -parseNum();
+                }
+                return parseFloat(consume());
+            };
+            const parseTerm = (): number => {
+                let v = parseNum();
+                while (peek() === '*' || peek() === '/' || peek() === '%') {
+                    const op = consume();
+                    const r = parseNum();
+                    if (op === '*') v *= r;
+                    else if (op === '/') v = r !== 0 ? v / r : NaN;
+                    else v %= r;
+                }
+                return v;
+            };
+            const parseExpr = (): number => {
+                let v = parseTerm();
+                while (peek() === '+' || peek() === '-') {
+                    const op = consume();
+                    const r = parseTerm();
+                    if (op === '+') v += r;
+                    else v -= r;
+                }
+                return v;
+            };
+            const result = parseExpr();
             return {
                 success: true,
                 content: { expression, result },

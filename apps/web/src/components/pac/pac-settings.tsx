@@ -1,24 +1,24 @@
 'use client';
 
-import * as React from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import {
+    Bell,
+    BellOff,
+    Check,
+    Clock,
+    Loader2,
+    Mail,
+    MessageSquare,
+    Moon,
+    Smartphone,
+    Sparkles,
+} from 'lucide-react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-    Bell,
-    BellOff,
-    Clock,
-    Mail,
-    Smartphone,
-    Sparkles,
-    MessageSquare,
-    Loader2,
-    Check,
-    Moon,
-} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * YULA OS PAC Settings Component
@@ -94,11 +94,7 @@ export function PACSettingsPanel({
                     </div>
                 </div>
 
-                <Button
-                    variant="pac"
-                    onClick={handleSave}
-                    disabled={!hasChanges || isSaving}
-                >
+                <Button variant="pac" onClick={handleSave} disabled={!hasChanges || isSaving}>
                     {isSaving ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : saved ? (
@@ -109,21 +105,25 @@ export function PACSettingsPanel({
             </div>
 
             {/* Master Switch */}
-            <Card className={cn(
-                'border-2 transition-colors',
-                settings.enabled
-                    ? 'border-feature-pac/30 bg-feature-pac/5'
-                    : 'border-zinc-200 dark:border-zinc-800'
-            )}>
+            <Card
+                className={cn(
+                    'border-2 transition-colors',
+                    settings.enabled
+                        ? 'border-feature-pac/30 bg-feature-pac/5'
+                        : 'border-zinc-200 dark:border-zinc-800'
+                )}
+            >
                 <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className={cn(
-                                'w-12 h-12 rounded-full flex items-center justify-center',
-                                settings.enabled
-                                    ? 'bg-feature-pac text-white'
-                                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
-                            )}>
+                            <div
+                                className={cn(
+                                    'w-12 h-12 rounded-full flex items-center justify-center',
+                                    settings.enabled
+                                        ? 'bg-feature-pac text-white'
+                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
+                                )}
+                            >
                                 {settings.enabled ? (
                                     <Bell className="w-6 h-6" />
                                 ) : (
@@ -157,9 +157,7 @@ export function PACSettingsPanel({
                         <Sparkles className="w-4 h-4 text-feature-pac" />
                         Detection Settings
                     </CardTitle>
-                    <CardDescription>
-                        Configure how YULA detects your commitments
-                    </CardDescription>
+                    <CardDescription>Configure how YULA detects your commitments</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <SettingRow
@@ -187,9 +185,7 @@ export function PACSettingsPanel({
                         <MessageSquare className="w-4 h-4 text-feature-pac" />
                         Notification Channels
                     </CardTitle>
-                    <CardDescription>
-                        Choose how you want to receive reminders
-                    </CardDescription>
+                    <CardDescription>Choose how you want to receive reminders</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <SettingRow
@@ -219,9 +215,7 @@ export function PACSettingsPanel({
                         <Clock className="w-4 h-4 text-feature-pac" />
                         Timing & Digest
                     </CardTitle>
-                    <CardDescription>
-                        Control when you receive notifications
-                    </CardDescription>
+                    <CardDescription>Control when you receive notifications</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <SettingRow
@@ -250,7 +244,9 @@ export function PACSettingsPanel({
                                     id="quietStart"
                                     type="time"
                                     value={settings.quietHoursStart}
-                                    onChange={(e) => handleChange('quietHoursStart', e.target.value)}
+                                    onChange={(e) =>
+                                        handleChange('quietHoursStart', e.target.value)
+                                    }
                                     className="px-2 py-1 rounded-[6px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm"
                                 />
                             </div>
@@ -337,23 +333,12 @@ function SettingRow({
     disabled = false,
 }: SettingRowProps) {
     return (
-        <div className={cn(
-            'flex items-center justify-between',
-            disabled && 'opacity-50'
-        )}>
+        <div className={cn('flex items-center justify-between', disabled && 'opacity-50')}>
             <div className="flex items-start gap-3">
-                {icon && (
-                    <div className="mt-0.5 text-zinc-400 dark:text-zinc-500">
-                        {icon}
-                    </div>
-                )}
+                {icon && <div className="mt-0.5 text-zinc-400 dark:text-zinc-500">{icon}</div>}
                 <div>
-                    <p className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">
-                        {label}
-                    </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {description}
-                    </p>
+                    <p className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">{label}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{description}</p>
                 </div>
             </div>
             <Switch

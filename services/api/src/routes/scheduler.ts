@@ -5,11 +5,15 @@
  */
 
 import { ScheduledTaskStatus } from '@aspendos/db';
+import { timingSafeEqual } from 'crypto';
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
+import { recordTokenUsage } from '../services/billing.service';
 import * as commitmentService from '../services/commitment-detector.service';
+import { consolidateMemories } from '../services/memory-agent';
 import { sendNotification } from '../services/notification.service';
+import * as openMemory from '../services/openmemory.service';
 import * as schedulerService from '../services/scheduler.service';
 import {
     createScheduledTaskSchema,
@@ -25,6 +29,23 @@ type Variables = {
 };
 
 const app = new Hono<{ Variables: Variables }>();
+
+// ============================================
+// SECURITY HELPER
+// ============================================
+
+/**
+ * Timing-safe CRON_SECRET comparison to prevent timing attacks
+ */
+function verifyCronSecret(provided: string | undefined): boolean {
+    const expected = process.env.CRON_SECRET;
+    if (!expected || !provided) return false;
+    try {
+        return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+    } catch {
+        return false;
+    }
+}
 
 // ============================================
 // AUTHENTICATED ROUTES
@@ -207,11 +228,11 @@ app.patch('/tasks/:id', requireAuth, validateBody(rescheduleTaskSchema), async (
 
 // POST /api/scheduler/execute - Execute a scheduled task (called by QStash/cron)
 app.post('/execute', validateBody(executeTaskSchema), async (c) => {
-    // Verify QStash signature if configured
-    const qstashSignature = c.req.header('upstash-signature');
-    if (process.env.QSTASH_CURRENT_SIGNING_KEY && qstashSignature) {
-        // TODO: Implement QStash signature verification
-        // For now, we'll trust the internal network
+    // Fail-closed: require CRON_SECRET for task execution
+    const cronSecret =
+        c.req.header('x-cron-secret') || c.req.header('authorization')?.replace('Bearer ', '');
+    if (!verifyCronSecret(cronSecret)) {
+        return c.json({ error: 'Unauthorized' }, 401);
     }
 
     const validated = c.get('validatedBody') as { taskId: string };
@@ -233,6 +254,9 @@ app.post('/execute', validateBody(executeTaskSchema), async (c) => {
 
         // Generate the re-engagement message
         const message = await commitmentService.generateReengagementMessage(task);
+
+        // Meter the LLM call for re-engagement generation (~200 input + 150 output tokens)
+        await recordTokenUsage(task.userId, 200, 150, 'openai/gpt-4o-mini');
 
         // Mark as completed
         await schedulerService.markTaskCompleted(taskId, message, 'pending_delivery');
@@ -275,7 +299,7 @@ app.post('/poll', async (c) => {
     // This endpoint should be called by a cron job
     // Verify it's an internal call (e.g., via API key or secret header)
     const cronSecret = c.req.header('x-cron-secret');
-    if (cronSecret !== process.env.CRON_SECRET) {
+    if (!verifyCronSecret(cronSecret)) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -286,6 +310,10 @@ app.post('/poll', async (c) => {
         try {
             await schedulerService.markTaskProcessing(task.id);
             const message = await commitmentService.generateReengagementMessage(task);
+
+            // Meter the LLM call for re-engagement generation
+            await recordTokenUsage(task.userId, 200, 150, 'openai/gpt-4o-mini');
+
             await schedulerService.markTaskCompleted(task.id, message, 'pending_delivery');
 
             // Trigger notification delivery
@@ -309,10 +337,10 @@ app.post('/poll', async (c) => {
                 task.id,
                 error instanceof Error ? error.message : 'Unknown error'
             );
+            console.error(`[Scheduler] Task ${task.id} failed:`, error);
             results.push({
                 taskId: task.id,
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown',
             });
         }
     }
@@ -321,6 +349,48 @@ app.post('/poll', async (c) => {
         processed: results.length,
         results,
     });
+});
+
+// POST /api/scheduler/consolidate - Run memory consolidation for active users (cron)
+app.post('/consolidate', async (c) => {
+    const cronSecret = c.req.header('x-cron-secret');
+    if (!verifyCronSecret(cronSecret)) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    try {
+        // Get users with recent activity (last 24h)
+        const recentUsers = await import('../lib/prisma').then((m) =>
+            m.prisma.user.findMany({
+                where: {
+                    updatedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+                },
+                select: { id: true },
+                take: 50, // Cap per cron run
+            })
+        );
+
+        const results = [];
+        for (const user of recentUsers) {
+            try {
+                const memories = await openMemory.listMemories(user.id, { limit: 500 });
+                if (memories.length < 10) continue; // Skip users with few memories
+
+                const result = await consolidateMemories(user.id, memories);
+                results.push({ userId: user.id, ...result });
+            } catch {
+                results.push({ userId: user.id, error: 'failed' });
+            }
+        }
+
+        return c.json({
+            success: true,
+            usersProcessed: results.length,
+            results,
+        });
+    } catch {
+        return c.json({ error: 'Consolidation cron failed' }, 500);
+    }
 });
 
 export default app;

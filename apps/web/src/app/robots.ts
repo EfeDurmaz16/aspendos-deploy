@@ -10,10 +10,10 @@ export default function robots(): MetadataRoute.Robots {
                 allow: '/',
                 disallow: [
                     '/api/',
-                    '/chat/*',      // Individual chat pages are private
-                    '/billing',     // Billing is private
-                    '/analytics',   // Analytics is private
-                    '/onboarding',  // Onboarding is private
+                    '/chat/*', // Individual chat pages are private
+                    '/billing', // Billing is private
+                    '/analytics', // Analytics is private
+                    '/onboarding', // Onboarding is private
                 ],
             },
             {
@@ -27,18 +27,8 @@ export default function robots(): MetadataRoute.Robots {
                     'CCBot',
                     'PerplexityBot',
                 ],
-                allow: [
-                    '/',
-                    '/pricing',
-                    '/signup',
-                    '/login',
-                ],
-                disallow: [
-                    '/api/',
-                    '/chat/',
-                    '/billing',
-                    '/analytics',
-                ],
+                allow: ['/', '/pricing', '/signup', '/login'],
+                disallow: ['/api/', '/chat/', '/billing', '/analytics'],
             },
         ],
         sitemap: `${BASE_URL}/sitemap.xml`,

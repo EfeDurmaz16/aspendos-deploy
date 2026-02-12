@@ -1,6 +1,6 @@
+import { ArrowLeft, ArrowRight } from '@phosphor-icons/react/dist/ssr';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight } from '@phosphor-icons/react/dist/ssr';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { generatePageMetadata } from '@/lib/seo/metadata';
@@ -93,29 +93,48 @@ export default function ComparePage() {
                         Compare YULA with AI Alternatives
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                        See how YULA stacks up against ChatGPT, Claude, Gemini, and more.
-                        Discover why YULA is the best unified AI platform with persistent memory.
+                        See how YULA stacks up against ChatGPT, Claude, Gemini, and more. Discover
+                        why YULA is the best unified AI platform with persistent memory.
                     </p>
                 </header>
 
                 {/* Comparison Cards */}
                 <section aria-labelledby="comparisons">
-                    <h2 id="comparisons" className="sr-only">Available Comparisons</h2>
+                    <h2 id="comparisons" className="sr-only">
+                        Available Comparisons
+                    </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {competitors.map((competitor) => (
-                            <Card key={competitor.slug} className="group hover:border-primary/50 transition-colors">
+                            <Card
+                                key={competitor.slug}
+                                className="group hover:border-primary/50 transition-colors"
+                            >
                                 <CardHeader>
                                     <div className="flex items-center gap-3 mb-2">
-                                        <span className={`w-3 h-3 rounded-full ${competitor.color}`} />
-                                        <CardTitle className="text-xl">YULA vs {competitor.name}</CardTitle>
+                                        <span
+                                            className={`w-3 h-3 rounded-full ${competitor.color}`}
+                                        />
+                                        <CardTitle className="text-xl">
+                                            YULA vs {competitor.name}
+                                        </CardTitle>
                                     </div>
                                     <CardDescription>{competitor.description}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs text-muted-foreground">{competitor.searches}</span>
-                                        <Button variant="ghost" size="sm" asChild className="group-hover:text-primary">
-                                            <Link href={`/compare/${competitor.slug}`} className="gap-1">
+                                        <span className="text-xs text-muted-foreground">
+                                            {competitor.searches}
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            asChild
+                                            className="group-hover:text-primary"
+                                        >
+                                            <Link
+                                                href={`/compare/${competitor.slug}`}
+                                                className="gap-1"
+                                            >
                                                 Compare
                                                 <ArrowRight className="w-4 h-4" />
                                             </Link>
@@ -129,12 +148,11 @@ export default function ComparePage() {
 
                 {/* Summary Section */}
                 <section className="mt-16 text-center py-12 px-6 rounded-2xl bg-primary/5 border border-primary/20">
-                    <h2 className="text-2xl font-semibold mb-4">
-                        Why YULA is Different
-                    </h2>
+                    <h2 className="text-2xl font-semibold mb-4">Why YULA is Different</h2>
                     <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                        YULA is the only AI platform that combines multi-model access with persistent semantic memory,
-                        history import from ChatGPT/Claude, and proactive AI callbacks.
+                        YULA is the only AI platform that combines multi-model access with
+                        persistent semantic memory, history import from ChatGPT/Claude, and
+                        proactive AI callbacks.
                     </p>
                     <Button size="lg" asChild>
                         <Link href="/signup" className="gap-2">

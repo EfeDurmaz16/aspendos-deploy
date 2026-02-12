@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-    type LocalChat,
-    type LocalMessage,
     deleteLocalChat,
     getLocalChat,
     getLocalChats,
     getLocalMessages,
+    type LocalChat,
+    type LocalMessage,
     queueMutation,
     saveLocalChat,
     saveLocalMessage,
@@ -205,9 +205,7 @@ export function useOfflineMessages(chatId: string | undefined) {
     // Update a message (for streaming)
     const updateMessage = useCallback(
         async (messageId: string, content: string): Promise<void> => {
-            setMessages((prev) =>
-                prev.map((m) => (m.id === messageId ? { ...m, content } : m))
-            );
+            setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, content } : m)));
 
             // Also update in IndexedDB
             const existing = messages.find((m) => m.id === messageId);

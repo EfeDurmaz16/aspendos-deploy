@@ -20,7 +20,7 @@ model User {
   email     String   @unique
   name      String?
   avatar    String?
-  tier      Tier     @default(STARTER)
+  tier      Tier     @default(FREE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -52,6 +52,7 @@ model User {
 }
 
 enum Tier {
+  FREE
   STARTER
   PRO
   ULTRA
@@ -95,6 +96,8 @@ model CreditLog {
   account BillingAccount @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
 
   @@index([billingAccountId])
+  @@index([billingAccountId, createdAt])
+  @@index([billingAccountId, reason, createdAt])
 }
 
 // ============================================
@@ -109,6 +112,8 @@ model Chat {
   modelPreference String? // null = auto-select
   memoryScope     String   @default("global") // global, project, chat
   projectId       String?
+  shareToken      String?  @unique
+  sharedAt        DateTime?
   isArchived      Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -119,6 +124,9 @@ model Chat {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([shareToken])
+  @@index([userId, createdAt])
+  @@index([userId, isArchived])
 }
 
 model Message {
@@ -141,6 +149,8 @@ model Message {
   @@index([chatId])
   @@index([userId])
   @@index([createdAt])
+  @@index([chatId, createdAt])
+  @@index([userId, createdAt])
 }
 
 // ============================================
@@ -177,6 +187,7 @@ model Memory {
   @@index([userId, isActive])
   @@index([chatId])
   @@index([type])
+  @@index([userId, isActive, lastAccessedAt])
 }
 
 model MemoryFeedback {
@@ -247,6 +258,7 @@ model ScheduledTask {
   @@index([userId, status])
   @@index([triggerAt])
   @@index([status, triggerAt])
+  @@index([status, updatedAt])
   @@map("scheduled_task")
 }
 
@@ -292,6 +304,7 @@ model Session {
 
   @@unique([token])
   @@index([userId])
+  @@index([expiresAt])
   @@map("session")
 }
 
@@ -406,6 +419,7 @@ model NotificationLog {
   @@index([userId])
   @@index([userId, status])
   @@index([createdAt])
+  @@index([userId, status, createdAt])
   @@map("notification_log")
 }
 
@@ -502,6 +516,7 @@ model PACReminder {
   deliveredAt   DateTime?
   respondedAt   DateTime?
   responseType  String? // "acknowledged", "snoozed", "dismissed"
+  snoozeCount   Int            @default(0)
   metadata      Json?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -513,6 +528,7 @@ model PACReminder {
   @@index([userId, status])
   @@index([triggerAt])
   @@index([status, triggerAt])
+  @@index([userId, createdAt])
   @@map("pac_reminder")
 }
 
@@ -586,7 +602,7 @@ model CouncilSession {
   query           String            @db.Text
   status          CouncilStatus     @default(PENDING)
   selectedPersona String? // Which persona's response was selected
-  synthesisText   String?           @db.Text // Combined synthesis of all responses
+  synthesis       String?           @db.Text // Combined synthesis of all responses
   totalLatencyMs  Int               @default(0)
   metadata        Json?
   createdAt       DateTime          @default(now())
@@ -619,6 +635,7 @@ model CouncilResponse {
 
   @@index([sessionId])
   @@index([sessionId, persona])
+  @@index([sessionId, selected])
   @@map("council_response")
 }
 
@@ -633,10 +650,10 @@ enum CouncilStatus {
 }
 
 enum PersonaType {
-  LOGICAL // Analytical, data-driven (Claude)
+  SCHOLAR // Analytical, data-driven (Claude)
   CREATIVE // Innovative, out-of-the-box (GPT-4)
-  PRUDENT // Cautious, risk-aware (Gemini)
-  SWIFT // Fast, efficient (Groq/Llama)
+  PRACTICAL // Cautious, risk-aware (Gemini)
+  DEVILS_ADVOCATE // Fast, efficient (Groq/Llama)
 }
 
 enum ResponseStatus {
@@ -703,4 +720,24 @@ model XPLog {
   @@index([profileId])
   @@index([profileId, createdAt])
   @@map("xp_log")
+}
+
+// ============================================
+// AUDIT LOG (Security & Compliance)
+// ============================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String // e.g., "ACCOUNT_DELETE", "DATA_EXPORT", "LOGIN", "SETTINGS_UPDATE"
+  resource   String // e.g., "user", "memory", "billing"
+  resourceId String?
+  ip         String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_log")
 }

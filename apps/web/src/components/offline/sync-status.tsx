@@ -14,14 +14,8 @@ interface SyncStatusProps {
  * Shows sync state and allows manual sync trigger.
  */
 export function SyncStatus({ authToken, compact = false }: SyncStatusProps) {
-    const {
-        isOnline,
-        isSyncing,
-        lastSyncTime,
-        pendingCount,
-        error,
-        performFullSync,
-    } = useSync(authToken);
+    const { isOnline, isSyncing, lastSyncTime, pendingCount, error, performFullSync } =
+        useSync(authToken);
 
     if (compact) {
         return (
@@ -88,15 +82,11 @@ export function SyncStatus({ authToken, compact = false }: SyncStatusProps) {
                     <span className="bg-amber-500/20 px-2 py-0.5 rounded">
                         {pendingCount} pending
                     </span>
-                    <span className="text-muted-foreground">
-                        Will sync when online
-                    </span>
+                    <span className="text-muted-foreground">Will sync when online</span>
                 </div>
             )}
 
-            {error && (
-                <p className="text-xs text-destructive">{error}</p>
-            )}
+            {error && <p className="text-xs text-destructive">{error}</p>}
 
             {lastSyncTime && (
                 <p className="text-xs text-muted-foreground">

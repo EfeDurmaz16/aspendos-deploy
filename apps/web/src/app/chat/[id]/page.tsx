@@ -1,20 +1,11 @@
 'use client';
 
-import { Brain, CircleNotch, List, SidebarSimple, GlobeIcon } from '@phosphor-icons/react';
+import { Brain, CircleNotch, GlobeIcon, PlusCircle, SidebarSimple } from '@phosphor-icons/react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { ChatSidebar } from '@/components/chat/chat-sidebar';
-import { MemoryPanel } from '@/components/chat/memory-panel';
-import { ModelPicker } from '@/components/chat/model-picker';
-import { AddModelsModal } from '@/components/chat/add-models-modal';
-import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
-import { ContextMenuMessage } from '@/components/chat/context-menu-message';
-import { useAuth } from '@/hooks/use-auth';
-import { useStreamingChat } from '@/hooks/useStreamingChat';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-
+import rehypeKatex from 'rehype-katex';
+// Streamdown Plugins
+import remarkMath from 'remark-math';
 // AI Elements Imports
 import {
     Conversation,
@@ -22,40 +13,53 @@ import {
     ConversationEmptyState,
     ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
-import {
-    Message,
-    MessageContent,
-    MessageResponse,
-    MessageAttachment,
-    MessageAttachments,
-} from '@/components/ai-elements/message';
+import type { MessageResponseProps } from '@/components/ai-elements/message';
+import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message';
+import type { PromptInputMessage } from '@/components/ai-elements/prompt-input';
 import {
     PromptInput,
-    PromptInputBody,
-    PromptInputTextarea,
-    PromptInputFooter,
-    PromptInputSubmit,
-    PromptInputTools,
-    PromptInputActionMenu,
-    PromptInputActionMenuTrigger,
-    PromptInputActionMenuContent,
     PromptInputActionAddAttachments,
-    PromptInputHeader,
-    PromptInputAttachments,
+    PromptInputActionMenu,
+    PromptInputActionMenuContent,
+    PromptInputActionMenuTrigger,
     PromptInputAttachment,
+    PromptInputAttachments,
+    PromptInputBody,
     PromptInputButton,
+    PromptInputFooter,
+    PromptInputHeader,
     PromptInputSelect,
-    PromptInputSelectTrigger,
-    PromptInputSelectValue,
     PromptInputSelectContent,
     PromptInputSelectItem,
+    PromptInputSelectTrigger,
+    PromptInputSelectValue,
+    PromptInputSubmit,
+    PromptInputTextarea,
+    PromptInputTools,
 } from '@/components/ai-elements/prompt-input';
-import { Reasoning, ChainOfThought } from '@/components/ai-elements/reasoning';
-
-// Streamdown Plugins
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import { Reasoning } from '@/components/ai-elements/reasoning';
+import { AddModelsModal } from '@/components/chat/add-models-modal';
+import { ChatSidebar } from '@/components/chat/chat-sidebar';
+import { ContextMenuMessage } from '@/components/chat/context-menu-message';
+import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/use-auth';
+import { type ChatMessage, type MemoryDecision, useStreamingChat } from '@/hooks/useStreamingChat';
+import { cn } from '@/lib/utils';
 import 'katex/dist/katex.min.css'; // Ensure katex CSS is imported for math rendering
+
+const REMARK_PLUGINS = [remarkMath] as unknown as NonNullable<MessageResponseProps['plugins']>;
+const REHYPE_PLUGINS = [rehypeKatex] as unknown as NonNullable<
+    MessageResponseProps['rehypePlugins']
+>;
+
+type StoredChatMessage = {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    createdAt: string;
+    decision?: MemoryDecision | null;
+};
 
 interface Chat {
     id: string;
@@ -63,7 +67,7 @@ interface Chat {
     modelPreference: string | null;
     createdAt: string;
     updatedAt: string;
-    messages?: any[];
+    messages?: StoredChatMessage[];
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -74,8 +78,14 @@ export default function ChatPage() {
     const { isLoaded, isSignedIn } = useAuth();
     const chatId = params.id as string;
 
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [memoryOpen, setMemoryOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Open sidebar by default on desktop
+    useEffect(() => {
+        if (window.innerWidth >= 768) {
+            setSidebarOpen(true);
+        }
+    }, []);
     const [chat, setChat] = useState<Chat | null>(null);
     const [chats, setChats] = useState<Chat[]>([]);
     const [isLoadingChat, setIsLoadingChat] = useState(true);
@@ -83,11 +93,11 @@ export default function ChatPage() {
 
     const [isAddModelsOpen, setIsAddModelsOpen] = useState(false);
     const [enabledModels, setEnabledModels] = useState<string[]>([
-        'openai/gpt-5.2',
-        'anthropic/claude-opus-4.5',
-        'anthropic/claude-sonnet-4.5',
-        'openai/gpt-5-nano',
-        'google/gemini-3-pro-preview',
+        'openai/gpt-4o-mini',
+        'anthropic/claude-3-5-haiku-20241022',
+        'google/gemini-2.0-flash',
+        'openai/gpt-4o',
+        'anthropic/claude-sonnet-4-5-20250929',
     ]);
     const [model, setModel] = useState('openai/gpt-4o-mini');
     const [webSearch, setWebSearch] = useState(false);
@@ -128,16 +138,6 @@ export default function ChatPage() {
 
                 const data = await res.json();
                 setChat(data);
-                // Initial messages are loaded by useStreamingChat via its own logic if we were using useChat fully, 
-                // but here useStreamingChat manages messages state. 
-                // The original code setInitialMessages separately.
-                // Assuming useStreamingChat handles the message list now or we load it here?
-                // The original code loaded initialMessages and combined them: const allMessages = [...initialMessages, ...messages];
-                // Wait, useStreamingChat in original code didn't load initial messages. It just exposed the new ones.
-                // So I need to keep the "load initial messages" logic, but merge it effectively.
-                // Actually, useStreamingChat hook in Step 16 has a "loadMessages" function.
-                // But typically useChat stores all messages.
-                // Let's stick to the previous pattern: "allMessages".
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load chat');
             } finally {
@@ -167,31 +167,25 @@ export default function ChatPage() {
         loadChats();
     }, [isLoaded, isSignedIn]);
 
-    // Initial messages from chat load (re-implementing original logic because useStreamingChat is a wrapper)
-    const [initialMessages, setInitialMessages] = useState<any[]>([]);
+    // Initial messages from chat load
+    const [initialMessages, setInitialMessages] = useState<ChatMessage[]>([]);
 
     useEffect(() => {
         if (chat?.messages) {
-            // Map chat.messages to the format we need
-            const converted = chat.messages.map((m: any) => ({
+            const converted: ChatMessage[] = chat.messages.map((m) => ({
                 id: m.id,
-                role: m.role as 'user' | 'assistant',
+                role: m.role,
                 content: m.content,
                 timestamp: new Date(m.createdAt),
+                decision: m.decision ?? undefined,
             }));
             setInitialMessages(converted);
         }
     }, [chat]);
 
-    // Combine messages. 
-    // Note: useStreamingChat messages are cumulative for the session.
-    // If we load old messages, we should probably initialize useStreamingChat with them if possible,
-    // or just display them.
-    // The previous code did: const allMessages = [...initialMessages, ...messages];
-    const allMessages = [...initialMessages, ...messages];
+    const allMessages: ChatMessage[] = [...initialMessages, ...messages];
 
-
-    const handleNewChat = async () => {
+    const handleNewChat = useCallback(async () => {
         try {
             const res = await fetch(`${API_BASE}/api/chat`, {
                 method: 'POST',
@@ -206,7 +200,7 @@ export default function ChatPage() {
         } catch {
             /* Handle error */
         }
-    };
+    }, [router]);
 
     const handleModelChange = useCallback(
         async (modelId: string) => {
@@ -217,7 +211,9 @@ export default function ChatPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model_id: modelId }),
                 });
-                setChat((prev: Chat | null) => (prev ? { ...prev, modelPreference: modelId } : prev));
+                setChat((prev: Chat | null) =>
+                    prev ? { ...prev, modelPreference: modelId } : prev
+                );
                 setModel(modelId);
             } catch {
                 /* Handle error silently */
@@ -246,17 +242,18 @@ export default function ChatPage() {
     }, [handleNewChat]);
 
     // Handle PromptInput submission
-    const handleSubmit = async (message: { text: string; files: any[] }) => {
-        // Just text for now, as useStreamingChat expects string
-        // If files are present, we might want to handle them (upload, then send URL?)
-        // For this MVP step, we'll focus on text.
-        await sendMessage(message.text, { model });
-    };
+    const handleSubmit = useCallback(
+        async (message: PromptInputMessage) => {
+            const text = webSearch ? `[Search] ${message.text}` : message.text;
+            await sendMessage(text, { model });
+        },
+        [model, sendMessage, webSearch]
+    );
 
     if (!isLoaded) {
         return (
             <div className="h-screen flex items-center justify-center bg-background">
-                <CircleNotch className="w-8 h-8 animate-spin text-zinc-400" />
+                <CircleNotch className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
         );
     }
@@ -267,17 +264,23 @@ export default function ChatPage() {
     }
 
     return (
-        <div className="h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-black overflow-hidden font-sans flex relative">
-            {/* YULA Monolith Background - Amber glow only */}
-            <div className="absolute inset-0 pointer-events-none z-0">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-100/10 to-transparent dark:from-amber-900/8 rounded-full blur-3xl opacity-50" />
-                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-bl from-emerald-100/15 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl opacity-50" />
-            </div>
+        <div className="h-screen bg-background overflow-hidden font-sans flex">
+            {/* Sidebar backdrop (mobile only) */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/40 z-30 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                    onKeyDown={() => {}}
+                    role="button"
+                    tabIndex={-1}
+                />
+            )}
 
             {/* Sidebar */}
             <div
                 className={cn(
-                    'h-full bg-white/50 dark:bg-zinc-950/50 backdrop-blur border-r border-zinc-200 dark:border-zinc-900 transition-all duration-300 z-20',
+                    'h-full bg-muted border-r border-border transition-all duration-300',
+                    'fixed md:relative z-40 md:z-20',
                     sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'
                 )}
             >
@@ -285,85 +288,77 @@ export default function ChatPage() {
                     chats={chats}
                     currentChatId={chatId}
                     onNewChat={handleNewChat}
-                    onSelectChat={(id) => router.push(`/chat/${id}`)}
+                    onSelectChat={(id) => {
+                        router.push(`/chat/${id}`);
+                        if (window.innerWidth < 768) setSidebarOpen(false);
+                    }}
                 />
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex-1 h-full flex flex-col relative bg-transparent z-10 w-full min-w-0">
-                {/* Header */}
-                <div className="flex items-center justify-between p-3 border-b border-zinc-200 dark:border-zinc-800 flex-none bg-white/50 dark:bg-zinc-950/50 backdrop-blur z-20 w-full">
-                    <div className="flex items-center">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground mr-2"
-                        >
-                            <SidebarSimple className="w-4 h-4" />
-                        </Button>
-                        <div className="hidden sm:block">
-                            <ModelPicker
-                                selectedModel={chat?.modelPreference || 'openai/gpt-5.2'}
-                                onSelectModel={handleModelChange}
-                                onOpenAddModels={() => setIsAddModelsOpen(true)}
-                                enabledModels={enabledModels}
-                            />
-                        </div>
-                    </div>
+            <div className="flex-1 h-full flex flex-col relative z-10 w-full min-w-0">
+                {/* Header - simplified: sidebar toggle + new chat */}
+                <div className="flex items-center justify-between p-3 border-b border-border flex-none bg-background z-20 w-full">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    >
+                        <SidebarSimple className="w-4 h-4" />
+                    </Button>
 
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setMemoryOpen(!memoryOpen)}
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        >
-                            <List className="w-4 h-4" />
-                        </Button>
-                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleNewChat}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    >
+                        <PlusCircle className="w-4 h-4" />
+                    </Button>
                 </div>
 
                 {/* Conversation Area */}
                 <div className="flex-1 flex flex-col min-h-0 relative">
                     <Conversation>
-                        <ConversationContent>
+                        <ConversationContent className="max-w-3xl mx-auto w-full">
                             {allMessages.length === 0 && !isLoadingChat && !error ? (
                                 <ConversationEmptyState
-                                    icon={<Brain className="w-12 h-12 text-muted-foreground/50" weight="duotone" />}
+                                    icon={
+                                        <Brain
+                                            className="w-12 h-12 text-muted-foreground/50"
+                                            weight="duotone"
+                                        />
+                                    }
                                     title="Start a conversation"
-                                    description="Ask anything, analyze data, or generate ideas. Aspendos is here to help."
+                                    description="Ask anything, analyze data, or generate ideas. YULA is here to help."
                                 />
                             ) : (
                                 allMessages.map((msg, index) => (
                                     <ContextMenuMessage
                                         key={msg.id || index}
-                                        message={{ id: msg.id, content: msg.content, role: msg.role }}
-                                        onReply={(m) => {
-                                            // Handle reply - could prepend quote to input
-                                            toast.info('Reply feature coming soon');
-                                        }}
-                                        onEdit={msg.role === 'user' ? (m) => {
-                                            toast.info('Edit feature coming soon');
-                                        } : undefined}
-                                        onRegenerate={msg.role === 'assistant' ? (id) => {
-                                            toast.info('Regenerate feature coming soon');
-                                        } : undefined}
-                                        onForward={(m) => {
-                                            toast.info('Forward feature coming soon');
+                                        message={{
+                                            id: msg.id,
+                                            content: msg.content,
+                                            role: msg.role,
                                         }}
                                     >
                                         <Message from={msg.role}>
-                                            {/* Show reasoning for assistant messages if available */}
-                                            {msg.role === 'assistant' && msg.reasoning && (
-                                                <Reasoning isStreaming={isStreaming && index === allMessages.length - 1}>
-                                                    {msg.reasoning}
-                                                </Reasoning>
-                                            )}
+                                            {msg.role === 'assistant' &&
+                                                msg.decision?.reasoning && (
+                                                    <Reasoning
+                                                        isStreaming={
+                                                            isStreaming &&
+                                                            index === allMessages.length - 1
+                                                        }
+                                                    >
+                                                        {msg.decision.reasoning}
+                                                    </Reasoning>
+                                                )}
                                             <MessageContent>
                                                 <MessageResponse
-                                                    plugins={[remarkMath] as any}
-                                                    rehypePlugins={[rehypeKatex] as any}
+                                                    plugins={REMARK_PLUGINS}
+                                                    rehypePlugins={REHYPE_PLUGINS}
                                                 >
                                                     {msg.content}
                                                 </MessageResponse>
@@ -388,10 +383,10 @@ export default function ChatPage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 flex-none z-20 max-w-3xl mx-auto w-full">
+                <div className="p-2 sm:p-4 flex-none z-20 max-w-3xl mx-auto w-full">
                     <PromptInput
                         onSubmit={handleSubmit}
-                        className="shadow-xl"
+                        className="border border-border rounded-2xl"
                     >
                         <PromptInputHeader>
                             <PromptInputAttachments>
@@ -407,7 +402,6 @@ export default function ChatPage() {
                                     <PromptInputActionMenuTrigger />
                                     <PromptInputActionMenuContent>
                                         <PromptInputActionAddAttachments />
-                                        {/* Add more actions like shortcuts later */}
                                     </PromptInputActionMenuContent>
                                 </PromptInputActionMenu>
                                 <PromptInputButton
@@ -419,11 +413,8 @@ export default function ChatPage() {
                                     <GlobeIcon size={16} />
                                     <span className="text-xs">Search</span>
                                 </PromptInputButton>
-                                {/* Model Selector in input */}
-                                <PromptInputSelect
-                                    value={model}
-                                    onValueChange={handleModelChange}
-                                >
+                                {/* Model Selector in input footer */}
+                                <PromptInputSelect value={model} onValueChange={handleModelChange}>
                                     <PromptInputSelectTrigger>
                                         <PromptInputSelectValue placeholder="Select model" />
                                     </PromptInputSelectTrigger>
@@ -440,19 +431,9 @@ export default function ChatPage() {
                         </PromptInputFooter>
                     </PromptInput>
                     <div className="text-center mt-2 text-xs text-muted-foreground">
-                        Aspendos can make mistakes. Check important info.
+                        YULA can make mistakes. Check important info.
                     </div>
                 </div>
-            </div>
-
-            {/* Memory Panel */}
-            <div
-                className={cn(
-                    'h-full border-l border-zinc-200 dark:border-zinc-900 bg-white/50 dark:bg-zinc-950/50 backdrop-blur transition-all duration-300 z-20',
-                    memoryOpen ? 'w-80' : 'w-0 overflow-hidden'
-                )}
-            >
-                <MemoryPanel />
             </div>
 
             {/* Keyboard Shortcuts Panel */}
@@ -467,4 +448,3 @@ export default function ChatPage() {
         </div>
     );
 }
-

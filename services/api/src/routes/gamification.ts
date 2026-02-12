@@ -40,7 +40,9 @@ app.get('/profile', async (c) => {
         recentXp: profile.xpLogs.map((log) => ({
             amount: log.amount,
             action: log.action,
-            description: gamificationService.XP_ACTIONS[log.action as gamificationService.XPAction]?.description || log.action,
+            description:
+                gamificationService.XP_ACTIONS[log.action as gamificationService.XPAction]
+                    ?.description || log.action,
             createdAt: log.createdAt,
         })),
     });
@@ -48,7 +50,21 @@ app.get('/profile', async (c) => {
 
 /**
  * POST /api/gamification/xp - Award XP for an action
+ *
+ * Rate-limited: Only certain low-value actions are allowed from the client.
+ * High-value actions (import, invite, streaks) must be awarded server-side.
  */
+// Actions that clients are allowed to trigger (low-value, idempotent-ish)
+const CLIENT_ALLOWED_ACTIONS: Set<gamificationService.XPAction> = new Set([
+    'send_message',
+    'use_memory_search',
+    'complete_onboarding',
+]);
+
+// Simple in-memory cooldown per user+action (prevent spam)
+const xpCooldowns = new Map<string, number>();
+const XP_COOLDOWN_MS = 5_000; // 5 seconds between same action
+
 app.post('/xp', async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
@@ -58,6 +74,19 @@ app.post('/xp', async (c) => {
     if (!action || !(action in gamificationService.XP_ACTIONS)) {
         return c.json({ error: 'Invalid action' }, 400);
     }
+
+    // Only allow low-value actions from client
+    if (!CLIENT_ALLOWED_ACTIONS.has(action as gamificationService.XPAction)) {
+        return c.json({ error: 'This action cannot be awarded directly' }, 403);
+    }
+
+    // Rate-limit: prevent spamming same action
+    const cooldownKey = `${userId}:${action}`;
+    const lastAwarded = xpCooldowns.get(cooldownKey) || 0;
+    if (Date.now() - lastAwarded < XP_COOLDOWN_MS) {
+        return c.json({ error: 'Too many requests, please wait' }, 429);
+    }
+    xpCooldowns.set(cooldownKey, Date.now());
 
     const result = await gamificationService.awardXp(
         userId,

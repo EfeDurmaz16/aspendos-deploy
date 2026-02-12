@@ -38,14 +38,10 @@ export default function NotFound() {
                 {/* Navigation */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                     <Button asChild size="lg" variant="primary">
-                        <Link href="/">
-                            Go Home
-                        </Link>
+                        <Link href="/">Go Home</Link>
                     </Button>
                     <Button asChild size="lg" variant="secondary">
-                        <Link href="/chat">
-                            Start Chatting
-                        </Link>
+                        <Link href="/chat">Start Chatting</Link>
                     </Button>
                 </div>
 

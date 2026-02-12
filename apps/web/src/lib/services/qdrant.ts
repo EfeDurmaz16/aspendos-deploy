@@ -42,7 +42,6 @@ export async function setupQdrantCollections() {
             await qdrant.createCollection(COLLECTIONS.USER_MEMORIES, {
                 vectors: { size: VECTOR_SIZE, distance: 'Cosine' },
             });
-            console.log(`[Qdrant] Created collection: ${COLLECTIONS.USER_MEMORIES}`);
         }
 
         // Conversation embeddings collection
@@ -53,10 +52,7 @@ export async function setupQdrantCollections() {
             await qdrant.createCollection(COLLECTIONS.CONVERSATION_EMBEDDINGS, {
                 vectors: { size: VECTOR_SIZE, distance: 'Cosine' },
             });
-            console.log(`[Qdrant] Created collection: ${COLLECTIONS.CONVERSATION_EMBEDDINGS}`);
         }
-
-        console.log('[Qdrant] Collections ready');
     } catch (error) {
         console.error('[Qdrant] Failed to setup collections:', error);
         throw error;

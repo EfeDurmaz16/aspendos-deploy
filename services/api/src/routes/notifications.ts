@@ -24,6 +24,29 @@ app.post('/subscribe', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
 
+    // Validate push subscription fields
+    if (!body.endpoint || typeof body.endpoint !== 'string') {
+        return c.json({ error: 'endpoint is required' }, 400);
+    }
+    try {
+        const url = new URL(body.endpoint);
+        if (!['https:'].includes(url.protocol)) {
+            return c.json({ error: 'endpoint must be HTTPS' }, 400);
+        }
+    } catch {
+        return c.json({ error: 'endpoint must be a valid URL' }, 400);
+    }
+    if (
+        !body.keys?.p256dh ||
+        !body.keys?.auth ||
+        typeof body.keys.p256dh !== 'string' ||
+        typeof body.keys.auth !== 'string'
+    ) {
+        return c.json({ error: 'keys.p256dh and keys.auth are required' }, 400);
+    }
+    const ALLOWED_DEVICE_TYPES = ['web', 'android', 'ios'];
+    const deviceType = ALLOWED_DEVICE_TYPES.includes(body.deviceType) ? body.deviceType : 'web';
+
     try {
         await registerPushSubscription(userId, {
             endpoint: body.endpoint,
@@ -31,7 +54,7 @@ app.post('/subscribe', requireAuth, async (c) => {
                 p256dh: body.keys.p256dh,
                 auth: body.keys.auth,
             },
-            deviceType: body.deviceType || 'web',
+            deviceType,
         });
 
         return c.json({ success: true }, 201);
@@ -83,8 +106,31 @@ app.patch('/preferences', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
 
+    // Whitelist allowed preference fields
+    const BOOLEAN_FIELDS = [
+        'pushEnabled',
+        'emailEnabled',
+        'inAppEnabled',
+        'quietHoursEnabled',
+    ] as const;
+    const TIME_FIELDS = ['quietHoursStart', 'quietHoursEnd'] as const;
+    const TIME_REGEX = /^\d{2}:\d{2}$/;
+
+    const sanitized: Record<string, boolean | string> = {};
+    for (const field of BOOLEAN_FIELDS) {
+        if (typeof body[field] === 'boolean') sanitized[field] = body[field];
+    }
+    for (const field of TIME_FIELDS) {
+        if (typeof body[field] === 'string' && TIME_REGEX.test(body[field]))
+            sanitized[field] = body[field];
+    }
+
+    if (Object.keys(sanitized).length === 0) {
+        return c.json({ error: 'No valid preference fields provided' }, 400);
+    }
+
     try {
-        await updateNotificationPreferences(userId, body);
+        await updateNotificationPreferences(userId, sanitized);
         return c.json({ success: true });
     } catch (error) {
         console.error('[Notifications] Error updating preferences:', error);
@@ -100,17 +146,15 @@ app.patch('/preferences', requireAuth, async (c) => {
 app.get('/stream', requireAuth, async (c) => {
     const userId = c.get('userId')!;
 
-    console.log(`[Notifications] SSE stream connected for user ${userId}`);
+    console.log(`[Notifications] SSE stream connected`);
 
     const stream = new ReadableStream({
         async start(controller) {
             let isActive = true;
 
-            // Send initial connection message
+            // Send initial connection message (no userId to prevent leaking internal IDs)
             controller.enqueue(
-                new TextEncoder().encode(
-                    `:connected\ndata: {"type":"connected","userId":"${userId}"}\n\n`
-                )
+                new TextEncoder().encode(`:connected\ndata: {"type":"connected"}\n\n`)
             );
 
             // Function to send a notification through SSE
@@ -199,7 +243,7 @@ app.get('/stream', requireAuth, async (c) => {
                 isActive = false;
                 clearInterval(heartbeat);
                 clearInterval(pollInterval);
-                console.log(`[Notifications] SSE connection closed for user ${userId}`);
+                console.log(`[Notifications] SSE connection closed`);
                 controller.close();
             });
         },

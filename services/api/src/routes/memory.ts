@@ -5,10 +5,26 @@
  * decay, waypoints, and explainable traces.
  */
 import { Hono } from 'hono';
+import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateParams } from '../middleware/validate';
+import { consolidateMemories, maybeAutoConsolidate } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
+import {
+    addMemorySchema,
+    bulkDeleteSchema,
+    memoryFeedbackSchema,
+    memoryIdParamSchema,
+    searchMemorySchema,
+} from '../validation/memory.schema';
 
-const app = new Hono();
+type Variables = {
+    validatedBody?: unknown;
+    validatedQuery?: unknown;
+    validatedParams?: unknown;
+};
+
+const app = new Hono<{ Variables: Variables }>();
 
 app.use('*', requireAuth);
 
@@ -30,9 +46,17 @@ app.get('/dashboard/stats', async (c) => {
  */
 app.get('/dashboard/list', async (c) => {
     const userId = c.get('userId')!;
-    const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 100);
+    const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
+    const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') || '50', 10), 100));
+    const offset = (page - 1) * limit;
 
-    const memories = await openMemory.listMemories(userId, { limit });
+    // Get total count first
+    const allMemories = await openMemory.listMemories(userId, { limit: 10000 });
+    const total = allMemories.length;
+    const totalPages = Math.ceil(total / limit);
+
+    // Get paginated slice
+    const memories = allMemories.slice(offset, offset + limit);
 
     // Map to frontend expected format
     return c.json({
@@ -46,9 +70,12 @@ app.get('/dashboard/list', async (c) => {
             isPinned: false,
             isActive: true,
         })),
-        total: memories.length,
-        page: 1,
-        totalPages: 1,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+        },
     });
 });
 
@@ -57,9 +84,15 @@ app.get('/dashboard/list', async (c) => {
  * Note: OpenMemory doesn't support direct updates, so we delete and re-add
  */
 app.patch('/dashboard/:id', async (c) => {
-    const _userId = c.get('userId')!;
+    const userId = c.get('userId')!;
     const memoryId = c.req.param('id');
     const body = await c.req.json();
+
+    // Verify ownership before update
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
+    }
 
     // Update memory
     try {
@@ -92,7 +125,15 @@ app.patch('/dashboard/:id', async (c) => {
  * DELETE /api/memory/dashboard/:id
  */
 app.delete('/dashboard/:id', async (c) => {
+    const userId = c.get('userId')!;
     const memoryId = c.req.param('id');
+
+    // Verify ownership before delete
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
+    }
+
     await openMemory.deleteMemory(memoryId);
     return c.json({ success: true, message: 'Memory deleted' });
 });
@@ -100,23 +141,30 @@ app.delete('/dashboard/:id', async (c) => {
 /**
  * POST /api/memory/dashboard/bulk-delete - Bulk delete memories
  */
-app.post('/dashboard/bulk-delete', async (c) => {
-    const body = await c.req.json();
-    const ids = body.ids as string[];
-
-    if (!Array.isArray(ids) || ids.length === 0) {
-        return c.json({ error: 'ids array is required' }, 400);
-    }
+app.post('/dashboard/bulk-delete', validateBody(bulkDeleteSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { ids } = c.get('validatedBody') as { ids: string[] };
 
     let deleted = 0;
     for (const id of ids) {
         try {
+            // Verify ownership before each delete
+            const isOwner = await openMemory.verifyMemoryOwnership(id, userId);
+            if (!isOwner) continue;
             await openMemory.deleteMemory(id);
             deleted++;
         } catch {
             // Continue with next
         }
     }
+
+    // Audit log the bulk delete
+    await auditLog({
+        userId,
+        action: 'BULK_DELETE',
+        resource: 'memory',
+        metadata: { count: deleted, requestedIds: ids.length },
+    });
 
     return c.json({ success: true, deleted });
 });
@@ -125,15 +173,21 @@ app.post('/dashboard/bulk-delete', async (c) => {
  * POST /api/memory/dashboard/feedback
  * Positive feedback = reinforce memory
  */
-app.post('/dashboard/feedback', async (c) => {
-    const body = await c.req.json();
+app.post('/dashboard/feedback', validateBody(memoryFeedbackSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { memoryId, wasHelpful } = c.get('validatedBody') as {
+        memoryId: string;
+        wasHelpful: boolean;
+    };
 
-    if (!body.memoryId || typeof body.wasHelpful !== 'boolean') {
-        return c.json({ error: 'memoryId and wasHelpful are required' }, 400);
+    // Verify ownership before reinforcing
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
     }
 
-    if (body.wasHelpful) {
-        await openMemory.reinforceMemory(body.memoryId);
+    if (wasHelpful) {
+        await openMemory.reinforceMemory(memoryId);
     }
 
     return c.json({ success: true }, 201);
@@ -149,7 +203,7 @@ app.post('/dashboard/feedback', async (c) => {
 app.get('/', async (c) => {
     const userId = c.get('userId')!;
     const query = c.req.query('q') || '';
-    const limit = parseInt(c.req.query('limit') || '10', 10);
+    const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') || '10', 10) || 10, 100));
 
     if (query) {
         const memories = await openMemory.searchMemories(query, userId, { limit });
@@ -163,41 +217,72 @@ app.get('/', async (c) => {
 /**
  * POST /api/memory - Add a memory
  */
-app.post('/', async (c) => {
+app.post('/', validateBody(addMemorySchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const { content, sector, tags, metadata } = c.get('validatedBody') as {
+        content: string;
+        sector?: string;
+        tags?: string[];
+        metadata?: Record<string, unknown>;
+    };
 
-    const memory = await openMemory.addMemory(body.content, userId, {
-        tags: body.tags,
-        sector: body.sector || 'semantic',
-        metadata: body.metadata,
+    const memory = await openMemory.addMemory(content.trim(), userId, {
+        tags,
+        sector,
+        metadata,
+    });
+
+    // Fire-and-forget: auto-consolidate if memory count is high
+    maybeAutoConsolidate(userId).catch(() => {
+        /* non-blocking */
     });
 
     return c.json(memory, 201);
 });
 
 /**
- * POST /api/memory/search - Semantic search
+ * POST /api/memory/search - Semantic search with optional sector filtering
  */
-app.post('/search', async (c) => {
+app.post('/search', validateBody(searchMemorySchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const { query, sector, limit } = c.get('validatedBody') as {
+        query: string;
+        sector?: string;
+        limit: number;
+    };
 
-    const memories = await openMemory.searchMemories(body.query, userId, {
-        limit: body.limit || 5,
+    let memories = await openMemory.searchMemories(query.trim(), userId, {
+        limit: sector ? limit * 2 : limit, // Fetch more if filtering by sector
     });
+
+    // Filter by sector if specified
+    if (sector) {
+        memories = memories.filter((m) => m.sector === sector).slice(0, limit);
+    }
 
     return c.json({
         memories,
         traces: memories.map((m) => m.trace).filter(Boolean),
+        meta: {
+            query: query.trim(),
+            sector: sector || 'all',
+            count: memories.length,
+        },
     });
 });
 
 /**
  * POST /api/memory/reinforce/:id
  */
-app.post('/reinforce/:id', async (c) => {
-    const memoryId = c.req.param('id');
+app.post('/reinforce/:id', validateParams(memoryIdParamSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { id: memoryId } = c.get('validatedParams') as { id: string };
+
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
+    }
+
     await openMemory.reinforceMemory(memoryId);
     return c.json({ success: true });
 });
@@ -205,10 +290,50 @@ app.post('/reinforce/:id', async (c) => {
 /**
  * DELETE /api/memory/:id
  */
-app.delete('/:id', async (c) => {
-    const memoryId = c.req.param('id');
+app.delete('/:id', validateParams(memoryIdParamSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { id: memoryId } = c.get('validatedParams') as { id: string };
+
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+    if (!isOwner) {
+        return c.json({ error: 'Memory not found' }, 404);
+    }
+
     await openMemory.deleteMemory(memoryId);
     return c.json({ success: true });
+});
+
+// ============================================
+// CONSOLIDATION (MOAT FEATURE)
+// ============================================
+
+/**
+ * POST /api/memory/consolidate - Run memory consolidation pipeline
+ *
+ * Deduplicates similar memories and applies temporal decay.
+ * This is a key differentiator: we don't just store memories,
+ * we intelligently maintain them like human memory does.
+ */
+app.post('/consolidate', async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        const memories = await openMemory.listMemories(userId, { limit: 500 });
+
+        const result = await consolidateMemories(userId, memories);
+
+        return c.json({
+            success: true,
+            consolidation: {
+                totalMemories: memories.length,
+                merged: result.merged,
+                decayed: result.decayed,
+                preserved: result.preserved,
+            },
+        });
+    } catch {
+        return c.json({ error: 'Consolidation failed' }, 500);
+    }
 });
 
 export default app;

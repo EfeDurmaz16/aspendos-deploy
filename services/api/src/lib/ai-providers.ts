@@ -6,6 +6,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
+import { breakers } from './circuit-breaker';
 
 // Initialize providers
 const openai = createOpenAI({
@@ -19,6 +20,26 @@ const anthropic = createAnthropic({
 const google = createGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
+
+/**
+ * Fallback chain for AI models when circuit breakers are open
+ */
+const FALLBACK_CHAIN: Record<string, string[]> = {
+    'openai/gpt-4o-mini': [
+        'google/gemini-2.0-flash',
+        'anthropic/claude-3-5-haiku-20241022',
+        'groq/llama-3.1-8b-instant',
+    ],
+    'openai/gpt-4o': ['anthropic/claude-sonnet-4-5-20250929', 'google/gemini-2.0-flash'],
+    'anthropic/claude-sonnet-4-5-20250929': ['openai/gpt-4o', 'google/gemini-2.0-flash'],
+    'anthropic/claude-3-5-haiku-20241022': [
+        'openai/gpt-4o-mini',
+        'google/gemini-2.0-flash',
+        'groq/llama-3.1-8b-instant',
+    ],
+    'google/gemini-2.0-flash': ['openai/gpt-4o-mini', 'groq/llama-3.1-8b-instant'],
+    'groq/llama-3.1-8b-instant': ['openai/gpt-4o-mini', 'google/gemini-2.0-flash'],
+};
 
 /**
  * Get a language model by ID
@@ -43,6 +64,67 @@ export function getModel(modelId: string) {
         default:
             throw new Error(`Unknown provider: ${provider}. Supported: openai, anthropic, google`);
     }
+}
+
+/**
+ * Get a language model with automatic fallback when circuit breakers are open
+ * @param modelId - The requested model ID (e.g., "openai/gpt-4o-mini")
+ * @returns Object containing the model and the actual model ID used (for logging/billing)
+ */
+export function getModelWithFallback(modelId: string): { model: any; actualModelId: string } {
+    // Extract provider from modelId
+    const [provider] = modelId.split('/');
+
+    if (!provider) {
+        throw new Error(`Invalid model ID format: ${modelId}. Expected "provider/model-name"`);
+    }
+
+    // Map provider name to breaker key
+    const breakerKey = provider as keyof typeof breakers;
+
+    // Check if the primary provider's circuit breaker is open
+    if (breakers[breakerKey]) {
+        const breakerState = breakers[breakerKey].getState();
+
+        if (breakerState.state === 'OPEN') {
+            // Primary provider is down, try fallbacks
+            const fallbacks = FALLBACK_CHAIN[modelId] || [];
+
+            for (const fallbackId of fallbacks) {
+                const [fallbackProvider] = fallbackId.split('/');
+                const fallbackBreakerKey = fallbackProvider as keyof typeof breakers;
+
+                // Check if fallback provider is available
+                if (breakers[fallbackBreakerKey]) {
+                    const fallbackState = breakers[fallbackBreakerKey].getState();
+
+                    if (fallbackState.state !== 'OPEN') {
+                        console.warn(`[Fallback] ${modelId} unavailable, using ${fallbackId}`);
+                        return {
+                            model: getModel(fallbackId),
+                            actualModelId: fallbackId,
+                        };
+                    }
+                } else {
+                    // Fallback provider doesn't have a breaker, use it
+                    console.warn(`[Fallback] ${modelId} unavailable, using ${fallbackId}`);
+                    return {
+                        model: getModel(fallbackId),
+                        actualModelId: fallbackId,
+                    };
+                }
+            }
+
+            // All fallbacks are also down
+            throw new Error('All AI providers are currently unavailable');
+        }
+    }
+
+    // Primary provider is available
+    return {
+        model: getModel(modelId),
+        actualModelId: modelId,
+    };
 }
 
 /**
@@ -95,12 +177,19 @@ export type SupportedModelId = (typeof SUPPORTED_MODELS)[number]['id'];
 /**
  * Get models available for a specific tier
  */
-export function getModelsForTier(tier: 'STARTER' | 'PRO' | 'ULTRA') {
-    const tierOrder = { STARTER: 0, PRO: 1, ULTRA: 2 };
+export function getModelsForTier(tier: 'FREE' | 'STARTER' | 'PRO' | 'ULTRA') {
+    const tierOrder = { FREE: 0, STARTER: 1, PRO: 2, ULTRA: 3 };
     const userTierLevel = tierOrder[tier];
 
+    // FREE tier only gets gpt-4o-mini and gemini-flash
+    if (tier === 'FREE') {
+        return SUPPORTED_MODELS.filter((model) =>
+            ['openai/gpt-4o-mini', 'google/gemini-2.0-flash'].includes(model.id)
+        );
+    }
+
     return SUPPORTED_MODELS.filter((model) => {
-        const modelTierLevel = tierOrder[model.tier as keyof typeof tierOrder];
+        const modelTierLevel = tierOrder[model.tier as keyof typeof tierOrder] ?? 1;
         return modelTierLevel <= userTierLevel;
     });
 }
@@ -110,8 +199,39 @@ export function getModelsForTier(tier: 'STARTER' | 'PRO' | 'ULTRA') {
  */
 export function isModelAvailableForTier(
     modelId: string,
-    tier: 'STARTER' | 'PRO' | 'ULTRA'
+    tier: 'FREE' | 'STARTER' | 'PRO' | 'ULTRA'
 ): boolean {
     const availableModels = getModelsForTier(tier);
     return availableModels.some((m) => m.id === modelId);
+}
+
+/**
+ * Smart model routing: downgrade expensive models for simple queries
+ * @param requestedModelId - The model the user requested
+ * @param userMessage - The user's message content
+ * @returns Model ID to actually use (downgraded if appropriate)
+ */
+export function getSmartModelId(requestedModelId: string, userMessage: string): string {
+    // Only downgrade for short, simple messages
+    if (userMessage.length >= 50) {
+        return requestedModelId;
+    }
+
+    // Simple pattern matching for greetings, acknowledgments, single words
+    const simplePatterns =
+        /^(hi|hello|hey|thanks|thank you|ok|okay|yes|no|sure|yep|nope|cool|great|nice|good|bye|goodbye|k)$/i;
+
+    if (!simplePatterns.test(userMessage.trim())) {
+        return requestedModelId;
+    }
+
+    // Downgrade map for simple queries
+    const downgrades: Record<string, string> = {
+        'openai/gpt-4o': 'openai/gpt-4o-mini',
+        'anthropic/claude-sonnet-4-20250514': 'anthropic/claude-3-5-haiku-20241022',
+        'anthropic/claude-opus-4-20250514': 'anthropic/claude-sonnet-4-20250514',
+        'google/gemini-2.5-pro-preview-05-06': 'google/gemini-2.0-flash',
+    };
+
+    return downgrades[requestedModelId] || requestedModelId;
 }

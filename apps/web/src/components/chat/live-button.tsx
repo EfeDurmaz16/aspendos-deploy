@@ -1,10 +1,10 @@
 'use client';
 
-import { Headphones, CircleNotch, X, Waveform } from '@phosphor-icons/react';
-import { useState, useEffect } from 'react';
+import { CircleNotch, Headphones, X } from '@phosphor-icons/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils'; // Ensure utils exist
 import { useGeminiLive } from '@/hooks/use-gemini-live';
+import { cn } from '@/lib/utils'; // Ensure utils exist
 
 interface LiveButtonProps {
     className?: string;
@@ -19,7 +19,7 @@ export function LiveButton({ className }: LiveButtonProps) {
         onError: (err) => {
             console.error('Live Error:', err);
             setIsActive(false);
-        }
+        },
     });
 
     const toggleLive = () => {
@@ -31,20 +31,20 @@ export function LiveButton({ className }: LiveButtonProps) {
     };
 
     return (
-        <div className={cn("relative", className)}>
+        <div className={cn('relative', className)}>
             <Button
-                variant={isActive ? "primary" : "ghost"}
+                variant={isActive ? 'primary' : 'ghost'}
                 size="icon"
                 onClick={toggleLive}
                 disabled={isConnecting}
                 className={cn(
-                    "h-8 w-8 transition-all rounded-lg",
+                    'h-8 w-8 transition-all rounded-lg',
                     isActive
-                        ? "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                    isConnecting && "opacity-70 cursor-wait"
+                        ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20'
+                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                    isConnecting && 'opacity-70 cursor-wait'
                 )}
-                title={isActive ? "End Voice Chat" : "Start Voice Chat"}
+                title={isActive ? 'End Voice Chat' : 'Start Voice Chat'}
             >
                 {isConnecting ? (
                     <CircleNotch className="w-4 h-4 animate-spin" />
@@ -57,7 +57,7 @@ export function LiveButton({ className }: LiveButtonProps) {
 
             {/* Visualizer / Status Indicator (when active) */}
             {isActive && isConnected && (
-                <div className="absolute top-1/2 left-full ml-3 -translate-y-1/2 flex items-center gap-2 bg-background/80 backdrop-blur border border-border/50 px-3 py-1.5 rounded-full shadow-lg pointer-events-none whitespace-nowrap z-50 animate-in fade-in slide-in-from-left-2">
+                <div className="absolute top-1/2 left-full ml-3 -translate-y-1/2 flex items-center gap-2 bg-background border border-border px-3 py-1.5 rounded-full shadow-lg pointer-events-none whitespace-nowrap z-50 animate-in fade-in slide-in-from-left-2">
                     <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
@@ -65,8 +65,15 @@ export function LiveButton({ className }: LiveButtonProps) {
                     <span className="text-xs font-medium">Live</span>
                     {/* Add a fake waveform or visualizer here if desired */}
                     <div className="flex gap-0.5 items-center h-3">
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="w-0.5 bg-foreground/30 rounded-full animate-pulse" style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 0.1}s` }} />
+                        {[1, 2, 3, 4].map((i) => (
+                            <div
+                                key={i}
+                                className="w-0.5 bg-foreground/30 rounded-full animate-pulse"
+                                style={{
+                                    height: `${Math.random() * 100}%`,
+                                    animationDelay: `${i * 0.1}s`,
+                                }}
+                            />
                         ))}
                     </div>
                 </div>

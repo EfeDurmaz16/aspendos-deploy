@@ -1,13 +1,13 @@
-"use client";
-import { cn } from "@/lib/utils";
-import { motion, MotionValue, Transition } from "framer-motion";
-import React from "react";
+'use client';
+import { type MotionValue, motion, type Transition } from 'framer-motion';
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 const transition: Transition = {
     duration: 10,
-    ease: "linear",
+    ease: 'linear',
     repeat: Infinity,
-    repeatType: "loop",
+    repeatType: 'loop',
 };
 
 export const GoogleGeminiEffect = ({
@@ -22,7 +22,7 @@ export const GoogleGeminiEffect = ({
     className?: string;
 }) => {
     return (
-        <div className={cn("sticky top-80", className)}>
+        <div className={cn('sticky top-80', className)}>
             <p className="text-lg md:text-7xl font-normal pb-4 text-center bg-clip-text text-transparent bg-gradient-to-b from-neutral-100 to-neutral-300">
                 {title || `Build with Aceternity UI`}
             </p>

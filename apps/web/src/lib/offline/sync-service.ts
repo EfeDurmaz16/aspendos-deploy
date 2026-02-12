@@ -9,12 +9,11 @@
  */
 
 import {
-    type LocalChat,
-    type LocalMessage,
-    type LocalMemory,
-    type PendingMutation,
-    getLocalChats,
     getPendingMutations,
+    type LocalChat,
+    type LocalMemory,
+    type LocalMessage,
+    type PendingMutation,
     removeMutation,
     saveLocalChat,
     saveLocalMemory,
