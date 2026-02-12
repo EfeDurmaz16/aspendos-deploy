@@ -7,6 +7,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma';
+import * as importParsers from './import-parsers';
 import * as openMemory from './openmemory.service';
 
 // Types for parsed conversations
@@ -22,7 +23,7 @@ export interface ParsedConversation {
     messages: ParsedMessage[];
     createdAt: Date;
     updatedAt: Date;
-    source: 'CHATGPT' | 'CLAUDE';
+    source: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
 }
 
 /**
@@ -30,7 +31,7 @@ export interface ParsedConversation {
  */
 export async function createImportJob(
     userId: string,
-    source: 'CHATGPT' | 'CLAUDE',
+    source: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY',
     fileName: string,
     fileSize: number
 ) {
@@ -308,6 +309,61 @@ function parseClaudeMessage(msg: ClaudeMessage, convCreatedAt?: string): ParsedM
         content: text,
         createdAt: new Date(msg.created_at || convCreatedAt || Date.now()),
     };
+}
+
+/**
+ * Parse Gemini export format
+ *
+ * Gemini exports conversations as JSON with entries array.
+ * Uses the import-parsers module for parsing logic.
+ */
+export function parseGeminiExport(data: unknown): ParsedConversation[] {
+    const conversations: ParsedConversation[] = [];
+
+    // Convert data to JSON string for parser
+    const jsonString = JSON.stringify(data);
+    const parsed = importParsers.parseGeminiExport(jsonString);
+
+    for (const conv of parsed) {
+        conversations.push({
+            externalId: `gemini-${randomUUID()}`,
+            title: conv.title,
+            messages: conv.messages,
+            createdAt: conv.messages[0]?.createdAt || new Date(),
+            updatedAt: conv.messages[conv.messages.length - 1]?.createdAt || new Date(),
+            source: 'GEMINI',
+        });
+    }
+
+    return conversations;
+}
+
+/**
+ * Parse Perplexity export format
+ *
+ * Perplexity exports threads with messages.
+ * Citations are stripped from content.
+ * Uses the import-parsers module for parsing logic.
+ */
+export function parsePerplexityExport(data: unknown): ParsedConversation[] {
+    const conversations: ParsedConversation[] = [];
+
+    // Convert data to JSON string for parser
+    const jsonString = JSON.stringify(data);
+    const parsed = importParsers.parsePerplexityExport(jsonString);
+
+    for (const conv of parsed) {
+        conversations.push({
+            externalId: `perplexity-${randomUUID()}`,
+            title: conv.title,
+            messages: conv.messages,
+            createdAt: conv.messages[0]?.createdAt || new Date(),
+            updatedAt: conv.messages[conv.messages.length - 1]?.createdAt || new Date(),
+            source: 'PERPLEXITY',
+        });
+    }
+
+    return conversations;
 }
 
 /**

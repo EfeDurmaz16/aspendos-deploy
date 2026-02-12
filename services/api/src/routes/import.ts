@@ -21,16 +21,26 @@ import {
  * Auto-detect import format from content structure.
  * ChatGPT exports: Array of objects with `title` and `mapping` fields
  * Claude exports: Object with `conversations` array containing `chat_messages`
+ * Gemini exports: Array of objects with `title` and `entries` fields
+ * Perplexity exports: Object with `threads` array containing `messages`
  */
-function detectImportFormat(content: unknown): 'CHATGPT' | 'CLAUDE' | null {
+function detectImportFormat(
+    content: unknown
+): 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY' | null {
     // ChatGPT format: Array of conversations with mapping objects
     if (Array.isArray(content)) {
         const first = content[0];
-        if (first && typeof first === 'object' && 'mapping' in first) {
-            return 'CHATGPT';
-        }
-        if (first && typeof first === 'object' && 'title' in first && 'create_time' in first) {
-            return 'CHATGPT';
+        if (first && typeof first === 'object') {
+            if ('mapping' in first) {
+                return 'CHATGPT';
+            }
+            if ('title' in first && 'create_time' in first) {
+                return 'CHATGPT';
+            }
+            // Gemini format: Array with entries
+            if ('entries' in first && Array.isArray((first as Record<string, unknown>).entries)) {
+                return 'GEMINI';
+            }
         }
     }
 
@@ -45,6 +55,10 @@ function detectImportFormat(content: unknown): 'CHATGPT' | 'CLAUDE' | null {
         // Alternative Claude format with chat_messages
         if ('chat_messages' in content) {
             return 'CLAUDE';
+        }
+        // Perplexity format: Object with threads array
+        if ('threads' in content && Array.isArray((content as Record<string, unknown>).threads)) {
+            return 'PERPLEXITY';
         }
     }
 
@@ -108,7 +122,7 @@ app.use('*', requireAuth);
 app.post('/jobs', validateBody(createImportJobSchema), async (c) => {
     const userId = c.get('userId')!;
     const validatedBody = c.get('validatedBody') as {
-        source?: 'CHATGPT' | 'CLAUDE';
+        source?: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
         fileName: string;
         fileSize: number;
         content: unknown;
@@ -124,14 +138,17 @@ app.post('/jobs', validateBody(createImportJobSchema), async (c) => {
         if (!detectedFormat) {
             return c.json(
                 {
-                    error: 'Could not auto-detect format. Please specify source as CHATGPT or CLAUDE.',
+                    error: 'Could not auto-detect format. Please specify source as CHATGPT, CLAUDE, GEMINI, or PERPLEXITY.',
                 },
                 400
             );
         }
         source = detectedFormat;
-    } else if (!['CHATGPT', 'CLAUDE'].includes(source)) {
-        return c.json({ error: 'Invalid source. Must be CHATGPT or CLAUDE' }, 400);
+    } else if (!['CHATGPT', 'CLAUDE', 'GEMINI', 'PERPLEXITY'].includes(source)) {
+        return c.json(
+            { error: 'Invalid source. Must be CHATGPT, CLAUDE, GEMINI, or PERPLEXITY' },
+            400
+        );
     }
 
     // Limit import size to prevent OOM (50MB JSON max)
@@ -158,8 +175,14 @@ app.post('/jobs', validateBody(createImportJobSchema), async (c) => {
         try {
             if (source === 'CHATGPT') {
                 conversations = importService.parseChatGPTExport(sanitizedContent);
-            } else {
+            } else if (source === 'CLAUDE') {
                 conversations = importService.parseClaudeExport(sanitizedContent);
+            } else if (source === 'GEMINI') {
+                conversations = importService.parseGeminiExport(sanitizedContent);
+            } else if (source === 'PERPLEXITY') {
+                conversations = importService.parsePerplexityExport(sanitizedContent);
+            } else {
+                return c.json({ error: 'Unsupported import source' }, 400);
             }
         } catch (_parseError) {
             await importService.updateImportJobStatus(job.id, 'FAILED', 'Failed to parse file');
@@ -273,119 +296,140 @@ app.get('/jobs/:id', validateParams(jobIdParamSchema), async (c) => {
 /**
  * PATCH /api/import/jobs/:id/entities/:entityId - Update entity selection
  */
-app.patch('/jobs/:id/entities/:entityId', validateParams(entityIdParamSchema), validateBody(updateEntitySelectionSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { id: jobId, entityId } = c.get('validatedParams') as { id: string; entityId: string };
-    const { selected } = c.get('validatedBody') as { selected: boolean };
+app.patch(
+    '/jobs/:id/entities/:entityId',
+    validateParams(entityIdParamSchema),
+    validateBody(updateEntitySelectionSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { id: jobId, entityId } = c.get('validatedParams') as {
+            id: string;
+            entityId: string;
+        };
+        const { selected } = c.get('validatedBody') as { selected: boolean };
 
-    // Verify job belongs to user
-    const job = await importService.getImportJob(jobId, userId);
-    if (!job) {
-        return c.json({ error: 'Import job not found' }, 404);
+        // Verify job belongs to user
+        const job = await importService.getImportJob(jobId, userId);
+        if (!job) {
+            return c.json({ error: 'Import job not found' }, 404);
+        }
+
+        await importService.updateEntitySelection(entityId, jobId, selected);
+
+        return c.json({ success: true });
     }
-
-    await importService.updateEntitySelection(entityId, jobId, selected);
-
-    return c.json({ success: true });
-});
+);
 
 /**
  * POST /api/import/jobs/:id/entities/bulk-select - Bulk update entity selection
  */
-app.post('/jobs/:id/entities/bulk-select', validateParams(jobIdParamSchema), validateBody(bulkSelectSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { id: jobId } = c.get('validatedParams') as { id: string };
-    const { entityIds, selected } = c.get('validatedBody') as { entityIds: string[]; selected: boolean };
+app.post(
+    '/jobs/:id/entities/bulk-select',
+    validateParams(jobIdParamSchema),
+    validateBody(bulkSelectSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { id: jobId } = c.get('validatedParams') as { id: string };
+        const { entityIds, selected } = c.get('validatedBody') as {
+            entityIds: string[];
+            selected: boolean;
+        };
 
-    // Verify job belongs to user
-    const job = await importService.getImportJob(jobId, userId);
-    if (!job) {
-        return c.json({ error: 'Import job not found' }, 404);
+        // Verify job belongs to user
+        const job = await importService.getImportJob(jobId, userId);
+        if (!job) {
+            return c.json({ error: 'Import job not found' }, 404);
+        }
+
+        for (const entityId of entityIds) {
+            await importService.updateEntitySelection(entityId, jobId, selected);
+        }
+
+        return c.json({ success: true, updated: entityIds.length });
     }
-
-    for (const entityId of entityIds) {
-        await importService.updateEntitySelection(entityId, jobId, selected);
-    }
-
-    return c.json({ success: true, updated: entityIds.length });
-});
+);
 
 /**
  * POST /api/import/jobs/:id/execute - Execute import for selected entities
  */
-app.post('/jobs/:id/execute', validateParams(jobIdParamSchema), validateBody(executeImportSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { id: jobId } = c.get('validatedParams') as { id: string };
-    const { selectedIds } = c.get('validatedBody') as { selectedIds?: string[] };
+app.post(
+    '/jobs/:id/execute',
+    validateParams(jobIdParamSchema),
+    validateBody(executeImportSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { id: jobId } = c.get('validatedParams') as { id: string };
+        const { selectedIds } = c.get('validatedBody') as { selectedIds?: string[] };
 
-    // Verify job belongs to user
-    const job = await importService.getImportJob(jobId, userId);
-    if (!job) {
-        return c.json({ error: 'Import job not found' }, 404);
-    }
-
-    if (job.status === 'COMPLETED') {
-        return c.json({ error: 'Import job already completed' }, 400);
-    }
-
-    if (job.status === 'PROCESSING') {
-        return c.json({ error: 'Import job already in progress' }, 400);
-    }
-
-    try {
-        const result = await importService.executeImport(jobId, userId, selectedIds);
-
-        // MOAT: Import→Memory bridge
-        // Imported conversations become searchable memories, making YULA
-        // more valuable the more data users import. Competitors just store chats.
-        try {
-            const openMemory = await import('../services/openmemory.service');
-            // Extract key memories from imported content
-            const importedEntities = await prisma.importEntity.findMany({
-                where: { jobId: job.id, status: 'completed' },
-                take: 50,
-                select: { content: true, title: true },
-            });
-            for (const entity of importedEntities) {
-                // content is Prisma Json type - extract text from structure
-                const content = entity.content as Record<string, unknown> | null;
-                if (!content) continue;
-                const messages = content.messages as
-                    | Array<{ role?: string; content?: string }>
-                    | undefined;
-                if (messages && messages.length > 0) {
-                    const firstUserMsg = messages.find((m) => m.role === 'user');
-                    const summary = [
-                        entity.title ? `Topic: ${entity.title}` : '',
-                        firstUserMsg?.content ? firstUserMsg.content.slice(0, 500) : '',
-                    ]
-                        .filter(Boolean)
-                        .join(' - ');
-                    if (summary.length > 20) {
-                        await openMemory.addMemory(summary.slice(0, 2000), userId, {
-                            sector: 'episodic',
-                            metadata: { source: 'import', jobId: job.id },
-                        });
-                    }
-                }
-            }
-        } catch {
-            // Non-blocking: import succeeded even if memory bridge fails
+        // Verify job belongs to user
+        const job = await importService.getImportJob(jobId, userId);
+        if (!job) {
+            return c.json({ error: 'Import job not found' }, 404);
         }
 
-        return c.json({
-            success: true,
-            result: {
-                total: result.total,
-                imported: result.imported,
-                failed: result.failed,
-            },
-        });
-    } catch (error) {
-        console.error('Import execution failed:', error);
-        return c.json({ error: 'Import execution failed' }, 500);
+        if (job.status === 'COMPLETED') {
+            return c.json({ error: 'Import job already completed' }, 400);
+        }
+
+        if (job.status === 'PROCESSING') {
+            return c.json({ error: 'Import job already in progress' }, 400);
+        }
+
+        try {
+            const result = await importService.executeImport(jobId, userId, selectedIds);
+
+            // MOAT: Import→Memory bridge
+            // Imported conversations become searchable memories, making YULA
+            // more valuable the more data users import. Competitors just store chats.
+            try {
+                const openMemory = await import('../services/openmemory.service');
+                // Extract key memories from imported content
+                const importedEntities = await prisma.importEntity.findMany({
+                    where: { jobId: job.id, status: 'completed' },
+                    take: 50,
+                    select: { content: true, title: true },
+                });
+                for (const entity of importedEntities) {
+                    // content is Prisma Json type - extract text from structure
+                    const content = entity.content as Record<string, unknown> | null;
+                    if (!content) continue;
+                    const messages = content.messages as
+                        | Array<{ role?: string; content?: string }>
+                        | undefined;
+                    if (messages && messages.length > 0) {
+                        const firstUserMsg = messages.find((m) => m.role === 'user');
+                        const summary = [
+                            entity.title ? `Topic: ${entity.title}` : '',
+                            firstUserMsg?.content ? firstUserMsg.content.slice(0, 500) : '',
+                        ]
+                            .filter(Boolean)
+                            .join(' - ');
+                        if (summary.length > 20) {
+                            await openMemory.addMemory(summary.slice(0, 2000), userId, {
+                                sector: 'episodic',
+                                metadata: { source: 'import', jobId: job.id },
+                            });
+                        }
+                    }
+                }
+            } catch {
+                // Non-blocking: import succeeded even if memory bridge fails
+            }
+
+            return c.json({
+                success: true,
+                result: {
+                    total: result.total,
+                    imported: result.imported,
+                    failed: result.failed,
+                },
+            });
+        } catch (error) {
+            console.error('Import execution failed:', error);
+            return c.json({ error: 'Import execution failed' }, 500);
+        }
     }
-});
+);
 
 /**
  * GET /api/import/stats - Get import statistics

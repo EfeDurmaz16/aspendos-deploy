@@ -99,12 +99,14 @@ describe('Logger', () => {
 
         it('should include error metadata', () => {
             const logger = createLogger();
-            logger.error('Database connection failed', { reason: 'timeout', retries: 3 });
+            logger.error('Database connection failed', {
+                metadata: { reason: 'timeout', retries: 3 },
+            });
 
             const loggedData = JSON.parse(consoleErrorSpy.mock.calls[0][0]);
 
-            expect(loggedData.reason).toBe('timeout');
-            expect(loggedData.retries).toBe(3);
+            expect(loggedData.metadata.reason).toBe('timeout');
+            expect(loggedData.metadata.retries).toBe(3);
         });
     });
 
@@ -209,17 +211,17 @@ describe('Logger', () => {
         });
 
         it('should support nested child loggers', () => {
-            const logger = createLogger({ service: 'api' });
-            const child1 = logger.child({ module: 'auth' });
-            const child2 = child1.child({ function: 'login' });
+            const logger = createLogger({ action: 'api' });
+            const child1 = logger.child({ userId: 'auth-user' });
+            const child2 = child1.child({ requestId: 'req-login' });
 
             child2.info('Nested log');
 
             const loggedData = JSON.parse(consoleInfoSpy.mock.calls[0][0]);
 
-            expect(loggedData.service).toBe('api');
-            expect(loggedData.module).toBe('auth');
-            expect(loggedData.function).toBe('login');
+            expect(loggedData.action).toBe('api');
+            expect(loggedData.userId).toBe('auth-user');
+            expect(loggedData.requestId).toBe('req-login');
         });
     });
 

@@ -5,11 +5,13 @@ import { logger } from 'hono/logger';
 import { getModelsForTier, SUPPORTED_MODELS } from './lib/ai-providers';
 import { auditLog } from './lib/audit-log';
 import { auth } from './lib/auth';
+import { getChangelog, getLatestVersion } from './lib/changelog';
 import { breakers } from './lib/circuit-breaker';
 import { enforceRetentionPolicies, getRetentionPolicies } from './lib/data-retention';
-import { getErrorCatalog } from './lib/error-codes';
 import { validateEnv } from './lib/env';
+import { getErrorCatalog } from './lib/error-codes';
 import { AppError } from './lib/errors';
+import { getAllFlags, getUserFeatures } from './lib/feature-flags';
 import { checkReadiness } from './lib/health-checks';
 import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
 import { initSentry, Sentry } from './lib/sentry';
@@ -28,6 +30,7 @@ import importRoutes from './routes/import';
 import memoryRoutes from './routes/memory';
 import notificationsRoutes from './routes/notifications';
 import pacRoutes from './routes/pac';
+import promptTemplatesRoutes from './routes/prompt-templates';
 import schedulerRoutes from './routes/scheduler';
 import voiceRoutes from './routes/voice';
 
@@ -1491,6 +1494,27 @@ app.get('/api/errors', (c) => {
     return c.json({ errors: getErrorCatalog() });
 });
 
+// ─── Feature Flags ───────────────────────────────────────────────────────────
+app.get('/api/features', (c) => {
+    const userId = c.get('userId');
+    const user = c.get('user');
+    const tier = ((user as unknown as Record<string, unknown>)?.tier as string) || 'FREE';
+    return c.json({
+        features: getUserFeatures(userId, tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA'),
+    });
+});
+
+app.get('/api/features/all', (c) => {
+    return c.json({ flags: getAllFlags() });
+});
+
+// ─── Changelog ───────────────────────────────────────────────────────────────
+app.get('/api/changelog', (c) => {
+    const type = c.req.query('type');
+    const limit = parseInt(c.req.query('limit') || '20', 10);
+    return c.json({ changelog: getChangelog(type, limit), latest: getLatestVersion() });
+});
+
 // API Routes
 app.route('/api/chat', chatRoutes);
 app.route('/api/council', councilRoutes);
@@ -1504,6 +1528,7 @@ app.route('/api/notifications', notificationsRoutes);
 app.route('/api/analytics', analyticsRoutes);
 app.route('/api/gamification', gamificationRoutes);
 app.route('/api/api-keys', apiKeysRoutes);
+app.route('/api/templates', promptTemplatesRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);

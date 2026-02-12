@@ -4,12 +4,14 @@
 import { z } from 'zod';
 
 export const createImportJobSchema = z.object({
-    source: z.enum(['CHATGPT', 'CLAUDE']).optional(),
+    source: z.enum(['CHATGPT', 'CLAUDE', 'GEMINI', 'PERPLEXITY']).optional(),
     fileName: z.string().max(500).optional().default('unknown'),
     fileSize: z.number().int().min(0).optional().default(0),
-    content: z.unknown().refine((val) => val !== null && val !== undefined && typeof val === 'object', {
-        message: 'content is required and must be a JSON object or array',
-    }),
+    content: z
+        .unknown()
+        .refine((val) => val !== null && val !== undefined && typeof val === 'object', {
+            message: 'content is required and must be a JSON object or array',
+        }),
 });
 
 export const jobIdParamSchema = z.object({
