@@ -331,4 +331,109 @@ app.get('/summary', requireAuth, async (c) => {
     }
 });
 
+/**
+ * GET /api/analytics/engagement - User engagement score and stickiness metrics
+ *
+ * Composite score (0-100) based on:
+ * - Chat frequency (how often user chats)
+ * - Memory depth (how many memories stored)
+ * - Feature breadth (council, PAC, import usage)
+ * - Retention signals (return frequency)
+ *
+ * This is a moat metric: higher engagement = harder to churn.
+ */
+app.get('/engagement', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        const [
+            totalChats,
+            recentChats,
+            weeklyChats,
+            totalMessages,
+            councilSessions,
+            pacReminders,
+            pacCompleted,
+            importJobs,
+            achievements,
+        ] = await Promise.all([
+            prisma.chat.count({ where: { userId } }),
+            prisma.chat.count({ where: { userId, createdAt: { gte: thirtyDaysAgo } } }),
+            prisma.chat.count({ where: { userId, createdAt: { gte: sevenDaysAgo } } }),
+            prisma.message.count({ where: { userId, role: 'user' } }),
+            prisma.councilSession.count({ where: { userId } }),
+            prisma.pACReminder.count({ where: { userId } }),
+            prisma.pACReminder.count({ where: { userId, status: 'ACKNOWLEDGED' } }),
+            prisma.importJob.count({ where: { userId, status: 'COMPLETED' } }),
+            prisma.achievement.count({ where: { userId } }),
+        ]);
+
+        // Score components (each 0-25, total 0-100)
+
+        // 1. Chat frequency (0-25): based on 30-day chat activity
+        const chatFreqScore = Math.min(25, Math.round((recentChats / 30) * 25));
+
+        // 2. Feature breadth (0-25): how many features used
+        let featuresUsed = 0;
+        if (totalChats > 0) featuresUsed++;
+        if (councilSessions > 0) featuresUsed++;
+        if (pacReminders > 0) featuresUsed++;
+        if (importJobs > 0) featuresUsed++;
+        if (achievements > 0) featuresUsed++;
+        const featureBreadthScore = Math.min(25, featuresUsed * 5);
+
+        // 3. Depth of use (0-25): messages per chat, PAC completion rate
+        const avgMessagesPerChat = totalChats > 0 ? totalMessages / totalChats : 0;
+        const depthFromMessages = Math.min(15, Math.round(avgMessagesPerChat * 1.5));
+        const pacCompletionRate = pacReminders > 0 ? pacCompleted / pacReminders : 0;
+        const depthFromPAC = Math.round(pacCompletionRate * 10);
+        const depthScore = Math.min(25, depthFromMessages + depthFromPAC);
+
+        // 4. Retention signal (0-25): weekly vs monthly ratio
+        const retentionRatio = recentChats > 0 ? weeklyChats / recentChats : 0;
+        const retentionScore = Math.min(25, Math.round(retentionRatio * 25));
+
+        const engagementScore = chatFreqScore + featureBreadthScore + depthScore + retentionScore;
+
+        // Activation status
+        let activationStatus: 'new' | 'activated' | 'engaged' | 'power_user' = 'new';
+        if (engagementScore >= 75) activationStatus = 'power_user';
+        else if (engagementScore >= 50) activationStatus = 'engaged';
+        else if (engagementScore >= 20) activationStatus = 'activated';
+
+        // Stickiness: 7-day active / 30-day active ratio
+        const stickiness = recentChats > 0 ? Math.round((weeklyChats / recentChats) * 100) : 0;
+
+        return c.json({
+            engagementScore,
+            activationStatus,
+            stickiness,
+            components: {
+                chatFrequency: chatFreqScore,
+                featureBreadth: featureBreadthScore,
+                depthOfUse: depthScore,
+                retention: retentionScore,
+            },
+            activity: {
+                totalChats,
+                chatsLast30d: recentChats,
+                chatsLast7d: weeklyChats,
+                totalMessages,
+                councilSessions,
+                pacReminders,
+                pacCompleted,
+                importJobs,
+                achievements,
+            },
+        });
+    } catch (error) {
+        console.error('[Analytics] Error computing engagement:', error);
+        return c.json({ error: 'Failed to compute engagement score' }, 500);
+    }
+});
+
 export default app;
