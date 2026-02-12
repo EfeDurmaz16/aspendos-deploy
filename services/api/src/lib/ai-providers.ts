@@ -6,6 +6,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
+import { breakers } from './circuit-breaker';
 
 // Initialize providers
 const openai = createOpenAI({
@@ -19,6 +20,26 @@ const anthropic = createAnthropic({
 const google = createGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
+
+/**
+ * Fallback chain for AI models when circuit breakers are open
+ */
+const FALLBACK_CHAIN: Record<string, string[]> = {
+    'openai/gpt-4o-mini': [
+        'google/gemini-2.0-flash',
+        'anthropic/claude-3-5-haiku-20241022',
+        'groq/llama-3.1-8b-instant',
+    ],
+    'openai/gpt-4o': ['anthropic/claude-sonnet-4-5-20250929', 'google/gemini-2.0-flash'],
+    'anthropic/claude-sonnet-4-5-20250929': ['openai/gpt-4o', 'google/gemini-2.0-flash'],
+    'anthropic/claude-3-5-haiku-20241022': [
+        'openai/gpt-4o-mini',
+        'google/gemini-2.0-flash',
+        'groq/llama-3.1-8b-instant',
+    ],
+    'google/gemini-2.0-flash': ['openai/gpt-4o-mini', 'groq/llama-3.1-8b-instant'],
+    'groq/llama-3.1-8b-instant': ['openai/gpt-4o-mini', 'google/gemini-2.0-flash'],
+};
 
 /**
  * Get a language model by ID
@@ -43,6 +64,67 @@ export function getModel(modelId: string) {
         default:
             throw new Error(`Unknown provider: ${provider}. Supported: openai, anthropic, google`);
     }
+}
+
+/**
+ * Get a language model with automatic fallback when circuit breakers are open
+ * @param modelId - The requested model ID (e.g., "openai/gpt-4o-mini")
+ * @returns Object containing the model and the actual model ID used (for logging/billing)
+ */
+export function getModelWithFallback(modelId: string): { model: any; actualModelId: string } {
+    // Extract provider from modelId
+    const [provider] = modelId.split('/');
+
+    if (!provider) {
+        throw new Error(`Invalid model ID format: ${modelId}. Expected "provider/model-name"`);
+    }
+
+    // Map provider name to breaker key
+    const breakerKey = provider as keyof typeof breakers;
+
+    // Check if the primary provider's circuit breaker is open
+    if (breakers[breakerKey]) {
+        const breakerState = breakers[breakerKey].getState();
+
+        if (breakerState.state === 'OPEN') {
+            // Primary provider is down, try fallbacks
+            const fallbacks = FALLBACK_CHAIN[modelId] || [];
+
+            for (const fallbackId of fallbacks) {
+                const [fallbackProvider] = fallbackId.split('/');
+                const fallbackBreakerKey = fallbackProvider as keyof typeof breakers;
+
+                // Check if fallback provider is available
+                if (breakers[fallbackBreakerKey]) {
+                    const fallbackState = breakers[fallbackBreakerKey].getState();
+
+                    if (fallbackState.state !== 'OPEN') {
+                        console.warn(`[Fallback] ${modelId} unavailable, using ${fallbackId}`);
+                        return {
+                            model: getModel(fallbackId),
+                            actualModelId: fallbackId,
+                        };
+                    }
+                } else {
+                    // Fallback provider doesn't have a breaker, use it
+                    console.warn(`[Fallback] ${modelId} unavailable, using ${fallbackId}`);
+                    return {
+                        model: getModel(fallbackId),
+                        actualModelId: fallbackId,
+                    };
+                }
+            }
+
+            // All fallbacks are also down
+            throw new Error('All AI providers are currently unavailable');
+        }
+    }
+
+    // Primary provider is available
+    return {
+        model: getModel(modelId),
+        actualModelId: modelId,
+    };
 }
 
 /**
