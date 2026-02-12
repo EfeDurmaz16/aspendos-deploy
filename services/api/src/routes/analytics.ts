@@ -436,4 +436,122 @@ app.get('/engagement', requireAuth, async (c) => {
     }
 });
 
+/**
+ * GET /api/analytics/switching-cost - Data gravity and switching cost analysis
+ *
+ * Quantifies the user's "data gravity" - how much value they've built up in YULA,
+ * making it hard to switch to competitors.
+ *
+ * Returns a composite score (0-100) based on:
+ * - Data volume: messages, chats (0-30 points)
+ * - Feature investment: council, PAC, achievements (0-30 points)
+ * - Imported data: completed imports (0-20 points)
+ * - Memory depth: memory interactions (0-20 points)
+ */
+app.get('/switching-cost', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        // Query all metrics in parallel
+        const [totalChats, totalMessages, councilSessions, pacReminders, importJobs, achievements] =
+            await Promise.all([
+                prisma.chat.count({ where: { userId } }),
+                prisma.message.count({ where: { userId } }),
+                prisma.councilSession.count({ where: { userId } }),
+                prisma.pACReminder.count({ where: { userId } }),
+                prisma.importJob.count({ where: { userId, status: 'COMPLETED' } }),
+                prisma.achievement.count({ where: { userId } }),
+            ]);
+
+        // Calculate score components
+
+        // 1. Data Volume (0-30): based on messages + chats
+        // More data = harder to export and migrate
+        const dataPoints = totalMessages + totalChats;
+        let dataVolume = 0;
+        if (dataPoints >= 1000) dataVolume = 30;
+        else if (dataPoints >= 500) dataVolume = 25;
+        else if (dataPoints >= 250) dataVolume = 20;
+        else if (dataPoints >= 100) dataVolume = 15;
+        else if (dataPoints >= 50) dataVolume = 10;
+        else if (dataPoints >= 10) dataVolume = 5;
+
+        // 2. Feature Investment (0-30): based on council + PAC + achievements
+        // Using unique features creates lock-in
+        const featurePoints = councilSessions + pacReminders + achievements;
+        let featureInvestment = 0;
+        if (featurePoints >= 100) featureInvestment = 30;
+        else if (featurePoints >= 50) featureInvestment = 25;
+        else if (featurePoints >= 25) featureInvestment = 20;
+        else if (featurePoints >= 10) featureInvestment = 15;
+        else if (featurePoints >= 5) featureInvestment = 10;
+        else if (featurePoints >= 1) featureInvestment = 5;
+
+        // 3. Imported Data (0-20): based on completed imports
+        // They brought their history here = high commitment
+        let importedData = 0;
+        if (importJobs >= 5) importedData = 20;
+        else if (importJobs >= 3) importedData = 15;
+        else if (importJobs >= 2) importedData = 12;
+        else if (importJobs >= 1) importedData = 10;
+
+        // 4. Memory Depth (0-20): based on total messages as proxy for memory interactions
+        // Deep conversational history = irreplaceable context
+        let memoryDepth = 0;
+        if (totalMessages >= 500) memoryDepth = 20;
+        else if (totalMessages >= 250) memoryDepth = 15;
+        else if (totalMessages >= 100) memoryDepth = 10;
+        else if (totalMessages >= 50) memoryDepth = 5;
+
+        // Calculate total switching cost score
+        const switchingCostScore = dataVolume + featureInvestment + importedData + memoryDepth;
+
+        // Determine data gravity level
+        let dataGravity: 'low' | 'medium' | 'high' | 'very_high';
+        if (switchingCostScore >= 75) dataGravity = 'very_high';
+        else if (switchingCostScore >= 50) dataGravity = 'high';
+        else if (switchingCostScore >= 25) dataGravity = 'medium';
+        else dataGravity = 'low';
+
+        // Generate moat strength description
+        let moatStrength: string;
+        if (switchingCostScore >= 75) {
+            moatStrength =
+                'User has significant data investment making switching very costly. Strong network effects and feature lock-in.';
+        } else if (switchingCostScore >= 50) {
+            moatStrength =
+                'User has substantial investment in the platform. Switching would require considerable effort to migrate data and recreate context.';
+        } else if (switchingCostScore >= 25) {
+            moatStrength =
+                'User has moderate platform investment. Some switching friction exists but migration is feasible.';
+        } else {
+            moatStrength =
+                'User has minimal data gravity. Low switching cost - retention depends on product experience.';
+        }
+
+        return c.json({
+            switchingCostScore,
+            dataGravity,
+            moatStrength,
+            breakdown: {
+                dataVolume,
+                featureInvestment,
+                importedData,
+                memoryDepth,
+            },
+            raw: {
+                totalChats,
+                totalMessages,
+                councilSessions,
+                pacReminders,
+                importJobs,
+                achievements,
+            },
+        });
+    } catch (error) {
+        console.error('[Analytics] Error computing switching cost:', error);
+        return c.json({ error: 'Failed to compute switching cost' }, 500);
+    }
+});
+
 export default app;
