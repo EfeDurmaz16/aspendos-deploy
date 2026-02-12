@@ -6,6 +6,7 @@
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
+import { enforceTierLimit } from '../middleware/tier-enforcement';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as pacService from '../services/pac.service';
 import {
@@ -29,7 +30,7 @@ app.use('*', requireAuth);
 /**
  * POST /api/pac/detect - Detect commitments in a message
  */
-app.post('/detect', validateBody(detectCommitmentsSchema), async (c) => {
+app.post('/detect', enforceTierLimit('dailyVoiceMinutes'), validateBody(detectCommitmentsSchema), async (c) => {
     const userId = c.get('userId')!;
     const { message, conversationId } = c.get('validatedBody') as {
         message: string;

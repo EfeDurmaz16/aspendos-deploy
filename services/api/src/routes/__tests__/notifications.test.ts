@@ -107,7 +107,8 @@ describe('Notification Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toBe('endpoint is required');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.path.includes('endpoint'))).toBe(true);
         });
 
         it('should return 400 when endpoint is not HTTPS', async () => {
@@ -124,7 +125,8 @@ describe('Notification Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toBe('endpoint must be HTTPS');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('HTTPS'))).toBe(true);
         });
 
         it('should return 400 when endpoint is not a valid URL', async () => {
@@ -141,7 +143,8 @@ describe('Notification Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toBe('endpoint must be a valid URL');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('valid URL') || d.message.includes('url'))).toBe(true);
         });
 
         it('should return 400 when keys are missing', async () => {
@@ -157,7 +160,8 @@ describe('Notification Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toContain('keys.p256dh');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.path.includes('keys'))).toBe(true);
         });
 
         it('should return 400 when keys.auth is missing', async () => {
@@ -174,7 +178,8 @@ describe('Notification Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toContain('keys');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.path.includes('auth') || d.path.includes('keys'))).toBe(true);
         });
 
         it('should register push subscription successfully and return 201', async () => {
@@ -201,8 +206,7 @@ describe('Notification Routes', () => {
             });
         });
 
-        it('should default deviceType to web for unknown values', async () => {
-            mockRegisterPush.mockResolvedValue(undefined);
+        it('should return 400 for unknown deviceType values', async () => {
             const app = await createTestApp();
 
             const res = await app.request('/notifications/subscribe', {
@@ -212,6 +216,24 @@ describe('Notification Routes', () => {
                     endpoint: 'https://push.example.com/send/abc',
                     keys: { p256dh: 'key1', auth: 'key2' },
                     deviceType: 'unknown-device',
+                }),
+            });
+
+            expect(res.status).toBe(400);
+            const body = await res.json();
+            expect(body.error).toBe('Validation failed');
+        });
+
+        it('should default deviceType to web when not provided', async () => {
+            mockRegisterPush.mockResolvedValue(undefined);
+            const app = await createTestApp();
+
+            const res = await app.request('/notifications/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpoint: 'https://push.example.com/send/abc',
+                    keys: { p256dh: 'key1', auth: 'key2' },
                 }),
             });
 
@@ -325,7 +347,8 @@ describe('Notification Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toContain('No valid preference fields');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('No valid preference fields'))).toBe(true);
         });
 
         it('should update boolean preference fields', async () => {
@@ -399,10 +422,11 @@ describe('Notification Routes', () => {
             });
 
             expect(res.status).toBe(200);
-            // Only pushEnabled should be passed through
-            expect(mockUpdatePrefs).toHaveBeenCalledWith(TEST_USER_ID, {
-                pushEnabled: true,
-            });
+            // Zod strips unknown fields - only pushEnabled should be passed through
+            const calledWith = mockUpdatePrefs.mock.calls[0][1];
+            expect(calledWith.pushEnabled).toBe(true);
+            expect(calledWith).not.toHaveProperty('hackerField');
+            expect(calledWith).not.toHaveProperty('isAdmin');
         });
 
         it('should return 500 when update fails', async () => {

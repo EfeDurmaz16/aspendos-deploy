@@ -1,4 +1,3 @@
-import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
@@ -19,6 +18,7 @@ import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
 import { getOpenAPISpec } from './lib/openapi-spec';
 import { initSentry, Sentry, setSentryRequestContext, setSentryUserContext } from './lib/sentry';
 import { getWebhookCategories, getWebhookEventsCatalog } from './lib/webhook-events';
+import { verifyTimingSafe } from './lib/webhook-security';
 import { apiVersion } from './middleware/api-version';
 import { botProtection } from './middleware/bot-protection';
 import { cacheControl } from './middleware/cache';
@@ -1556,9 +1556,9 @@ app.get('/api/feedback/nps/summary', async (c) => {
 
 // POST /api/scheduler/reengage - Trigger re-engagement for churning users (cron job)
 app.post('/api/scheduler/reengage', async (c) => {
-    // Verify cron secret
+    // Verify cron secret (timing-safe comparison to prevent timing attacks)
     const cronSecret = c.req.header('x-cron-secret');
-    if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+    if (!cronSecret || !process.env.CRON_SECRET || !verifyTimingSafe(cronSecret, process.env.CRON_SECRET)) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -1621,8 +1621,9 @@ app.post('/api/scheduler/reengage', async (c) => {
 
 // ─── CRON: Data Retention Policy Enforcement ─────────────────────────────────
 app.post('/api/cron/retention', async (c) => {
+    // Timing-safe comparison to prevent timing attacks
     const secret = c.req.header('x-cron-secret');
-    if (secret !== process.env.CRON_SECRET) {
+    if (!secret || !process.env.CRON_SECRET || !verifyTimingSafe(secret, process.env.CRON_SECRET)) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -1858,6 +1859,7 @@ async function startServer() {
         // Continue without MCP - it's optional
     }
 
+    const { serve } = await import('@hono/node-server');
     const server = serve({
         fetch: app.fetch,
         port,

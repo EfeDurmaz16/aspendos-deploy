@@ -178,7 +178,8 @@ describe('Voice Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toBe('No text provided');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.path.includes('text'))).toBe(true);
         });
 
         it('should return 400 when text is not a string', async () => {
@@ -192,7 +193,8 @@ describe('Voice Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toBe('No text provided');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.path.includes('text'))).toBe(true);
         });
 
         it('should return 400 when text exceeds 4096 characters', async () => {
@@ -207,7 +209,8 @@ describe('Voice Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toContain('maximum length');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('maximum length'))).toBe(true);
         });
 
         it('should return 400 when voice parameter is invalid', async () => {
@@ -221,7 +224,8 @@ describe('Voice Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toBe('Invalid voice parameter');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('Invalid voice parameter'))).toBe(true);
         });
 
         it('should accept all valid voice parameters', async () => {

@@ -183,6 +183,7 @@ model Memory {
   feedback MemoryFeedback[]
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([userId, sector])
   @@index([userId, isActive])
   @@index([chatId])

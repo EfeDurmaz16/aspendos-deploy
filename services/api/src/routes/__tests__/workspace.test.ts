@@ -81,7 +81,8 @@ describe('Workspace Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toBe('Workspace name is required');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('required') || d.message.includes('Required'))).toBe(true);
         });
 
         it('should return 400 when name is empty string', async () => {
@@ -95,7 +96,8 @@ describe('Workspace Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toBe('Workspace name is required');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('required') || d.message.includes('Workspace name'))).toBe(true);
         });
 
         it('should return 400 when name exceeds 100 characters', async () => {
@@ -110,7 +112,8 @@ describe('Workspace Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toContain('100 characters');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('100 characters'))).toBe(true);
         });
 
         it('should create workspace successfully and return 201', async () => {
@@ -364,7 +367,8 @@ describe('Workspace Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toBe('User ID is required');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.path.includes('userId'))).toBe(true);
         });
 
         it('should return 400 when role is invalid', async () => {
@@ -378,7 +382,8 @@ describe('Workspace Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toContain('Invalid role');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('Invalid role'))).toBe(true);
         });
 
         it('should return 403 when user lacks admin permission to add members', async () => {
@@ -487,7 +492,8 @@ describe('Workspace Routes', () => {
 
             expect(res.status).toBe(400);
             const body = await res.json();
-            expect(body.error).toContain('Invalid role');
+            expect(body.error).toBe('Validation failed');
+            expect(body.details.some((d: any) => d.message.includes('Invalid role'))).toBe(true);
         });
 
         it('should update member role successfully', async () => {

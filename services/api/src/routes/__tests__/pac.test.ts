@@ -44,6 +44,11 @@ vi.mock('../../lib/audit-log', () => ({
     auditLog: vi.fn(),
 }));
 
+// Mock tier-enforcement to always pass through
+vi.mock('../../middleware/tier-enforcement', () => ({
+    enforceTierLimit: vi.fn(() => (_c: any, next: any) => next()),
+}));
+
 const TEST_USER_ID = 'test-user-1';
 
 async function createTestApp() {

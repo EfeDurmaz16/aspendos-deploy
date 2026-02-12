@@ -5,7 +5,13 @@
 
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
 import * as workspaceService from '../services/workspace.service';
+import {
+    createWorkspaceSchema,
+    addMemberSchema,
+    updateMemberRoleSchema,
+} from '../validation/workspace.schema';
 
 type Variables = {
     userId: string | null;
@@ -17,22 +23,13 @@ const app = new Hono<{ Variables: Variables }>();
 app.use('*', requireAuth);
 
 // POST /api/workspace - Create workspace
-app.post('/', async (c) => {
+app.post('/', validateBody(createWorkspaceSchema), async (c) => {
     const userId = c.get('userId')!;
 
     try {
-        const body = await c.req.json();
-        const { name } = body;
+        const { name } = c.get('validatedBody');
 
-        if (!name || typeof name !== 'string' || name.trim().length === 0) {
-            return c.json({ error: 'Workspace name is required' }, 400);
-        }
-
-        if (name.length > 100) {
-            return c.json({ error: 'Workspace name must be 100 characters or less' }, 400);
-        }
-
-        const workspace = await workspaceService.createWorkspace(name.trim(), userId);
+        const workspace = await workspaceService.createWorkspace(name, userId);
 
         return c.json({ workspace }, 201);
     } catch (error) {
@@ -141,21 +138,12 @@ app.delete('/:id', async (c) => {
 });
 
 // POST /api/workspace/:id/members - Add member to workspace
-app.post('/:id/members', async (c) => {
+app.post('/:id/members', validateBody(addMemberSchema), async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
 
     try {
-        const body = await c.req.json();
-        const { userId: newUserId, role } = body;
-
-        if (!newUserId || typeof newUserId !== 'string') {
-            return c.json({ error: 'User ID is required' }, 400);
-        }
-
-        if (!role || !['admin', 'member', 'viewer'].includes(role)) {
-            return c.json({ error: 'Invalid role. Must be admin, member, or viewer.' }, 400);
-        }
+        const { userId: newUserId, role } = c.get('validatedBody');
 
         // Check if user has admin permission
         const hasPermission = await workspaceService.checkPermission(workspaceId, userId, 'admin');
@@ -212,18 +200,13 @@ app.delete('/:id/members/:userId', async (c) => {
 });
 
 // PATCH /api/workspace/:id/members/:userId - Update member role
-app.patch('/:id/members/:userId', async (c) => {
+app.patch('/:id/members/:userId', validateBody(updateMemberRoleSchema), async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
     const memberUserId = c.req.param('userId');
 
     try {
-        const body = await c.req.json();
-        const { role } = body;
-
-        if (!role || !['admin', 'member', 'viewer'].includes(role)) {
-            return c.json({ error: 'Invalid role. Must be admin, member, or viewer.' }, 400);
-        }
+        const { role } = c.get('validatedBody');
 
         // Check if user has admin permission
         const hasPermission = await workspaceService.checkPermission(workspaceId, userId, 'admin');

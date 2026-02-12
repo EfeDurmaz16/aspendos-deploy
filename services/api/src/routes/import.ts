@@ -6,6 +6,7 @@
 import { Hono } from 'hono';
 import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
+import { enforceTierLimit } from '../middleware/tier-enforcement';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as importService from '../services/import.service';
 import {
@@ -119,7 +120,7 @@ app.use('*', requireAuth);
  * - fileSize: number
  * - content: parsed JSON from the export file
  */
-app.post('/jobs', validateBody(createImportJobSchema), async (c) => {
+app.post('/jobs', enforceTierLimit('monthlyImageGenerations'), validateBody(createImportJobSchema), async (c) => {
     const userId = c.get('userId')!;
     const validatedBody = c.get('validatedBody') as {
         source?: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
@@ -354,6 +355,7 @@ app.post(
  */
 app.post(
     '/jobs/:id/execute',
+    enforceTierLimit('monthlyImageGenerations'),
     validateParams(jobIdParamSchema),
     validateBody(executeImportSchema),
     async (c) => {

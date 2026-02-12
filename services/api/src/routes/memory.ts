@@ -7,6 +7,7 @@
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
+import { enforceTierLimit } from '../middleware/tier-enforcement';
 import { validateBody, validateParams } from '../middleware/validate';
 import { consolidateMemories, maybeAutoConsolidate } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
@@ -320,7 +321,7 @@ app.delete('/:id', validateParams(memoryIdParamSchema), async (c) => {
  * This is a key differentiator: we don't just store memories,
  * we intelligently maintain them like human memory does.
  */
-app.post('/consolidate', async (c) => {
+app.post('/consolidate', enforceTierLimit('memoryInspector'), async (c) => {
     const userId = c.get('userId')!;
 
     try {
