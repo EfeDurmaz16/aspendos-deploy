@@ -18,6 +18,40 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+// Failed webhook retry queue with exponential backoff
+const webhookRetryQueue: Array<{
+    payload: string;
+    attempt: number;
+    nextRetryAt: number;
+}> = [];
+const MAX_RETRY_ATTEMPTS = 3;
+
+// Process retry queue every 30 seconds
+setInterval(async () => {
+    const now = Date.now();
+    const ready = webhookRetryQueue.filter((w) => w.nextRetryAt <= now);
+    for (const item of ready) {
+        try {
+            const event = JSON.parse(item.payload);
+            await polarService.handleWebhook(event);
+            // Remove from queue on success
+            const idx = webhookRetryQueue.indexOf(item);
+            if (idx > -1) webhookRetryQueue.splice(idx, 1);
+            console.log(`[Webhook] Retry attempt ${item.attempt} succeeded`);
+        } catch (_error) {
+            item.attempt++;
+            if (item.attempt >= MAX_RETRY_ATTEMPTS) {
+                const idx = webhookRetryQueue.indexOf(item);
+                if (idx > -1) webhookRetryQueue.splice(idx, 1);
+                console.error(`[Webhook] Failed after ${MAX_RETRY_ATTEMPTS} attempts, dropping`);
+            } else {
+                // Exponential backoff: 30s, 120s, 480s
+                item.nextRetryAt = now + 30000 * 4 ** (item.attempt - 1);
+            }
+        }
+    }
+}, 30_000);
+
 // ============================================
 // AUTHENTICATED ROUTES
 // ============================================
@@ -251,7 +285,16 @@ app.post('/webhook', async (c) => {
         return c.json({ received: true });
     } catch (error) {
         console.error('Webhook processing error:', error);
-        return c.json({ error: 'Webhook processing failed' }, 500);
+        // Queue for retry with exponential backoff
+        if (webhookRetryQueue.length < 100) {
+            // Prevent memory leak
+            webhookRetryQueue.push({
+                payload: rawBody,
+                attempt: 1,
+                nextRetryAt: Date.now() + 30_000,
+            });
+        }
+        return c.json({ error: 'Webhook processing failed, queued for retry' }, 500);
     }
 });
 
