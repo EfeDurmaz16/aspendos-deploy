@@ -16,6 +16,7 @@ import {
     memoryFeedbackSchema,
     memoryIdParamSchema,
     searchMemorySchema,
+    updateMemorySchema,
 } from '../validation/memory.schema';
 
 type Variables = {
@@ -83,10 +84,15 @@ app.get('/dashboard/list', async (c) => {
  * PATCH /api/memory/dashboard/:id - Update a memory
  * Note: OpenMemory doesn't support direct updates, so we delete and re-add
  */
-app.patch('/dashboard/:id', async (c) => {
+app.patch('/dashboard/:id', validateParams(memoryIdParamSchema), validateBody(updateMemorySchema), async (c) => {
     const userId = c.get('userId')!;
-    const memoryId = c.req.param('id');
-    const body = await c.req.json();
+    const { id: memoryId } = c.get('validatedParams') as { id: string };
+    const body = c.get('validatedBody') as {
+        content?: string;
+        sector?: string;
+        isPinned?: boolean;
+        metadata?: Record<string, unknown>;
+    };
 
     // Verify ownership before update
     const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
@@ -124,9 +130,9 @@ app.patch('/dashboard/:id', async (c) => {
 /**
  * DELETE /api/memory/dashboard/:id
  */
-app.delete('/dashboard/:id', async (c) => {
+app.delete('/dashboard/:id', validateParams(memoryIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const memoryId = c.req.param('id');
+    const { id: memoryId } = c.get('validatedParams') as { id: string };
 
     // Verify ownership before delete
     const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);

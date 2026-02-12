@@ -16,19 +16,19 @@ import { checkReadiness } from './lib/health-checks';
 import { jobQueue } from './lib/job-queue';
 import { getPrivacyPolicy, getTermsOfService } from './lib/legal';
 import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
+import { getOpenAPISpec } from './lib/openapi-spec';
 import { initSentry, Sentry, setSentryRequestContext, setSentryUserContext } from './lib/sentry';
 import { getWebhookCategories, getWebhookEventsCatalog } from './lib/webhook-events';
 import { apiVersion } from './middleware/api-version';
+import { botProtection } from './middleware/bot-protection';
 import { cacheControl } from './middleware/cache';
 import { compression } from './middleware/compression';
+import { correlationIdMiddleware } from './middleware/correlation-id';
 import { endpointRateLimit } from './middleware/endpoint-rate-limit';
+import { featureHealthMiddleware } from './middleware/feature-health';
 import { idempotency } from './middleware/idempotency';
 import { metricsMiddleware } from './middleware/metrics';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
-import { botProtection } from './middleware/bot-protection';
-import { correlationIdMiddleware } from './middleware/correlation-id';
-import { featureHealthMiddleware } from './middleware/feature-health';
-import { payloadLimits } from './middleware/payload-limits';
 import { sanitizeBody } from './middleware/sanitize';
 import { requestTimeout } from './middleware/timeout';
 import {
@@ -39,6 +39,7 @@ import {
     tracingMiddleware,
 } from './middleware/tracing';
 import adminRoutes from './routes/admin';
+import adminBackupsRoutes from './routes/admin-backups';
 import analyticsRoutes from './routes/analytics';
 import apiKeysRoutes from './routes/api-keys';
 import billingRoutes from './routes/billing';
@@ -53,13 +54,12 @@ import pacRoutes from './routes/pac';
 import promptTemplatesRoutes from './routes/prompt-templates';
 import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
-import voiceRoutes from './routes/voice';
-import workspaceRoutes from './routes/workspace';
-import adminBackupsRoutes from './routes/admin-backups';
-import complianceRoutes from './routes/user-compliance';
+import sessionRoutes from './routes/sessions';
 import securityRoutes from './routes/security';
 import systemRoutes from './routes/system';
-import { getOpenAPISpec } from './lib/openapi-spec';
+import complianceRoutes from './routes/user-compliance';
+import voiceRoutes from './routes/voice';
+import workspaceRoutes from './routes/workspace';
 
 // Validate environment variables on startup
 validateEnv();
@@ -77,6 +77,7 @@ type Variables = {
     rootSpan: unknown;
     trace: unknown;
     currentSpan: unknown;
+    cspNonce: string;
 };
 
 const app = new Hono<{ Variables: Variables }>();
@@ -113,6 +114,10 @@ app.use('*', async (c, next) => {
     const requestId = crypto.randomUUID();
     c.set('requestId', requestId);
 
+    // Generate CSP nonce for inline scripts
+    const nonce = crypto.randomUUID();
+    c.set('cspNonce', nonce);
+
     // Add request timing
     const start = Date.now();
     await next();
@@ -142,10 +147,10 @@ app.use('*', async (c, next) => {
         c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     }
 
-    // Content-Security-Policy (basic policy)
+    // Content-Security-Policy with nonce-based inline script protection
     c.header(
         'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+        `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline';`
     );
 });
 
@@ -683,6 +688,7 @@ app.get('/api/docs/openapi.json', (c) => {
 
 // Swagger UI endpoint
 app.get('/api/docs/ui', (c) => {
+    const nonce = c.get('cspNonce');
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -703,9 +709,9 @@ app.get('/api/docs/ui', (c) => {
 </head>
 <body>
     <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-bundle.js"></script>
-    <script src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-standalone-preset.js"></script>
-    <script>
+    <script nonce="${nonce}" src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-bundle.js"></script>
+    <script nonce="${nonce}" src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-standalone-preset.js"></script>
+    <script nonce="${nonce}">
         window.onload = function() {
             SwaggerUIBundle({
                 url: '/api/docs/openapi.json',
@@ -1832,6 +1838,7 @@ app.route('/api/gamification', gamificationRoutes);
 app.route('/api/api-keys', apiKeysRoutes);
 app.route('/api/templates', promptTemplatesRoutes);
 app.route('/api/search', searchRoutes);
+app.route('/api/sessions', sessionRoutes);
 app.route('/api/workspace', workspaceRoutes);
 app.route('/api/compliance', complianceRoutes);
 app.route('/api/security', securityRoutes);
