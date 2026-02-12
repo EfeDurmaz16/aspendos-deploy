@@ -236,7 +236,6 @@ export async function* streamPersonaResponse(
             model: provider(modelName),
             system: personaDef.systemPrompt,
             prompt: query,
-            maxTokens: 500,
         });
 
         let fullContent = '';
@@ -264,8 +263,8 @@ export async function* streamPersonaResponse(
             type: 'done',
             latencyMs,
             usage: {
-                promptTokens: usage?.promptTokens || 0,
-                completionTokens: usage?.completionTokens || 0,
+                promptTokens: usage?.inputTokens || 0,
+                completionTokens: usage?.outputTokens || 0,
             },
         };
     } catch (error) {
@@ -406,7 +405,6 @@ Perspectives received:
 ${responseSummary}
 
 Please synthesize these perspectives into a balanced recommendation.`,
-        maxTokens: 600,
     });
 
     let synthesis = '';
@@ -426,8 +424,8 @@ Please synthesize these perspectives into a balanced recommendation.`,
     return {
         text: synthesis,
         usage: {
-            promptTokens: usage?.promptTokens || 0,
-            completionTokens: usage?.completionTokens || 0,
+            promptTokens: usage?.inputTokens || 0,
+            completionTokens: usage?.outputTokens || 0,
         },
     };
 }
@@ -447,7 +445,7 @@ export async function getCouncilStats(userId: string) {
             where: {
                 session: { userId },
                 status: 'COMPLETED',
-                latencyMs: { not: null },
+                latencyMs: { not: 0 },
             },
             _avg: { latencyMs: true },
             _min: { latencyMs: true },
@@ -469,9 +467,9 @@ export async function getCouncilStats(userId: string) {
         totalSessions,
         preferences: preferenceMap,
         latency: {
-            avgMs: Math.round(latencyStats._avg.latencyMs || 0),
-            minMs: latencyStats._min.latencyMs || 0,
-            maxMs: latencyStats._max.latencyMs || 0,
+            avgMs: Math.round(latencyStats._avg?.latencyMs || 0),
+            minMs: latencyStats._min?.latencyMs || 0,
+            maxMs: latencyStats._max?.latencyMs || 0,
         },
         insights: qualityInsights,
     };

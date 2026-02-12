@@ -7,10 +7,24 @@
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateParams } from '../middleware/validate';
 import { consolidateMemories } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
+import {
+    addMemorySchema,
+    bulkDeleteSchema,
+    memoryFeedbackSchema,
+    memoryIdParamSchema,
+    searchMemorySchema,
+} from '../validation/memory.schema';
 
-const app = new Hono();
+type Variables = {
+    validatedBody?: unknown;
+    validatedQuery?: unknown;
+    validatedParams?: unknown;
+};
+
+const app = new Hono<{ Variables: Variables }>();
 
 app.use('*', requireAuth);
 
@@ -127,19 +141,9 @@ app.delete('/dashboard/:id', async (c) => {
 /**
  * POST /api/memory/dashboard/bulk-delete - Bulk delete memories
  */
-app.post('/dashboard/bulk-delete', async (c) => {
+app.post('/dashboard/bulk-delete', validateBody(bulkDeleteSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
-    const ids = body.ids as string[];
-
-    if (!Array.isArray(ids) || ids.length === 0) {
-        return c.json({ error: 'ids array is required' }, 400);
-    }
-
-    // Cap bulk operations to prevent abuse
-    if (ids.length > 100) {
-        return c.json({ error: 'Maximum 100 items per bulk delete' }, 400);
-    }
+    const { ids } = c.get('validatedBody') as { ids: string[] };
 
     let deleted = 0;
     for (const id of ids) {
@@ -169,22 +173,21 @@ app.post('/dashboard/bulk-delete', async (c) => {
  * POST /api/memory/dashboard/feedback
  * Positive feedback = reinforce memory
  */
-app.post('/dashboard/feedback', async (c) => {
+app.post('/dashboard/feedback', validateBody(memoryFeedbackSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
-
-    if (!body.memoryId || typeof body.wasHelpful !== 'boolean') {
-        return c.json({ error: 'memoryId and wasHelpful are required' }, 400);
-    }
+    const { memoryId, wasHelpful } = c.get('validatedBody') as {
+        memoryId: string;
+        wasHelpful: boolean;
+    };
 
     // Verify ownership before reinforcing
-    const isOwner = await openMemory.verifyMemoryOwnership(body.memoryId, userId);
+    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
     if (!isOwner) {
         return c.json({ error: 'Memory not found' }, 404);
     }
 
-    if (body.wasHelpful) {
-        await openMemory.reinforceMemory(body.memoryId);
+    if (wasHelpful) {
+        await openMemory.reinforceMemory(memoryId);
     }
 
     return c.json({ success: true }, 201);
@@ -214,25 +217,19 @@ app.get('/', async (c) => {
 /**
  * POST /api/memory - Add a memory
  */
-app.post('/', async (c) => {
+app.post('/', validateBody(addMemorySchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const { content, sector, tags, metadata } = c.get('validatedBody') as {
+        content: string;
+        sector?: string;
+        tags?: string[];
+        metadata?: Record<string, unknown>;
+    };
 
-    if (!body.content || typeof body.content !== 'string' || body.content.trim().length === 0) {
-        return c.json({ error: 'content is required and must be a non-empty string' }, 400);
-    }
-
-    if (body.content.length > 10000) {
-        return c.json({ error: 'content must be 10,000 characters or less' }, 400);
-    }
-
-    const VALID_SECTORS = ['semantic', 'episodic', 'procedural', 'emotional'];
-    const sector = VALID_SECTORS.includes(body.sector) ? body.sector : 'semantic';
-
-    const memory = await openMemory.addMemory(body.content.trim(), userId, {
-        tags: Array.isArray(body.tags) ? body.tags.slice(0, 20).map(String) : undefined,
+    const memory = await openMemory.addMemory(content.trim(), userId, {
+        tags,
         sector,
-        metadata: body.metadata,
+        metadata,
     });
 
     return c.json(memory, 201);
@@ -241,23 +238,15 @@ app.post('/', async (c) => {
 /**
  * POST /api/memory/search - Semantic search with optional sector filtering
  */
-app.post('/search', async (c) => {
+app.post('/search', validateBody(searchMemorySchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const { query, sector, limit } = c.get('validatedBody') as {
+        query: string;
+        sector?: string;
+        limit: number;
+    };
 
-    if (!body.query || typeof body.query !== 'string' || body.query.trim().length === 0) {
-        return c.json({ error: 'query is required and must be a non-empty string' }, 400);
-    }
-
-    if (body.query.length > 2000) {
-        return c.json({ error: 'query must be 2,000 characters or less' }, 400);
-    }
-
-    const limit = Math.max(1, Math.min(parseInt(body.limit, 10) || 5, 50));
-    const VALID_SECTORS = ['semantic', 'episodic', 'procedural', 'emotional', 'reflective'];
-    const sector = VALID_SECTORS.includes(body.sector) ? body.sector : undefined;
-
-    let memories = await openMemory.searchMemories(body.query.trim(), userId, {
+    let memories = await openMemory.searchMemories(query.trim(), userId, {
         limit: sector ? limit * 2 : limit, // Fetch more if filtering by sector
     });
 
@@ -270,7 +259,7 @@ app.post('/search', async (c) => {
         memories,
         traces: memories.map((m) => m.trace).filter(Boolean),
         meta: {
-            query: body.query.trim(),
+            query: query.trim(),
             sector: sector || 'all',
             count: memories.length,
         },
@@ -280,9 +269,9 @@ app.post('/search', async (c) => {
 /**
  * POST /api/memory/reinforce/:id
  */
-app.post('/reinforce/:id', async (c) => {
+app.post('/reinforce/:id', validateParams(memoryIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const memoryId = c.req.param('id');
+    const { id: memoryId } = c.get('validatedParams') as { id: string };
 
     const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
     if (!isOwner) {
@@ -296,9 +285,9 @@ app.post('/reinforce/:id', async (c) => {
 /**
  * DELETE /api/memory/:id
  */
-app.delete('/:id', async (c) => {
+app.delete('/:id', validateParams(memoryIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const memoryId = c.req.param('id');
+    const { id: memoryId } = c.get('validatedParams') as { id: string };
 
     const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
     if (!isOwner) {
