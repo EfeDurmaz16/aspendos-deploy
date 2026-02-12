@@ -44,9 +44,9 @@ describe('api-version', () => {
             const parts = versionInfo.current.split('.');
 
             expect(parts.length).toBe(3);
-            expect(Number.parseInt(parts[0])).toBeGreaterThanOrEqual(0);
-            expect(Number.parseInt(parts[1])).toBeGreaterThanOrEqual(0);
-            expect(Number.parseInt(parts[2])).toBeGreaterThanOrEqual(0);
+            expect(Number.parseInt(parts[0], 10)).toBeGreaterThanOrEqual(0);
+            expect(Number.parseInt(parts[1], 10)).toBeGreaterThanOrEqual(0);
+            expect(Number.parseInt(parts[2], 10)).toBeGreaterThanOrEqual(0);
         });
 
         it('minimum version is valid semver', () => {
@@ -54,9 +54,9 @@ describe('api-version', () => {
             const parts = versionInfo.minimum.split('.');
 
             expect(parts.length).toBe(3);
-            expect(Number.parseInt(parts[0])).toBeGreaterThanOrEqual(0);
-            expect(Number.parseInt(parts[1])).toBeGreaterThanOrEqual(0);
-            expect(Number.parseInt(parts[2])).toBeGreaterThanOrEqual(0);
+            expect(Number.parseInt(parts[0], 10)).toBeGreaterThanOrEqual(0);
+            expect(Number.parseInt(parts[1], 10)).toBeGreaterThanOrEqual(0);
+            expect(Number.parseInt(parts[2], 10)).toBeGreaterThanOrEqual(0);
         });
 
         it('returns consistent results on multiple calls', () => {

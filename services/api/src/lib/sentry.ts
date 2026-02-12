@@ -42,8 +42,8 @@ export function setSentryRequestContext(requestId: string, path: string, method:
 /**
  * Start a performance transaction
  */
-export function startTransaction(name: string, op: string) {
-    return Sentry.startSpan({ name, op });
+export function startTransaction<T>(name: string, op: string, fn: () => T): T {
+    return Sentry.startSpan({ name, op }, fn);
 }
 
 /**
