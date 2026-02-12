@@ -8,7 +8,7 @@ import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
-import { consolidateMemories } from '../services/memory-agent';
+import { consolidateMemories, maybeAutoConsolidate } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
 import {
     addMemorySchema,
@@ -230,6 +230,11 @@ app.post('/', validateBody(addMemorySchema), async (c) => {
         tags,
         sector,
         metadata,
+    });
+
+    // Fire-and-forget: auto-consolidate if memory count is high
+    maybeAutoConsolidate(userId).catch(() => {
+        /* non-blocking */
     });
 
     return c.json(memory, 201);

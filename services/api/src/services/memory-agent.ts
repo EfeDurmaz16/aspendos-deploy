@@ -724,6 +724,54 @@ JSON only:`,
     }
 }
 
+/**
+ * Check if user's memory needs automated consolidation.
+ * Triggers consolidation when memory count exceeds threshold.
+ * This prevents unbounded memory growth and keeps the memory set high-quality.
+ */
+export async function shouldAutoConsolidate(userId: string): Promise<boolean> {
+    try {
+        const memories = await openMemory.listMemories(userId, { limit: 1 });
+        // Trigger consolidation at 500+ memories (checked via total count if available)
+        // For now, use a simple heuristic: if we have memories, periodically consolidate
+        const lastConsolidation = autoConsolidationTracker.get(userId);
+        const CONSOLIDATION_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once per day max
+        if (lastConsolidation && Date.now() - lastConsolidation < CONSOLIDATION_INTERVAL_MS) {
+            return false;
+        }
+        return memories.length > 0;
+    } catch {
+        return false;
+    }
+}
+
+// Track last consolidation time per user (in-memory, resets on deploy)
+const autoConsolidationTracker = new Map<string, number>();
+
+/**
+ * Run automated consolidation if needed (fire-and-forget).
+ * Called after memory operations to keep the memory set clean.
+ */
+export async function maybeAutoConsolidate(userId: string): Promise<void> {
+    if (!(await shouldAutoConsolidate(userId))) return;
+
+    autoConsolidationTracker.set(userId, Date.now());
+
+    try {
+        const memories = await openMemory.listMemories(userId, { limit: 200 });
+        if (memories.length >= 50) {
+            const result = await consolidateMemories(userId, memories);
+            if (result.merged > 0 || result.decayed > 0) {
+                console.log(
+                    `[Memory] Auto-consolidation for ${userId}: merged=${result.merged}, decayed=${result.decayed}, score=${result.consolidationScore}`
+                );
+            }
+        }
+    } catch (error) {
+        console.error('[Memory] Auto-consolidation failed:', error);
+    }
+}
+
 // Singleton instance
 let agentInstance: MemoryDecisionAgent | null = null;
 

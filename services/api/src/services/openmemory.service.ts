@@ -31,8 +31,31 @@ async function withQdrantFallback<T>(fn: () => Promise<T>, fallback: T): Promise
 // TYPES (matching OpenMemory response format)
 // ============================================
 
-// @ts-expect-error - Accessing internal DB module to fix missing delete/update methods
 import { q } from 'openmemory-js/dist/core/db';
+
+/**
+ * Apply recency boost to search results.
+ * Newer memories get a small score boost, creating a "living memory" effect.
+ * This is a moat differentiator: competitors return static results,
+ * we surface recent context that's more likely to be relevant.
+ */
+function applyRecencyBoost(
+    results: Array<{ id: string; score: number; createdAt?: string; [key: string]: unknown }>,
+    boostFactor = 0.1
+): typeof results {
+    const now = Date.now();
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+    return results
+        .map((r) => {
+            if (!r.createdAt) return r;
+            const ageMs = now - new Date(r.createdAt).getTime();
+            // Boost ranges from 0 to boostFactor, linear decay over 30 days
+            const boost = Math.max(0, boostFactor * (1 - ageMs / THIRTY_DAYS_MS));
+            return { ...r, score: r.score + boost };
+        })
+        .sort((a, b) => b.score - a.score);
+}
 
 export interface MemoryResult {
     id: string;
@@ -122,16 +145,26 @@ export async function searchMemories(
         []
     );
 
-    return results.map((r) => ({
+    const mapped = results.map((r) => ({
         id: r.id,
         content: r.content,
         sector: ((r.metadata as Record<string, unknown>)?.sector as string) || 'semantic',
         salience: r.salience || 0,
+        score: r.salience || 0,
         createdAt: r.created_at,
         metadata: r.metadata,
         isPinned: !!(r.metadata as Record<string, unknown>)?.isPinned,
         trace: r.trace,
     }));
+
+    // Apply recency boost to surface recent context
+    const boosted = applyRecencyBoost(mapped);
+
+    // Remove the score field and return as MemoryResult[]
+    return boosted.map((item) => {
+        const { score: _score, ...rest } = item;
+        return rest as MemoryResult;
+    });
 }
 
 /**
