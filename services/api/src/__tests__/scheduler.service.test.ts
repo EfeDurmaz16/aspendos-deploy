@@ -68,14 +68,14 @@ describe('Scheduler Service', () => {
             it('should parse "in 5 hours"', () => {
                 const result = parseTimeExpression('in 5 hours', baseDate);
                 expect(result).toBeInstanceOf(Date);
-                expect(result?.getHours()).toBe(15); // 10 + 5 hours
+                expect(result?.getUTCHours()).toBe(15); // 10 + 5 hours
             });
 
             it('should parse "in 30 minutes"', () => {
                 const result = parseTimeExpression('in 30 minutes', baseDate);
                 expect(result).toBeInstanceOf(Date);
-                expect(result?.getMinutes()).toBe(0); // 30 + 30 minutes = 1 hour
-                expect(result?.getHours()).toBe(11);
+                expect(result?.getUTCMinutes()).toBe(0); // 30 + 30 minutes = 1 hour
+                expect(result?.getUTCHours()).toBe(11);
             });
         });
 
@@ -109,7 +109,7 @@ describe('Scheduler Service', () => {
             it('should parse "2 hours"', () => {
                 const result = parseTimeExpression('2 hours', baseDate);
                 expect(result).toBeInstanceOf(Date);
-                expect(result?.getHours()).toBe(12);
+                expect(result?.getUTCHours()).toBe(12);
             });
         });
 
