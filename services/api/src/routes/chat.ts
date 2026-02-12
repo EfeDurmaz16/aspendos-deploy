@@ -45,6 +45,17 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+// Idempotency cache: prevents duplicate message creation on retry
+// Key: idempotency key, Value: { timestamp, chatId }
+const idempotencyCache = new Map<string, { timestamp: number; chatId: string }>();
+// Clean up expired entries every 5 minutes (keys valid for 10 minutes)
+setInterval(() => {
+    const cutoff = Date.now() - 10 * 60 * 1000;
+    for (const [key, entry] of idempotencyCache.entries()) {
+        if (entry.timestamp < cutoff) idempotencyCache.delete(key);
+    }
+}, 5 * 60_000);
+
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
 
@@ -150,6 +161,16 @@ app.post(
         const chatId = validatedParams.id;
 
         const { content, model_id, enable_thinking, stream: shouldStream } = validatedBody;
+
+        // Idempotency: reject duplicate requests within 10-minute window
+        const idempotencyKey = c.req.header('Idempotency-Key');
+        if (idempotencyKey) {
+            const existing = idempotencyCache.get(idempotencyKey);
+            if (existing && existing.chatId === chatId) {
+                return c.json({ error: 'Duplicate request', code: 'IDEMPOTENCY_CONFLICT' }, 409);
+            }
+            idempotencyCache.set(idempotencyKey, { timestamp: Date.now(), chatId });
+        }
 
         // Get user tier (default to FREE if not available)
         const user = c.get('user');

@@ -299,15 +299,14 @@ app.get('/health', async (c) => {
     }
     dependencies.database = { status: dbStatus, latencyMs: dbLatency };
 
-    // Check Qdrant (via circuit breaker)
+    // Check Qdrant (via circuit breaker) with actual ping
     let qdrantStatus: 'up' | 'down' = 'down';
     try {
         const qdrantStart = Date.now();
         await breakers.qdrant.execute(async () => {
-            const { getMemoryClient } = await import('./services/openmemory.service');
-            const mem = getMemoryClient();
-            // Just check if client is available, don't make actual call
-            return mem;
+            const { searchMemories } = await import('./services/openmemory.service');
+            // Lightweight probe: search with empty query, limit 1
+            await searchMemories('health-check-probe', 'system', { limit: 1 });
         });
         const qdrantLatency = Date.now() - qdrantStart;
         qdrantStatus = 'up';
@@ -931,7 +930,14 @@ app.get('/api/export', async (c) => {
             }),
             prisma.notification.findMany({
                 where: { userId },
-                select: { id: true, type: true, title: true, body: true, read: true, createdAt: true },
+                select: {
+                    id: true,
+                    type: true,
+                    title: true,
+                    body: true,
+                    read: true,
+                    createdAt: true,
+                },
                 orderBy: { createdAt: 'desc' },
                 take: 200,
             }),
@@ -994,7 +1000,8 @@ app.get('/api/export', async (c) => {
             },
             notifications,
             retentionPolicy: {
-                description: 'YULA retains your data as long as your account is active. Memories older than 365 days without reinforcement may be flagged for cleanup. You can export or delete your data at any time.',
+                description:
+                    'YULA retains your data as long as your account is active. Memories older than 365 days without reinforcement may be flagged for cleanup. You can export or delete your data at any time.',
                 memoryRetentionDays: 365,
                 chatRetentionDays: null, // Retained indefinitely while account is active
                 exportAvailable: true,
