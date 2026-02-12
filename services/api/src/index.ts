@@ -859,6 +859,9 @@ app.get('/api/export', async (c) => {
             billingAccount,
             councilSessions,
             importJobs,
+            achievements,
+            xpEvents,
+            notifications,
         ] = await Promise.all([
             prisma.user.findUnique({
                 where: { id: userId },
@@ -916,6 +919,22 @@ app.get('/api/export', async (c) => {
                     createdAt: true,
                 },
             }),
+            prisma.achievement.findMany({
+                where: { userId },
+                select: { id: true, type: true, unlockedAt: true, metadata: true },
+            }),
+            prisma.xPEvent.findMany({
+                where: { userId },
+                select: { id: true, amount: true, reason: true, createdAt: true },
+                orderBy: { createdAt: 'desc' },
+                take: 500,
+            }),
+            prisma.notification.findMany({
+                where: { userId },
+                select: { id: true, type: true, title: true, body: true, read: true, createdAt: true },
+                orderBy: { createdAt: 'desc' },
+                take: 200,
+            }),
         ]);
 
         // Audit log the data export
@@ -969,6 +988,18 @@ app.get('/api/export', async (c) => {
                 responses: s.responses,
             })),
             importHistory: importJobs,
+            gamification: {
+                achievements,
+                xpEvents,
+            },
+            notifications,
+            retentionPolicy: {
+                description: 'YULA retains your data as long as your account is active. Memories older than 365 days without reinforcement may be flagged for cleanup. You can export or delete your data at any time.',
+                memoryRetentionDays: 365,
+                chatRetentionDays: null, // Retained indefinitely while account is active
+                exportAvailable: true,
+                deletionAvailable: true,
+            },
         });
     } catch (error) {
         console.error('[Export] Data export failed:', error);
