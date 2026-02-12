@@ -32,7 +32,14 @@ export default function NewChatPage() {
     const router = useRouter();
     const { isLoaded, isSignedIn } = useAuth();
 
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Open sidebar by default on desktop
+    useEffect(() => {
+        if (window.innerWidth >= 768) {
+            setSidebarOpen(true);
+        }
+    }, []);
     const [chats, setChats] = useState<Chat[]>([]);
     const [selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
     const [inputValue, setInputValue] = useState('');
@@ -119,10 +126,22 @@ export default function NewChatPage() {
 
     return (
         <div className="h-screen bg-background overflow-hidden font-sans flex">
+            {/* Sidebar backdrop (mobile only) */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/40 z-30 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                    onKeyDown={() => {}}
+                    role="button"
+                    tabIndex={-1}
+                />
+            )}
+
             {/* Sidebar */}
             <div
                 className={cn(
                     'h-full bg-muted border-r border-border transition-all duration-300',
+                    'fixed md:relative z-40 md:z-20',
                     sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'
                 )}
             >
@@ -130,7 +149,10 @@ export default function NewChatPage() {
                     chats={chats}
                     currentChatId="new"
                     onNewChat={handleNewChat}
-                    onSelectChat={(id) => router.push(`/chat/${id}`)}
+                    onSelectChat={(id) => {
+                        router.push(`/chat/${id}`);
+                        if (window.innerWidth < 768) setSidebarOpen(false);
+                    }}
                 />
             </div>
 
@@ -195,7 +217,7 @@ export default function NewChatPage() {
                 </ScrollArea>
 
                 {/* Input */}
-                <div className="max-w-3xl mx-auto w-full px-4 mb-6 relative z-10">
+                <div className="max-w-3xl mx-auto w-full px-2 sm:px-4 mb-4 sm:mb-6 relative z-10">
                     <div className="relative flex flex-col bg-background border border-border rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-ring/30 focus-within:border-ring/50 transition-colors">
                         <textarea
                             ref={textareaRef}

@@ -78,7 +78,14 @@ export default function ChatPage() {
     const { isLoaded, isSignedIn } = useAuth();
     const chatId = params.id as string;
 
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Open sidebar by default on desktop
+    useEffect(() => {
+        if (window.innerWidth >= 768) {
+            setSidebarOpen(true);
+        }
+    }, []);
     const [chat, setChat] = useState<Chat | null>(null);
     const [chats, setChats] = useState<Chat[]>([]);
     const [isLoadingChat, setIsLoadingChat] = useState(true);
@@ -258,10 +265,22 @@ export default function ChatPage() {
 
     return (
         <div className="h-screen bg-background overflow-hidden font-sans flex">
+            {/* Sidebar backdrop (mobile only) */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/40 z-30 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                    onKeyDown={() => {}}
+                    role="button"
+                    tabIndex={-1}
+                />
+            )}
+
             {/* Sidebar */}
             <div
                 className={cn(
-                    'h-full bg-muted border-r border-border transition-all duration-300 z-20',
+                    'h-full bg-muted border-r border-border transition-all duration-300',
+                    'fixed md:relative z-40 md:z-20',
                     sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'
                 )}
             >
@@ -269,7 +288,10 @@ export default function ChatPage() {
                     chats={chats}
                     currentChatId={chatId}
                     onNewChat={handleNewChat}
-                    onSelectChat={(id) => router.push(`/chat/${id}`)}
+                    onSelectChat={(id) => {
+                        router.push(`/chat/${id}`);
+                        if (window.innerWidth < 768) setSidebarOpen(false);
+                    }}
                 />
             </div>
 
@@ -299,7 +321,7 @@ export default function ChatPage() {
                 {/* Conversation Area */}
                 <div className="flex-1 flex flex-col min-h-0 relative">
                     <Conversation>
-                        <ConversationContent>
+                        <ConversationContent className="max-w-3xl mx-auto w-full">
                             {allMessages.length === 0 && !isLoadingChat && !error ? (
                                 <ConversationEmptyState
                                     icon={
@@ -361,7 +383,7 @@ export default function ChatPage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 flex-none z-20 max-w-3xl mx-auto w-full">
+                <div className="p-2 sm:p-4 flex-none z-20 max-w-3xl mx-auto w-full">
                     <PromptInput
                         onSubmit={handleSubmit}
                         className="border border-border rounded-2xl"

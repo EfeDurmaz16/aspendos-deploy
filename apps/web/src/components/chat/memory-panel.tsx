@@ -2,20 +2,20 @@
 
 import {
     Brain,
+    ChartBar,
     CircleNotch,
+    Lightning,
     MagnifyingGlass,
+    Sparkle,
     Tag,
     X,
-    Sparkle,
-    Lightning,
-    ChartBar,
 } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
+import { ContextMenuMemory } from '@/components/chat/context-menu-memory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { ContextMenuMemory } from '@/components/chat/context-menu-memory';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -68,9 +68,9 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
     }, [fetchMemories]);
 
     return (
-        <div className="h-full flex flex-col bg-background/95 backdrop-blur-xl">
+        <div className="h-full flex flex-col bg-background">
             {/* Header */}
-            <div className="h-14 flex items-center justify-between px-4 border-b border-border/50 sticky top-0 z-10 bg-background/95 backdrop-blur-xl">
+            <div className="h-14 flex items-center justify-between px-4 border-b border-border sticky top-0 z-10 bg-background">
                 <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
                         <Brain className="size-4 text-primary-foreground" weight="fill" />
@@ -104,18 +104,18 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-3 gap-2">
-                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                            <Sparkle className="size-4 text-amber-500 mb-1.5" weight="fill" />
+                        <div className="p-3 rounded-xl bg-muted border border-border">
+                            <Sparkle className="size-4 text-primary mb-1.5" weight="fill" />
                             <div className="text-lg font-semibold">{memories.length}</div>
                             <div className="text-[10px] text-muted-foreground">Memories</div>
                         </div>
-                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                            <Lightning className="size-4 text-amber-500 mb-1.5" weight="fill" />
+                        <div className="p-3 rounded-xl bg-muted border border-border">
+                            <Lightning className="size-4 text-primary mb-1.5" weight="fill" />
                             <div className="text-lg font-semibold">42</div>
                             <div className="text-[10px] text-muted-foreground">Nodes</div>
                         </div>
-                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                            <ChartBar className="size-4 text-emerald-500 mb-1.5" weight="fill" />
+                        <div className="p-3 rounded-xl bg-muted border border-border">
+                            <ChartBar className="size-4 text-primary mb-1.5" weight="fill" />
                             <div className="text-lg font-semibold">89%</div>
                             <div className="text-[10px] text-muted-foreground">Accuracy</div>
                         </div>
@@ -133,10 +133,15 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                                     <CircleNotch className="size-5 animate-spin text-muted-foreground" />
                                 </div>
                             ) : memories.length === 0 ? (
-                                <div className="text-center py-8 border border-dashed border-border/60 rounded-xl bg-muted/20">
-                                    <Brain className="size-8 text-muted-foreground/30 mx-auto mb-2" weight="duotone" />
-                                    <p className="text-xs text-muted-foreground">No memories found</p>
-                                    <p className="text-[10px] text-muted-foreground/60 mt-1">
+                                <div className="text-center py-8 border border-dashed border-border rounded-xl bg-muted">
+                                    <Brain
+                                        className="size-8 text-muted-foreground mx-auto mb-2"
+                                        weight="duotone"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        No memories found
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground mt-1">
                                         Chat to start building context
                                     </p>
                                 </div>
@@ -144,7 +149,12 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                                 memories.slice(0, 10).map((memory) => (
                                     <ContextMenuMemory
                                         key={memory.id}
-                                        memory={{ id: memory.id, content: memory.content, type: memory.sector, tags: memory.tags }}
+                                        memory={{
+                                            id: memory.id,
+                                            content: memory.content,
+                                            type: memory.sector,
+                                            tags: memory.tags,
+                                        }}
                                     >
                                         <MemoryCard memory={memory} />
                                     </ContextMenuMemory>
@@ -160,12 +170,17 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
 
 function MemoryCard({ memory }: { memory: Memory }) {
     const relevanceScore = memory.metrics?.relevance ?? memory.confidence ?? 0;
-    const relevanceColor = relevanceScore > 0.7 ? 'text-emerald-500' : relevanceScore > 0.4 ? 'text-amber-500' : 'text-muted-foreground';
+    const relevanceColor =
+        relevanceScore > 0.7
+            ? 'text-emerald-500'
+            : relevanceScore > 0.4
+              ? 'text-amber-500'
+              : 'text-muted-foreground';
 
     return (
-        <div className="group p-3 rounded-xl border border-border/60 bg-card hover:border-foreground/20 hover:shadow-sm transition-all cursor-pointer">
+        <div className="group p-3 rounded-xl border border-border bg-card hover:border-border hover:shadow-sm transition-all cursor-pointer">
             <div className="flex items-start gap-2.5">
-                <div className="mt-0.5 p-1.5 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                <div className="mt-0.5 p-1.5 rounded-lg bg-muted text-muted-foreground group-hover:bg-muted group-hover:text-primary transition-colors">
                     <Tag className="size-3" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -173,7 +188,7 @@ function MemoryCard({ memory }: { memory: Memory }) {
                         {memory.content}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
-                        <span className={cn("text-[10px] font-medium", relevanceColor)}>
+                        <span className={cn('text-[10px] font-medium', relevanceColor)}>
                             {(relevanceScore * 100).toFixed(0)}% match
                         </span>
                         <span className="text-[10px] text-muted-foreground/60">

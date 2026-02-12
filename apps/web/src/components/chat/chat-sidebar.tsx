@@ -4,21 +4,32 @@ import {
     Brain,
     ChatCircle,
     CircleNotch,
-    DotsThree,
+    CreditCard,
     Gear,
     MagnifyingGlass,
+    Moon,
     Plus,
+    SignOut,
     Star,
+    Sun,
     UsersThree,
 } from '@phosphor-icons/react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { useState } from 'react';
 import { ContextMenuChat } from '@/components/chat/context-menu-chat';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useUser } from '@/hooks/use-auth';
+import { useAuth, useUser } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 
 interface Chat {
@@ -50,7 +61,10 @@ export function ChatSidebar({
     isLoading = false,
 }: ChatSidebarProps) {
     const { user } = useUser();
+    const { signOut } = useAuth();
+    const router = useRouter();
     const pathname = usePathname();
+    const { theme, setTheme } = useTheme();
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filter chats by search
@@ -225,9 +239,48 @@ export function ChatSidebar({
                         <span className="text-[10px] text-muted-foreground">Pro Plan</span>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground">
-                    <DotsThree className="size-4" weight="bold" />
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-muted-foreground"
+                        >
+                            <Gear className="size-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" side="top" className="w-48">
+                        <DropdownMenuItem
+                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                        >
+                            {theme === 'dark' ? (
+                                <Sun className="size-4 mr-2" />
+                            ) : (
+                                <Moon className="size-4 mr-2" />
+                            )}
+                            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => router.push('/settings')}>
+                            <Gear className="size-4 mr-2" />
+                            Settings
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/billing')}>
+                            <CreditCard className="size-4 mr-2" />
+                            Billing
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={async () => {
+                                await signOut();
+                                router.push('/landing');
+                            }}
+                        >
+                            <SignOut className="size-4 mr-2" />
+                            Sign out
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
     );
