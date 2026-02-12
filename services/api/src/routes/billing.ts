@@ -207,6 +207,13 @@ app.get('/spending-alerts', requireAuth, async (c) => {
     return c.json(alerts);
 });
 
+// GET /api/billing/unit-economics - Get per-user unit economics (admin/self)
+app.get('/unit-economics', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const economics = await billingService.getUnitEconomics(userId);
+    return c.json(economics);
+});
+
 // ============================================
 // WEBHOOK (NO AUTH - uses signature verification)
 // ============================================

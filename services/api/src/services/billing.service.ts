@@ -546,3 +546,75 @@ export async function getCostSummary(userId: string): Promise<{
         billingPeriodStart: account.resetDate,
     };
 }
+
+/**
+ * Get unit economics for a user: revenue vs cost per billing period.
+ * This is critical for proving the business model works.
+ * Tracks: monthly revenue (tier price), actual API cost, gross margin.
+ */
+export async function getUnitEconomics(userId: string): Promise<{
+    monthlyRevenue: number;
+    periodApiCost: number;
+    grossMargin: number;
+    grossMarginPercent: number;
+    costPerChat: number;
+    ltv30d: number;
+    healthStatus: 'profitable' | 'break_even' | 'unprofitable';
+}> {
+    const account = await getOrCreateBillingAccount(userId);
+    const tier = account.plan.toUpperCase() as TierName;
+    const config = getTierConfig(tier);
+
+    const monthlyRevenue = config.monthlyPrice;
+
+    // Sum actual API costs this billing period
+    const logs = await prisma.creditLog.findMany({
+        where: {
+            billingAccountId: account.id,
+            createdAt: { gte: account.resetDate },
+            reason: 'model_inference',
+        },
+        select: { metadata: true },
+    });
+
+    let periodApiCost = 0;
+    for (const log of logs) {
+        const meta = log.metadata as { usd_cost?: number } | null;
+        periodApiCost += meta?.usd_cost || 0;
+    }
+    periodApiCost = Math.round(periodApiCost * 10000) / 10000;
+
+    const grossMargin = monthlyRevenue - periodApiCost;
+    const grossMarginPercent = monthlyRevenue > 0
+        ? Math.round((grossMargin / monthlyRevenue) * 100)
+        : 0;
+
+    // Cost per chat
+    const chatsUsed = config.monthlyChats - (account.chatsRemaining || 0);
+    const costPerChat = chatsUsed > 0
+        ? Math.round((periodApiCost / chatsUsed) * 10000) / 10000
+        : 0;
+
+    // Simple 30-day LTV proxy
+    const ltv30d = monthlyRevenue;
+
+    // Health assessment
+    let healthStatus: 'profitable' | 'break_even' | 'unprofitable' = 'profitable';
+    if (monthlyRevenue === 0 && periodApiCost > 0) {
+        healthStatus = 'unprofitable'; // Free tier with usage
+    } else if (grossMarginPercent < 10) {
+        healthStatus = 'break_even';
+    } else if (grossMarginPercent < 0) {
+        healthStatus = 'unprofitable';
+    }
+
+    return {
+        monthlyRevenue,
+        periodApiCost,
+        grossMargin,
+        grossMarginPercent,
+        costPerChat,
+        ltv30d,
+        healthStatus,
+    };
+}
