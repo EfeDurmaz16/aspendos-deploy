@@ -1,6 +1,6 @@
 import { prisma } from '@aspendos/db';
-import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 
 export async function GET(request: Request) {
     try {
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
             FROM series
             LEFT JOIN agg USING(bucket)
             ORDER BY series.bucket ASC;
-        ` as unknown) as Array<{ date: string; userMessages: number; assistantMessages: number }>;
+        `) as unknown as Array<{ date: string; userMessages: number; assistantMessages: number }>;
 
         const data = rows.map((row) => ({
             date: row.date,

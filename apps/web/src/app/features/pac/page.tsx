@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
 import { BellRinging } from '@phosphor-icons/react/dist/ssr';
-import { FeaturePage, type FeatureData } from '@/components/seo/FeaturePage';
+import type { Metadata } from 'next';
+import { type FeatureData, FeaturePage } from '@/components/seo/FeaturePage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
@@ -22,57 +22,68 @@ export const metadata: Metadata = generatePageMetadata(
 const pacData: FeatureData = {
     name: 'PAC - Proactive Agentic Callback',
     slug: 'pac',
-    tagline: 'The first AI that messages YOU first. Schedule reminders, get follow-ups, and let YULA reach out when it matters most.',
+    tagline:
+        'The first AI that messages YOU first. Schedule reminders, get follow-ups, and let YULA reach out when it matters most.',
     description: `PAC (Proactive Agentic Callback) is YULA's revolutionary feature that flips the AI interaction model. Instead of always waiting for you to ask, YULA can proactively reach out. Tell YULA to remind you about something in a week, follow up on a goal, or check in about a decision - and it will. No other AI platform offers this capability.`,
     heroIcon: <BellRinging className="w-16 h-16 text-primary" weight="duotone" />,
     benefits: [
         {
             title: 'AI That Initiates',
-            description: 'YULA can message you first - a capability no other AI assistant offers. Set reminders naturally in conversation.',
+            description:
+                'YULA can message you first - a capability no other AI assistant offers. Set reminders naturally in conversation.',
         },
         {
             title: 'Contextual Follow-ups',
-            description: 'Unlike simple reminders, PAC includes full context from your original conversation when it reaches out.',
+            description:
+                'Unlike simple reminders, PAC includes full context from your original conversation when it reaches out.',
         },
         {
             title: 'Multiple Notification Channels',
-            description: 'Receive PAC notifications via push notification, email, or in-app - your choice.',
+            description:
+                'Receive PAC notifications via push notification, email, or in-app - your choice.',
         },
         {
             title: 'Natural Scheduling',
-            description: '"Remind me about this next week" or "Follow up with me on this goal monthly" - just talk naturally.',
+            description:
+                '"Remind me about this next week" or "Follow up with me on this goal monthly" - just talk naturally.',
         },
     ],
     howItWorks: [
         {
             step: 1,
             title: 'Request a callback naturally',
-            description: 'During any conversation, ask YULA to remind you, follow up, or check in at a future time.',
+            description:
+                'During any conversation, ask YULA to remind you, follow up, or check in at a future time.',
         },
         {
             step: 2,
             title: 'YULA schedules the callback',
-            description: 'YULA extracts the timing and context, scheduling a proactive callback for the right moment.',
+            description:
+                'YULA extracts the timing and context, scheduling a proactive callback for the right moment.',
         },
         {
             step: 3,
             title: 'Context is preserved',
-            description: 'When the time comes, YULA has full context of the original conversation and why you wanted the reminder.',
+            description:
+                'When the time comes, YULA has full context of the original conversation and why you wanted the reminder.',
         },
         {
             step: 4,
             title: 'YULA reaches out',
-            description: 'You receive a notification with YULA\'s contextual message, ready to continue the conversation.',
+            description:
+                "You receive a notification with YULA's contextual message, ready to continue the conversation.",
         },
     ],
     useCases: [
         {
             title: 'Goal Tracking',
-            description: '"Check in with me about my fitness goals every Sunday" - YULA becomes your accountability partner.',
+            description:
+                '"Check in with me about my fitness goals every Sunday" - YULA becomes your accountability partner.',
         },
         {
             title: 'Decision Follow-ups',
-            description: '"Remind me in 3 days to reconsider this decision" - let important choices marinate with a follow-up.',
+            description:
+                '"Remind me in 3 days to reconsider this decision" - let important choices marinate with a follow-up.',
         },
         {
             title: 'Learning Reminders',
@@ -80,7 +91,8 @@ const pacData: FeatureData = {
         },
         {
             title: 'Project Check-ins',
-            description: '"Follow up on this project\'s progress in 2 weeks" - never let important tasks slip.',
+            description:
+                '"Follow up on this project\'s progress in 2 weeks" - never let important tasks slip.',
         },
     ],
     faqs: [

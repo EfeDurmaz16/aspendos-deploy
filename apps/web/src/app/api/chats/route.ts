@@ -55,15 +55,15 @@ export async function GET(req: NextRequest) {
                     createdAt: Date;
                     updatedAt: Date;
                 }) => ({
-                id: chat.id,
-                title: chat.title,
-                description: chat.description,
-                messageCount: chat._count.messages,
-                lastMessage: chat.messages[0]?.content?.slice(0, 100),
-                lastMessageAt: chat.messages[0]?.createdAt,
-                createdAt: chat.createdAt,
-                updatedAt: chat.updatedAt,
-            })
+                    id: chat.id,
+                    title: chat.title,
+                    description: chat.description,
+                    messageCount: chat._count.messages,
+                    lastMessage: chat.messages[0]?.content?.slice(0, 100),
+                    lastMessageAt: chat.messages[0]?.createdAt,
+                    createdAt: chat.createdAt,
+                    updatedAt: chat.updatedAt,
+                })
             ),
             nextCursor,
         });

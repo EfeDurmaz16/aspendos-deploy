@@ -86,7 +86,10 @@ export async function routeUserMessage(
             model: ROUTER_MODEL,
             messages: [
                 { role: 'system', content: ROUTER_SYSTEM_PROMPT },
-                { role: 'user', content: `User message: "${userMessage}"${contextStr}\n\nDecide the route:` },
+                {
+                    role: 'user',
+                    content: `User message: "${userMessage}"${contextStr}\n\nDecide the route:`,
+                },
             ],
             temperature: 0.1,
             max_tokens: 500,
@@ -109,7 +112,10 @@ export async function routeUserMessage(
                 model: FALLBACK_ROUTER_MODEL,
                 messages: [
                     { role: 'system', content: ROUTER_SYSTEM_PROMPT },
-                    { role: 'user', content: `User message: "${userMessage}"\n\nDecide the route:` },
+                    {
+                        role: 'user',
+                        content: `User message: "${userMessage}"\n\nDecide the route:`,
+                    },
                 ],
                 temperature: 0.1,
                 max_tokens: 500,

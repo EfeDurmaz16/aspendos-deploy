@@ -1,7 +1,12 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { useYulaStore, type CouncilPersona, type CouncilThought, type CouncilVerdict } from '@/stores/yula-store';
+import {
+    type CouncilPersona,
+    type CouncilThought,
+    type CouncilVerdict,
+    useYulaStore,
+} from '@/stores/yula-store';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -55,7 +60,7 @@ export const personaDefinitions: Record<
         color: '#ef4444', // Red
         bgColor: 'bg-red-500/10',
         icon: 'warning',
-        description: 'Challenges assumptions and plays devil\'s advocate',
+        description: "Challenges assumptions and plays devil's advocate",
         thinkingStyle: 'Questioning assumptions and identifying blind spots...',
         backendKey: 'DEVILS_ADVOCATE',
     },
@@ -68,7 +73,6 @@ const backendToFrontendPersona: Record<string, CouncilPersona> = {
     PRACTICAL: 'prudent',
     DEVILS_ADVOCATE: 'devils-advocate',
 };
-
 
 export function useCouncil() {
     const {
@@ -87,16 +91,20 @@ export function useCouncil() {
     const synthesizeVerdict = useCallback(
         async (sessId: string, question: string, thoughts: Record<CouncilPersona, string>) => {
             try {
-                const response = await fetch(`${API_BASE}/api/council/sessions/${sessId}/synthesize`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                });
+                const response = await fetch(
+                    `${API_BASE}/api/council/sessions/${sessId}/synthesize`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                    }
+                );
 
                 if (response.ok) {
                     const data = await response.json();
                     const verdict: CouncilVerdict = {
-                        recommendation: data.synthesis || generateLocalConsensus(question, thoughts),
+                        recommendation:
+                            data.synthesis || generateLocalConsensus(question, thoughts),
                         confidence: undefined,
                         reasoning:
                             'After careful deliberation, the Council has reached a balanced consensus that considers logical analysis, creative possibilities, and prudent risk assessment.',
@@ -107,7 +115,8 @@ export function useCouncil() {
                     const verdict: CouncilVerdict = {
                         recommendation: generateLocalConsensus(question, thoughts),
                         confidence: undefined,
-                        reasoning: 'After careful deliberation, the Council has reached a balanced consensus.',
+                        reasoning:
+                            'After careful deliberation, the Council has reached a balanced consensus.',
                         contributions: thoughts,
                     };
                     setCouncilVerdict(verdict);
@@ -116,7 +125,8 @@ export function useCouncil() {
                 const verdict: CouncilVerdict = {
                     recommendation: generateLocalConsensus(question, thoughts),
                     confidence: undefined,
-                    reasoning: 'After careful deliberation, the Council has reached a balanced consensus.',
+                    reasoning:
+                        'After careful deliberation, the Council has reached a balanced consensus.',
                     contributions: thoughts,
                 };
                 setCouncilVerdict(verdict);
@@ -124,7 +134,6 @@ export function useCouncil() {
         },
         [setCouncilVerdict]
     );
-
 
     // Real API-based deliberation
     const streamDeliberation = useCallback(
@@ -275,7 +284,7 @@ function generateLocalConsensus(
     _question: string,
     thoughts: Record<CouncilPersona, string>
 ): string {
-    const responseCount = Object.values(thoughts).filter(t => t.length > 0).length;
+    const responseCount = Object.values(thoughts).filter((t) => t.length > 0).length;
     if (responseCount === 0) return 'No Council responses available.';
     return `Based on ${responseCount} Council perspectives. Review individual responses above for the full analysis.`;
 }

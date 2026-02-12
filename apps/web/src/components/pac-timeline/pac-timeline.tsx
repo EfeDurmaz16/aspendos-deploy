@@ -1,17 +1,10 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    Lightning,
-    CaretLeft,
-    CaretRight,
-    Bell,
-    CheckCircle,
-    Clock,
-} from '@phosphor-icons/react';
+import { Bell, CaretLeft, CaretRight, CheckCircle, Clock, Lightning } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { usePAC } from './use-pac';
 import { PACItemCard } from './pac-item';
+import { usePAC } from './use-pac';
 
 interface PACTimelineProps {
     className?: string;
@@ -74,10 +67,7 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
         <motion.div
             initial={{ width: 320 }}
             animate={{ width: 320 }}
-            className={cn(
-                'flex h-full flex-col border-r border-white/5 bg-zinc-900/50',
-                className
-            )}
+            className={cn('flex h-full flex-col border-r border-white/5 bg-zinc-900/50', className)}
         >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
@@ -119,7 +109,9 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
                             <PACItemCard
                                 key={item.id}
                                 item={item}
-                                relativeTime={item.scheduledFor ? getRelativeTime(item.scheduledFor) : 'Now'}
+                                relativeTime={
+                                    item.scheduledFor ? getRelativeTime(item.scheduledFor) : 'Now'
+                                }
                                 onApprove={() => approve(item.id)}
                                 onDismiss={() => dismiss(item.id)}
                                 onSnooze15Min={() => snooze15Min(item.id)}
@@ -170,7 +162,10 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
                                 animate={{ opacity: 1 }}
                                 className="flex flex-col items-center justify-center py-12 text-center"
                             >
-                                <CheckCircle className="mb-3 h-10 w-10 text-emerald-400" weight="fill" />
+                                <CheckCircle
+                                    className="mb-3 h-10 w-10 text-emerald-400"
+                                    weight="fill"
+                                />
                                 <p className="text-sm font-medium text-zinc-300">All caught up!</p>
                                 <p className="mt-1 text-xs text-zinc-500">
                                     No pending items in your future stream

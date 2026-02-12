@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -49,7 +49,7 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
         }
 
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
         }
 
@@ -72,32 +72,39 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
         isPlayingRef.current = true;
         const chunk = audioQueueRef.current.shift()!;
 
-        audioContextRef.current.decodeAudioData(chunk, (buffer) => {
-            const source = audioContextRef.current!.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioContextRef.current!.destination);
+        audioContextRef.current.decodeAudioData(
+            chunk,
+            (buffer) => {
+                const source = audioContextRef.current!.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioContextRef.current!.destination);
 
-            const currentTime = audioContextRef.current!.currentTime;
-            const startTime = Math.max(currentTime, nextPlayTimeRef.current);
+                const currentTime = audioContextRef.current!.currentTime;
+                const startTime = Math.max(currentTime, nextPlayTimeRef.current);
 
-            source.start(startTime);
-            nextPlayTimeRef.current = startTime + buffer.duration;
+                source.start(startTime);
+                nextPlayTimeRef.current = startTime + buffer.duration;
 
-            source.onended = () => {
+                source.onended = () => {
+                    playNextChunk();
+                };
+            },
+            (err) => {
+                console.error('Error decoding audio chunk', err);
                 playNextChunk();
-            };
-        }, (err) => {
-            console.error('Error decoding audio chunk', err);
-            playNextChunk();
-        });
+            }
+        );
     }, []);
 
-    const queueAudio = useCallback((arrayBuffer: ArrayBuffer) => {
-        audioQueueRef.current.push(arrayBuffer);
-        if (!isPlayingRef.current) {
-            playNextChunk();
-        }
-    }, [playNextChunk]);
+    const queueAudio = useCallback(
+        (arrayBuffer: ArrayBuffer) => {
+            audioQueueRef.current.push(arrayBuffer);
+            if (!isPlayingRef.current) {
+                playNextChunk();
+            }
+        },
+        [playNextChunk]
+    );
 
     const connect = useCallback(async () => {
         if (isConnecting || isConnected) return;
@@ -107,13 +114,17 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
 
             // 1. Get Ephemeral Token
             // Note: In real setup, ensure credentials are sent if behind auth
-            const tokenRes = await fetch(`${API_BASE}/api/voice/token`, { method: 'POST', credentials: 'include' });
+            const tokenRes = await fetch(`${API_BASE}/api/voice/token`, {
+                method: 'POST',
+                credentials: 'include',
+            });
             if (!tokenRes.ok) throw new Error('Failed to get voice token');
 
             const { token, url } = await tokenRes.json();
 
             // 2. Setup Audio Context
-            type WebkitWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+            type WebkitWindow = Window &
+                typeof globalThis & { webkitAudioContext?: typeof AudioContext };
             const AudioContextCtor =
                 window.AudioContext ?? (window as WebkitWindow).webkitAudioContext;
             if (!AudioContextCtor) throw new Error('AudioContext not supported');
@@ -137,20 +148,22 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
                 options.onConnect?.();
 
                 // Send initial config if needed (JSON)
-                ws.send(JSON.stringify({
-                    setup: {
-                        model: "models/gemini-pro-vision", // or gemini-1.5-pro
-                        generation_config: { response_modalities: ["AUDIO"] }
-                    }
-                }));
+                ws.send(
+                    JSON.stringify({
+                        setup: {
+                            model: 'models/gemini-pro-vision', // or gemini-1.5-pro
+                            generation_config: { response_modalities: ['AUDIO'] },
+                        },
+                    })
+                );
 
                 // Start Recording
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({
                         audio: {
                             channelCount: 1,
-                            sampleRate: 16000
-                        }
+                            sampleRate: 16000,
+                        },
                     });
                     streamRef.current = stream;
 
@@ -171,21 +184,27 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
                         // For now assuming raw floats or sending base64
                         const pcmData = new Int16Array(inputData.length);
                         for (let i = 0; i < inputData.length; i++) {
-                            pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+                            pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7fff;
                         }
 
                         // Convert to blob/buffer and send
-                        const base64Audio = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+                        const base64Audio = btoa(
+                            String.fromCharCode(...new Uint8Array(pcmData.buffer))
+                        );
 
                         if (ws.readyState === WebSocket.OPEN) {
-                            ws.send(JSON.stringify({
-                                realtime_input: {
-                                    media_chunks: [{
-                                        mime_type: "audio/pcm",
-                                        data: base64Audio
-                                    }]
-                                }
-                            }));
+                            ws.send(
+                                JSON.stringify({
+                                    realtime_input: {
+                                        media_chunks: [
+                                            {
+                                                mime_type: 'audio/pcm',
+                                                data: base64Audio,
+                                            },
+                                        ],
+                                    },
+                                })
+                            );
                         }
                     };
 
@@ -238,7 +257,6 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
             };
 
             socketRef.current = ws;
-
         } catch (err) {
             console.error(err);
             setIsConnecting(false);
@@ -251,6 +269,6 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
         disconnect,
         isConnected,
         isConnecting,
-        isRecording
+        isRecording,
     };
 }

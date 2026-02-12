@@ -1,17 +1,10 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
+import { AlertCircle, CheckCircle2, FileText, Loader2, Upload, X } from 'lucide-react';
 import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-    Upload,
-    FileText,
-    X,
-    CheckCircle2,
-    AlertCircle,
-    Loader2,
-} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * YULA OS Import Uploader Component
@@ -263,7 +256,12 @@ function FileItem({ file, onRemove, isUploading }: FileItemProps) {
             )}
         >
             {/* File Icon */}
-            <div className={cn('w-10 h-10 rounded-[6px] flex items-center justify-center', sourceColors[file.source])}>
+            <div
+                className={cn(
+                    'w-10 h-10 rounded-[6px] flex items-center justify-center',
+                    sourceColors[file.source]
+                )}
+            >
                 <FileText className="w-5 h-5" />
             </div>
 
@@ -273,10 +271,12 @@ function FileItem({ file, onRemove, isUploading }: FileItemProps) {
                     <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
                         {file.file.name}
                     </p>
-                    <span className={cn(
-                        'text-[10px] font-medium px-1.5 py-0.5 rounded',
-                        sourceColors[file.source]
-                    )}>
+                    <span
+                        className={cn(
+                            'text-[10px] font-medium px-1.5 py-0.5 rounded',
+                            sourceColors[file.source]
+                        )}
+                    >
                         {file.source}
                     </span>
                 </div>
@@ -292,9 +292,7 @@ function FileItem({ file, onRemove, isUploading }: FileItemProps) {
                             </span>
                         </>
                     )}
-                    {file.error && (
-                        <span className="text-xs text-rose-500">{file.error}</span>
-                    )}
+                    {file.error && <span className="text-xs text-rose-500">{file.error}</span>}
                 </div>
             </div>
 

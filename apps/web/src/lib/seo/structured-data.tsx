@@ -80,12 +80,10 @@ export const organizationSchema: Organization = {
     alternateName: 'YULA OS',
     url: BASE_URL,
     logo: `${BASE_URL}/logo.png`,
-    description: 'YULA is a unified AI platform providing access to multiple AI models with persistent semantic memory.',
+    description:
+        'YULA is a unified AI platform providing access to multiple AI models with persistent semantic memory.',
     foundingDate: '2024',
-    sameAs: [
-        'https://twitter.com/yaboruAI',
-        'https://github.com/yula-ai',
-    ],
+    sameAs: ['https://twitter.com/yaboruAI', 'https://github.com/yula-ai'],
     contactPoint: {
         '@type': 'ContactPoint',
         contactType: 'customer support',

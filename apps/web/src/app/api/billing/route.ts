@@ -46,7 +46,9 @@ export async function GET() {
 
         // Calculate usage percentages
         const tokenUsagePercent = Math.round((billing.creditUsed / billing.monthlyCredit) * 100);
-        const chatsUsagePercent = Math.round(((tierChatLimit - billing.chatsRemaining) / tierChatLimit) * 100);
+        const chatsUsagePercent = Math.round(
+            ((tierChatLimit - billing.chatsRemaining) / tierChatLimit) * 100
+        );
 
         // Days until reset
         const now = new Date();
@@ -89,13 +91,21 @@ export async function GET() {
                 hasSubscription: !!(billing.polarCustomerId && billing.subscriptionId),
             },
 
-            recentActivity: billing.creditHistory.map((log: { id: string; amount: number; reason: string; metadata: unknown; createdAt: Date }) => ({
-                id: log.id,
-                amount: log.amount,
-                reason: log.reason,
-                metadata: log.metadata,
-                createdAt: log.createdAt,
-            })),
+            recentActivity: billing.creditHistory.map(
+                (log: {
+                    id: string;
+                    amount: number;
+                    reason: string;
+                    metadata: unknown;
+                    createdAt: Date;
+                }) => ({
+                    id: log.id,
+                    amount: log.amount,
+                    reason: log.reason,
+                    metadata: log.metadata,
+                    createdAt: log.createdAt,
+                })
+            ),
         });
     } catch (error) {
         console.error('[API /billing] Error:', error);

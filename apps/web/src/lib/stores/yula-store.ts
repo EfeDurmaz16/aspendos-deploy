@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 // ============================================
 // TYPES
@@ -93,9 +93,7 @@ export const useMemoryStore = create<MemoryState>()(
             updateNode: (id, updates) => {
                 set((state) => ({
                     nodes: state.nodes.map((node) =>
-                        node.id === id
-                            ? { ...node, ...updates, updatedAt: new Date() }
-                            : node
+                        node.id === id ? { ...node, ...updates, updatedAt: new Date() } : node
                     ),
                 }));
             },

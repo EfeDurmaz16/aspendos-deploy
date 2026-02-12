@@ -1,11 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    ArrowLeft,
+    Brain,
+    CircleNotch,
+    List,
+    PaperPlaneTilt,
+    Plus,
+    SidebarSimple,
+    Sparkle,
+} from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, List, SidebarSimple, Sparkle, PaperPlaneTilt, CircleNotch, Plus, ArrowLeft } from '@phosphor-icons/react';
-import { cn } from '@/lib/utils';
-
+import { useCallback, useEffect, useRef, useState } from 'react';
+import rehypeKatex from 'rehype-katex';
+// Streamdown plugins for markdown rendering
+import remarkMath from 'remark-math';
 // AI Elements - ONLY Vercel AI Elements for chat UI
 import {
     Conversation,
@@ -15,45 +25,42 @@ import {
 } from '@/components/ai-elements/conversation';
 import {
     Message,
-    MessageContent,
-    MessageResponse,
     MessageAttachment,
     MessageAttachments,
+    MessageContent,
+    MessageResponse,
 } from '@/components/ai-elements/message';
 import {
-    PromptInput,
-    PromptInputBody,
-    PromptInputTextarea,
-    PromptInputFooter,
-    PromptInputSubmit,
-    PromptInputTools,
-    PromptInputActionMenu,
-    PromptInputActionMenuTrigger,
-    PromptInputActionMenuContent,
-    PromptInputActionAddAttachments,
-    PromptInputHeader,
-    PromptInputAttachments,
-    PromptInputAttachment,
-    PromptInputButton,
-} from '@/components/ai-elements/prompt-input';
-import {
     ModelSelector,
-    ModelSelectorTrigger,
     ModelSelectorContent,
-    ModelSelectorInput,
-    ModelSelectorList,
     ModelSelectorEmpty,
     ModelSelectorGroup,
+    ModelSelectorInput,
     ModelSelectorItem,
+    ModelSelectorList,
     ModelSelectorLogo,
     ModelSelectorLogoGroup,
     ModelSelectorName,
     ModelSelectorShortcut,
+    ModelSelectorTrigger,
 } from '@/components/ai-elements/model-selector';
-
-// Streamdown plugins for markdown rendering
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import {
+    PromptInput,
+    PromptInputActionAddAttachments,
+    PromptInputActionMenu,
+    PromptInputActionMenuContent,
+    PromptInputActionMenuTrigger,
+    PromptInputAttachment,
+    PromptInputAttachments,
+    PromptInputBody,
+    PromptInputButton,
+    PromptInputFooter,
+    PromptInputHeader,
+    PromptInputSubmit,
+    PromptInputTextarea,
+    PromptInputTools,
+} from '@/components/ai-elements/prompt-input';
+import { cn } from '@/lib/utils';
 import 'katex/dist/katex.min.css';
 
 // Demo message type
@@ -87,16 +94,18 @@ const MODEL_GROUPS = {
         label: 'Anthropic',
         providerId: 'anthropic' as const,
         models: [
-            { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5', description: 'Balanced performance' },
+            {
+                id: 'claude-sonnet-4-5',
+                name: 'Claude Sonnet 4.5',
+                description: 'Balanced performance',
+            },
             { id: 'claude-3-5-haiku', name: 'Claude 3.5 Haiku', description: 'Fast responses' },
         ],
     },
     google: {
         label: 'Google',
         providerId: 'google' as const,
-        models: [
-            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Ultra-fast' },
-        ],
+        models: [{ id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Ultra-fast' }],
     },
     meta: {
         label: 'Meta',
@@ -117,8 +126,8 @@ const MODEL_GROUPS = {
 };
 
 // Flatten models for quick lookup
-const ALL_MODELS = Object.values(MODEL_GROUPS).flatMap(group =>
-    group.models.map(model => ({ ...model, provider: group.label, providerId: group.providerId }))
+const ALL_MODELS = Object.values(MODEL_GROUPS).flatMap((group) =>
+    group.models.map((model) => ({ ...model, provider: group.label, providerId: group.providerId }))
 );
 
 // Suggested prompts for empty state
@@ -169,16 +178,18 @@ function ChatSidebar({
 
                 {/* Chat List */}
                 <div className="flex-1 overflow-y-auto space-y-1">
-                    <div className="font-mono text-xs text-zinc-600 tracking-widest uppercase mb-3">Recent</div>
+                    <div className="font-mono text-xs text-zinc-600 tracking-widest uppercase mb-3">
+                        Recent
+                    </div>
                     {chats.map((chat) => (
                         <button
                             key={chat.id}
                             onClick={() => onSelectChat(chat.id)}
                             className={cn(
-                                "w-full py-2 px-3 text-left text-sm truncate transition-all duration-200",
+                                'w-full py-2 px-3 text-left text-sm truncate transition-all duration-200',
                                 currentChatId === chat.id
-                                    ? "text-white bg-zinc-800/50 border-l-2 border-cyan-500"
-                                    : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50"
+                                    ? 'text-white bg-zinc-800/50 border-l-2 border-cyan-500'
+                                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50'
                             )}
                         >
                             {chat.title}
@@ -201,7 +212,11 @@ function ChatSidebar({
 }
 
 // Cinematic empty state with suggestions
-function CinematicEmptyState({ onSuggestionClick }: { onSuggestionClick: (prompt: string) => void }) {
+function CinematicEmptyState({
+    onSuggestionClick,
+}: {
+    onSuggestionClick: (prompt: string) => void;
+}) {
     return (
         <ConversationEmptyState className="h-full flex flex-col items-center justify-center">
             <motion.div
@@ -257,9 +272,27 @@ export default function Chat2Page() {
 
     // Demo chats for sidebar
     const [chats] = useState<Chat[]>([
-        { id: 'demo-1', title: 'Current conversation', messages: [], model: 'gpt-4o', createdAt: new Date() },
-        { id: 'demo-2', title: 'Code review session', messages: [], model: 'claude-opus', createdAt: new Date(Date.now() - 86400000) },
-        { id: 'demo-3', title: 'Research notes', messages: [], model: 'gemini-pro', createdAt: new Date(Date.now() - 172800000) },
+        {
+            id: 'demo-1',
+            title: 'Current conversation',
+            messages: [],
+            model: 'gpt-4o',
+            createdAt: new Date(),
+        },
+        {
+            id: 'demo-2',
+            title: 'Code review session',
+            messages: [],
+            model: 'claude-opus',
+            createdAt: new Date(Date.now() - 86400000),
+        },
+        {
+            id: 'demo-3',
+            title: 'Research notes',
+            messages: [],
+            model: 'gemini-pro',
+            createdAt: new Date(Date.now() - 172800000),
+        },
     ]);
 
     // Ref for auto-scroll
@@ -271,7 +304,7 @@ export default function Chat2Page() {
 
         // Simulated response based on query type
         const responses: Record<string, string> = {
-            'quantum': `Quantum computing harnesses the principles of quantum mechanics to process information in fundamentally different ways than classical computers.
+            quantum: `Quantum computing harnesses the principles of quantum mechanics to process information in fundamentally different ways than classical computers.
 
 **Key Concepts:**
 1. **Qubits** - Unlike classical bits (0 or 1), qubits can exist in superposition, representing both states simultaneously
@@ -285,7 +318,7 @@ export default function Chat2Page() {
 - Machine learning acceleration
 
 The field is still evolving, with companies like IBM, Google, and startups racing to achieve "quantum advantage" for practical problems.`,
-            'haiku': `Here's a haiku about coding:
+            haiku: `Here's a haiku about coding:
 
 *Semicolon lost*
 *Hours searching line by line*
@@ -294,7 +327,7 @@ The field is still evolving, with companies like IBM, Google, and startups racin
 ---
 
 The beauty of code lies in its precision and poetry. Each line tells a story, each function a verse in the larger narrative of software.`,
-            'debug': `I'd be happy to help debug your React component! Please share the code and I'll analyze it for:
+            debug: `I'd be happy to help debug your React component! Please share the code and I'll analyze it for:
 
 1. **Common React pitfalls**
    - Missing dependency arrays in useEffect
@@ -312,7 +345,7 @@ The beauty of code lies in its precision and poetry. Each line tells a story, ea
    - Event handler problems
 
 Paste your component code and any error messages you're seeing.`,
-            'trip': `Let me help you plan an amazing weekend trip! Here's a framework:
+            trip: `Let me help you plan an amazing weekend trip! Here's a framework:
 
 **1. Destination Selection**
 Consider: budget, travel time, interests (nature, culture, food)
@@ -333,7 +366,7 @@ Consider: budget, travel time, interests (nature, culture, food)
 - Travel documents
 
 What's your ideal vibe? Adventure, relaxation, or cultural immersion?`,
-            'default': `I understand you're asking about: "${userMessage}"
+            default: `I understand you're asking about: "${userMessage}"
 
 This is a demo interface showcasing the cinematic dark theme with Vercel AI Elements. In a production environment, this would connect to the YULA API and stream real AI responses.
 
@@ -344,15 +377,23 @@ This is a demo interface showcasing the cinematic dark theme with Vercel AI Elem
 - Model selection
 - Persistent memory concept
 
-Try asking about quantum computing, writing a haiku, debugging code, or planning a trip!`
+Try asking about quantum computing, writing a haiku, debugging code, or planning a trip!`,
         };
 
         // Determine which response to use
         let response = responses['default'];
         if (userMessage.toLowerCase().includes('quantum')) response = responses['quantum'];
         else if (userMessage.toLowerCase().includes('haiku')) response = responses['haiku'];
-        else if (userMessage.toLowerCase().includes('debug') || userMessage.toLowerCase().includes('react')) response = responses['debug'];
-        else if (userMessage.toLowerCase().includes('trip') || userMessage.toLowerCase().includes('weekend')) response = responses['trip'];
+        else if (
+            userMessage.toLowerCase().includes('debug') ||
+            userMessage.toLowerCase().includes('react')
+        )
+            response = responses['debug'];
+        else if (
+            userMessage.toLowerCase().includes('trip') ||
+            userMessage.toLowerCase().includes('weekend')
+        )
+            response = responses['trip'];
 
         // Add assistant message with streaming simulation
         const assistantMessage: ChatMessage = {
@@ -362,12 +403,12 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
             timestamp: new Date(),
         };
 
-        setMessages(prev => [...prev, assistantMessage]);
+        setMessages((prev) => [...prev, assistantMessage]);
 
         // Simulate character-by-character streaming
         for (let i = 0; i <= response.length; i++) {
-            await new Promise(resolve => setTimeout(resolve, 10));
-            setMessages(prev => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            setMessages((prev) => {
                 const updated = [...prev];
                 const lastIdx = updated.length - 1;
                 if (updated[lastIdx]?.role === 'assistant') {
@@ -392,7 +433,7 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
             timestamp: new Date(),
         };
 
-        setMessages(prev => [...prev, userMessage]);
+        setMessages((prev) => [...prev, userMessage]);
 
         // Simulate response
         await simulateResponse(message.text);
@@ -423,7 +464,7 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.metaKey && e.key === 'b') {
                 e.preventDefault();
-                setSidebarOpen(prev => !prev);
+                setSidebarOpen((prev) => !prev);
             }
             if (e.metaKey && e.key === 'n') {
                 e.preventDefault();
@@ -431,7 +472,7 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
             }
             if (e.metaKey && e.key === 'k') {
                 e.preventDefault();
-                setModelSelectorOpen(prev => !prev);
+                setModelSelectorOpen((prev) => !prev);
             }
         };
 
@@ -479,7 +520,9 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
                             <ModelSelectorTrigger asChild>
                                 <button className="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/50 transition-all duration-200 group">
                                     {(() => {
-                                        const currentModel = ALL_MODELS.find(m => m.id === selectedModel);
+                                        const currentModel = ALL_MODELS.find(
+                                            (m) => m.id === selectedModel
+                                        );
                                         return (
                                             <>
                                                 <ModelSelectorLogo
@@ -489,7 +532,9 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
                                                 <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">
                                                     {currentModel?.name || 'Select model'}
                                                 </span>
-                                                <span className="text-xs text-zinc-600 font-mono">⌘K</span>
+                                                <span className="text-xs text-zinc-600 font-mono">
+                                                    ⌘K
+                                                </span>
                                             </>
                                         );
                                     })()}
@@ -513,7 +558,10 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
                                             key={key}
                                             heading={
                                                 <div className="flex items-center gap-2 px-2 py-1.5">
-                                                    <ModelSelectorLogo provider={group.providerId} className="size-3 invert" />
+                                                    <ModelSelectorLogo
+                                                        provider={group.providerId}
+                                                        className="size-3 invert"
+                                                    />
                                                     <span className="text-xs font-mono text-zinc-500 tracking-widest uppercase">
                                                         {group.label}
                                                     </span>
@@ -530,14 +578,18 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
                                                         setModelSelectorOpen(false);
                                                     }}
                                                     className={cn(
-                                                        "flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors",
-                                                        "hover:bg-zinc-800/50 data-[selected=true]:bg-cyan-500/10",
-                                                        "aria-selected:bg-cyan-500/10",
-                                                        selectedModel === model.id && "bg-cyan-500/10 border-l-2 border-cyan-500"
+                                                        'flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors',
+                                                        'hover:bg-zinc-800/50 data-[selected=true]:bg-cyan-500/10',
+                                                        'aria-selected:bg-cyan-500/10',
+                                                        selectedModel === model.id &&
+                                                            'bg-cyan-500/10 border-l-2 border-cyan-500'
                                                     )}
                                                 >
                                                     <ModelSelectorLogoGroup>
-                                                        <ModelSelectorLogo provider={group.providerId} className="size-5 invert" />
+                                                        <ModelSelectorLogo
+                                                            provider={group.providerId}
+                                                            className="size-5 invert"
+                                                        />
                                                     </ModelSelectorLogoGroup>
                                                     <div className="flex-1 min-w-0">
                                                         <ModelSelectorName className="text-zinc-200 font-medium">
@@ -548,7 +600,9 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
                                                         </p>
                                                     </div>
                                                     {selectedModel === model.id && (
-                                                        <span className="text-cyan-400 text-xs">✓</span>
+                                                        <span className="text-cyan-400 text-xs">
+                                                            ✓
+                                                        </span>
                                                     )}
                                                 </ModelSelectorItem>
                                             ))}
@@ -590,8 +644,8 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
                                             <MessageContent
                                                 className={cn(
                                                     msg.role === 'user'
-                                                        ? "bg-zinc-900 border border-zinc-800 text-zinc-100"
-                                                        : "text-zinc-300"
+                                                        ? 'bg-zinc-900 border border-zinc-800 text-zinc-100'
+                                                        : 'text-zinc-300'
                                                 )}
                                             >
                                                 {msg.role === 'assistant' ? (
@@ -608,11 +662,16 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
                                             </MessageContent>
 
                                             {/* Timestamp */}
-                                            <div className={cn(
-                                                "text-xs text-zinc-600 mt-1",
-                                                msg.role === 'user' ? "text-right" : "text-left"
-                                            )}>
-                                                {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            <div
+                                                className={cn(
+                                                    'text-xs text-zinc-600 mt-1',
+                                                    msg.role === 'user' ? 'text-right' : 'text-left'
+                                                )}
+                                            >
+                                                {msg.timestamp.toLocaleTimeString([], {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                })}
                                             </div>
                                         </Message>
                                     </motion.div>
@@ -674,10 +733,10 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
                                     status={isStreaming ? 'streaming' : undefined}
                                     disabled={isStreaming}
                                     className={cn(
-                                        "transition-all duration-300",
+                                        'transition-all duration-300',
                                         isStreaming
-                                            ? "bg-zinc-800 text-zinc-500"
-                                            : "bg-cyan-500 text-black hover:bg-cyan-400"
+                                            ? 'bg-zinc-800 text-zinc-500'
+                                            : 'bg-cyan-500 text-black hover:bg-cyan-400'
                                     )}
                                 />
                             </PromptInputFooter>
@@ -685,23 +744,35 @@ Try asking about quantum computing, writing a haiku, debugging code, or planning
 
                         <div className="text-center mt-3 text-xs text-zinc-600 font-mono flex items-center justify-center gap-4 flex-wrap">
                             <span>
-                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">⌘</kbd>
+                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">
+                                    ⌘
+                                </kbd>
                                 <span className="mx-1">+</span>
-                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">K</kbd>
+                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">
+                                    K
+                                </kbd>
                                 <span className="ml-2 text-zinc-700">Model picker</span>
                             </span>
                             <span className="text-zinc-800">|</span>
                             <span>
-                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">⌘</kbd>
+                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">
+                                    ⌘
+                                </kbd>
                                 <span className="mx-1">+</span>
-                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">B</kbd>
+                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">
+                                    B
+                                </kbd>
                                 <span className="ml-2 text-zinc-700">Sidebar</span>
                             </span>
                             <span className="text-zinc-800">|</span>
                             <span>
-                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">⌘</kbd>
+                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">
+                                    ⌘
+                                </kbd>
                                 <span className="mx-1">+</span>
-                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">N</kbd>
+                                <kbd className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-zinc-500">
+                                    N
+                                </kbd>
                                 <span className="ml-2 text-zinc-700">New chat</span>
                             </span>
                         </div>

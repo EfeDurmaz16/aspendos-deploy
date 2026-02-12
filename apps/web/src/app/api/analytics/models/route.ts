@@ -1,6 +1,6 @@
 import { prisma } from '@aspendos/db';
-import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 
 export async function GET(request: Request) {
     try {
@@ -30,8 +30,7 @@ export async function GET(request: Request) {
             orderBy: { _count: { id: 'desc' } },
         });
 
-        const totalCount =
-            grouped.reduce((sum, item) => sum + item._count._all, 0) || 1;
+        const totalCount = grouped.reduce((sum, item) => sum + item._count._all, 0) || 1;
 
         const data = grouped.map((item) => {
             const tokensIn = item._sum.tokensIn ?? 0;

@@ -3,9 +3,14 @@
 import { ArrowLeft, ArrowRight, CheckCircle, X as XIcon } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { ModeToggle } from '@/components/mode-toggle';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export interface CompetitorData {
     name: string;
@@ -80,11 +85,18 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                 <nav aria-label="Breadcrumb" className="mb-8">
                     <ol className="flex items-center gap-2 text-sm text-muted-foreground">
                         <li>
-                            <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+                            <Link href="/" className="hover:text-foreground transition-colors">
+                                Home
+                            </Link>
                         </li>
                         <li>/</li>
                         <li>
-                            <Link href="/compare" className="hover:text-foreground transition-colors">Compare</Link>
+                            <Link
+                                href="/compare"
+                                className="hover:text-foreground transition-colors"
+                            >
+                                Compare
+                            </Link>
                         </li>
                         <li>/</li>
                         <li className="text-foreground font-medium">{competitor.name}</li>
@@ -118,7 +130,9 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
-                                    <span className={`w-3 h-3 rounded-full ${competitor.logoColor}`} />
+                                    <span
+                                        className={`w-3 h-3 rounded-full ${competitor.logoColor}`}
+                                    />
                                     {competitor.name}
                                 </CardTitle>
                             </CardHeader>
@@ -135,8 +149,9 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-muted-foreground">
-                                    Unified AI platform with access to 12+ models including {competitor.name},
-                                    persistent semantic memory, ChatGPT/Claude import, and proactive AI callbacks.
+                                    Unified AI platform with access to 12+ models including{' '}
+                                    {competitor.name}, persistent semantic memory, ChatGPT/Claude
+                                    import, and proactive AI callbacks.
                                 </p>
                             </CardContent>
                         </Card>
@@ -172,7 +187,10 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                             <ul className="space-y-3">
                                 {competitor.yulaAdvantages.map((advantage) => (
                                     <li key={advantage} className="flex items-start gap-3">
-                                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" weight="fill" />
+                                        <CheckCircle
+                                            className="w-5 h-5 text-primary flex-shrink-0 mt-0.5"
+                                            weight="fill"
+                                        />
                                         <span>{advantage}</span>
                                     </li>
                                 ))}
@@ -191,8 +209,12 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                             <thead className="bg-muted/50">
                                 <tr>
                                     <th className="px-6 py-4 text-left font-semibold">Feature</th>
-                                    <th className="px-6 py-4 text-center font-semibold">{competitor.name}</th>
-                                    <th className="px-6 py-4 text-center font-semibold text-primary">YULA</th>
+                                    <th className="px-6 py-4 text-center font-semibold">
+                                        {competitor.name}
+                                    </th>
+                                    <th className="px-6 py-4 text-center font-semibold text-primary">
+                                        YULA
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -226,16 +248,24 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                             <thead className="bg-muted/50">
                                 <tr>
                                     <th className="px-6 py-4 text-left font-semibold">Tier</th>
-                                    <th className="px-6 py-4 text-center font-semibold">{competitor.name}</th>
-                                    <th className="px-6 py-4 text-center font-semibold text-primary">YULA</th>
+                                    <th className="px-6 py-4 text-center font-semibold">
+                                        {competitor.name}
+                                    </th>
+                                    <th className="px-6 py-4 text-center font-semibold text-primary">
+                                        YULA
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
                                 {competitor.pricingComparison.map((row) => (
                                     <tr key={row.tier}>
                                         <td className="px-6 py-4 font-medium">{row.tier}</td>
-                                        <td className="px-6 py-4 text-center text-muted-foreground">{row.competitor}</td>
-                                        <td className="px-6 py-4 text-center text-muted-foreground">{row.yula}</td>
+                                        <td className="px-6 py-4 text-center text-muted-foreground">
+                                            {row.competitor}
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-muted-foreground">
+                                            {row.yula}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -260,11 +290,10 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
 
                 {/* CTA */}
                 <section className="text-center py-12 px-6 rounded-2xl bg-primary/5 border border-primary/20">
-                    <h2 className="text-2xl font-semibold mb-4">
-                        Ready to try YULA?
-                    </h2>
+                    <h2 className="text-2xl font-semibold mb-4">Ready to try YULA?</h2>
                     <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-                        Import your {competitor.name} history and experience AI with persistent memory.
+                        Import your {competitor.name} history and experience AI with persistent
+                        memory.
                     </p>
                     <Button size="lg" asChild>
                         <Link href="/signup" className="gap-2">

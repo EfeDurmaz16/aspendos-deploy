@@ -4,8 +4,8 @@
  * Text embeddings using Vercel AI SDK with OpenAI.
  */
 
-import { embed, embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { embed, embedMany } from 'ai';
 
 // ============================================
 // EMBEDDING OPERATIONS

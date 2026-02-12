@@ -1,7 +1,7 @@
 'use client';
-import { cn } from '@/lib/utils';
-import { motion, MotionValue, Transition } from 'framer-motion';
+import { type MotionValue, motion, type Transition } from 'framer-motion';
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 const transition: Transition = {
     duration: 10,

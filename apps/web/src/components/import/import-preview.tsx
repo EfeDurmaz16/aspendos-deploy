@@ -1,21 +1,21 @@
 'use client';
 
-import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-    MessageSquare,
-    Search,
-    CheckCheck,
-    Square,
     ArrowRight,
-    Loader2,
+    CheckCheck,
     ChevronDown,
     ChevronRight,
+    Loader2,
+    MessageSquare,
+    Search,
+    Square,
 } from 'lucide-react';
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 /**
  * YULA OS Import Preview Component
@@ -88,9 +88,7 @@ export function ImportPreview({
         if (!searchQuery.trim()) return conversations;
         const query = searchQuery.toLowerCase();
         return conversations.filter(
-            (c) =>
-                c.title.toLowerCase().includes(query) ||
-                c.preview?.toLowerCase().includes(query)
+            (c) => c.title.toLowerCase().includes(query) || c.preview?.toLowerCase().includes(query)
         );
     }, [conversations, searchQuery]);
 
@@ -119,7 +117,8 @@ export function ImportPreview({
                         Preview Import
                     </h3>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        {totalCount} conversations found with {totalMessages.toLocaleString()} messages
+                        {totalCount} conversations found with {totalMessages.toLocaleString()}{' '}
+                        messages
                     </p>
                 </div>
 
@@ -241,7 +240,8 @@ function ConversationItem({
     disabled,
 }: ConversationItemProps) {
     const sourceColors = {
-        CHATGPT: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50',
+        CHATGPT:
+            'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50',
         CLAUDE: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900/50',
     };
 
@@ -257,7 +257,9 @@ function ConversationItem({
         >
             <div
                 className="flex items-start gap-3 p-3 cursor-pointer"
-                onClick={() => !disabled && onSelectionChange(conversation.id, !conversation.selected)}
+                onClick={() =>
+                    !disabled && onSelectionChange(conversation.id, !conversation.selected)
+                }
             >
                 {/* Checkbox */}
                 <Checkbox
@@ -293,7 +295,12 @@ function ConversationItem({
                     <div className="flex items-center gap-2 mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                         <span>{conversation.messageCount} messages</span>
                         <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-                        <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-medium', sourceColors[conversation.source])}>
+                        <span
+                            className={cn(
+                                'px-1.5 py-0.5 rounded text-[10px] font-medium',
+                                sourceColors[conversation.source]
+                            )}
+                        >
                             {conversation.source}
                         </span>
                     </div>

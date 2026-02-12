@@ -21,8 +21,10 @@ export const metadata: Metadata = generatePageMetadata(
 const poeData: CompetitorData = {
     name: 'Poe',
     slug: 'poe',
-    tagline: 'Like Poe, YULA offers multi-model access. Unlike Poe, YULA has persistent memory, proactive AI, and history import from other platforms.',
-    description: 'Poe by Quora is a multi-model AI platform that gives users access to various AI models and custom bots.',
+    tagline:
+        'Like Poe, YULA offers multi-model access. Unlike Poe, YULA has persistent memory, proactive AI, and history import from other platforms.',
+    description:
+        'Poe by Quora is a multi-model AI platform that gives users access to various AI models and custom bots.',
     logoColor: 'bg-purple-500',
     strengths: [
         'Access to multiple AI models (GPT-4, Claude, Gemini)',

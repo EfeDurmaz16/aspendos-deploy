@@ -2,11 +2,7 @@
  * Environment variable validation - fails fast on missing required vars
  */
 
-const requiredEnvVars = [
-    'DATABASE_URL',
-    'BETTER_AUTH_SECRET',
-    'BETTER_AUTH_URL',
-] as const;
+const requiredEnvVars = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL'] as const;
 
 const optionalEnvVars = [
     'NEXT_PUBLIC_SENTRY_DSN',
@@ -44,8 +40,6 @@ export function validateEnv() {
     }
 
     if (missingOptional.length > 0) {
-        console.warn(
-            `[env] Missing optional environment variables: ${missingOptional.join(', ')}`
-        );
+        console.warn(`[env] Missing optional environment variables: ${missingOptional.join(', ')}`);
     }
 }

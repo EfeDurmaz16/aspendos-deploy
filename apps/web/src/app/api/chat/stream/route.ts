@@ -1,8 +1,8 @@
 import { prisma } from '@aspendos/db';
 import type { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { createEmbedding, createUnifiedStreamingCompletion, executeHybridRoute } from '@/lib/ai';
 import { auth } from '@/lib/auth';
-import { createEmbedding, executeHybridRoute, createUnifiedStreamingCompletion } from '@/lib/ai';
 import { storeConversationEmbedding } from '@/lib/services/qdrant';
 
 // ============================================
@@ -80,10 +80,13 @@ export async function POST(req: NextRequest) {
 
         // Cap input message length to prevent cost runaway (32K chars ~ 8K tokens)
         if (message.length > 32000) {
-            return new Response(JSON.stringify({ error: 'Message too long. Maximum 32,000 characters.' }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-            });
+            return new Response(
+                JSON.stringify({ error: 'Message too long. Maximum 32,000 characters.' }),
+                {
+                    status: 400,
+                    headers: { 'Content-Type': 'application/json' },
+                }
+            );
         }
 
         // Get user from database
@@ -130,7 +133,9 @@ export async function POST(req: NextRequest) {
             const dailyCeiling = monthlyCredit / 25; // ~monthly / 25 working days
             if (dailyCeiling > 0 && dailyUsed >= monthlyCredit) {
                 return new Response(
-                    JSON.stringify({ error: 'Monthly token budget exhausted. Please upgrade or wait for reset.' }),
+                    JSON.stringify({
+                        error: 'Monthly token budget exhausted. Please upgrade or wait for reset.',
+                    }),
                     { status: 403, headers: { 'Content-Type': 'application/json' } }
                 );
             }
@@ -177,7 +182,10 @@ export async function POST(req: NextRequest) {
             });
             recentMessages = recent
                 .reverse()
-                .map((m: { role: string; content: string }) => `${m.role}: ${m.content.slice(0, 200)}`);
+                .map(
+                    (m: { role: string; content: string }) =>
+                        `${m.role}: ${m.content.slice(0, 200)}`
+                );
         }
 
         const sse = createSSEEncoder();
@@ -203,9 +211,11 @@ export async function POST(req: NextRequest) {
                             content: `Route: ${decision.type}`,
                             metadata: {
                                 decision: decision.type,
-                                model: decision.type === 'direct_reply' || decision.type === 'rag_search'
-                                    ? (decision as { model: string }).model
-                                    : undefined,
+                                model:
+                                    decision.type === 'direct_reply' ||
+                                    decision.type === 'rag_search'
+                                        ? (decision as { model: string }).model
+                                        : undefined,
                                 reason: decision.reason,
                             },
                         })
@@ -244,7 +254,10 @@ export async function POST(req: NextRequest) {
 
                         usedModel = selectedModel;
 
-                        const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+                        const messages: {
+                            role: 'system' | 'user' | 'assistant';
+                            content: string;
+                        }[] = [
                             { role: 'system', content: systemPrompt },
                             { role: 'user', content: message },
                         ];
@@ -284,7 +297,11 @@ export async function POST(req: NextRequest) {
                         }
                     } else if (decision.type === 'tool_call') {
                         // Handle tool calls
-                        const toolDecision = decision as { tool: string; params: Record<string, unknown>; reason: string };
+                        const toolDecision = decision as {
+                            tool: string;
+                            params: Record<string, unknown>;
+                            reason: string;
+                        };
                         fullContent = `[Tool call requested: ${toolDecision.tool}]\n\nThis feature is being implemented. Tool: ${toolDecision.tool}, Params: ${JSON.stringify(toolDecision.params)}`;
                         usedModel = 'system';
 
@@ -296,14 +313,23 @@ export async function POST(req: NextRequest) {
                         );
                     } else if (decision.type === 'proactive_schedule') {
                         // Handle proactive scheduling - connect to real PAC queue
-                        const scheduleDecision = decision as { schedule: { time: string; action: string }; reason: string };
+                        const scheduleDecision = decision as {
+                            schedule: { time: string; action: string };
+                            reason: string;
+                        };
 
                         // Attempt to schedule via PAC service
                         try {
-                            const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8080';
+                            const apiBase =
+                                process.env.NEXT_PUBLIC_API_URL ||
+                                process.env.API_URL ||
+                                'http://localhost:8080';
                             const pacResponse = await fetch(`${apiBase}/api/pac/reminders`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Cookie': req.headers.get('cookie') || '' },
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    Cookie: req.headers.get('cookie') || '',
+                                },
                                 body: JSON.stringify({
                                     content: scheduleDecision.schedule.action,
                                     triggerAt: scheduleDecision.schedule.time,
@@ -341,35 +367,46 @@ export async function POST(req: NextRequest) {
                     const tokensOut = Math.ceil(fullContent.length / charsPerToken);
 
                     // Calculate approximate cost based on model and tokens
-                    const costPerInputToken = usedModel.includes('gpt-4o-mini') ? 0.00000015 : usedModel.includes('gpt-4o') ? 0.0000025 : usedModel.includes('claude') ? 0.000003 : usedModel.includes('gemini') ? 0.0000001 : 0.000001;
+                    const costPerInputToken = usedModel.includes('gpt-4o-mini')
+                        ? 0.00000015
+                        : usedModel.includes('gpt-4o')
+                          ? 0.0000025
+                          : usedModel.includes('claude')
+                            ? 0.000003
+                            : usedModel.includes('gemini')
+                              ? 0.0000001
+                              : 0.000001;
                     const costPerOutputToken = costPerInputToken * 4;
-                    const estimatedCost = (tokensIn * costPerInputToken) + (tokensOut * costPerOutputToken);
+                    const estimatedCost =
+                        tokensIn * costPerInputToken + tokensOut * costPerOutputToken;
 
                     if (chatId) {
                         // Batch DB writes in a transaction for data consistency
-                        prisma.$transaction([
-                            prisma.message.createMany({
-                                data: [
-                                    { chatId, userId: user.id, role: 'user', content: message },
-                                    {
-                                        chatId,
-                                        userId: user.id,
-                                        role: 'assistant',
-                                        content: fullContent,
-                                        modelUsed: usedModel,
-                                        tokensIn,
-                                        tokensOut,
-                                        costUsd: estimatedCost,
-                                    },
-                                ],
-                            }),
-                            prisma.chat.updateMany({
-                                where: { id: chatId, userId: user.id },
-                                data: { updatedAt: new Date() },
-                            }),
-                        ]).catch((err: unknown) =>
-                            console.error('[Chat] Failed to save messages:', err)
-                        );
+                        prisma
+                            .$transaction([
+                                prisma.message.createMany({
+                                    data: [
+                                        { chatId, userId: user.id, role: 'user', content: message },
+                                        {
+                                            chatId,
+                                            userId: user.id,
+                                            role: 'assistant',
+                                            content: fullContent,
+                                            modelUsed: usedModel,
+                                            tokensIn,
+                                            tokensOut,
+                                            costUsd: estimatedCost,
+                                        },
+                                    ],
+                                }),
+                                prisma.chat.updateMany({
+                                    where: { id: chatId, userId: user.id },
+                                    data: { updatedAt: new Date() },
+                                }),
+                            ])
+                            .catch((err: unknown) =>
+                                console.error('[Chat] Failed to save messages:', err)
+                            );
                     }
 
                     // Fire-and-forget: don't block response on embedding

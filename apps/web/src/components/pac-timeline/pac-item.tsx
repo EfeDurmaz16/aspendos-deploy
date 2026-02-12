@@ -1,9 +1,9 @@
 'use client';
 
+import { Bell, Clock, Lightbulb, Warning } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Bell, Lightbulb, Warning, Clock } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import type { PACItem as PACItemType, PACItemType as ItemType } from '@/stores/yula-store';
+import type { PACItemType as ItemType, PACItem as PACItemType } from '@/stores/yula-store';
 import { PACActions } from './pac-actions';
 import { pacTypeStyles } from './use-pac';
 

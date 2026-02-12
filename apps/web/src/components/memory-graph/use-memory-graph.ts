@@ -1,33 +1,88 @@
 'use client';
 
 import { useCallback, useEffect, useMemo } from 'react';
-import { useYulaStore, type MemoryNode, type MemoryEdge, type MemoryNodeCategory } from '@/stores/yula-store';
+import {
+    type MemoryEdge,
+    type MemoryNode,
+    type MemoryNodeCategory,
+    useYulaStore,
+} from '@/stores/yula-store';
 
 // Sample data generator for demo purposes
 function generateSampleData(): { nodes: MemoryNode[]; edges: MemoryEdge[] } {
     const nodes: MemoryNode[] = [
         // Core preferences
-        { id: 'pref-1', label: 'Dark Mode', category: 'preference', content: 'User prefers dark interfaces' },
-        { id: 'pref-2', label: 'Morning Person', category: 'preference', content: 'Most productive before noon' },
-        { id: 'pref-3', label: 'Minimalist', category: 'preference', content: 'Prefers clean, simple designs' },
+        {
+            id: 'pref-1',
+            label: 'Dark Mode',
+            category: 'preference',
+            content: 'User prefers dark interfaces',
+        },
+        {
+            id: 'pref-2',
+            label: 'Morning Person',
+            category: 'preference',
+            content: 'Most productive before noon',
+        },
+        {
+            id: 'pref-3',
+            label: 'Minimalist',
+            category: 'preference',
+            content: 'Prefers clean, simple designs',
+        },
 
         // People
-        { id: 'person-1', label: 'Alice', category: 'person', content: 'Colleague from engineering team' },
+        {
+            id: 'person-1',
+            label: 'Alice',
+            category: 'person',
+            content: 'Colleague from engineering team',
+        },
         { id: 'person-2', label: 'Bob', category: 'person', content: 'Project manager' },
         { id: 'person-3', label: 'Carol', category: 'person', content: 'Design lead' },
 
         // Projects
         { id: 'project-1', label: 'Yula OS', category: 'project', content: 'AI companion project' },
-        { id: 'project-2', label: 'Website Redesign', category: 'project', content: 'Q1 initiative' },
-        { id: 'project-3', label: 'Mobile App', category: 'project', content: 'Cross-platform app development' },
+        {
+            id: 'project-2',
+            label: 'Website Redesign',
+            category: 'project',
+            content: 'Q1 initiative',
+        },
+        {
+            id: 'project-3',
+            label: 'Mobile App',
+            category: 'project',
+            content: 'Cross-platform app development',
+        },
 
         // Important dates
-        { id: 'date-1', label: 'Q1 Deadline', category: 'date', content: 'March 31st - Major milestone' },
-        { id: 'date-2', label: 'Team Offsite', category: 'date', content: 'February 15th - Planning session' },
+        {
+            id: 'date-1',
+            label: 'Q1 Deadline',
+            category: 'date',
+            content: 'March 31st - Major milestone',
+        },
+        {
+            id: 'date-2',
+            label: 'Team Offsite',
+            category: 'date',
+            content: 'February 15th - Planning session',
+        },
 
         // Memories
-        { id: 'memory-1', label: 'Coffee Chat Ideas', category: 'memory', content: 'Discussed new features with Alice' },
-        { id: 'memory-2', label: 'Design Review', category: 'memory', content: 'Feedback from Carol on UI' },
+        {
+            id: 'memory-1',
+            label: 'Coffee Chat Ideas',
+            category: 'memory',
+            content: 'Discussed new features with Alice',
+        },
+        {
+            id: 'memory-2',
+            label: 'Design Review',
+            category: 'memory',
+            content: 'Feedback from Carol on UI',
+        },
     ];
 
     const edges: MemoryEdge[] = [
@@ -54,7 +109,10 @@ function generateSampleData(): { nodes: MemoryNode[]; edges: MemoryEdge[] } {
 }
 
 // Category colors for nodes
-export const categoryColors: Record<MemoryNodeCategory, { bg: string; border: string; text: string }> = {
+export const categoryColors: Record<
+    MemoryNodeCategory,
+    { bg: string; border: string; text: string }
+> = {
     person: { bg: '#3b82f6', border: '#60a5fa', text: '#dbeafe' }, // Blue
     project: { bg: '#8b5cf6', border: '#a78bfa', text: '#ede9fe' }, // Violet
     date: { bg: '#f59e0b', border: '#fbbf24', text: '#fef3c7' }, // Amber
@@ -87,7 +145,13 @@ export function useMemoryGraph() {
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [memoryGraph.nodes.length, memoryGraph.isLoading, setMemoryNodes, setMemoryEdges, setMemoryGraphLoading]);
+    }, [
+        memoryGraph.nodes.length,
+        memoryGraph.isLoading,
+        setMemoryNodes,
+        setMemoryEdges,
+        setMemoryGraphLoading,
+    ]);
 
     // Convert to graph format for react-force-graph
     const graphData = useMemo(() => {

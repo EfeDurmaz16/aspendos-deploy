@@ -1,24 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Brain, ChatCircle, Command, Gear, Lightning, Sparkle, Users } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import {
-    Sparkle,
-    Users,
-    Brain,
-    Command,
-    Gear,
-    ChatCircle,
-    Lightning,
-} from '@phosphor-icons/react';
-import { cn } from '@/lib/utils';
-
+import { useEffect, useState } from 'react';
+import { CouncilChat } from '@/components/council';
+import { MemoryGraph } from '@/components/memory-graph';
+import { WelcomeGuideTrigger } from '@/components/onboarding';
 // Components
 import { PACTimeline } from '@/components/pac-timeline';
-import { MemoryGraph } from '@/components/memory-graph';
-import { CouncilChat } from '@/components/council';
-import { HybridEngineToggle, EngineIndicator } from '@/components/settings';
-import { WelcomeGuideTrigger } from '@/components/onboarding';
+import { EngineIndicator, HybridEngineToggle } from '@/components/settings';
+import { cn } from '@/lib/utils';
 
 type ActiveView = 'chat' | 'council' | 'memory';
 
@@ -169,8 +160,10 @@ export default function YulaPage() {
                                             <button
                                                 key={label}
                                                 onClick={() => {
-                                                    if (label === 'Ask Council') setActiveView('council');
-                                                    if (label === 'Remember') setActiveView('memory');
+                                                    if (label === 'Ask Council')
+                                                        setActiveView('council');
+                                                    if (label === 'Remember')
+                                                        setActiveView('memory');
                                                 }}
                                                 className={cn(
                                                     'flex items-center gap-3 rounded-xl p-4',

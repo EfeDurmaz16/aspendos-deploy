@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useYulaStore, type OmnibarResult } from '@/stores/yula-store';
+import { useCallback, useEffect, useMemo } from 'react';
+import { type OmnibarResult, useYulaStore } from '@/stores/yula-store';
 
 // Quick action definitions
 const QUICK_ACTIONS: OmnibarResult[] = [
@@ -146,11 +146,13 @@ export function useOmnibar() {
             try {
                 // Filter quick actions and navigation
                 const matchedActions = QUICK_ACTIONS.filter(
-                    (item) => fuzzyMatch(query, item.title) || fuzzyMatch(query, item.description || '')
+                    (item) =>
+                        fuzzyMatch(query, item.title) || fuzzyMatch(query, item.description || '')
                 );
 
                 const matchedNav = NAVIGATION_ITEMS.filter(
-                    (item) => fuzzyMatch(query, item.title) || fuzzyMatch(query, item.description || '')
+                    (item) =>
+                        fuzzyMatch(query, item.title) || fuzzyMatch(query, item.description || '')
                 );
 
                 // TODO: Add memory search here
@@ -166,12 +168,12 @@ export function useOmnibar() {
                             item.id === 'action-council'
                                 ? () => router.push('/chat?mode=council')
                                 : item.id === 'action-plan-weekend'
-                                    ? () => router.push('/chat?prompt=Plan+my+weekend')
-                                    : item.id === 'action-remember-receipt'
-                                        ? () => router.push('/chat?prompt=Remember+this+receipt')
-                                        : item.id === 'action-summarize'
-                                            ? () => router.push('/chat?prompt=Summarize+my+day')
-                                            : undefined,
+                                  ? () => router.push('/chat?prompt=Plan+my+weekend')
+                                  : item.id === 'action-remember-receipt'
+                                    ? () => router.push('/chat?prompt=Remember+this+receipt')
+                                    : item.id === 'action-summarize'
+                                      ? () => router.push('/chat?prompt=Summarize+my+day')
+                                      : undefined,
                     })),
                     ...matchedNav.map((item) => ({
                         ...item,
@@ -179,10 +181,10 @@ export function useOmnibar() {
                             item.id === 'nav-home'
                                 ? '/'
                                 : item.id === 'nav-chat'
-                                    ? '/chat'
-                                    : item.id === 'nav-memory'
-                                        ? '/memory'
-                                        : '/settings'
+                                  ? '/chat'
+                                  : item.id === 'nav-memory'
+                                    ? '/memory'
+                                    : '/settings'
                         ),
                     })),
                 ];
@@ -230,8 +232,8 @@ export function useOmnibar() {
                     item.id === 'action-council'
                         ? () => router.push('/chat?mode=council')
                         : item.id === 'action-plan-weekend'
-                            ? () => router.push('/chat?prompt=Plan+my+weekend')
-                            : undefined,
+                          ? () => router.push('/chat?prompt=Plan+my+weekend')
+                          : undefined,
             })),
             ...NAVIGATION_ITEMS.slice(0, 3).map((item) => ({
                 ...item,

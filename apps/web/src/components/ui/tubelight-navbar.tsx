@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import type React from 'react';
+import { useState } from 'react';
 import { SkyToggle } from '@/components/ui/sky-toggle';
+import { cn } from '@/lib/utils';
 
 interface NavItem {
     name: string;

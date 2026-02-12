@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
+import { Moon, Sun } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Sun, Moon } from '@phosphor-icons/react';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 export function SkyToggle() {
     const [mounted, setMounted] = useState(false);

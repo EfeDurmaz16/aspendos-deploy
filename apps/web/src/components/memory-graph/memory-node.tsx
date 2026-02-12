@@ -1,9 +1,9 @@
 'use client';
 
+import { Brain, Briefcase, CalendarBlank, SlidersHorizontal, User, X } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { User, Briefcase, CalendarBlank, SlidersHorizontal, Brain, X } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import type { MemoryNode as MemoryNodeType, MemoryNodeCategory } from '@/stores/yula-store';
+import type { MemoryNodeCategory, MemoryNode as MemoryNodeType } from '@/stores/yula-store';
 import { categoryColors } from './use-memory-graph';
 
 interface MemoryNodeCardProps {
@@ -140,8 +140,8 @@ export function MemoryNodeCard({
                 isSelected
                     ? 'border-white/20 bg-white/10 shadow-lg'
                     : isHovered
-                        ? 'border-white/15 bg-white/5'
-                        : 'border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/5'
+                      ? 'border-white/15 bg-white/5'
+                      : 'border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/5'
             )}
         >
             <div

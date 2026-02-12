@@ -26,11 +26,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Sign Up', url: `${BASE_URL}/signup` },
 ]);
 
-export default function SignupLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function SignupLayout({ children }: { children: React.ReactNode }) {
     return (
         <>
             <Script

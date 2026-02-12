@@ -224,7 +224,9 @@ export default function StyleguidePage() {
                                             fontWeight: style.fontWeight,
                                             lineHeight: style.lineHeight,
                                             letterSpacing:
-                                                'letterSpacing' in style ? style.letterSpacing : undefined,
+                                                'letterSpacing' in style
+                                                    ? style.letterSpacing
+                                                    : undefined,
                                         }}
                                     >
                                         {name.includes('code')

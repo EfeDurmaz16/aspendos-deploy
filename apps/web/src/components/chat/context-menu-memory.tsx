@@ -1,5 +1,7 @@
 'use client';
 
+import { Brain, Copy, Edit, Eye, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
     ContextMenu,
     ContextMenuContent,
@@ -7,8 +9,6 @@ import {
     ContextMenuSeparator,
     ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Eye, Edit, Trash2, Copy, Brain } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface ContextMenuMemoryProps {
     children: React.ReactNode;

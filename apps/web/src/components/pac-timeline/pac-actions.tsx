@@ -1,8 +1,8 @@
 'use client';
 
+import { CaretDown, Check, Clock, X } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, Clock, CaretDown } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 interface PACActionsProps {

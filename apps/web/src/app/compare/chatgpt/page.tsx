@@ -21,8 +21,10 @@ export const metadata: Metadata = generatePageMetadata(
 const chatgptData: CompetitorData = {
     name: 'ChatGPT',
     slug: 'chatgpt',
-    tagline: 'YULA gives you everything ChatGPT offers, plus persistent memory, multi-model access, and the ability to import your ChatGPT history.',
-    description: 'ChatGPT by OpenAI is the most popular AI assistant, offering GPT-4 and GPT-4o models with a clean interface and plugin ecosystem.',
+    tagline:
+        'YULA gives you everything ChatGPT offers, plus persistent memory, multi-model access, and the ability to import your ChatGPT history.',
+    description:
+        'ChatGPT by OpenAI is the most popular AI assistant, offering GPT-4 and GPT-4o models with a clean interface and plugin ecosystem.',
     logoColor: 'bg-emerald-500',
     strengths: [
         'First-mover advantage with massive user base',
@@ -43,7 +45,11 @@ const chatgptData: CompetitorData = {
         { feature: 'GPT-5/GPT-4o Access', competitor: true, yula: true },
         { feature: 'Claude Access', competitor: false, yula: true },
         { feature: 'Gemini Access', competitor: false, yula: true },
-        { feature: 'Persistent Memory', competitor: 'Per-conversation', yula: 'Cross-conversation' },
+        {
+            feature: 'Persistent Memory',
+            competitor: 'Per-conversation',
+            yula: 'Cross-conversation',
+        },
         { feature: 'Import ChatGPT History', competitor: false, yula: true },
         { feature: 'Multi-Model Comparison', competitor: false, yula: true },
         { feature: 'Proactive Reminders', competitor: false, yula: true },

@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-    type SyncResult,
     getPendingCount,
     hasPendingChanges,
     performFullSync,
     quickSync,
+    type SyncResult,
 } from '@/lib/offline/sync-service';
 import { usePWA } from './use-pwa';
 

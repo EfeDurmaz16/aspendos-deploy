@@ -1,18 +1,13 @@
 'use client';
 
+import { CheckCircle, Warning } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import {
-    Grid2x2PlusIcon,
-    Loader2,
-    Mail,
-    RefreshCw,
-} from 'lucide-react';
+import { Grid2x2PlusIcon, Loader2, Mail, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSession, sendVerificationEmail } from '@/lib/auth-client';
-import { Warning, CheckCircle } from '@phosphor-icons/react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { sendVerificationEmail, useSession } from '@/lib/auth-client';
 
 function VerifyEmailContent() {
     const router = useRouter();
@@ -69,7 +64,10 @@ function VerifyEmailContent() {
                 className="text-center space-y-4"
             >
                 <div className="mx-auto w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                    <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" weight="fill" />
+                    <CheckCircle
+                        className="h-8 w-8 text-emerald-600 dark:text-emerald-400"
+                        weight="fill"
+                    />
                 </div>
 
                 <div className="space-y-2">
@@ -77,7 +75,8 @@ function VerifyEmailContent() {
                         Email verified!
                     </h2>
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm">
-                        Your email has been verified successfully. You can now enjoy all YULA features.
+                        Your email has been verified successfully. You can now enjoy all YULA
+                        features.
                     </p>
                 </div>
 
@@ -86,10 +85,7 @@ function VerifyEmailContent() {
                     <span>Your account is now fully activated.</span>
                 </div>
 
-                <Button
-                    onClick={() => router.push('/chat')}
-                    className="w-full"
-                >
+                <Button onClick={() => router.push('/chat')} className="w-full">
                     Continue to YULA
                 </Button>
             </motion.div>
@@ -110,7 +106,9 @@ function VerifyEmailContent() {
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm">
                         We've sent a verification link to{' '}
                         {email && (
-                            <span className="font-medium text-zinc-700 dark:text-zinc-300">{email}</span>
+                            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                                {email}
+                            </span>
                         )}
                     </p>
                 </div>
@@ -166,19 +164,22 @@ function VerifyEmailContent() {
                     ) : (
                         <RefreshCw size={16} className="mr-2" />
                     )}
-                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend verification email'}
+                    {resendCooldown > 0
+                        ? `Resend in ${resendCooldown}s`
+                        : 'Resend verification email'}
                 </Button>
 
                 <Button variant="ghost" asChild className="w-full">
-                    <Link href="/login">
-                        Back to login
-                    </Link>
+                    <Link href="/login">Back to login</Link>
                 </Button>
             </div>
 
             <p className="text-zinc-400 dark:text-zinc-500 text-xs text-center">
                 Having trouble? Contact us at{' '}
-                <a href="mailto:support@yula.dev" className="text-zinc-600 dark:text-zinc-300 hover:underline">
+                <a
+                    href="mailto:support@yula.dev"
+                    className="text-zinc-600 dark:text-zinc-300 hover:underline"
+                >
                     support@yula.dev
                 </a>
             </p>
@@ -189,10 +190,7 @@ function VerifyEmailContent() {
 export default function VerifyEmailPage() {
     return (
         <main className="relative min-h-screen flex items-center justify-center p-4">
-            <div
-                aria-hidden
-                className="absolute inset-0 isolate contain-strict -z-10 opacity-60"
-            >
+            <div aria-hidden className="absolute inset-0 isolate contain-strict -z-10 opacity-60">
                 <div className="bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,--theme(--color-foreground/.06)_0,hsla(0,0%,55%,.02)_50%,--theme(--color-foreground/.01)_80%)] absolute top-0 right-0 h-320 w-140 -translate-y-87.5 rounded-full" />
                 <div className="bg-[radial-gradient(50%_50%_at_50%_50%,--theme(--color-foreground/.04)_0,--theme(--color-foreground/.01)_80%,transparent_100%)] absolute top-0 right-0 h-320 w-60 [translate:5%_-50%] rounded-full" />
             </div>

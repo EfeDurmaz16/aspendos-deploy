@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { Upload, FileText, Check, Warning, Spinner, DownloadSimple } from '@phosphor-icons/react';
+import { Check, DownloadSimple, FileText, Spinner, Upload, Warning } from '@phosphor-icons/react';
+import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -128,7 +128,8 @@ export function MemoryImporter() {
                 <DialogHeader>
                     <DialogTitle>Memory Import/Export</DialogTitle>
                     <DialogDescription>
-                        Import your conversation history from ChatGPT or Claude, or export your Aspendos memories.
+                        Import your conversation history from ChatGPT or Claude, or export your
+                        Aspendos memories.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -148,7 +149,9 @@ export function MemoryImporter() {
                                 dragActive
                                     ? 'border-blue-500 bg-blue-500/10'
                                     : 'border-zinc-700 hover:border-zinc-600',
-                                status !== 'idle' && status !== 'error' && 'pointer-events-none opacity-50'
+                                status !== 'idle' &&
+                                    status !== 'error' &&
+                                    'pointer-events-none opacity-50'
                             )}
                         >
                             {status === 'idle' || status === 'error' ? (
@@ -197,7 +200,9 @@ export function MemoryImporter() {
                                             Successfully imported: {result.success}
                                         </p>
                                         {result.failed > 0 && (
-                                            <p className="text-amber-400">Failed: {result.failed}</p>
+                                            <p className="text-amber-400">
+                                                Failed: {result.failed}
+                                            </p>
                                         )}
                                     </div>
                                     <Button variant="outline" size="sm" onClick={reset}>

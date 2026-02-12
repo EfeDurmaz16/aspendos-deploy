@@ -3,9 +3,14 @@
 import { ArrowLeft, ArrowRight, CheckCircle } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { ModeToggle } from '@/components/mode-toggle';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export interface FeatureData {
     name: string;
@@ -81,11 +86,18 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                 <nav aria-label="Breadcrumb" className="mb-8">
                     <ol className="flex items-center gap-2 text-sm text-muted-foreground">
                         <li>
-                            <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+                            <Link href="/" className="hover:text-foreground transition-colors">
+                                Home
+                            </Link>
                         </li>
                         <li>/</li>
                         <li>
-                            <Link href="/features" className="hover:text-foreground transition-colors">Features</Link>
+                            <Link
+                                href="/features"
+                                className="hover:text-foreground transition-colors"
+                            >
+                                Features
+                            </Link>
                         </li>
                         <li>/</li>
                         <li className="text-foreground font-medium">{feature.name}</li>
@@ -94,9 +106,7 @@ export function FeaturePage({ feature }: FeaturePageProps) {
 
                 {/* Hero */}
                 <header className="text-center mb-16 space-y-6">
-                    <div className="flex justify-center mb-4">
-                        {feature.heroIcon}
-                    </div>
+                    <div className="flex justify-center mb-4">{feature.heroIcon}</div>
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
                         {feature.name}
                     </h1>
@@ -130,7 +140,10 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                             <Card key={benefit.title}>
                                 <CardHeader>
                                     <CardTitle className="flex items-start gap-3">
-                                        <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" weight="fill" />
+                                        <CheckCircle
+                                            className="w-6 h-6 text-primary flex-shrink-0 mt-0.5"
+                                            weight="fill"
+                                        />
                                         {benefit.title}
                                     </CardTitle>
                                 </CardHeader>
@@ -172,7 +185,9 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                             <Card key={useCase.title} className="bg-muted/30">
                                 <CardContent className="pt-6">
                                     <h3 className="font-medium mb-2">{useCase.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{useCase.description}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {useCase.description}
+                                    </p>
                                 </CardContent>
                             </Card>
                         ))}
@@ -201,10 +216,15 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                     </h2>
                     <div className="grid md:grid-cols-3 gap-4">
                         {feature.relatedFeatures.map((related) => (
-                            <Card key={related.slug} className="group hover:border-primary/50 transition-colors">
+                            <Card
+                                key={related.slug}
+                                className="group hover:border-primary/50 transition-colors"
+                            >
                                 <CardContent className="pt-6">
                                     <h3 className="font-medium mb-2">{related.name}</h3>
-                                    <p className="text-sm text-muted-foreground mb-4">{related.description}</p>
+                                    <p className="text-sm text-muted-foreground mb-4">
+                                        {related.description}
+                                    </p>
                                     <Link
                                         href={`/features/${related.slug}`}
                                         className="text-sm text-primary hover:underline inline-flex items-center gap-1"
@@ -220,9 +240,7 @@ export function FeaturePage({ feature }: FeaturePageProps) {
 
                 {/* CTA */}
                 <section className="text-center py-12 px-6 rounded-2xl bg-primary/5 border border-primary/20">
-                    <h2 className="text-2xl font-semibold mb-4">
-                        Ready to try {feature.name}?
-                    </h2>
+                    <h2 className="text-2xl font-semibold mb-4">Ready to try {feature.name}?</h2>
                     <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
                         Start using YULA today and experience AI with {feature.name.toLowerCase()}.
                     </p>

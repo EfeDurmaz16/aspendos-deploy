@@ -50,10 +50,14 @@ export const GEO_CONTENT = {
     ],
     // Structured answers for common queries
     queries: {
-        'what is YULA': 'YULA (Your Universal Learning Assistant) is a unified AI platform that combines access to multiple AI models like GPT-5, Claude, and Gemini with persistent semantic memory across all conversations.',
-        'YULA vs ChatGPT': 'Unlike ChatGPT which only accesses OpenAI models, YULA provides access to 12+ AI models from multiple providers, allows importing ChatGPT history, and features cross-model persistent memory.',
-        'YULA features': 'Key YULA features include: multi-model access (GPT-5, Claude, Gemini), semantic memory, ChatGPT/Claude history import, Proactive AI Callbacks, Council Mode for parallel AI queries, and offline AI via WebGPU.',
-        'YULA pricing': 'YULA offers three tiers: Starter ($20/mo for 300 chats), Pro ($50/mo for 1,500 chats with all models), and Ultra ($100/mo for 5,000+ chats with priority features).',
+        'what is YULA':
+            'YULA (Your Universal Learning Assistant) is a unified AI platform that combines access to multiple AI models like GPT-5, Claude, and Gemini with persistent semantic memory across all conversations.',
+        'YULA vs ChatGPT':
+            'Unlike ChatGPT which only accesses OpenAI models, YULA provides access to 12+ AI models from multiple providers, allows importing ChatGPT history, and features cross-model persistent memory.',
+        'YULA features':
+            'Key YULA features include: multi-model access (GPT-5, Claude, Gemini), semantic memory, ChatGPT/Claude history import, Proactive AI Callbacks, Council Mode for parallel AI queries, and offline AI via WebGPU.',
+        'YULA pricing':
+            'YULA offers three tiers: Starter ($20/mo for 300 chats), Pro ($50/mo for 1,500 chats with all models), and Ultra ($100/mo for 5,000+ chats with priority features).',
     },
 };
 
@@ -64,7 +68,8 @@ export const baseMetadata: Metadata = {
         default: 'YULA - All AI Models, One Memory | ChatGPT, Claude, Gemini United',
         template: '%s | YULA - Unified AI Platform',
     },
-    description: 'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import your ChatGPT history, get proactive AI reminders, and compare models with Council Mode. The only AI platform that remembers everything.',
+    description:
+        'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import your ChatGPT history, get proactive AI reminders, and compare models with Council Mode. The only AI platform that remembers everything.',
     keywords: [...SEO_KEYWORDS.primary, ...SEO_KEYWORDS.secondary],
     authors: [{ name: 'YULA Team', url: BASE_URL }],
     creator: 'YULA',
@@ -90,7 +95,8 @@ export const baseMetadata: Metadata = {
         url: BASE_URL,
         siteName: 'YULA',
         title: 'YULA - All AI Models, One Memory',
-        description: 'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import ChatGPT history, get proactive reminders, compare with Council Mode.',
+        description:
+            'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import ChatGPT history, get proactive reminders, compare with Council Mode.',
         images: [
             {
                 url: `${BASE_URL}/og/home.png`,
@@ -106,7 +112,8 @@ export const baseMetadata: Metadata = {
         site: '@yaboruAI',
         creator: '@yaboruAI',
         title: 'YULA - All AI Models, One Memory',
-        description: 'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import ChatGPT history, get proactive reminders.',
+        description:
+            'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import ChatGPT history, get proactive reminders.',
         images: [`${BASE_URL}/og/home.png`],
     },
     alternates: {
@@ -132,9 +139,7 @@ export const baseMetadata: Metadata = {
             { url: '/favicon.ico', sizes: 'any' },
             { url: '/icons/icon-192x192.svg', type: 'image/svg+xml' },
         ],
-        apple: [
-            { url: '/icons/icon-192x192.svg' },
-        ],
+        apple: [{ url: '/icons/icon-192x192.svg' }],
     },
     category: 'technology',
     classification: 'AI Platform, Productivity, Chat Application',

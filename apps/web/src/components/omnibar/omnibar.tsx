@@ -1,12 +1,12 @@
 'use client';
 
+import { Command, MagnifyingGlass, Sparkle, X } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MagnifyingGlass, Command, X, Sparkle } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import { useOmnibar } from './use-omnibar';
-import { OmnibarResults } from './omnibar-results';
 import { OmnibarActions } from './omnibar-actions';
+import { OmnibarResults } from './omnibar-results';
+import { useOmnibar } from './use-omnibar';
 
 export function Omnibar() {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -110,9 +110,16 @@ export function Omnibar() {
                                     {isLoading ? (
                                         <motion.div
                                             animate={{ rotate: 360 }}
-                                            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                                            transition={{
+                                                repeat: Infinity,
+                                                duration: 1,
+                                                ease: 'linear',
+                                            }}
                                         >
-                                            <Sparkle className="h-4 w-4 text-violet-400" weight="fill" />
+                                            <Sparkle
+                                                className="h-4 w-4 text-violet-400"
+                                                weight="fill"
+                                            />
                                         </motion.div>
                                     ) : (
                                         <MagnifyingGlass className="h-4 w-4 text-zinc-500" />

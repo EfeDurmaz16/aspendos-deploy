@@ -1,14 +1,14 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import {
+    ArrowRight,
     CalendarBlank,
     Clipboard,
     Lightning,
     Sparkle,
     Users,
-    ArrowRight,
 } from '@phosphor-icons/react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface QuickAction {

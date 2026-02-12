@@ -1,10 +1,10 @@
-export { PACSettingsPanel, type PACSettings } from './pac-settings';
 export {
     PACNotification,
     PACNotificationList,
-    PACToast,
     type PACReminder,
-    type ReminderType,
-    type ReminderStatus,
+    PACToast,
     type ReminderPriority,
+    type ReminderStatus,
+    type ReminderType,
 } from './pac-notification';
+export { type PACSettings, PACSettingsPanel } from './pac-settings';

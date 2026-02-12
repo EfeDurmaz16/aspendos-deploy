@@ -1,24 +1,29 @@
 'use client';
 
-import * as React from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ImportUploader, ImportPreview, type UploadedFile, type ParsedConversation } from '@/components/import';
 import {
-    Download,
-    ArrowRight,
-    ArrowLeft,
-    Loader2,
-    CheckCircle2,
-    Upload,
-    Eye,
     AlertCircle,
+    ArrowLeft,
+    ArrowRight,
+    CheckCircle2,
+    Download,
+    Eye,
     History,
-    Sparkles,
+    Loader2,
     Search,
+    Sparkles,
+    Upload,
 } from 'lucide-react';
 import Link from 'next/link';
+import * as React from 'react';
+import {
+    ImportPreview,
+    ImportUploader,
+    type ParsedConversation,
+    type UploadedFile,
+} from '@/components/import';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 /**
  * YULA OS Import Page
@@ -106,7 +111,10 @@ function getFirstUserMessage(mapping: Record<string, unknown>): string | undefin
                 'content' in node.message &&
                 (node.message as { content: { parts?: string[] } }).content?.parts?.[0]
             ) {
-                return (node.message as { content: { parts: string[] } }).content.parts[0].slice(0, 200);
+                return (node.message as { content: { parts: string[] } }).content.parts[0].slice(
+                    0,
+                    200
+                );
             }
         }
     } catch {
@@ -137,9 +145,7 @@ export default function ImportPage() {
         setError(null);
 
         try {
-            setFiles((prev) =>
-                prev.map((f) => ({ ...f, status: 'validating' as const }))
-            );
+            setFiles((prev) => prev.map((f) => ({ ...f, status: 'validating' as const })));
 
             const parsedConversations: ParsedConversation[] = [];
 
@@ -190,9 +196,7 @@ export default function ImportPage() {
     }, [files]);
 
     const handleSelectionChange = React.useCallback((id: string, selected: boolean) => {
-        setConversations((prev) =>
-            prev.map((c) => (c.id === id ? { ...c, selected } : c))
-        );
+        setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, selected } : c)));
     }, []);
 
     const handleSelectAll = React.useCallback(() => {
@@ -255,7 +259,10 @@ export default function ImportPage() {
             <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
                 <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Link href="/chat" className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                        <Link
+                            href="/chat"
+                            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                        >
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
                         <div className="flex items-center gap-2">
@@ -293,7 +300,9 @@ export default function ImportPage() {
                                         {i < steps.length - 1 && (
                                             <div
                                                 className={`w-8 h-0.5 rounded ${
-                                                    isPast ? 'bg-feature-import' : 'bg-zinc-200 dark:bg-zinc-800'
+                                                    isPast
+                                                        ? 'bg-feature-import'
+                                                        : 'bg-zinc-200 dark:bg-zinc-800'
                                                 }`}
                                             />
                                         )}
@@ -413,24 +422,38 @@ export default function ImportPage() {
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded bg-emerald-500/10 flex items-center justify-center">
-                                            <span className="text-xs font-bold text-emerald-600">G</span>
+                                            <span className="text-xs font-bold text-emerald-600">
+                                                G
+                                            </span>
                                         </div>
-                                        <h4 className="font-medium text-zinc-900 dark:text-zinc-100">ChatGPT</h4>
+                                        <h4 className="font-medium text-zinc-900 dark:text-zinc-100">
+                                            ChatGPT
+                                        </h4>
                                     </div>
                                     <ol className="list-decimal list-inside space-y-1 text-sm text-zinc-600 dark:text-zinc-400 ml-8">
                                         <li>Go to Settings &gt; Data Controls &gt; Export data</li>
                                         <li>Click "Export" and wait for the email</li>
                                         <li>Download the ZIP file and extract it</li>
-                                        <li>Upload the <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs">conversations.json</code> file</li>
+                                        <li>
+                                            Upload the{' '}
+                                            <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs">
+                                                conversations.json
+                                            </code>{' '}
+                                            file
+                                        </li>
                                     </ol>
                                 </div>
 
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded bg-orange-500/10 flex items-center justify-center">
-                                            <span className="text-xs font-bold text-orange-600">C</span>
+                                            <span className="text-xs font-bold text-orange-600">
+                                                C
+                                            </span>
                                         </div>
-                                        <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Claude</h4>
+                                        <h4 className="font-medium text-zinc-900 dark:text-zinc-100">
+                                            Claude
+                                        </h4>
                                     </div>
                                     <ol className="list-decimal list-inside space-y-1 text-sm text-zinc-600 dark:text-zinc-400 ml-8">
                                         <li>Go to your Claude account settings</li>
@@ -445,10 +468,7 @@ export default function ImportPage() {
                 )}
 
                 {step === 'preview' && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                         <Card className="bg-white dark:bg-zinc-900">
                             <CardContent className="pt-6">
                                 <ImportPreview

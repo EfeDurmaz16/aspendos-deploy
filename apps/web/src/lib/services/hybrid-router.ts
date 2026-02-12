@@ -1,6 +1,6 @@
-import { routeUserMessage, createGroqStreamingCompletion, type RouteDecision } from './groq';
-import { createStreamingChatCompletion as createOpenAIStream, createEmbedding } from './openai';
 import { createAnthropicStreamingCompletion } from './anthropic';
+import { createGroqStreamingCompletion, type RouteDecision, routeUserMessage } from './groq';
+import { createEmbedding, createStreamingChatCompletion as createOpenAIStream } from './openai';
 import { searchMemories } from './qdrant';
 
 // ============================================
@@ -49,7 +49,11 @@ export async function* createUnifiedStreamingCompletion(
         maxTokens?: number;
         userId?: string;
     }
-): AsyncGenerator<{ type: 'text' | 'done' | 'error' | 'fallback'; content: string; metadata?: Record<string, unknown> }> {
+): AsyncGenerator<{
+    type: 'text' | 'done' | 'error' | 'fallback';
+    content: string;
+    metadata?: Record<string, unknown>;
+}> {
     const { model, temperature = 0.7, maxTokens = 4000 } = options;
     const modelsToTry = [model, ...(FALLBACK_CHAIN[model] || [])];
 

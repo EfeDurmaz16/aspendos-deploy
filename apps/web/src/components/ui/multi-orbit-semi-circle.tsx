@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const ICONS = [
     'https://pub-940ccf6255b54fa799a9b01050e6c227.r2.dev/gatsby-icon.svg',

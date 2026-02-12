@@ -250,21 +250,23 @@ export default function SettingsPage() {
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Profile</CardTitle>
-                                        <CardDescription>
-                                            Your account information
-                                        </CardDescription>
+                                        <CardDescription>Your account information</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="flex items-center gap-4">
                                             <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                                                <User className="w-8 h-8 text-emerald-600 dark:text-emerald-400" weight="duotone" />
+                                                <User
+                                                    className="w-8 h-8 text-emerald-600 dark:text-emerald-400"
+                                                    weight="duotone"
+                                                />
                                             </div>
                                             <div>
                                                 <p className="font-semibold text-zinc-900 dark:text-zinc-100">
                                                     {user?.fullName || user?.firstName || 'User'}
                                                 </p>
                                                 <p className="text-sm text-zinc-500">
-                                                    {user?.primaryEmailAddress?.emailAddress || 'No email'}
+                                                    {user?.primaryEmailAddress?.emailAddress ||
+                                                        'No email'}
                                                 </p>
                                             </div>
                                         </div>
@@ -305,7 +307,9 @@ export default function SettingsPage() {
                                         label="Email Notifications"
                                         description="Receive important updates via email"
                                         checked={settings.notifications.email}
-                                        onChange={(v) => updateSettings('notifications', 'email', v)}
+                                        onChange={(v) =>
+                                            updateSettings('notifications', 'email', v)
+                                        }
                                     />
                                     <SettingRow
                                         label="Push Notifications"
@@ -317,13 +321,17 @@ export default function SettingsPage() {
                                         label="PAC Reminders"
                                         description="Receive proactive AI callbacks and reminders"
                                         checked={settings.notifications.pacReminders}
-                                        onChange={(v) => updateSettings('notifications', 'pacReminders', v)}
+                                        onChange={(v) =>
+                                            updateSettings('notifications', 'pacReminders', v)
+                                        }
                                     />
                                     <SettingRow
                                         label="Weekly Digest"
                                         description="Get a summary of your AI activity each week"
                                         checked={settings.notifications.weeklyDigest}
-                                        onChange={(v) => updateSettings('notifications', 'weeklyDigest', v)}
+                                        onChange={(v) =>
+                                            updateSettings('notifications', 'weeklyDigest', v)
+                                        }
                                     />
                                 </CardContent>
                             </Card>
@@ -334,9 +342,7 @@ export default function SettingsPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Appearance</CardTitle>
-                                    <CardDescription>
-                                        Customize how YULA looks
-                                    </CardDescription>
+                                    <CardDescription>Customize how YULA looks</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div>
@@ -346,15 +352,19 @@ export default function SettingsPage() {
                                         <div className="flex gap-3">
                                             {(
                                                 [
-                                                { id: 'light', label: 'Light', icon: Sun },
-                                                { id: 'dark', label: 'Dark', icon: Moon },
-                                                { id: 'system', label: 'System', icon: Globe },
-                                            ] as const
+                                                    { id: 'light', label: 'Light', icon: Sun },
+                                                    { id: 'dark', label: 'Dark', icon: Moon },
+                                                    { id: 'system', label: 'System', icon: Globe },
+                                                ] as const
                                             ).map((theme) => (
                                                 <button
                                                     key={theme.id}
                                                     onClick={() =>
-                                                        updateSettings('appearance', 'theme', theme.id)
+                                                        updateSettings(
+                                                            'appearance',
+                                                            'theme',
+                                                            theme.id
+                                                        )
                                                     }
                                                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-all ${
                                                         settings.appearance.theme === theme.id
@@ -362,7 +372,10 @@ export default function SettingsPage() {
                                                             : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                                                     }`}
                                                 >
-                                                    <theme.icon className="w-5 h-5" weight="duotone" />
+                                                    <theme.icon
+                                                        className="w-5 h-5"
+                                                        weight="duotone"
+                                                    />
                                                     {theme.label}
                                                 </button>
                                             ))}
@@ -372,13 +385,17 @@ export default function SettingsPage() {
                                         label="Compact Mode"
                                         description="Use smaller spacing and fonts"
                                         checked={settings.appearance.compactMode}
-                                        onChange={(v) => updateSettings('appearance', 'compactMode', v)}
+                                        onChange={(v) =>
+                                            updateSettings('appearance', 'compactMode', v)
+                                        }
                                     />
                                     <SettingRow
                                         label="Show Line Numbers"
                                         description="Display line numbers in code blocks"
                                         checked={settings.appearance.showLineNumbers}
-                                        onChange={(v) => updateSettings('appearance', 'showLineNumbers', v)}
+                                        onChange={(v) =>
+                                            updateSettings('appearance', 'showLineNumbers', v)
+                                        }
                                     />
                                 </CardContent>
                             </Card>
@@ -389,9 +406,7 @@ export default function SettingsPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>AI Configuration</CardTitle>
-                                    <CardDescription>
-                                        Customize your AI experience
-                                    </CardDescription>
+                                    <CardDescription>Customize your AI experience</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div>
@@ -400,7 +415,9 @@ export default function SettingsPage() {
                                         </label>
                                         <select
                                             value={settings.ai.defaultModel}
-                                            onChange={(e) => updateSettings('ai', 'defaultModel', e.target.value)}
+                                            onChange={(e) =>
+                                                updateSettings('ai', 'defaultModel', e.target.value)
+                                            }
                                             className="w-full px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
                                         >
                                             {models.map((model) => (
@@ -437,22 +454,24 @@ export default function SettingsPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Privacy Settings</CardTitle>
-                                    <CardDescription>
-                                        Control your data and privacy
-                                    </CardDescription>
+                                    <CardDescription>Control your data and privacy</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <SettingRow
                                         label="Share Analytics"
                                         description="Help improve YULA by sharing anonymous usage data"
                                         checked={settings.privacy.shareAnalytics}
-                                        onChange={(v) => updateSettings('privacy', 'shareAnalytics', v)}
+                                        onChange={(v) =>
+                                            updateSettings('privacy', 'shareAnalytics', v)
+                                        }
                                     />
                                     <SettingRow
                                         label="Public Profile"
                                         description="Allow others to see your profile on the leaderboard"
                                         checked={settings.privacy.publicProfile}
-                                        onChange={(v) => updateSettings('privacy', 'publicProfile', v)}
+                                        onChange={(v) =>
+                                            updateSettings('privacy', 'publicProfile', v)
+                                        }
                                     />
                                 </CardContent>
                             </Card>
@@ -486,27 +505,35 @@ export default function SettingsPage() {
                                         <CardTitle className="text-rose-600 dark:text-rose-400">
                                             Danger Zone
                                         </CardTitle>
-                                        <CardDescription>
-                                            Irreversible actions
-                                        </CardDescription>
+                                        <CardDescription>Irreversible actions</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg border border-rose-200 dark:border-rose-800">
                                             <div className="flex items-start gap-3">
-                                                <WarningCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 mt-0.5" weight="fill" />
+                                                <WarningCircle
+                                                    className="w-5 h-5 text-rose-600 dark:text-rose-400 mt-0.5"
+                                                    weight="fill"
+                                                />
                                                 <div>
                                                     <p className="font-medium text-rose-900 dark:text-rose-100">
                                                         Delete Account
                                                     </p>
                                                     <p className="text-sm text-rose-700 dark:text-rose-300 mb-3">
-                                                        Once you delete your account, there is no going back. All your data will be permanently removed.
+                                                        Once you delete your account, there is no
+                                                        going back. All your data will be
+                                                        permanently removed.
                                                     </p>
                                                     {!showDeleteConfirm ? (
                                                         <button
-                                                            onClick={() => setShowDeleteConfirm(true)}
+                                                            onClick={() =>
+                                                                setShowDeleteConfirm(true)
+                                                            }
                                                             className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors"
                                                         >
-                                                            <Trash className="w-4 h-4" weight="duotone" />
+                                                            <Trash
+                                                                className="w-4 h-4"
+                                                                weight="duotone"
+                                                            />
                                                             Delete Account
                                                         </button>
                                                     ) : (
@@ -518,7 +545,9 @@ export default function SettingsPage() {
                                                                 Yes, Delete My Account
                                                             </button>
                                                             <button
-                                                                onClick={() => setShowDeleteConfirm(false)}
+                                                                onClick={() =>
+                                                                    setShowDeleteConfirm(false)
+                                                                }
                                                                 className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg font-medium hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
                                                             >
                                                                 Cancel

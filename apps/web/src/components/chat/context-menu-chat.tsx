@@ -1,5 +1,6 @@
 'use client';
 
+import { Edit, MessageSquare, Pin, PinOff, Trash2 } from 'lucide-react';
 import {
     ContextMenu,
     ContextMenuContent,
@@ -7,7 +8,6 @@ import {
     ContextMenuSeparator,
     ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Edit, Trash2, Pin, PinOff, MessageSquare } from 'lucide-react';
 
 interface ContextMenuChatProps {
     children: React.ReactNode;

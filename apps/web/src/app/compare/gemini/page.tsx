@@ -21,8 +21,10 @@ export const metadata: Metadata = generatePageMetadata(
 const geminiData: CompetitorData = {
     name: 'Gemini',
     slug: 'gemini',
-    tagline: 'YULA gives you Gemini plus 12+ other AI models, persistent memory across all of them, and proactive AI that messages you first.',
-    description: 'Google Gemini is an AI assistant integrated into Google Workspace, offering multimodal capabilities and Google Search integration.',
+    tagline:
+        'YULA gives you Gemini plus 12+ other AI models, persistent memory across all of them, and proactive AI that messages you first.',
+    description:
+        'Google Gemini is an AI assistant integrated into Google Workspace, offering multimodal capabilities and Google Search integration.',
     logoColor: 'bg-blue-500',
     strengths: [
         'Deep Google Workspace integration (Docs, Gmail, Drive)',

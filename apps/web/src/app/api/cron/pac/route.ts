@@ -1,8 +1,8 @@
-import { type NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@aspendos/db';
+import { type NextRequest, NextResponse } from 'next/server';
+import { createEmbedding } from '@/lib/ai';
 import { analyzeContextForPAC } from '@/lib/pac/analyzer';
 import { searchConversations } from '@/lib/services/qdrant';
-import { createEmbedding } from '@/lib/ai';
 
 // ============================================
 // PAC CRON ENDPOINT
@@ -64,7 +64,10 @@ export async function GET(req: NextRequest) {
                 let recentMemories: string[] = [];
                 try {
                     const queryEmbedding = await createEmbedding(
-                        recentMessages.map((m: { content: string }) => m.content).join(' ').slice(0, 1000)
+                        recentMessages
+                            .map((m: { content: string }) => m.content)
+                            .join(' ')
+                            .slice(0, 1000)
                     );
                     const searchResults = await searchConversations(user.id, queryEmbedding, 3);
                     recentMemories = searchResults.map((r: { content: string }) => r.content);
@@ -75,7 +78,8 @@ export async function GET(req: NextRequest) {
                 // Analyze context for PAC
                 const analysis = await analyzeContextForPAC(user.id, {
                     recentMessages: recentMessages.map(
-                        (m: { role: string; content: string }) => `${m.role}: ${m.content.slice(0, 200)}`
+                        (m: { role: string; content: string }) =>
+                            `${m.role}: ${m.content.slice(0, 200)}`
                     ),
                     recentMemories,
                     currentTime: new Date(),
@@ -91,24 +95,36 @@ export async function GET(req: NextRequest) {
                         },
                         select: { title: true },
                     });
-                    const existingTitles = new Set(existingNotifs.map((n: { title: string }) => n.title));
+                    const existingTitles = new Set(
+                        existingNotifs.map((n: { title: string }) => n.title)
+                    );
 
                     // Batch create non-duplicate notifications
-                    const newItems = analysis.items.filter((item: { title: string }) => !existingTitles.has(item.title));
+                    const newItems = analysis.items.filter(
+                        (item: { title: string }) => !existingTitles.has(item.title)
+                    );
                     if (newItems.length > 0) {
                         await prisma.notificationLog.createMany({
-                            data: newItems.map((item: { type: string; title: string; description: string; priority: string; triggerReason: string }) => ({
-                                userId: user.id,
-                                type: `PAC_${item.type.toUpperCase()}`,
-                                title: item.title,
-                                message: item.description,
-                                channel: 'in_app',
-                                status: 'pending',
-                                metadata: {
-                                    priority: item.priority,
-                                    triggerReason: item.triggerReason,
-                                },
-                            })),
+                            data: newItems.map(
+                                (item: {
+                                    type: string;
+                                    title: string;
+                                    description: string;
+                                    priority: string;
+                                    triggerReason: string;
+                                }) => ({
+                                    userId: user.id,
+                                    type: `PAC_${item.type.toUpperCase()}`,
+                                    title: item.title,
+                                    message: item.description,
+                                    channel: 'in_app',
+                                    status: 'pending',
+                                    metadata: {
+                                        priority: item.priority,
+                                        triggerReason: item.triggerReason,
+                                    },
+                                })
+                            ),
                         });
                     }
                     const createdCount = newItems.length;

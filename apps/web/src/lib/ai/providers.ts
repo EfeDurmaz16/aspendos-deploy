@@ -5,10 +5,10 @@
  * ALL AI generation uses streamText/generateText from this module.
  */
 
-import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { createGroq } from '@ai-sdk/groq';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createGroq } from '@ai-sdk/groq';
+import { openai } from '@ai-sdk/openai';
 
 // ============================================
 // PROVIDER INITIALIZATION

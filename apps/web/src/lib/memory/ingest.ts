@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { createEmbeddings } from '@/lib/ai';
-import { storeMemory, qdrant, COLLECTIONS } from '@/lib/services/qdrant';
+import { COLLECTIONS, qdrant, storeMemory } from '@/lib/services/qdrant';
 
 // ============================================
 // CHATGPT EXPORT FORMAT
@@ -69,7 +69,10 @@ export interface AspendosExport {
 // PARSE CHATGPT EXPORT
 // ============================================
 
-export function parseChatGPTExport(jsonData: unknown): { conversations: string[]; messageCount: number } {
+export function parseChatGPTExport(jsonData: unknown): {
+    conversations: string[];
+    messageCount: number;
+} {
     const data = jsonData as ChatGPTConversation[];
 
     if (!Array.isArray(data)) {
@@ -110,7 +113,10 @@ export function parseChatGPTExport(jsonData: unknown): { conversations: string[]
 // PARSE CLAUDE EXPORT
 // ============================================
 
-export function parseClaudeExport(jsonData: unknown): { conversations: string[]; messageCount: number } {
+export function parseClaudeExport(jsonData: unknown): {
+    conversations: string[];
+    messageCount: number;
+} {
     const data = jsonData as ClaudeConversation[];
 
     if (!Array.isArray(data)) {
@@ -179,7 +185,10 @@ export async function ingestConversations(
                             success++;
                         })
                         .catch((error) => {
-                            console.error(`[Ingest] Failed to store memory for conversation ${j}:`, error);
+                            console.error(
+                                `[Ingest] Failed to store memory for conversation ${j}:`,
+                                error
+                            );
                             failed++;
                         })
                 )

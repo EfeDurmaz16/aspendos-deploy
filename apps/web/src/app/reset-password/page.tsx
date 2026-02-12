@@ -1,23 +1,16 @@
 'use client';
 
+import { CheckCircle, Lock, Warning } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import {
-    ChevronLeftIcon,
-    Grid2x2PlusIcon,
-    Loader2,
-    KeyRound,
-    Check,
-    X,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { Check, ChevronLeftIcon, Grid2x2PlusIcon, KeyRound, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState, useMemo, Suspense } from 'react';
+import { Suspense, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { resetPassword } from '@/lib/auth-client';
-import { Warning, CheckCircle, Lock } from '@phosphor-icons/react';
+import { cn } from '@/lib/utils';
 
 function ResetPasswordContent() {
     const searchParams = useSearchParams();
@@ -30,13 +23,16 @@ function ResetPasswordContent() {
     const [success, setSuccess] = useState(false);
 
     // Password strength validation
-    const passwordChecks = useMemo(() => ({
-        length: password.length >= 8,
-        uppercase: /[A-Z]/.test(password),
-        lowercase: /[a-z]/.test(password),
-        number: /[0-9]/.test(password),
-        special: /[^A-Za-z0-9]/.test(password),
-    }), [password]);
+    const passwordChecks = useMemo(
+        () => ({
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password),
+        }),
+        [password]
+    );
 
     const passwordStrength = useMemo(() => {
         const passed = Object.values(passwordChecks).filter(Boolean).length;
@@ -97,9 +93,7 @@ function ResetPasswordContent() {
                 </div>
 
                 <Button asChild className="w-full">
-                    <Link href="/forgot-password">
-                        Request a new link
-                    </Link>
+                    <Link href="/forgot-password">Request a new link</Link>
                 </Button>
             </motion.div>
         );
@@ -129,9 +123,16 @@ function ResetPasswordContent() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-4" aria-label="Reset password form">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-4"
+                        aria-label="Reset password form"
+                    >
                         <div className="space-y-2">
-                            <Label htmlFor="password" className="text-muted-foreground text-start text-xs font-medium">
+                            <Label
+                                htmlFor="password"
+                                className="text-muted-foreground text-start text-xs font-medium"
+                            >
                                 New Password
                             </Label>
                             <div className="relative">
@@ -158,28 +159,51 @@ function ResetPasswordContent() {
                                     <div className="flex items-center gap-2">
                                         <div className="flex-1 h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
                                             <div
-                                                className={cn('h-full transition-all', passwordStrength.bg)}
+                                                className={cn(
+                                                    'h-full transition-all',
+                                                    passwordStrength.bg
+                                                )}
                                                 style={{
-                                                    width: `${(Object.values(passwordChecks).filter(Boolean).length / 5) * 100}%`
+                                                    width: `${(Object.values(passwordChecks).filter(Boolean).length / 5) * 100}%`,
                                                 }}
                                             />
                                         </div>
-                                        <span className={cn('text-xs font-medium', passwordStrength.color)}>
+                                        <span
+                                            className={cn(
+                                                'text-xs font-medium',
+                                                passwordStrength.color
+                                            )}
+                                        >
                                             {passwordStrength.label}
                                         </span>
                                     </div>
                                     <div className="grid grid-cols-2 gap-1 text-xs">
-                                        <PasswordCheck passed={passwordChecks.length} label="8+ characters" />
-                                        <PasswordCheck passed={passwordChecks.uppercase} label="Uppercase" />
-                                        <PasswordCheck passed={passwordChecks.lowercase} label="Lowercase" />
-                                        <PasswordCheck passed={passwordChecks.number} label="Number" />
+                                        <PasswordCheck
+                                            passed={passwordChecks.length}
+                                            label="8+ characters"
+                                        />
+                                        <PasswordCheck
+                                            passed={passwordChecks.uppercase}
+                                            label="Uppercase"
+                                        />
+                                        <PasswordCheck
+                                            passed={passwordChecks.lowercase}
+                                            label="Lowercase"
+                                        />
+                                        <PasswordCheck
+                                            passed={passwordChecks.number}
+                                            label="Number"
+                                        />
                                     </div>
                                 </div>
                             )}
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="confirmPassword" className="text-muted-foreground text-start text-xs font-medium">
+                            <Label
+                                htmlFor="confirmPassword"
+                                className="text-muted-foreground text-start text-xs font-medium"
+                            >
                                 Confirm New Password
                             </Label>
                             <div className="relative">
@@ -233,7 +257,8 @@ function ResetPasswordContent() {
                             Password reset successful
                         </h2>
                         <p className="text-zinc-500 dark:text-zinc-400 text-sm">
-                            Your password has been reset. You can now sign in with your new password.
+                            Your password has been reset. You can now sign in with your new
+                            password.
                         </p>
                     </div>
 
@@ -243,9 +268,7 @@ function ResetPasswordContent() {
                     </div>
 
                     <Button asChild className="w-full">
-                        <Link href="/login">
-                            Continue to Sign In
-                        </Link>
+                        <Link href="/login">Continue to Sign In</Link>
                     </Button>
                 </motion.div>
             )}
@@ -255,10 +278,14 @@ function ResetPasswordContent() {
 
 function PasswordCheck({ passed, label }: { passed: boolean; label: string }) {
     return (
-        <div className={cn(
-            'flex items-center gap-1',
-            passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-600'
-        )}>
+        <div
+            className={cn(
+                'flex items-center gap-1',
+                passed
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-zinc-400 dark:text-zinc-600'
+            )}
+        >
             {passed ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
             <span>{label}</span>
         </div>
@@ -268,17 +295,18 @@ function PasswordCheck({ passed, label }: { passed: boolean; label: string }) {
 export default function ResetPasswordPage() {
     return (
         <main className="relative min-h-screen flex items-center justify-center p-4">
-            <div
-                aria-hidden
-                className="absolute inset-0 isolate contain-strict -z-10 opacity-60"
-            >
+            <div aria-hidden className="absolute inset-0 isolate contain-strict -z-10 opacity-60">
                 <div className="bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,--theme(--color-foreground/.06)_0,hsla(0,0%,55%,.02)_50%,--theme(--color-foreground/.01)_80%)] absolute top-0 right-0 h-320 w-140 -translate-y-87.5 rounded-full" />
                 <div className="bg-[radial-gradient(50%_50%_at_50%_50%,--theme(--color-foreground/.04)_0,--theme(--color-foreground/.01)_80%,transparent_100%)] absolute top-0 right-0 h-320 w-60 [translate:5%_-50%] rounded-full" />
             </div>
 
-            <Button variant="ghost" className="absolute top-7 left-5 text-zinc-600 dark:text-zinc-400" asChild>
+            <Button
+                variant="ghost"
+                className="absolute top-7 left-5 text-zinc-600 dark:text-zinc-400"
+                asChild
+            >
                 <Link href="/login">
-                    <ChevronLeftIcon className='size-4 me-2' />
+                    <ChevronLeftIcon className="size-4 me-2" />
                     Back to login
                 </Link>
             </Button>

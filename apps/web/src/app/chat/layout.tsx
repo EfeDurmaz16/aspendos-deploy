@@ -19,10 +19,6 @@ export const metadata: Metadata = generatePageMetadata(
     }
 );
 
-export default function ChatLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function ChatLayout({ children }: { children: React.ReactNode }) {
     return children;
 }

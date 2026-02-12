@@ -1,18 +1,18 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import {
+    Brain,
     CalendarBlank,
+    ChatCircle,
+    File,
+    Gear,
+    House,
+    MagnifyingGlass,
     Receipt,
     Sparkle,
     Users,
-    House,
-    ChatCircle,
-    Brain,
-    Gear,
-    File,
-    MagnifyingGlass,
 } from '@phosphor-icons/react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { OmnibarResult } from '@/stores/yula-store';
 
@@ -79,7 +79,12 @@ export function OmnibarResults({ results, selectedIndex, onSelect, onHover }: Om
             {Object.entries(groupedResults).map(([type, items]) => (
                 <div key={type}>
                     <div className="mb-1 px-2">
-                        <span className={cn('text-xs font-medium uppercase tracking-wider', typeColors[type as OmnibarResult['type']])}>
+                        <span
+                            className={cn(
+                                'text-xs font-medium uppercase tracking-wider',
+                                typeColors[type as OmnibarResult['type']]
+                            )}
+                        >
                             {typeLabels[type as OmnibarResult['type']]}
                         </span>
                     </div>
@@ -108,11 +113,16 @@ export function OmnibarResults({ results, selectedIndex, onSelect, onHover }: Om
                                     <div
                                         className={cn(
                                             'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
-                                            isSelected ? 'bg-white/15' : 'bg-white/5 group-hover:bg-white/10'
+                                            isSelected
+                                                ? 'bg-white/15'
+                                                : 'bg-white/5 group-hover:bg-white/10'
                                         )}
                                     >
                                         <Icon
-                                            className={cn('h-4 w-4', isSelected ? 'text-white' : 'text-zinc-400')}
+                                            className={cn(
+                                                'h-4 w-4',
+                                                isSelected ? 'text-white' : 'text-zinc-400'
+                                            )}
                                             weight={isSelected ? 'fill' : 'regular'}
                                         />
                                     </div>
@@ -126,7 +136,9 @@ export function OmnibarResults({ results, selectedIndex, onSelect, onHover }: Om
                                             {result.title}
                                         </p>
                                         {result.description && (
-                                            <p className="truncate text-xs text-zinc-500">{result.description}</p>
+                                            <p className="truncate text-xs text-zinc-500">
+                                                {result.description}
+                                            </p>
                                         )}
                                     </div>
                                     {isSelected && (

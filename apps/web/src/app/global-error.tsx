@@ -20,7 +20,8 @@ export default function GlobalError({
                 style={{
                     margin: 0,
                     padding: 0,
-                    fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                    fontFamily:
+                        "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     backgroundColor: '#09090b',
                     color: '#fafafa',
                     minHeight: '100vh',
@@ -63,8 +64,8 @@ export default function GlobalError({
                             lineHeight: 1.6,
                         }}
                     >
-                        A critical error occurred that prevented the application from loading. Please try
-                        refreshing the page.
+                        A critical error occurred that prevented the application from loading.
+                        Please try refreshing the page.
                     </p>
                     {error.digest && (
                         <p

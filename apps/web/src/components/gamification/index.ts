@@ -1,24 +1,25 @@
 // Gamification Components
-export { XPProgressBar, XPGainAnimation } from './xp-progress-bar';
-export { LevelBadge, LevelUpAnimation, LEVEL_CONFIG } from './level-badge';
+
 export {
-  AchievementCard,
-  AchievementGrid,
-  AchievementUnlockAnimation,
-  type Achievement,
+    type Achievement,
+    AchievementCard,
+    AchievementGrid,
+    AchievementUnlockAnimation,
 } from './achievement-card';
 export {
-  StreakIndicator,
-  StreakCalendar,
-  StreakMilestoneList,
-  STREAK_MILESTONES,
-} from './streak-indicator';
+    Leaderboard,
+    LeaderboardTabs,
+} from './leaderboard';
+export { LEVEL_CONFIG, LevelBadge, LevelUpAnimation } from './level-badge';
 export {
-  ReferralCard,
-  ReferralInput,
-  ReferralProgress,
+    ReferralCard,
+    ReferralInput,
+    ReferralProgress,
 } from './referral-card';
 export {
-  Leaderboard,
-  LeaderboardTabs,
-} from './leaderboard';
+    STREAK_MILESTONES,
+    StreakCalendar,
+    StreakIndicator,
+    StreakMilestoneList,
+} from './streak-indicator';
+export { XPGainAnimation, XPProgressBar } from './xp-progress-bar';

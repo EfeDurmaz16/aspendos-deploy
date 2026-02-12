@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { generatePageMetadata } from '@/lib/seo/metadata';
-import { productSchemas, serializeSchema, generateBreadcrumbSchema } from '@/lib/seo/structured-data';
+import {
+    generateBreadcrumbSchema,
+    productSchemas,
+    serializeSchema,
+} from '@/lib/seo/structured-data';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yula.dev';
 
@@ -30,11 +34,7 @@ const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Pricing', url: `${BASE_URL}/pricing` },
 ]);
 
-export default function PricingLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function PricingLayout({ children }: { children: React.ReactNode }) {
     return (
         <>
             {/* Product structured data for rich snippets */}

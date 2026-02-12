@@ -1,20 +1,14 @@
 'use client';
 
+import { CheckCircle, Warning } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import {
-    AtSignIcon,
-    ChevronLeftIcon,
-    Grid2x2PlusIcon,
-    Loader2,
-    Mail,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { AtSignIcon, ChevronLeftIcon, Grid2x2PlusIcon, Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { forgetPassword } from '@/lib/auth-client';
-import { Warning, CheckCircle } from '@phosphor-icons/react';
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
@@ -42,17 +36,18 @@ export default function ForgotPasswordPage() {
 
     return (
         <main className="relative min-h-screen flex items-center justify-center p-4">
-            <div
-                aria-hidden
-                className="absolute inset-0 isolate contain-strict -z-10 opacity-60"
-            >
+            <div aria-hidden className="absolute inset-0 isolate contain-strict -z-10 opacity-60">
                 <div className="bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,--theme(--color-foreground/.06)_0,hsla(0,0%,55%,.02)_50%,--theme(--color-foreground/.01)_80%)] absolute top-0 right-0 h-320 w-140 -translate-y-87.5 rounded-full" />
                 <div className="bg-[radial-gradient(50%_50%_at_50%_50%,--theme(--color-foreground/.04)_0,--theme(--color-foreground/.01)_80%,transparent_100%)] absolute top-0 right-0 h-320 w-60 [translate:5%_-50%] rounded-full" />
             </div>
 
-            <Button variant="ghost" className="absolute top-7 left-5 text-zinc-600 dark:text-zinc-400" asChild>
+            <Button
+                variant="ghost"
+                className="absolute top-7 left-5 text-zinc-600 dark:text-zinc-400"
+                asChild
+            >
                 <Link href="/login">
-                    <ChevronLeftIcon className='size-4 me-2' />
+                    <ChevronLeftIcon className="size-4 me-2" />
                     Back to login
                 </Link>
             </Button>
@@ -74,7 +69,8 @@ export default function ForgotPasswordPage() {
                                 Reset your password
                             </h1>
                             <p className="text-zinc-500 dark:text-zinc-400 text-sm">
-                                Enter your email address and we'll send you a link to reset your password.
+                                Enter your email address and we'll send you a link to reset your
+                                password.
                             </p>
                         </div>
 
@@ -89,9 +85,16 @@ export default function ForgotPasswordPage() {
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-4" aria-label="Forgot password form">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="space-y-4"
+                            aria-label="Forgot password form"
+                        >
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-muted-foreground text-start text-xs font-medium">
+                                <Label
+                                    htmlFor="email"
+                                    className="text-muted-foreground text-start text-xs font-medium"
+                                >
                                     Email
                                 </Label>
                                 <div className="relative">
@@ -142,7 +145,9 @@ export default function ForgotPasswordPage() {
                             </h2>
                             <p className="text-zinc-500 dark:text-zinc-400 text-sm">
                                 We've sent a password reset link to{' '}
-                                <span className="font-medium text-zinc-700 dark:text-zinc-300">{email}</span>
+                                <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                                    {email}
+                                </span>
                             </p>
                         </div>
 
@@ -160,9 +165,7 @@ export default function ForgotPasswordPage() {
                                 Try a different email
                             </Button>
                             <Button variant="ghost" asChild className="w-full">
-                                <Link href="/login">
-                                    Back to login
-                                </Link>
+                                <Link href="/login">Back to login</Link>
                             </Button>
                         </div>
                     </motion.div>

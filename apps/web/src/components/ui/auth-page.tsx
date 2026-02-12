@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from './button';
-import { Grid2x2PlusIcon, ChevronLeftIcon } from 'lucide-react';
+import { ChevronLeftIcon, Grid2x2PlusIcon } from 'lucide-react';
+import React, { useState } from 'react';
 import SignIn from '@/components/auth/sign-in';
 import SignUp from '@/components/auth/sign-up';
+import { Button } from './button';
 
 export function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);

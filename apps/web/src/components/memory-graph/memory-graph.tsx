@@ -1,14 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    ArrowsInSimple,
+    ArrowsOutSimple,
+    Brain,
+    Briefcase,
+    CalendarBlank,
+    MagnifyingGlass,
+    SlidersHorizontal,
+    User,
+} from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User, Briefcase, CalendarBlank, SlidersHorizontal, Brain, MagnifyingGlass, ArrowsOutSimple, ArrowsInSimple } from '@phosphor-icons/react';
-import { cn } from '@/lib/utils';
-import { useMemoryGraph, categoryColors } from './use-memory-graph';
-import { MemoryNodeCard } from './memory-node';
-import type { MemoryNodeCategory } from '@/stores/yula-store';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ForceGraphMethods, NodeObject } from 'react-force-graph-2d';
+import { cn } from '@/lib/utils';
+import type { MemoryNodeCategory } from '@/stores/yula-store';
+import { MemoryNodeCard } from './memory-node';
+import { categoryColors, useMemoryGraph } from './use-memory-graph';
 
 // Dynamically import ForceGraph2D to avoid SSR issues
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -97,8 +106,10 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
 
         const nodeIds = new Set(nodes.map((n) => n.id));
         const links = graphData.links.filter((l) => {
-            const sourceId = typeof l.source === 'string' ? l.source : (l.source as { id: string })?.id;
-            const targetId = typeof l.target === 'string' ? l.target : (l.target as { id: string })?.id;
+            const sourceId =
+                typeof l.source === 'string' ? l.source : (l.source as { id: string })?.id;
+            const targetId =
+                typeof l.target === 'string' ? l.target : (l.target as { id: string })?.id;
             return nodeIds.has(sourceId) && nodeIds.has(targetId);
         });
 
@@ -235,9 +246,7 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
                             onClick={() => setSelectedCategory(isActive ? null : category)}
                             className={cn(
                                 'flex h-7 w-7 items-center justify-center rounded-md transition-all duration-200',
-                                isActive
-                                    ? 'bg-white/15 shadow-lg'
-                                    : 'bg-white/5 hover:bg-white/10'
+                                isActive ? 'bg-white/15 shadow-lg' : 'bg-white/5 hover:bg-white/10'
                             )}
                             style={isActive ? { borderColor: colors.bg, borderWidth: 1 } : {}}
                             title={category}

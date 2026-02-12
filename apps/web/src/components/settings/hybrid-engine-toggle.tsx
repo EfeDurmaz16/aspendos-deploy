@@ -1,9 +1,9 @@
 'use client';
 
+import { Brain, Gauge, Lightning } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Lightning, Brain, Gauge } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import { useYulaStore, type EngineMode } from '@/stores/yula-store';
+import { type EngineMode, useYulaStore } from '@/stores/yula-store';
 
 interface HybridEngineToggleProps {
     className?: string;
@@ -84,10 +84,7 @@ export function HybridEngineToggle({
                 {/* Background indicator */}
                 <motion.div
                     layout
-                    className={cn(
-                        'absolute rounded-full',
-                        sizes.pill
-                    )}
+                    className={cn('absolute rounded-full', sizes.pill)}
                     style={{
                         backgroundColor: `${config.color}20`,
                         left: mode === 'speed' ? 4 : 'auto',
@@ -166,12 +163,7 @@ export function EngineSettingsPanel({ className }: { className?: string }) {
     const mode = settings.engineMode;
 
     return (
-        <div
-            className={cn(
-                'rounded-xl border border-white/10 bg-zinc-900/80 p-4',
-                className
-            )}
-        >
+        <div className={cn('rounded-xl border border-white/10 bg-zinc-900/80 p-4', className)}>
             <div className="mb-4 flex items-center gap-2">
                 <Gauge className="h-5 w-5 text-violet-400" weight="fill" />
                 <h3 className="font-semibold text-white">Hybrid Engine</h3>

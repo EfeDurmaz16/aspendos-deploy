@@ -4,13 +4,13 @@
  * Integration tests for the Vercel AI SDK router functionality.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    routeUserMessage,
     fastRoute,
-    needsMemorySearch,
     isGreeting,
+    needsMemorySearch,
     type RouteDecision,
+    routeUserMessage,
 } from '../router';
 
 // ============================================
@@ -19,7 +19,7 @@ import {
 
 describe('fastRoute', () => {
     it('should route simple greetings to direct_reply', () => {
-        const greetings = ['Hi', 'Hello', 'Hey', 'Good morning', 'What\'s up'];
+        const greetings = ['Hi', 'Hello', 'Hey', 'Good morning', "What's up"];
 
         for (const greeting of greetings) {
             const result = fastRoute(greeting);
@@ -62,10 +62,7 @@ describe('fastRoute', () => {
     });
 
     it('should return null for reminder requests (needs LLM schedule extraction)', () => {
-        const reminderQueries = [
-            'Remind me to call mom tomorrow',
-            'Set a reminder for 3pm',
-        ];
+        const reminderQueries = ['Remind me to call mom tomorrow', 'Set a reminder for 3pm'];
 
         for (const query of reminderQueries) {
             const result = fastRoute(query);
@@ -179,7 +176,9 @@ describe('routeUserMessage', () => {
 
         expect(result).toBeDefined();
         expect(result.type).toBeDefined();
-        expect(['direct_reply', 'rag_search', 'tool_call', 'proactive_schedule']).toContain(result.type);
+        expect(['direct_reply', 'rag_search', 'tool_call', 'proactive_schedule']).toContain(
+            result.type
+        );
     });
 
     it('should include reason in the response', async () => {
@@ -191,7 +190,10 @@ describe('routeUserMessage', () => {
 
     it('should handle context for better routing', async () => {
         const result = await routeUserMessage('Continue from where we left off', {
-            recentMessages: ['User: Started discussing React', 'Assistant: Great, what about React?'],
+            recentMessages: [
+                'User: Started discussing React',
+                'Assistant: Great, what about React?',
+            ],
         });
 
         expect(result).toBeDefined();

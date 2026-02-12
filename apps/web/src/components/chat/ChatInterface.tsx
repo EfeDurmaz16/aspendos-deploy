@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-    PaperPlaneRight,
-    Spinner,
-    Robot,
-    User,
-    Paperclip,
-    Image as ImageIcon,
-    X,
     Brain,
+    Image as ImageIcon,
     Lightning,
+    Paperclip,
+    PaperPlaneRight,
+    Robot,
+    Spinner,
+    User,
     Warning,
+    X,
 } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -77,7 +77,12 @@ function MessageBubble({ message }: { message: Message }) {
                     <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
                 {message.metadata && (
-                    <div className={cn('mt-1 flex items-center gap-2 text-xs text-zinc-500', isUser && 'justify-end')}>
+                    <div
+                        className={cn(
+                            'mt-1 flex items-center gap-2 text-xs text-zinc-500',
+                            isUser && 'justify-end'
+                        )}
+                    >
                         {message.metadata.model && (
                             <span className="flex items-center gap-1">
                                 <Lightning className="h-3 w-3" />
@@ -164,8 +169,13 @@ function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
                             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 text-xs"
                         >
                             <ImageIcon className="h-4 w-4 text-zinc-400" />
-                            <span className="text-zinc-300 truncate max-w-[150px]">{file.name}</span>
-                            <button onClick={() => removeAttachment(index)} className="text-zinc-500 hover:text-zinc-300">
+                            <span className="text-zinc-300 truncate max-w-[150px]">
+                                {file.name}
+                            </span>
+                            <button
+                                onClick={() => removeAttachment(index)}
+                                className="text-zinc-500 hover:text-zinc-300"
+                            >
                                 <X className="h-3 w-3" />
                             </button>
                         </div>

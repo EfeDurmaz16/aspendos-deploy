@@ -5,8 +5,8 @@
  * ONLY uses streamText and generateText from @ai-sdk.
  */
 
-import { streamText, generateText } from 'ai';
-import { getModel, getFallbackModels, MODEL_REGISTRY, type ModelId } from './providers';
+import { generateText, streamText } from 'ai';
+import { getFallbackModels, getModel, MODEL_REGISTRY, type ModelId } from './providers';
 
 // ============================================
 // TYPES
@@ -142,7 +142,6 @@ export async function createCompletion(
             };
         } catch (error) {
             console.warn(`[AI] Model ${currentModel} failed:`, error);
-            continue;
         }
     }
 

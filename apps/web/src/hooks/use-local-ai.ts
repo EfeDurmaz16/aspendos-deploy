@@ -1,15 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { getSetting, setSetting } from '@/lib/offline/database';
 import {
     AVAILABLE_MODELS,
-    type ModelId,
-    type ModelLoadProgress,
     formatMessagesForLocalModel,
     getOfflineSystemPrompt,
     localAI,
+    type ModelId,
+    type ModelLoadProgress,
 } from '@/lib/offline/local-ai';
-import { getSetting, setSetting } from '@/lib/offline/database';
 
 export interface LocalAIState {
     isSupported: boolean;

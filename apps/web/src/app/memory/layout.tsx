@@ -19,10 +19,6 @@ export const metadata: Metadata = generatePageMetadata(
     }
 );
 
-export default function MemoryLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function MemoryLayout({ children }: { children: React.ReactNode }) {
     return children;
 }

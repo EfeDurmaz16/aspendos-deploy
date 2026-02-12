@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bell,
-    Lightbulb,
-    Warning,
     Brain,
-    Clock,
-    Check,
-    X,
     CaretDown,
     CaretRight,
+    Check,
+    Clock,
+    Lightbulb,
+    Warning,
+    X,
 } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import type { PACItem, PACItemType } from '@/lib/pac/types';
+import { cn } from '@/lib/utils';
 
 // ============================================
 // TYPE STYLES
@@ -104,7 +104,11 @@ interface PACNotificationsProps {
     onToggleCollapse?: () => void;
 }
 
-export function PACNotifications({ className, collapsed = false, onToggleCollapse }: PACNotificationsProps) {
+export function PACNotifications({
+    className,
+    collapsed = false,
+    onToggleCollapse,
+}: PACNotificationsProps) {
     const [items, setItems] = useState<PACItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(true);
@@ -179,10 +183,7 @@ export function PACNotifications({ className, collapsed = false, onToggleCollaps
 
     return (
         <aside
-            className={cn(
-                'w-72 border-r border-zinc-800 bg-zinc-900/50 flex flex-col',
-                className
-            )}
+            className={cn('w-72 border-r border-zinc-800 bg-zinc-900/50 flex flex-col', className)}
         >
             {/* Header */}
             <div className="p-3 border-b border-zinc-800">

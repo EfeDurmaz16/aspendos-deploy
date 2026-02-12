@@ -25,19 +25,19 @@ import {
     ThumbsUp,
     Trash,
 } from '@phosphor-icons/react';
-import { NativeDelete } from '@/components/ui/delete-button';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/use-auth';
-import { cn } from '@/lib/utils';
 import {
     ContextMenu,
     ContextMenuContent,
     ContextMenuItem,
     ContextMenuSeparator,
-    ContextMenuTrigger,
     ContextMenuShortcut,
-} from "@/components/ui/context-menu";
+    ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import { NativeDelete } from '@/components/ui/delete-button';
+import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
 
 interface Memory {
     id: string;
@@ -145,7 +145,8 @@ function MemoryCard({
                 <div
                     className={cn(
                         'bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg hover:bg-white/70 dark:hover:bg-zinc-900/70',
-                        memory.isPinned && 'ring-2 ring-amber-500/30 bg-amber-50/20 dark:bg-amber-950/10'
+                        memory.isPinned &&
+                            'ring-2 ring-amber-500/30 bg-amber-50/20 dark:bg-amber-950/10'
                     )}
                 >
                     <div className="flex items-start justify-between gap-2">
@@ -157,7 +158,10 @@ function MemoryCard({
                                 {memory.sector}
                             </span>
                             {memory.isPinned && (
-                                <PushPin className="w-4 h-4 text-amber-500 fill-amber-500" weight="fill" />
+                                <PushPin
+                                    className="w-4 h-4 text-amber-500 fill-amber-500"
+                                    weight="fill"
+                                />
                             )}
                         </div>
                         <span className="text-xs font-mono bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-lg text-zinc-700 dark:text-zinc-300">
@@ -240,7 +244,7 @@ function MemoryCard({
                                 <PencilSimple className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
                             </Button>
                             <NativeDelete
-                                onConfirm={() => { }} // No-op for initial click
+                                onConfirm={() => {}} // No-op for initial click
                                 onDelete={onDelete}
                                 buttonText=""
                                 confirmText="Confirm"
@@ -258,8 +262,14 @@ function MemoryCard({
                     <ContextMenuShortcut>⌘E</ContextMenuShortcut>
                 </ContextMenuItem>
                 <ContextMenuItem onClick={onPin}>
-                    <PushPin className={cn("mr-2 h-4 w-4", memory.isPinned ? "text-amber-500 fill-amber-500" : "")} weight={memory.isPinned ? "fill" : "regular"} />
-                    {memory.isPinned ? "Unpin Memory" : "Pin Memory"}
+                    <PushPin
+                        className={cn(
+                            'mr-2 h-4 w-4',
+                            memory.isPinned ? 'text-amber-500 fill-amber-500' : ''
+                        )}
+                        weight={memory.isPinned ? 'fill' : 'regular'}
+                    />
+                    {memory.isPinned ? 'Unpin Memory' : 'Pin Memory'}
                     <ContextMenuShortcut>⌘P</ContextMenuShortcut>
                 </ContextMenuItem>
                 <ContextMenuSeparator />
@@ -278,7 +288,7 @@ function MemoryCard({
                     <ContextMenuShortcut>⌫</ContextMenuShortcut>
                 </ContextMenuItem>
             </ContextMenuContent>
-        </ContextMenu >
+        </ContextMenu>
     );
 }
 

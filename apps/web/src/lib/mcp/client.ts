@@ -137,17 +137,21 @@ const webSearchTool: MCPTool = {
         type: 'object',
         properties: {
             query: { type: 'string', description: 'Search query' },
-            num_results: { type: 'number', description: 'Number of results to return (default: 5)' },
+            num_results: {
+                type: 'number',
+                description: 'Number of results to return (default: 5)',
+            },
         },
         required: ['query'],
     },
     execute: async (params) => {
         return {
             success: false,
-            content: 'Web search is currently unavailable. Please try again later or rephrase your question.',
+            content:
+                'Web search is currently unavailable. Please try again later or rephrase your question.',
             metadata: {
                 resultsCount: 0,
-                query: params.query
+                query: params.query,
             },
         };
     },
@@ -206,8 +210,16 @@ const calculatorTool: MCPTool = {
             const peek = () => tokens[pos];
             const consume = () => tokens[pos++];
             const parseNum = (): number => {
-                if (peek() === '(') { consume(); const v = parseExpr(); consume(); return v; }
-                if (peek() === '-') { consume(); return -parseNum(); }
+                if (peek() === '(') {
+                    consume();
+                    const v = parseExpr();
+                    consume();
+                    return v;
+                }
+                if (peek() === '-') {
+                    consume();
+                    return -parseNum();
+                }
                 return parseFloat(consume());
             };
             const parseTerm = (): number => {
@@ -215,7 +227,9 @@ const calculatorTool: MCPTool = {
                 while (peek() === '*' || peek() === '/' || peek() === '%') {
                     const op = consume();
                     const r = parseNum();
-                    if (op === '*') v *= r; else if (op === '/') v = r !== 0 ? v / r : NaN; else v %= r;
+                    if (op === '*') v *= r;
+                    else if (op === '/') v = r !== 0 ? v / r : NaN;
+                    else v %= r;
                 }
                 return v;
             };
@@ -224,7 +238,8 @@ const calculatorTool: MCPTool = {
                 while (peek() === '+' || peek() === '-') {
                     const op = consume();
                     const r = parseTerm();
-                    if (op === '+') v += r; else v -= r;
+                    if (op === '+') v += r;
+                    else v -= r;
                 }
                 return v;
             };

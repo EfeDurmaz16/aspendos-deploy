@@ -63,7 +63,11 @@ const TIER_LIMITS: Record<
 };
 
 export const POST = Webhooks({
-    webhookSecret: process.env.POLAR_WEBHOOK_SECRET || (() => { throw new Error('POLAR_WEBHOOK_SECRET is required'); })(),
+    webhookSecret:
+        process.env.POLAR_WEBHOOK_SECRET ||
+        (() => {
+            throw new Error('POLAR_WEBHOOK_SECRET is required');
+        })(),
 
     onOrderCreated: async (payload) => {
         const { data: order } = payload;
@@ -77,8 +81,9 @@ export const POST = Webhooks({
             return;
         }
         // Log the order for audit trail
-        console.log(`[Polar Webhook] Order created for user ${userId}, product: ${order.product?.name}`);
-
+        console.log(
+            `[Polar Webhook] Order created for user ${userId}, product: ${order.product?.name}`
+        );
     },
 
     onSubscriptionCreated: async (payload) => {

@@ -1,6 +1,6 @@
 import { prisma } from '@aspendos/db';
-import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 
 export async function GET(request: Request) {
     try {
@@ -12,7 +12,8 @@ export async function GET(request: Request) {
 
         const { searchParams } = new URL(request.url);
         const intervalParam = (searchParams.get('interval') || 'day').toLowerCase();
-        const interval = intervalParam === 'week' || intervalParam === 'month' ? intervalParam : 'day';
+        const interval =
+            intervalParam === 'week' || intervalParam === 'month' ? intervalParam : 'day';
         const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '30'), 1), 365);
 
         const now = new Date();

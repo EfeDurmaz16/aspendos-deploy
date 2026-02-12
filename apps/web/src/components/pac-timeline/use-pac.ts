@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo } from 'react';
-import { useYulaStore, type PACItem, type PACItemType } from '@/stores/yula-store';
+import { type PACItem, type PACItemType, useYulaStore } from '@/stores/yula-store';
 
 // Sample PAC items for demo
 const samplePACItems: Omit<PACItem, 'id' | 'createdAt' | 'status'>[] = [

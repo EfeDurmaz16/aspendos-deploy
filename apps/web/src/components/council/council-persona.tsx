@@ -1,7 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Brain, Lightbulb, ShieldCheck, Warning } from '@phosphor-icons/react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { CouncilPersona, CouncilThought } from '@/stores/yula-store';
 import { personaDefinitions } from './use-council';

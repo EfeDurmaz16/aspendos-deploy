@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { PaperPlaneRight, Users, X, ArrowCounterClockwise } from '@phosphor-icons/react';
+import { ArrowCounterClockwise, PaperPlaneRight, Users, X } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useCouncil } from './use-council';
-import { CouncilPersonaCard } from './council-persona';
-import { CouncilDeliberation } from './council-deliberation';
-import { CouncilVerdictCard } from './council-verdict';
 import type { CouncilPersona } from '@/stores/yula-store';
+import { CouncilDeliberation } from './council-deliberation';
+import { CouncilPersonaCard } from './council-persona';
+import { CouncilVerdictCard } from './council-verdict';
+import { useCouncil } from './use-council';
 
 interface CouncilChatProps {
     className?: string;
@@ -54,9 +54,9 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
         inputRef.current?.focus();
     }, [reset]);
 
-    const completedPersonas = (['logic', 'creative', 'prudent', 'devils-advocate'] as CouncilPersona[]).filter(
-        hasPersonaResponded
-    );
+    const completedPersonas = (
+        ['logic', 'creative', 'prudent', 'devils-advocate'] as CouncilPersona[]
+    ).filter(hasPersonaResponded);
 
     // Auto-focus input
     useEffect(() => {
@@ -119,18 +119,23 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                             className="flex h-full flex-col items-center justify-center text-center"
                         >
                             <div className="mb-8 flex flex-wrap justify-center gap-3">
-                                {(['logic', 'creative', 'prudent', 'devils-advocate'] as CouncilPersona[]).map(
-                                    (persona, i) => (
-                                        <motion.div
-                                            key={persona}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: i * 0.1 }}
-                                        >
-                                            <CouncilPersonaCard persona={persona} isCompact />
-                                        </motion.div>
-                                    )
-                                )}
+                                {(
+                                    [
+                                        'logic',
+                                        'creative',
+                                        'prudent',
+                                        'devils-advocate',
+                                    ] as CouncilPersona[]
+                                ).map((persona, i) => (
+                                    <motion.div
+                                        key={persona}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.1 }}
+                                    >
+                                        <CouncilPersonaCard persona={persona} isCompact />
+                                    </motion.div>
+                                ))}
                             </div>
                             <h3 className="mb-2 text-xl font-semibold text-white">
                                 Summon The Council
@@ -191,18 +196,21 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
 
                             {/* Persona cards */}
                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                {(['logic', 'creative', 'prudent', 'devils-advocate'] as CouncilPersona[]).map(
-                                    (persona) => (
-                                        <CouncilPersonaCard
-                                            key={persona}
-                                            persona={persona}
-                                            thought={getPersonaThought(persona)}
-                                            isThinking={
-                                                isDeliberating && !hasPersonaResponded(persona)
-                                            }
-                                        />
-                                    )
-                                )}
+                                {(
+                                    [
+                                        'logic',
+                                        'creative',
+                                        'prudent',
+                                        'devils-advocate',
+                                    ] as CouncilPersona[]
+                                ).map((persona) => (
+                                    <CouncilPersonaCard
+                                        key={persona}
+                                        persona={persona}
+                                        thought={getPersonaThought(persona)}
+                                        isThinking={isDeliberating && !hasPersonaResponded(persona)}
+                                    />
+                                ))}
                             </div>
                         </motion.div>
                     )}

@@ -1,14 +1,7 @@
 'use client';
 
+import { ArrowRight, Brain, Command, Lightning, Sparkle, Users } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import {
-    Command,
-    Brain,
-    Users,
-    Lightning,
-    Sparkle,
-    ArrowRight,
-} from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 interface Feature {
@@ -25,7 +18,8 @@ const features: Feature[] = [
         id: 'omnibar',
         icon: Command,
         title: 'The Omnibar',
-        description: 'Your command center. Search, navigate, and execute actions with natural language.',
+        description:
+            'Your command center. Search, navigate, and execute actions with natural language.',
         color: '#a78bfa',
         shortcut: 'Cmd+K',
     },
@@ -33,21 +27,24 @@ const features: Feature[] = [
         id: 'memory',
         icon: Brain,
         title: 'Living Memory',
-        description: 'Yula remembers everything - people, projects, preferences. All connected in a visual graph.',
+        description:
+            'Yula remembers everything - people, projects, preferences. All connected in a visual graph.',
         color: '#ec4899',
     },
     {
         id: 'council',
         icon: Users,
         title: 'The Council',
-        description: 'Get multiple perspectives on important decisions. Three AI personas deliberate together.',
+        description:
+            'Get multiple perspectives on important decisions. Three AI personas deliberate together.',
         color: '#3b82f6',
     },
     {
         id: 'pac',
         icon: Lightning,
         title: 'Proactive Assistance',
-        description: 'Yula anticipates your needs. The Future Stream shows upcoming nudges and reminders.',
+        description:
+            'Yula anticipates your needs. The Future Stream shows upcoming nudges and reminders.',
         color: '#f59e0b',
     },
 ];
@@ -111,8 +108,8 @@ export function FeatureTour({ currentStep, onNext, onSkip, totalSteps }: Feature
                             i === currentStep
                                 ? 'w-6 bg-white'
                                 : i < currentStep
-                                    ? 'w-1.5 bg-white/50'
-                                    : 'w-1.5 bg-white/20'
+                                  ? 'w-1.5 bg-white/50'
+                                  : 'w-1.5 bg-white/20'
                         )}
                     />
                 ))}

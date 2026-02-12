@@ -1,20 +1,20 @@
 'use client';
 
-import React from 'react';
-import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
     ArrowUp,
-    Paperclip,
-    Square,
-    X,
-    StopCircle,
-    Mic,
-    Globe,
     BrainCog,
     FolderCode,
+    Globe,
+    Mic,
+    Paperclip,
+    Square,
+    StopCircle,
+    X,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
 
 // Utility function for className merging
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
@@ -535,12 +535,12 @@ export const PromptInputBox = React.forwardRef(
 
         const handleDrop = React.useCallback(
             (e: React.DragEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const files = Array.from(e.dataTransfer.files);
-            const imageFiles = files.filter((file) => isImageFile(file));
-            if (imageFiles.length > 0) processFile(imageFiles[0]);
-        },
+                e.preventDefault();
+                e.stopPropagation();
+                const files = Array.from(e.dataTransfer.files);
+                const imageFiles = files.filter((file) => isImageFile(file));
+                if (imageFiles.length > 0) processFile(imageFiles[0]);
+            },
             [isImageFile, processFile]
         );
 
@@ -553,20 +553,23 @@ export const PromptInputBox = React.forwardRef(
 
         const openImageModal = (imageUrl: string) => setSelectedImage(imageUrl);
 
-        const handlePaste = React.useCallback((e: ClipboardEvent) => {
-            const items = e.clipboardData?.items;
-            if (!items) return;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    const file = items[i].getAsFile();
-                    if (file) {
-                        e.preventDefault();
-                        processFile(file);
-                        break;
+        const handlePaste = React.useCallback(
+            (e: ClipboardEvent) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (file) {
+                            e.preventDefault();
+                            processFile(file);
+                            break;
+                        }
                     }
                 }
-            }
-        }, [processFile]);
+            },
+            [processFile]
+        );
 
         React.useEffect(() => {
             document.addEventListener('paste', handlePaste);

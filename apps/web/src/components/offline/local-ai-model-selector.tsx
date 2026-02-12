@@ -31,8 +31,8 @@ export function LocalAIModelSelector() {
                     <div>
                         <h3 className="font-medium text-foreground">WebGPU Not Available</h3>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Your browser doesn't support WebGPU, which is required for local AI.
-                            Try using Chrome 113+ or Edge 113+.
+                            Your browser doesn't support WebGPU, which is required for local AI. Try
+                            using Chrome 113+ or Edge 113+.
                         </p>
                     </div>
                 </div>

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkle } from '@phosphor-icons/react';
+import { Sparkle, X } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useYulaStore } from '@/stores/yula-store';
-import { FeatureTour, features, FeatureCard } from './feature-tour';
+import { FeatureCard, FeatureTour, features } from './feature-tour';
 
 interface WelcomeGuideProps {
     forceShow?: boolean;
@@ -89,7 +89,10 @@ export function WelcomeGuide({ forceShow = false, onClose }: WelcomeGuideProps) 
                                         transition={{ type: 'spring', delay: 0.1 }}
                                         className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20"
                                     >
-                                        <Sparkle className="h-10 w-10 text-violet-400" weight="fill" />
+                                        <Sparkle
+                                            className="h-10 w-10 text-violet-400"
+                                            weight="fill"
+                                        />
                                     </motion.div>
 
                                     {/* Title */}
@@ -105,16 +108,23 @@ export function WelcomeGuide({ forceShow = false, onClose }: WelcomeGuideProps) 
                                     {/* Important distinction */}
                                     <div className="mb-8 rounded-xl border border-white/10 bg-white/[0.02] p-4">
                                         <p className="text-sm leading-relaxed text-zinc-300">
-                                            <span className="font-semibold text-white">Yula isn't a chatbot.</span>{' '}
-                                            It's an intelligent layer that learns, anticipates, and assists.
-                                            Think of it as your personal AI companion that grows with you.
+                                            <span className="font-semibold text-white">
+                                                Yula isn't a chatbot.
+                                            </span>{' '}
+                                            It's an intelligent layer that learns, anticipates, and
+                                            assists. Think of it as your personal AI companion that
+                                            grows with you.
                                         </p>
                                     </div>
 
                                     {/* Feature preview grid */}
                                     <div className="mb-8 grid w-full grid-cols-2 gap-3">
                                         {features.map((feature, i) => (
-                                            <FeatureCard key={feature.id} feature={feature} index={i} />
+                                            <FeatureCard
+                                                key={feature.id}
+                                                feature={feature}
+                                                index={i}
+                                            />
                                         ))}
                                     </div>
 
@@ -174,9 +184,7 @@ export function WelcomeGuideTrigger({ className }: { className?: string }) {
                 <Sparkle className="h-4 w-4" />
                 Show Welcome Guide
             </button>
-            {showGuide && (
-                <WelcomeGuide forceShow onClose={() => setShowGuide(false)} />
-            )}
+            {showGuide && <WelcomeGuide forceShow onClose={() => setShowGuide(false)} />}
         </>
     );
 }

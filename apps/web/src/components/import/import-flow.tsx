@@ -181,7 +181,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
                         body: JSON.stringify({
-                            selectedIds: conversations.filter(e => e.selected).map(e => e.id),
+                            selectedIds: conversations.filter((e) => e.selected).map((e) => e.id),
                         }),
                     }
                 );

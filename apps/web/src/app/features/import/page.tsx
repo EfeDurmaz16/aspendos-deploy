@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
 import { UploadSimple } from '@phosphor-icons/react/dist/ssr';
-import { FeaturePage, type FeatureData } from '@/components/seo/FeaturePage';
+import type { Metadata } from 'next';
+import { type FeatureData, FeaturePage } from '@/components/seo/FeaturePage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
@@ -22,53 +22,63 @@ export const metadata: Metadata = generatePageMetadata(
 const importData: FeatureData = {
     name: 'Import Your AI History',
     slug: 'import',
-    tagline: 'Bring your ChatGPT and Claude conversations to YULA. Your AI history becomes searchable semantic memory - never start from scratch again.',
+    tagline:
+        'Bring your ChatGPT and Claude conversations to YULA. Your AI history becomes searchable semantic memory - never start from scratch again.',
     description: `YULA's Import feature lets you bring your entire conversation history from ChatGPT and Claude. Simply export your data from OpenAI or Anthropic, upload to YULA, and all your past conversations become part of your semantic memory. Ask any AI model about discussions you had months ago on another platform - YULA remembers.`,
     heroIcon: <UploadSimple className="w-16 h-16 text-primary" weight="duotone" />,
     benefits: [
         {
             title: 'Never Start Fresh',
-            description: 'Switching to YULA does not mean losing your AI history. Import everything and continue where you left off.',
+            description:
+                'Switching to YULA does not mean losing your AI history. Import everything and continue where you left off.',
         },
         {
             title: 'Unified Memory',
-            description: 'Conversations from ChatGPT, Claude, and YULA all become part of one searchable semantic memory.',
+            description:
+                'Conversations from ChatGPT, Claude, and YULA all become part of one searchable semantic memory.',
         },
         {
             title: 'Cross-Model Access',
-            description: 'Ask GPT-5 about something you discussed with Claude, or vice versa. All history is accessible to all models.',
+            description:
+                'Ask GPT-5 about something you discussed with Claude, or vice versa. All history is accessible to all models.',
         },
         {
             title: 'Semantic Search',
-            description: 'Imported conversations are embedded for semantic search. Find discussions by meaning, not just keywords.',
+            description:
+                'Imported conversations are embedded for semantic search. Find discussions by meaning, not just keywords.',
         },
     ],
     howItWorks: [
         {
             step: 1,
             title: 'Export from ChatGPT/Claude',
-            description: 'Go to settings in ChatGPT or Claude and request your data export. You\'ll receive a file with your conversations.',
+            description:
+                "Go to settings in ChatGPT or Claude and request your data export. You'll receive a file with your conversations.",
         },
         {
             step: 2,
             title: 'Upload to YULA',
-            description: 'In YULA\'s Import section, upload your export file. YULA processes and converts it automatically.',
+            description:
+                "In YULA's Import section, upload your export file. YULA processes and converts it automatically.",
         },
         {
             step: 3,
             title: 'Embedding and indexing',
-            description: 'YULA converts your conversations into vector embeddings and indexes them in your semantic memory.',
+            description:
+                'YULA converts your conversations into vector embeddings and indexes them in your semantic memory.',
         },
         {
             step: 4,
             title: 'Access anywhere',
-            description: 'Your imported history is now searchable and available as context for any AI model you use.',
+            description:
+                'Your imported history is now searchable and available as context for any AI model you use.',
         },
     ],
     useCases: [
         {
             title: 'ChatGPT Refugees',
-            description: 'Moving away from ChatGPT? Bring all your conversations with you. No knowledge is lost.',
+            description:
+                'Moving away from ChatGPT? Bring all your conversations with you. No knowledge is lost.',
         },
         {
             title: 'Claude Users',
@@ -76,11 +86,13 @@ const importData: FeatureData = {
         },
         {
             title: 'AI Power Users',
-            description: 'Consolidate history from multiple AI platforms into one unified, searchable memory.',
+            description:
+                'Consolidate history from multiple AI platforms into one unified, searchable memory.',
         },
         {
             title: 'Long-term Projects',
-            description: 'Projects spanning months across different AI tools? Import everything and maintain full context.',
+            description:
+                'Projects spanning months across different AI tools? Import everything and maintain full context.',
         },
     ],
     faqs: [

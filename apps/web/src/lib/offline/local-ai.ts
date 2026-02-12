@@ -77,7 +77,8 @@ class LocalAIService {
         if (!('gpu' in navigator)) return false;
 
         try {
-            const gpu = (navigator as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } }).gpu;
+            const gpu = (navigator as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } })
+                .gpu;
             if (!gpu) return false;
             const adapter = await gpu.requestAdapter();
             return adapter !== null;

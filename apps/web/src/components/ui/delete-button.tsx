@@ -1,10 +1,10 @@
 'use client';
 
-import { Button } from './button';
-import { cn } from '@/lib/utils';
-import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { Check, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { Button } from './button';
 
 export interface NativeDeleteProps {
     /**

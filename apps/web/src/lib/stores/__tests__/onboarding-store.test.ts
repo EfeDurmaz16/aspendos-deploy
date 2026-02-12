@@ -7,11 +7,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    ONBOARDING_STEPS,
-    STEP_ORDER,
-    SPOTLIGHT_TARGETS,
     getSpotlightTarget,
+    ONBOARDING_STEPS,
     type OnboardingStep,
+    SPOTLIGHT_TARGETS,
+    STEP_ORDER,
 } from '../onboarding-store';
 
 // ==========================================

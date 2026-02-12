@@ -1,30 +1,24 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useState } from "react";
-import Image from "next/image";
-import { Loader2, X } from "lucide-react";
-import { signUp } from "@/lib/auth-client";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { Loader2, X } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { signUp } from '@/lib/auth-client';
 
 export default function SignUp() {
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [passwordConfirmation, setPasswordConfirmation] = useState("");
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [image, setImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const router = useRouter();
@@ -126,9 +120,7 @@ export default function SignUp() {
                             autoComplete="new-password"
                             placeholder="Password"
                         />
-                        {passwordError && (
-                            <p className="text-xs text-red-500">{passwordError}</p>
-                        )}
+                        {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="password_confirmation">Confirm Password</Label>
@@ -180,12 +172,15 @@ export default function SignUp() {
                             checked={tosAccepted}
                             onCheckedChange={(checked) => setTosAccepted(checked === true)}
                         />
-                        <Label htmlFor="tos" className="text-sm font-normal leading-tight cursor-pointer">
-                            I agree to the{" "}
+                        <Label
+                            htmlFor="tos"
+                            className="text-sm font-normal leading-tight cursor-pointer"
+                        >
+                            I agree to the{' '}
                             <Link href="/terms" className="underline hover:text-primary">
                                 Terms of Service
-                            </Link>{" "}
-                            and{" "}
+                            </Link>{' '}
+                            and{' '}
                             <Link href="/privacy" className="underline hover:text-primary">
                                 Privacy Policy
                             </Link>
@@ -200,8 +195,8 @@ export default function SignUp() {
                                 email,
                                 password,
                                 name: `${firstName} ${lastName}`,
-                                image: image ? await convertImageToBase64(image) : "",
-                                callbackURL: "/dashboard",
+                                image: image ? await convertImageToBase64(image) : '',
+                                callbackURL: '/dashboard',
                                 fetchOptions: {
                                     onResponse: () => {
                                         setLoading(false);
@@ -213,7 +208,7 @@ export default function SignUp() {
                                         toast.error(ctx.error.message);
                                     },
                                     onSuccess: () => {
-                                        router.push("/dashboard");
+                                        router.push('/dashboard');
                                     },
                                 },
                             });
@@ -222,7 +217,7 @@ export default function SignUp() {
                         {loading ? (
                             <Loader2 size={16} className="animate-spin" />
                         ) : (
-                            "Create your account"
+                            'Create your account'
                         )}
                     </Button>
                 </div>

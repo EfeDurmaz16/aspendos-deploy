@@ -1,6 +1,6 @@
-import { useState, type ImgHTMLAttributes } from 'react';
-import { cn } from '@/lib/utils';
 import { Image as ImageIcon } from 'lucide-react';
+import { type ImgHTMLAttributes, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ImageWithFallbackProps extends ImgHTMLAttributes<HTMLImageElement> {
     fallbackClassName?: string;

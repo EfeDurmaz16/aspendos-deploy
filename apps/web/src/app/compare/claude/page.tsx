@@ -21,8 +21,10 @@ export const metadata: Metadata = generatePageMetadata(
 const claudeData: CompetitorData = {
     name: 'Claude',
     slug: 'claude',
-    tagline: 'YULA gives you Claude plus 12+ other AI models, persistent memory across all of them, and the ability to import your Claude history.',
-    description: 'Claude by Anthropic is known for its safety-focused approach, long context windows, and excellent writing capabilities.',
+    tagline:
+        'YULA gives you Claude plus 12+ other AI models, persistent memory across all of them, and the ability to import your Claude history.',
+    description:
+        'Claude by Anthropic is known for its safety-focused approach, long context windows, and excellent writing capabilities.',
     logoColor: 'bg-orange-500',
     strengths: [
         'Excellent at nuanced, long-form writing',
@@ -43,7 +45,11 @@ const claudeData: CompetitorData = {
         { feature: 'Claude Access', competitor: true, yula: true },
         { feature: 'GPT-5 Access', competitor: false, yula: true },
         { feature: 'Gemini Access', competitor: false, yula: true },
-        { feature: 'Persistent Memory', competitor: 'Per-conversation', yula: 'Cross-conversation' },
+        {
+            feature: 'Persistent Memory',
+            competitor: 'Per-conversation',
+            yula: 'Cross-conversation',
+        },
         { feature: 'Import Claude History', competitor: false, yula: true },
         { feature: 'Multi-Model Comparison', competitor: false, yula: true },
         { feature: 'Proactive Reminders', competitor: false, yula: true },
