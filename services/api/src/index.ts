@@ -17,10 +17,17 @@ import { getPrivacyPolicy, getTermsOfService } from './lib/legal';
 import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
 import { initSentry, Sentry, setSentryRequestContext, setSentryUserContext } from './lib/sentry';
 import { getWebhookCategories, getWebhookEventsCatalog } from './lib/webhook-events';
+import { jobQueue } from './lib/job-queue';
 import { apiVersion } from './middleware/api-version';
+import { cacheControl } from './middleware/cache';
+import { compression } from './middleware/compression';
+import { endpointRateLimit } from './middleware/endpoint-rate-limit';
+import { idempotency } from './middleware/idempotency';
+import { metricsMiddleware } from './middleware/metrics';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
 import { sanitizeBody } from './middleware/sanitize';
 import { requestTimeout } from './middleware/timeout';
+import adminRoutes from './routes/admin';
 import analyticsRoutes from './routes/analytics';
 import apiKeysRoutes from './routes/api-keys';
 import billingRoutes from './routes/billing';
@@ -34,6 +41,7 @@ import notificationsRoutes from './routes/notifications';
 import pacRoutes from './routes/pac';
 import promptTemplatesRoutes from './routes/prompt-templates';
 import schedulerRoutes from './routes/scheduler';
+import searchRoutes from './routes/search';
 import voiceRoutes from './routes/voice';
 
 // Validate environment variables on startup
@@ -56,6 +64,9 @@ let isShuttingDown = false;
 
 // Middleware
 app.use('*', logger());
+
+// Metrics middleware (must be early to track all requests)
+app.use('*', metricsMiddleware());
 
 // Reject requests during shutdown
 app.use('*', async (c, next) => {
@@ -89,6 +100,7 @@ app.use('*', async (c, next) => {
     // API Versioning Headers
     c.header('X-API-Version', '1.0.0');
     c.header('X-Request-Id', requestId);
+    c.header('X-Response-Time', `${duration}ms`);
 
     // Helmet-equivalent security headers
     c.header('X-Content-Type-Options', 'nosniff');
@@ -143,6 +155,12 @@ app.use('*', sanitizeBody());
 
 // API versioning middleware
 app.use('/api/*', apiVersion());
+
+// Compression middleware (gzip/brotli for responses > 1KB)
+app.use('*', compression());
+
+// Cache control middleware (Cache-Control headers, ETag support)
+app.use('*', cacheControl());
 
 // Sentry error handling middleware
 app.use('*', async (c, next) => {
@@ -276,6 +294,12 @@ app.use('*', async (c, next) => {
 
 // Apply rate limiting
 app.use('*', rateLimit());
+
+// Apply per-endpoint rate limiting (more specific limits per endpoint)
+app.use('*', endpointRateLimit());
+
+// Apply idempotency middleware for POST/PUT/PATCH requests
+app.use('*', idempotency());
 
 // Global error handler with structured error handling
 app.onError((err, c) => {
@@ -440,6 +464,14 @@ app.get('/ready', async (c) => {
 app.get('/health/deep', async (c) => {
     const result = await checkReadiness();
     return c.json(result);
+});
+
+// Prometheus metrics endpoint
+app.get('/metrics', async (c) => {
+    const { getMetricsText } = await import('./lib/metrics');
+    return c.text(getMetricsText(), 200, {
+        'Content-Type': 'text/plain; version=0.0.4',
+    });
 });
 
 // Models endpoint - now uses local configuration
@@ -1556,7 +1588,31 @@ app.get('/api/changelog', (c) => {
 app.get('/api/legal/terms', (c) => c.json(getTermsOfService()));
 app.get('/api/legal/privacy', (c) => c.json(getPrivacyPolicy()));
 
+// ─── Job Queue Status ────────────────────────────────────────────────────────
+app.get('/api/jobs/stats', (c) => {
+    const queue = c.req.query('queue');
+    return c.json({
+        stats: jobQueue.getStats(queue || undefined),
+        deadLetterQueue: jobQueue.getDeadLetterQueue().length,
+    });
+});
+
+app.get('/api/jobs/dead-letter', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ jobs: jobQueue.getDeadLetterQueue().slice(0, 100) });
+});
+
+app.post('/api/jobs/retry/:jobId', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    const jobId = c.req.param('jobId');
+    const success = jobQueue.retryDead(jobId);
+    return c.json({ success });
+});
+
 // API Routes
+app.route('/api/admin', adminRoutes);
 app.route('/api/chat', chatRoutes);
 app.route('/api/council', councilRoutes);
 app.route('/api/import', importRoutes);
@@ -1570,6 +1626,7 @@ app.route('/api/analytics', analyticsRoutes);
 app.route('/api/gamification', gamificationRoutes);
 app.route('/api/api-keys', apiKeysRoutes);
 app.route('/api/templates', promptTemplatesRoutes);
+app.route('/api/search', searchRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);
@@ -1604,6 +1661,12 @@ async function startServer() {
         // Give in-flight requests time to complete
         await new Promise((resolve) => setTimeout(resolve, 30000));
 
+        try {
+            await jobQueue.shutdown(10000);
+            console.log('✅ Job queue drained');
+        } catch (error) {
+            console.error('Error draining job queue:', error);
+        }
         try {
             await closeMCPClients();
             console.log('✅ MCP clients closed');

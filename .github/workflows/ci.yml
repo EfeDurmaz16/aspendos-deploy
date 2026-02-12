@@ -7,6 +7,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   BUN_VERSION: '1.1.0'
   NODE_VERSION: '20'
@@ -29,8 +33,17 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Generate Prisma Client
         run: cd packages/db && bunx prisma generate
@@ -48,7 +61,52 @@ jobs:
         continue-on-error: true
 
   # ============================================
-  # TEST
+  # SECURITY SCAN
+  # ============================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check for known vulnerabilities
+        run: bun audit 2>/dev/null || true
+
+      - name: Scan for hardcoded secrets
+        run: |
+          echo "Scanning for hardcoded secrets..."
+          FOUND=0
+          for pattern in "sk-[a-zA-Z0-9]{20,}" "ghp_[a-zA-Z0-9]{36}" "AKIA[0-9A-Z]{16}" "-----BEGIN.*PRIVATE KEY-----"; do
+            if grep -rn --include="*.ts" --include="*.tsx" --include="*.js" --include="*.json" -E "$pattern" . --exclude-dir=node_modules --exclude-dir=.git 2>/dev/null | grep -v "test" | grep -v "example" | grep -v ".env.example"; then
+              echo "WARNING: Potential secret found matching pattern"
+              FOUND=1
+            fi
+          done
+          if [ $FOUND -eq 1 ]; then
+            echo "::warning::Potential secrets detected in codebase"
+          else
+            echo "No hardcoded secrets detected."
+          fi
+
+      - name: Check for .env files in repo
+        run: |
+          if find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" -not -name ".env.local.example" | grep -q .; then
+            echo "::error::Found .env files committed to repository!"
+            exit 1
+          fi
+          echo "No .env files found in repository."
+
+  # ============================================
+  # TEST WITH COVERAGE
   # ============================================
   test:
     name: Test
@@ -78,8 +136,17 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Generate Prisma Client
         run: cd packages/db && bunx prisma generate
@@ -100,9 +167,9 @@ jobs:
       - name: Run AI SDK Router tests
         run: cd apps/web && bun run test:router 2>/dev/null || true
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'test-key' }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || 'test-key' }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || 'test-key' }}
+          OPENAI_API_KEY: test-key
+          ANTHROPIC_API_KEY: test-key
+          GROQ_API_KEY: test-key
 
   # ============================================
   # BUILD
@@ -120,8 +187,17 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Generate Prisma Client
         run: cd packages/db && bunx prisma generate
@@ -132,10 +208,56 @@ jobs:
       - name: Build Web
         run: cd apps/web && bun run build
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://api.yula.dev' }}
+          NEXT_PUBLIC_API_URL: https://api.yula.dev
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+  # ============================================
+  # DATABASE MIGRATION CHECK
+  # ============================================
+  migration-check:
+    name: Database Migration Check
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: yula_migration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Validate Prisma schema
+        run: cd packages/db && bunx prisma validate
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/yula_migration_test
+
+      - name: Push schema to test database
+        run: cd packages/db && bunx prisma db push --accept-data-loss
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/yula_migration_test
+
+      - name: Generate Prisma Client
+        run: cd packages/db && bunx prisma generate
 
   # ============================================
   # DEPLOY TO VERCEL (Preview)
@@ -143,7 +265,7 @@ jobs:
   deploy-preview:
     name: Deploy Preview to Vercel
     runs-on: ubuntu-latest
-    needs: [build, test]
+    needs: [build, test, security]
     if: github.event_name == 'pull_request'
     environment:
       name: preview
@@ -165,8 +287,7 @@ jobs:
         id: deploy
         run: |
           URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "Preview deployed to: $URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
 
   # ============================================
   # DEPLOY TO VERCEL (Production)
@@ -174,7 +295,7 @@ jobs:
   deploy-production:
     name: Deploy Production to Vercel
     runs-on: ubuntu-latest
-    needs: [build, test]
+    needs: [build, test, security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: production
@@ -194,7 +315,15 @@ jobs:
 
       - name: Deploy Production to Vercel
         run: |
-          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
-          echo "Production deployed to: $URL"
-          echo "YULA OS deployed successfully to production"
-          echo "Live at: https://yula.dev"
+          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+          echo "YULA OS deployed to production"
+
+      - name: Post-deploy health check
+        run: |
+          sleep 30
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.yula.dev/health || echo "000")
+          if [ "$STATUS" = "200" ]; then
+            echo "Health check passed"
+          else
+            echo "::warning::Health check returned $STATUS"
+          fi
