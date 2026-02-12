@@ -31,9 +31,17 @@ app.get('/dashboard/stats', async (c) => {
  */
 app.get('/dashboard/list', async (c) => {
     const userId = c.get('userId')!;
+    const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
     const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') || '50', 10), 100));
+    const offset = (page - 1) * limit;
 
-    const memories = await openMemory.listMemories(userId, { limit });
+    // Get total count first
+    const allMemories = await openMemory.listMemories(userId, { limit: 10000 });
+    const total = allMemories.length;
+    const totalPages = Math.ceil(total / limit);
+
+    // Get paginated slice
+    const memories = allMemories.slice(offset, offset + limit);
 
     // Map to frontend expected format
     return c.json({
@@ -47,9 +55,12 @@ app.get('/dashboard/list', async (c) => {
             isPinned: false,
             isActive: true,
         })),
-        total: memories.length,
-        page: 1,
-        totalPages: 1,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+        },
     });
 });
 
@@ -233,7 +244,7 @@ app.post('/search', async (c) => {
         return c.json({ error: 'query must be 2,000 characters or less' }, 400);
     }
 
-    const limit = Math.max(1, Math.min(parseInt(body.limit) || 5, 50));
+    const limit = Math.max(1, Math.min(parseInt(body.limit, 10) || 5, 50));
     const VALID_SECTORS = ['semantic', 'episodic', 'procedural', 'emotional', 'reflective'];
     const sector = VALID_SECTORS.includes(body.sector) ? body.sector : undefined;
 
@@ -243,7 +254,7 @@ app.post('/search', async (c) => {
 
     // Filter by sector if specified
     if (sector) {
-        memories = memories.filter(m => m.sector === sector).slice(0, limit);
+        memories = memories.filter((m) => m.sector === sector).slice(0, limit);
     }
 
     return c.json({

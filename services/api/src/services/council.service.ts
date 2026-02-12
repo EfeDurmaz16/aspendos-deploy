@@ -104,21 +104,43 @@ function getProvider(modelId: string) {
 }
 
 /**
+ * MOAT: Learn user's persona preferences from selection history.
+ * Orders personas by preference so the user's favorite appears first.
+ * Competitors show static order; we learn and adapt.
+ */
+export async function getPersonaPreferenceOrder(userId: string): Promise<PersonaType[]> {
+    const selections = await prisma.councilSession.groupBy({
+        by: ['selectedPersona'],
+        where: {
+            userId,
+            selectedPersona: { not: null },
+        },
+        _count: { selectedPersona: true },
+        orderBy: { _count: { selectedPersona: 'desc' } },
+    });
+
+    const defaultOrder: PersonaType[] = ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
+
+    if (selections.length === 0) return defaultOrder;
+
+    // Put selected personas first, then remaining in default order
+    const preferred = selections
+        .map((s) => s.selectedPersona as PersonaType)
+        .filter((p): p is PersonaType => p !== null && defaultOrder.includes(p));
+    const remaining = defaultOrder.filter((p) => !preferred.includes(p));
+
+    return [...preferred, ...remaining];
+}
+
+/**
  * Get user's preferred persona ordering based on historical selections.
  * Preferred personas stream first, giving the user a better experience.
  */
 async function getPersonaOrdering(userId: string): Promise<PersonaType[]> {
-    const allPersonas = Object.keys(COUNCIL_PERSONAS) as PersonaType[];
-
     try {
-        const stats = await getCouncilStats(userId);
-        if (!stats.insights || !stats.insights.personaScores) return allPersonas;
-
-        const scores = stats.insights.personaScores;
-        // Sort by preference score (highest first), keeping all personas
-        return [...allPersonas].sort((a, b) => (scores[b] || 0) - (scores[a] || 0));
+        return await getPersonaPreferenceOrder(userId);
     } catch {
-        return allPersonas;
+        return ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
     }
 }
 
@@ -191,7 +213,12 @@ export async function* streamPersonaResponse(
     sessionId: string,
     persona: PersonaType,
     query: string
-): AsyncGenerator<{ type: 'text' | 'done' | 'error'; content?: string; latencyMs?: number; usage?: { promptTokens: number; completionTokens: number } }> {
+): AsyncGenerator<{
+    type: 'text' | 'done' | 'error';
+    content?: string;
+    latencyMs?: number;
+    usage?: { promptTokens: number; completionTokens: number };
+}> {
     const startTime = Date.now();
     const personaDef = COUNCIL_PERSONAS[persona];
 
@@ -303,13 +330,32 @@ export async function selectResponse(sessionId: string, userId: string, persona:
     // Store this as reflective memory to inform future responses and personalization.
     // Competitors show 4 answers; we learn which thinking styles the user values and adapt.
     try {
-        const openMemory = await import('./openmemory.service');
-        const personaName = COUNCIL_PERSONAS[persona]?.name || persona;
-        await openMemory.addMemory(
-            `User prefers ${personaName} perspective for decision-making`,
-            userId,
-            { sector: 'reflective', metadata: { source: 'council_selection', persona } }
-        );
+        const response = await prisma.councilResponse.findFirst({
+            where: { sessionId, persona },
+            select: { content: true },
+        });
+
+        if (response?.content) {
+            const openMemory = await import('./openmemory.service');
+            const personaName = COUNCIL_PERSONAS[persona]?.name || persona;
+
+            // Save both preference pattern and the actual insight
+            await openMemory.addMemory(
+                `User prefers ${personaName} perspective for decision-making`,
+                userId,
+                { sector: 'reflective', metadata: { source: 'council_selection', persona } }
+            );
+
+            // Save the selected response content as an episodic insight
+            await openMemory.addMemory(
+                `Council insight (${personaName}): ${response.content.slice(0, 500)}`,
+                userId,
+                {
+                    sector: 'episodic',
+                    metadata: { source: 'council_selection', sessionId, persona },
+                }
+            );
+        }
     } catch {
         /* non-blocking cross-system bridge */
     }
@@ -377,7 +423,13 @@ Please synthesize these perspectives into a balanced recommendation.`,
         data: { synthesis },
     });
 
-    return { text: synthesis, usage: { promptTokens: usage?.promptTokens || 0, completionTokens: usage?.completionTokens || 0 } };
+    return {
+        text: synthesis,
+        usage: {
+            promptTokens: usage?.promptTokens || 0,
+            completionTokens: usage?.completionTokens || 0,
+        },
+    };
 }
 
 /**
@@ -431,7 +483,7 @@ export async function getCouncilStats(userId: string) {
 
 interface CouncilInsights {
     dominantPersona: string | null;
-    diversityScore: number;       // 0-100, how evenly distributed selections are
+    diversityScore: number; // 0-100, how evenly distributed selections are
     recommendation: string;
     personaScores: Record<string, number>; // preference score per persona
 }
@@ -444,7 +496,7 @@ interface CouncilInsights {
  */
 function computeCouncilInsights(
     preferences: Record<string, number>,
-    totalSessions: number,
+    totalSessions: number
 ): CouncilInsights {
     const personas = Object.keys(COUNCIL_PERSONAS) as PersonaType[];
     const totalSelections = Object.values(preferences).reduce((a, b) => a + b, 0);
@@ -453,7 +505,8 @@ function computeCouncilInsights(
         return {
             dominantPersona: null,
             diversityScore: 0,
-            recommendation: 'Start selecting preferred responses to help Council learn your thinking style.',
+            recommendation:
+                'Start selecting preferred responses to help Council learn your thinking style.',
             personaScores: {},
         };
     }
@@ -483,9 +536,10 @@ function computeCouncilInsights(
     // Compute preference scores (0-100)
     const personaScores: Record<string, number> = {};
     for (const persona of personas) {
-        personaScores[persona] = totalSelections > 0
-            ? Math.round(((preferences[persona] || 0) / totalSelections) * 100)
-            : 0;
+        personaScores[persona] =
+            totalSelections > 0
+                ? Math.round(((preferences[persona] || 0) / totalSelections) * 100)
+                : 0;
     }
 
     // Generate recommendation
@@ -495,7 +549,8 @@ function computeCouncilInsights(
         : null;
 
     if (diversityScore > 80) {
-        recommendation = 'You value diverse perspectives equally. Council is providing balanced value.';
+        recommendation =
+            'You value diverse perspectives equally. Council is providing balanced value.';
     } else if (diversityScore > 50) {
         recommendation = `You tend toward ${dominantName || 'one perspective'}, but still appreciate variety. Good balance.`;
     } else if (maxCount > totalSelections * 0.6) {

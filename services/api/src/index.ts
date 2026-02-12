@@ -4,15 +4,13 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { getModelsForTier, SUPPORTED_MODELS } from './lib/ai-providers';
 import { auth } from './lib/auth';
+import { breakers } from './lib/circuit-breaker';
 import { validateEnv } from './lib/env';
-import {
-    closeMCPClients,
-    getConnectedMCPServers,
-    getMCPStatus,
-    initializeMCPClients,
-} from './lib/mcp-clients';
+import { AppError } from './lib/errors';
+import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
 import { initSentry, Sentry } from './lib/sentry';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
+import { requestTimeout } from './middleware/timeout';
 import analyticsRoutes from './routes/analytics';
 import billingRoutes from './routes/billing';
 // Routes
@@ -42,9 +40,20 @@ const app = new Hono<{ Variables: Variables }>();
 // Middleware
 app.use('*', logger());
 
-// Security Headers (Helmet-style)
+// Request timeout middleware (30 seconds)
+app.use('*', requestTimeout(30000));
+
+// Security Headers (Helmet-style) + API Versioning
 app.use('*', async (c, next) => {
+    // Generate request ID for tracing
+    const requestId = crypto.randomUUID();
+    c.set('requestId', requestId);
+
     await next();
+
+    // API Versioning Headers
+    c.header('X-API-Version', '1.0.0');
+    c.header('X-Request-Id', requestId);
 
     // Helmet-equivalent security headers
     c.header('X-Content-Type-Options', 'nosniff');
@@ -101,7 +110,13 @@ app.use('*', async (c, next) => {
     } catch (err) {
         // Capture error in Sentry
         // Sanitize headers before sending to Sentry (never log auth tokens)
-        const SENSITIVE_HEADERS = ['authorization', 'cookie', 'x-cron-secret', 'x-polar-signature', 'polar-signature'];
+        const SENSITIVE_HEADERS = [
+            'authorization',
+            'cookie',
+            'x-cron-secret',
+            'x-polar-signature',
+            'polar-signature',
+        ];
         const safeHeaders = Object.fromEntries(
             [...c.req.raw.headers.entries()].filter(
                 ([key]) => !SENSITIVE_HEADERS.includes(key.toLowerCase())
@@ -209,27 +224,99 @@ app.use('*', async (c, next) => {
 // Apply rate limiting
 app.use('*', rateLimit());
 
-// Global error handler
+// Global error handler with structured error handling
 app.onError((err, c) => {
     Sentry.captureException(err);
     console.error('Unhandled error:', err);
-    return c.json({ error: 'Internal Server Error' }, 500);
+
+    // Handle AppError instances
+    if (err instanceof AppError) {
+        return c.json(
+            {
+                error: err.message,
+                code: err.code,
+            },
+            err.statusCode
+        );
+    }
+
+    // Default error response
+    return c.json(
+        {
+            error: 'Internal Server Error',
+            code: 'INTERNAL_ERROR',
+        },
+        500
+    );
 });
 
-// Health check with database connectivity
+// Enhanced health check with database connectivity and circuit breaker states
 app.get('/health', async (c) => {
+    const _startTime = Date.now();
+    const dependencies: Record<string, { status: 'up' | 'down'; latencyMs?: number }> = {};
+
+    // Check database
+    let dbStatus: 'up' | 'down' = 'down';
+    let dbLatency = 0;
     try {
         const { prisma } = await import('./lib/prisma');
+        const dbStart = Date.now();
         await prisma.$queryRawUnsafe('SELECT 1');
-        return c.json({
-            status: 'ok',
-            service: 'api',
-            version: '0.3.0',
-            timestamp: new Date().toISOString(),
-        });
-    } catch {
-        return c.json({ status: 'degraded', service: 'api', timestamp: new Date().toISOString() }, 503);
+        dbLatency = Date.now() - dbStart;
+        dbStatus = 'up';
+    } catch (error) {
+        console.error('[Health] Database check failed:', error);
     }
+    dependencies.database = { status: dbStatus, latencyMs: dbLatency };
+
+    // Check Qdrant (via circuit breaker)
+    let qdrantStatus: 'up' | 'down' = 'down';
+    try {
+        const qdrantStart = Date.now();
+        await breakers.qdrant.execute(async () => {
+            const { getMemoryClient } = await import('./services/openmemory.service');
+            const mem = getMemoryClient();
+            // Just check if client is available, don't make actual call
+            return mem;
+        });
+        const qdrantLatency = Date.now() - qdrantStart;
+        qdrantStatus = 'up';
+        dependencies.qdrant = { status: qdrantStatus, latencyMs: qdrantLatency };
+    } catch {
+        dependencies.qdrant = { status: qdrantStatus };
+    }
+
+    // Get circuit breaker states
+    const circuitBreakers = {
+        openai: breakers.openai.getState(),
+        anthropic: breakers.anthropic.getState(),
+        groq: breakers.groq.getState(),
+        qdrant: breakers.qdrant.getState(),
+        google: breakers.google.getState(),
+    };
+
+    // Determine overall status
+    let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    if (dbStatus === 'down') {
+        overallStatus = 'unhealthy';
+    } else if (
+        qdrantStatus === 'down' ||
+        Object.values(circuitBreakers).some((cb) => cb.state === 'OPEN')
+    ) {
+        overallStatus = 'degraded';
+    }
+
+    const response = {
+        status: overallStatus,
+        version: '0.3.0',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        dependencies,
+        circuitBreakers,
+    };
+
+    const statusCode = overallStatus === 'unhealthy' ? 503 : 200;
+    return c.json(response, statusCode);
 });
 
 // Models endpoint - now uses local configuration
@@ -289,6 +376,280 @@ app.get('/api/models/pinned', (c) => {
     });
 });
 
+// API Documentation Endpoint
+app.get('/api/docs', (c) => {
+    return c.json({
+        name: 'YULA OS API',
+        version: '1.0.0',
+        endpoints: [
+            { method: 'GET', path: '/api/chat', description: 'List chats', auth: true },
+            { method: 'POST', path: '/api/chat', description: 'Create chat', auth: true },
+            { method: 'GET', path: '/api/chat/:id', description: 'Get chat details', auth: true },
+            { method: 'PATCH', path: '/api/chat/:id', description: 'Update chat', auth: true },
+            { method: 'DELETE', path: '/api/chat/:id', description: 'Delete chat', auth: true },
+            {
+                method: 'POST',
+                path: '/api/chat/:id/message',
+                description: 'Send message',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/chat/:id/multi',
+                description: 'Multi-model comparison',
+                auth: true,
+            },
+            { method: 'POST', path: '/api/chat/:id/fork', description: 'Fork chat', auth: true },
+            {
+                method: 'POST',
+                path: '/api/chat/:id/share',
+                description: 'Create share token',
+                auth: true,
+            },
+            {
+                method: 'DELETE',
+                path: '/api/chat/:id/share',
+                description: 'Revoke share token',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/chat/message/:messageId/feedback',
+                description: 'Add message feedback',
+                auth: true,
+            },
+            { method: 'GET', path: '/api/memory', description: 'Search memories', auth: true },
+            { method: 'POST', path: '/api/memory', description: 'Add memory', auth: true },
+            {
+                method: 'POST',
+                path: '/api/memory/search',
+                description: 'Semantic search',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/memory/reinforce/:id',
+                description: 'Reinforce memory',
+                auth: true,
+            },
+            { method: 'DELETE', path: '/api/memory/:id', description: 'Delete memory', auth: true },
+            {
+                method: 'GET',
+                path: '/api/memory/dashboard/stats',
+                description: 'Memory statistics',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/memory/dashboard/list',
+                description: 'List memories (paginated)',
+                auth: true,
+            },
+            {
+                method: 'PATCH',
+                path: '/api/memory/dashboard/:id',
+                description: 'Update memory',
+                auth: true,
+            },
+            {
+                method: 'DELETE',
+                path: '/api/memory/dashboard/:id',
+                description: 'Delete memory',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/memory/dashboard/bulk-delete',
+                description: 'Bulk delete memories',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/memory/consolidate',
+                description: 'Consolidate memories',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/council/sessions',
+                description: 'Create council session',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/council/sessions',
+                description: 'List council sessions',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/council/sessions/:id',
+                description: 'Get session details',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/council/sessions/:id/stream',
+                description: 'Stream council responses',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/council/sessions/:id/select',
+                description: 'Select preferred response',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/council/sessions/:id/synthesize',
+                description: 'Generate synthesis',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/council/personas',
+                description: 'Get available personas',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/council/stats',
+                description: 'Council statistics',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/pac/detect',
+                description: 'Detect commitments',
+                auth: true,
+            },
+            { method: 'GET', path: '/api/pac/reminders', description: 'Get reminders', auth: true },
+            {
+                method: 'PATCH',
+                path: '/api/pac/reminders/:id/complete',
+                description: 'Complete reminder',
+                auth: true,
+            },
+            {
+                method: 'PATCH',
+                path: '/api/pac/reminders/:id/dismiss',
+                description: 'Dismiss reminder',
+                auth: true,
+            },
+            {
+                method: 'PATCH',
+                path: '/api/pac/reminders/:id/snooze',
+                description: 'Snooze reminder',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/pac/settings',
+                description: 'Get PAC settings',
+                auth: true,
+            },
+            {
+                method: 'PATCH',
+                path: '/api/pac/settings',
+                description: 'Update PAC settings',
+                auth: true,
+            },
+            { method: 'GET', path: '/api/pac/stats', description: 'PAC statistics', auth: true },
+            { method: 'GET', path: '/api/billing', description: 'Billing status', auth: true },
+            {
+                method: 'POST',
+                path: '/api/billing/sync',
+                description: 'Sync with Polar',
+                auth: true,
+            },
+            { method: 'GET', path: '/api/billing/usage', description: 'Usage history', auth: true },
+            {
+                method: 'GET',
+                path: '/api/billing/tiers',
+                description: 'Tier comparison',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/billing/checkout',
+                description: 'Create checkout',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/billing/cancel',
+                description: 'Cancel subscription',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/billing/portal',
+                description: 'Customer portal URL',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/billing/cost-ceiling',
+                description: 'Cost ceiling status',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/billing/cost-summary',
+                description: 'Cost summary',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/billing/webhook',
+                description: 'Polar webhook',
+                auth: false,
+            },
+            {
+                method: 'POST',
+                path: '/api/import/jobs',
+                description: 'Create import job',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/import/jobs',
+                description: 'List import jobs',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/import/jobs/:id',
+                description: 'Get import job',
+                auth: true,
+            },
+            {
+                method: 'POST',
+                path: '/api/import/jobs/:id/execute',
+                description: 'Execute import',
+                auth: true,
+            },
+            {
+                method: 'GET',
+                path: '/api/import/stats',
+                description: 'Import statistics',
+                auth: true,
+            },
+            { method: 'GET', path: '/health', description: 'Health check', auth: false },
+            { method: 'GET', path: '/api/models', description: 'List models', auth: false },
+            {
+                method: 'GET',
+                path: '/api/models/tier/:tier',
+                description: 'Models for tier',
+                auth: false,
+            },
+            { method: 'GET', path: '/api/docs', description: 'API documentation', auth: false },
+            { method: 'DELETE', path: '/api/account', description: 'Delete account', auth: true },
+            { method: 'GET', path: '/api/export', description: 'Export user data', auth: true },
+        ],
+    });
+});
+
 // Better Auth routes
 app.on(['POST', 'GET'], '/api/auth/*', (c) => {
     return auth.handler(c.req.raw);
@@ -338,7 +699,10 @@ app.delete('/api/account', async (c) => {
         // Delete all user data in dependency order
         await prisma.$transaction(async (tx) => {
             // Delete PAC data
-            const reminders = await tx.pACReminder.findMany({ where: { userId }, select: { id: true } });
+            const reminders = await tx.pACReminder.findMany({
+                where: { userId },
+                select: { id: true },
+            });
             for (const r of reminders) {
                 await tx.pACEscalation.deleteMany({ where: { reminderId: r.id } });
             }
@@ -346,7 +710,10 @@ app.delete('/api/account', async (c) => {
             await tx.pACSettings.deleteMany({ where: { userId } });
 
             // Delete council data
-            const sessions = await tx.councilSession.findMany({ where: { userId }, select: { id: true } });
+            const sessions = await tx.councilSession.findMany({
+                where: { userId },
+                select: { id: true },
+            });
             for (const s of sessions) {
                 await tx.councilResponse.deleteMany({ where: { sessionId: s.id } });
             }
@@ -413,7 +780,10 @@ app.get('/api/export', async (c) => {
 
     const lastExport = exportLimiter.get(userId) || 0;
     if (Date.now() - lastExport < 5 * 60 * 1000) {
-        return c.json({ error: 'Export rate limited. Please wait 5 minutes between exports.' }, 429);
+        return c.json(
+            { error: 'Export rate limited. Please wait 5 minutes between exports.' },
+            429
+        );
     }
     exportLimiter.set(userId, Date.now());
 
@@ -427,14 +797,28 @@ app.get('/api/export', async (c) => {
         const chatSkip = (page - 1) * chatLimit;
 
         // Fetch all user data in parallel (chats paginated)
-        const [user, chats, chatCount, memories, pacReminders, pacSettings, billingAccount, councilSessions, importJobs] = await Promise.all([
+        const [
+            user,
+            chats,
+            chatCount,
+            memories,
+            pacReminders,
+            pacSettings,
+            billingAccount,
+            councilSessions,
+            importJobs,
+        ] = await Promise.all([
             prisma.user.findUnique({
                 where: { id: userId },
                 select: { id: true, name: true, email: true, createdAt: true, tier: true },
             }),
             prisma.chat.findMany({
                 where: { userId },
-                include: { messages: { select: { role: true, content: true, createdAt: true, modelUsed: true } } },
+                include: {
+                    messages: {
+                        select: { role: true, content: true, createdAt: true, modelUsed: true },
+                    },
+                },
                 orderBy: { createdAt: 'desc' },
                 take: chatLimit,
                 skip: chatSkip,
@@ -443,12 +827,25 @@ app.get('/api/export', async (c) => {
             openMemory.listMemories(userId, { limit: 1000 }),
             prisma.pACReminder.findMany({
                 where: { userId },
-                select: { id: true, content: true, type: true, status: true, triggerAt: true, createdAt: true },
+                select: {
+                    id: true,
+                    content: true,
+                    type: true,
+                    status: true,
+                    triggerAt: true,
+                    createdAt: true,
+                },
             }),
             prisma.pACSettings.findUnique({ where: { userId } }),
             prisma.billingAccount.findUnique({
                 where: { userId },
-                select: { plan: true, creditUsed: true, monthlyCredit: true, chatsRemaining: true, createdAt: true },
+                select: {
+                    plan: true,
+                    creditUsed: true,
+                    monthlyCredit: true,
+                    chatsRemaining: true,
+                    createdAt: true,
+                },
             }),
             prisma.councilSession.findMany({
                 where: { userId },
@@ -458,7 +855,14 @@ app.get('/api/export', async (c) => {
             }),
             prisma.importJob.findMany({
                 where: { userId },
-                select: { id: true, source: true, status: true, totalItems: true, importedItems: true, createdAt: true },
+                select: {
+                    id: true,
+                    source: true,
+                    status: true,
+                    totalItems: true,
+                    importedItems: true,
+                    createdAt: true,
+                },
             }),
         ]);
 
@@ -472,28 +876,30 @@ app.get('/api/export', async (c) => {
                 totalPages: Math.ceil(chatCount / chatLimit),
             },
             user,
-            chats: chats.map(chat => ({
+            chats: chats.map((chat) => ({
                 id: chat.id,
                 title: chat.title,
                 createdAt: chat.createdAt,
                 messages: chat.messages,
             })),
-            memories: memories.map(m => ({
+            memories: memories.map((m) => ({
                 id: m.id,
                 content: m.content,
                 sector: m.sector,
                 createdAt: m.createdAt,
             })),
             reminders: pacReminders,
-            pacSettings: pacSettings ? {
-                enabled: pacSettings.enabled,
-                explicitEnabled: pacSettings.explicitEnabled,
-                implicitEnabled: pacSettings.implicitEnabled,
-                quietHoursStart: pacSettings.quietHoursStart,
-                quietHoursEnd: pacSettings.quietHoursEnd,
-            } : null,
+            pacSettings: pacSettings
+                ? {
+                      enabled: pacSettings.enabled,
+                      explicitEnabled: pacSettings.explicitEnabled,
+                      implicitEnabled: pacSettings.implicitEnabled,
+                      quietHoursStart: pacSettings.quietHoursStart,
+                      quietHoursEnd: pacSettings.quietHoursEnd,
+                  }
+                : null,
             billing: billingAccount,
-            councilSessions: councilSessions.map(s => ({
+            councilSessions: councilSessions.map((s) => ({
                 id: s.id,
                 query: s.query,
                 status: s.status,

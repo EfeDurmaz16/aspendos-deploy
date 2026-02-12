@@ -45,7 +45,7 @@ app.post('/sessions', async (c) => {
     });
 
     if (!user) {
-        return c.json({ error: 'User not found' }, 404);
+        return c.json({ error: { code: 'NOT_FOUND', message: 'User not found' } }, 404);
     }
 
     const tier = (user.tier || 'FREE') as TierName;
@@ -121,7 +121,7 @@ app.get('/sessions/:id/stream', async (c) => {
     // Verify session belongs to user
     const session = await councilService.getCouncilSession(sessionId, userId);
     if (!session) {
-        return c.json({ error: 'Session not found' }, 404);
+        return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
     }
 
     // Check token budget for 4 parallel persona calls (~2400 tokens total)
@@ -138,9 +138,10 @@ app.get('/sessions/:id/stream', async (c) => {
         // Use DB-stored persona ordering (learned from user preferences)
         // Session responses are created in preference order during createCouncilSession()
         const dbResponses = session.responses || [];
-        const personas: PersonaType[] = dbResponses.length > 0
-            ? dbResponses.map(r => r.persona as PersonaType)
-            : ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
+        const personas: PersonaType[] =
+            dbResponses.length > 0
+                ? dbResponses.map((r) => r.persona as PersonaType)
+                : ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
 
         // Create streaming generators for each persona
         const streams = personas.map((persona) =>
@@ -252,7 +253,7 @@ app.get('/sessions/:id', async (c) => {
     const session = await councilService.getCouncilSession(sessionId, userId);
 
     if (!session) {
-        return c.json({ error: 'Session not found' }, 404);
+        return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
     }
 
     return c.json({
@@ -307,7 +308,7 @@ app.post('/sessions/:id/synthesize', async (c) => {
     // Verify session belongs to user
     const session = await councilService.getCouncilSession(sessionId, userId);
     if (!session) {
-        return c.json({ error: 'Session not found' }, 404);
+        return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
     }
 
     // Check token budget before synthesis (uses gpt-4o)
@@ -330,7 +331,10 @@ app.post('/sessions/:id/synthesize', async (c) => {
 
         return c.json({ synthesis: result.text });
     } catch (_error) {
-        return c.json({ error: 'Failed to generate synthesis' }, 500);
+        return c.json(
+            { error: { code: 'INTERNAL_ERROR', message: 'Failed to generate synthesis' } },
+            500
+        );
     }
 });
 

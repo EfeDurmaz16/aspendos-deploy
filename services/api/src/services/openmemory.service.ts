@@ -6,9 +6,26 @@
  */
 
 import { Memory } from 'openmemory-js';
+import { breakers } from '../lib/circuit-breaker';
 
 // Initialize OpenMemory client
 const mem = new Memory();
+
+/**
+ * Graceful degradation wrapper for Qdrant operations.
+ * If Qdrant is down, return fallback value instead of throwing.
+ */
+async function withQdrantFallback<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+    try {
+        return await breakers.qdrant.execute(fn);
+    } catch (error) {
+        console.warn(
+            '[Qdrant] Service unavailable, using fallback:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
+        return fallback;
+    }
+}
 
 // ============================================
 // TYPES (matching OpenMemory response format)
@@ -52,14 +69,28 @@ export async function addMemory(
         metadata?: Record<string, unknown>;
     }
 ): Promise<MemoryResult> {
-    const result = await mem.add(content, {
-        user_id: userId,
-        tags: options?.tags,
-        metadata: {
-            sector: options?.sector,
-            ...options?.metadata,
-        },
-    });
+    const result = await withQdrantFallback(
+        async () =>
+            await mem.add(content, {
+                user_id: userId,
+                tags: options?.tags,
+                metadata: {
+                    sector: options?.sector,
+                    ...options?.metadata,
+                },
+            }),
+        {
+            id: `fallback-${Date.now()}`,
+            content,
+            user_id: userId,
+            salience: 1.0,
+            created_at: new Date().toISOString(),
+            metadata: {
+                sector: options?.sector,
+                ...options?.metadata,
+            },
+        }
+    );
 
     return {
         id: result.id,
@@ -82,10 +113,14 @@ export async function searchMemories(
         threshold?: number;
     }
 ): Promise<MemoryResult[]> {
-    const results = await mem.search(query, {
-        user_id: userId,
-        limit: options?.limit || 5,
-    });
+    const results = await withQdrantFallback(
+        async () =>
+            await mem.search(query, {
+                user_id: userId,
+                limit: options?.limit || 5,
+            }),
+        []
+    );
 
     return results.map((r) => ({
         id: r.id,
@@ -109,10 +144,14 @@ export async function listMemories(
         offset?: number;
     }
 ): Promise<MemoryResult[]> {
-    const results = await mem.search('', {
-        user_id: userId,
-        limit: options?.limit || 50,
-    });
+    const results = await withQdrantFallback(
+        async () =>
+            await mem.search('', {
+                user_id: userId,
+                limit: options?.limit || 50,
+            }),
+        []
+    );
 
     return results.map((r) => ({
         id: r.id,

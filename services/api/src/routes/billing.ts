@@ -88,12 +88,7 @@ app.post('/checkout', requireAuth, validateBody(createCheckoutSchema), async (c)
     const { plan, cycle, success_url, cancel_url } = validatedBody;
 
     // Validate redirect URLs to prevent open redirect attacks
-    const ALLOWED_REDIRECT_HOSTS = [
-        'yula.dev',
-        'www.yula.dev',
-        'localhost',
-        'localhost:3000',
-    ];
+    const ALLOWED_REDIRECT_HOSTS = ['yula.dev', 'www.yula.dev', 'localhost', 'localhost:3000'];
     const validateRedirectUrl = (url: string | undefined): string | undefined => {
         if (!url) return undefined;
         try {
@@ -107,7 +102,8 @@ app.post('/checkout', requireAuth, validateBody(createCheckoutSchema), async (c)
         }
     };
 
-    const safeSuccessUrl = validateRedirectUrl(success_url) || `${process.env.FRONTEND_URL}/billing/success`;
+    const safeSuccessUrl =
+        validateRedirectUrl(success_url) || `${process.env.FRONTEND_URL}/billing/success`;
     const safeCancelUrl = validateRedirectUrl(cancel_url);
 
     try {
@@ -178,6 +174,20 @@ app.get('/cost-ceiling', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const ceiling = await billingService.checkCostCeiling(userId);
     return c.json(ceiling);
+});
+
+// GET /api/billing/cost-summary - Get cost breakdown by model and day
+app.get('/cost-summary', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const summary = await billingService.getCostSummary(userId);
+    return c.json(summary);
+});
+
+// GET /api/billing/spending-alerts - Get spending alerts for user
+app.get('/spending-alerts', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const alerts = await billingService.getSpendingAlerts(userId);
+    return c.json(alerts);
 });
 
 // ============================================

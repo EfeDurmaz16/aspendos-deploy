@@ -6,6 +6,20 @@ import { type BillingAccount, prisma, type Tier } from '@aspendos/db';
 import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
 
 /**
+ * Per-model pricing in USD per 1K tokens
+ * Used for actual cost tracking and billing transparency
+ */
+const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+    'openai/gpt-4o': { input: 0.0025, output: 0.01 },
+    'openai/gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+    'anthropic/claude-3.5-sonnet': { input: 0.003, output: 0.015 },
+    'anthropic/claude-3-haiku': { input: 0.00025, output: 0.00125 },
+    'groq/llama-3.3-70b': { input: 0.00059, output: 0.00079 },
+    'groq/llama-3.1-8b': { input: 0.00005, output: 0.00008 },
+    'google/gemini-2.0-flash': { input: 0.0001, output: 0.0004 },
+};
+
+/**
  * Get or create billing account for user
  */
 export async function getOrCreateBillingAccount(userId: string): Promise<BillingAccount> {
@@ -101,6 +115,15 @@ export async function recordTokenUsage(
     const totalTokens = tokensIn + tokensOut;
     const creditsUsed = totalTokens / 1000; // Store in K tokens
 
+    // Calculate actual USD cost based on model pricing
+    const pricing = MODEL_PRICING[modelId];
+    let usdCost = 0;
+    if (pricing) {
+        const inputCost = (tokensIn / 1000) * pricing.input;
+        const outputCost = (tokensOut / 1000) * pricing.output;
+        usdCost = inputCost + outputCost;
+    }
+
     // Create credit log
     await prisma.creditLog.create({
         data: {
@@ -111,6 +134,7 @@ export async function recordTokenUsage(
                 model: modelId,
                 tokens_in: tokensIn,
                 tokens_out: tokensOut,
+                usd_cost: usdCost,
                 ...metadata,
             },
         },
@@ -126,11 +150,11 @@ export async function recordTokenUsage(
 }
 
 /**
- * Record chat usage
+ * Record chat usage (atomic - prevents going negative)
  */
 export async function recordChatUsage(userId: string) {
     await prisma.billingAccount.updateMany({
-        where: { userId },
+        where: { userId, chatsRemaining: { gt: 0 } },
         data: {
             chatsRemaining: { decrement: 1 },
         },
@@ -252,7 +276,7 @@ export async function checkCostCeiling(userId: string): Promise<{
     const config = getTierConfig(tier);
 
     // Daily ceiling = monthly tokens / 25 working days (generous buffer)
-    const dailyCeilingKTokens = (config.monthlyTokens / 1000) / 25;
+    const dailyCeilingKTokens = config.monthlyTokens / 1000 / 25;
 
     // Sum today's usage from credit logs
     const startOfDay = new Date();
@@ -268,7 +292,8 @@ export async function checkCostCeiling(userId: string): Promise<{
     });
 
     const dailySpend = todaysLogs.reduce((sum, log) => sum + Math.abs(log.amount), 0);
-    const percentUsed = dailyCeilingKTokens > 0 ? Math.round((dailySpend / dailyCeilingKTokens) * 100) : 0;
+    const percentUsed =
+        dailyCeilingKTokens > 0 ? Math.round((dailySpend / dailyCeilingKTokens) * 100) : 0;
 
     return {
         allowed: dailySpend < dailyCeilingKTokens,
@@ -305,5 +330,169 @@ export function getTierComparison() {
         starter: TIER_CONFIG.STARTER,
         pro: TIER_CONFIG.PRO,
         ultra: TIER_CONFIG.ULTRA,
+    };
+}
+
+/**
+ * Get spending alerts for user
+ * Returns warnings when user approaches token or cost limits
+ */
+export async function getSpendingAlerts(userId: string): Promise<{
+    alerts: Array<{ level: 'info' | 'warning' | 'critical'; message: string }>;
+}> {
+    const account = await getOrCreateBillingAccount(userId);
+    const alerts: Array<{ level: 'info' | 'warning' | 'critical'; message: string }> = [];
+
+    // Check monthly token usage
+    const usagePercent = (account.creditUsed / account.monthlyCredit) * 100;
+    if (usagePercent >= 95) {
+        alerts.push({
+            level: 'critical',
+            message: `You've used ${Math.round(usagePercent)}% of your monthly tokens. Consider upgrading your plan.`,
+        });
+    } else if (usagePercent >= 80) {
+        alerts.push({
+            level: 'warning',
+            message: `You've used ${Math.round(usagePercent)}% of your monthly tokens.`,
+        });
+    }
+
+    // Check daily cost ceiling
+    const ceiling = await checkCostCeiling(userId);
+    if (ceiling.percentUsed >= 95) {
+        alerts.push({
+            level: 'critical',
+            message: `You've used ${ceiling.percentUsed}% of your daily cost ceiling (${ceiling.dailySpend}K/${ceiling.dailyCeiling}K tokens today).`,
+        });
+    } else if (ceiling.percentUsed >= 80) {
+        alerts.push({
+            level: 'warning',
+            message: `You've used ${ceiling.percentUsed}% of your daily cost ceiling (${ceiling.dailySpend}K/${ceiling.dailyCeiling}K tokens today).`,
+        });
+    }
+
+    return { alerts };
+}
+
+/**
+ * Get cost summary by model and day for current billing period
+ */
+export async function getCostSummary(userId: string): Promise<{
+    byModel: Array<{
+        model: string;
+        tokensIn: number;
+        tokensOut: number;
+        totalTokens: number;
+        usdCost: number;
+        requestCount: number;
+    }>;
+    byDay: Array<{
+        date: string;
+        tokensIn: number;
+        tokensOut: number;
+        totalTokens: number;
+        usdCost: number;
+        requestCount: number;
+    }>;
+    totalUsdCost: number;
+    billingPeriodStart: Date;
+}> {
+    const account = await getOrCreateBillingAccount(userId);
+
+    // Get all logs since last reset
+    const logs = await prisma.creditLog.findMany({
+        where: {
+            billingAccountId: account.id,
+            createdAt: { gte: account.resetDate },
+            reason: 'model_inference',
+        },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    // Group by model
+    const byModelMap = new Map<
+        string,
+        {
+            model: string;
+            tokensIn: number;
+            tokensOut: number;
+            totalTokens: number;
+            usdCost: number;
+            requestCount: number;
+        }
+    >();
+
+    // Group by day
+    const byDayMap = new Map<
+        string,
+        {
+            date: string;
+            tokensIn: number;
+            tokensOut: number;
+            totalTokens: number;
+            usdCost: number;
+            requestCount: number;
+        }
+    >();
+
+    let totalUsdCost = 0;
+
+    for (const log of logs) {
+        const metadata = log.metadata as {
+            model?: string;
+            tokens_in?: number;
+            tokens_out?: number;
+            usd_cost?: number;
+        };
+        const model = metadata.model || 'unknown';
+        const tokensIn = metadata.tokens_in || 0;
+        const tokensOut = metadata.tokens_out || 0;
+        const usdCost = metadata.usd_cost || 0;
+
+        totalUsdCost += usdCost;
+
+        // Aggregate by model
+        if (!byModelMap.has(model)) {
+            byModelMap.set(model, {
+                model,
+                tokensIn: 0,
+                tokensOut: 0,
+                totalTokens: 0,
+                usdCost: 0,
+                requestCount: 0,
+            });
+        }
+        const modelStats = byModelMap.get(model)!;
+        modelStats.tokensIn += tokensIn;
+        modelStats.tokensOut += tokensOut;
+        modelStats.totalTokens += tokensIn + tokensOut;
+        modelStats.usdCost += usdCost;
+        modelStats.requestCount += 1;
+
+        // Aggregate by day
+        const date = log.createdAt.toISOString().split('T')[0];
+        if (!byDayMap.has(date)) {
+            byDayMap.set(date, {
+                date,
+                tokensIn: 0,
+                tokensOut: 0,
+                totalTokens: 0,
+                usdCost: 0,
+                requestCount: 0,
+            });
+        }
+        const dayStats = byDayMap.get(date)!;
+        dayStats.tokensIn += tokensIn;
+        dayStats.tokensOut += tokensOut;
+        dayStats.totalTokens += tokensIn + tokensOut;
+        dayStats.usdCost += usdCost;
+        dayStats.requestCount += 1;
+    }
+
+    return {
+        byModel: Array.from(byModelMap.values()).sort((a, b) => b.usdCost - a.usdCost),
+        byDay: Array.from(byDayMap.values()).sort((a, b) => b.date.localeCompare(a.date)),
+        totalUsdCost: Math.round(totalUsdCost * 10000) / 10000, // Round to 4 decimals
+        billingPeriodStart: account.resetDate,
     };
 }

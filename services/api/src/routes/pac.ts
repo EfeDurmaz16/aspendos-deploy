@@ -19,7 +19,7 @@ app.post('/detect', async (c) => {
     const userId = c.get('userId')!;
     const body = await c.req.json();
 
-    const { message, conversationId, messageId } = body;
+    const { message, conversationId } = body;
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
         return c.json({ error: 'message is required' }, 400);
@@ -49,12 +49,7 @@ app.post('/detect', async (c) => {
     // Create reminders for detected commitments
     const createdReminders = [];
     for (const commitment of filteredCommitments) {
-        const reminder = await pacService.createReminder(
-            userId,
-            commitment,
-            conversationId,
-            messageId
-        );
+        const reminder = await pacService.createReminder(userId, commitment, conversationId);
         createdReminders.push(reminder);
     }
 
@@ -89,8 +84,7 @@ app.get('/reminders', async (c) => {
             priority: r.priority,
             triggerAt: r.triggerAt,
             snoozeCount: r.snoozeCount,
-            conversationId: r.conversation?.id,
-            conversationTitle: r.conversation?.title,
+            conversationId: r.chatId,
             createdAt: r.createdAt,
         })),
     });
@@ -176,9 +170,14 @@ app.patch('/settings', async (c) => {
 
     // Whitelist and validate allowed fields
     const BOOLEAN_FIELDS = [
-        'enabled', 'explicitEnabled', 'implicitEnabled',
-        'pushEnabled', 'emailEnabled', 'quietHoursEnabled',
-        'escalationEnabled', 'digestEnabled',
+        'enabled',
+        'explicitEnabled',
+        'implicitEnabled',
+        'pushEnabled',
+        'emailEnabled',
+        'quietHoursEnabled',
+        'escalationEnabled',
+        'digestEnabled',
     ] as const;
     const TIME_FIELDS = ['quietHoursStart', 'quietHoursEnd', 'digestTime'] as const;
     const TIME_REGEX = /^\d{2}:\d{2}$/;

@@ -12,8 +12,8 @@
  * - Memory consolidation pipeline (dedup + decay)
  */
 
-import { generateText } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
+import { generateText } from 'ai';
 import * as openMemory from './openmemory.service';
 
 // ============================================
@@ -149,15 +149,16 @@ const CLASSIFICATION_PATTERNS: { pattern: RegExp; type: QueryType }[] = [
 export class MemoryDecisionAgent {
     private groq = createGroq({ apiKey: process.env.GROQ_API_KEY || '' });
 
-    constructor(_llmEndpoint?: string) {
-        // Groq initialized for fast LLM-based routing decisions
-    }
-
     /**
      * Classify query type using LLM when pattern matching fails.
      * Uses Groq Llama for sub-100ms inference.
      */
-    async classifyWithLLM(query: string): Promise<{ type: QueryType; confidence: number; useMemory: boolean; sectors: MemorySector[] }> {
+    async classifyWithLLM(query: string): Promise<{
+        type: QueryType;
+        confidence: number;
+        useMemory: boolean;
+        sectors: MemorySector[];
+    }> {
         try {
             const { text } = await generateText({
                 model: this.groq('llama-3.1-8b-instant'),
@@ -173,11 +174,21 @@ Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["se
             });
 
             const parsed = JSON.parse(text.trim());
-            const validTypes = Object.values(QueryType).filter(t => t !== 'unknown');
-            const type = validTypes.includes(parsed.type) ? parsed.type as QueryType : QueryType.UNKNOWN;
-            const validSectors: MemorySector[] = ['episodic', 'semantic', 'procedural', 'emotional', 'reflective'];
+            const validTypes = Object.values(QueryType).filter((t) => t !== 'unknown');
+            const type = validTypes.includes(parsed.type)
+                ? (parsed.type as QueryType)
+                : QueryType.UNKNOWN;
+            const validSectors: MemorySector[] = [
+                'episodic',
+                'semantic',
+                'procedural',
+                'emotional',
+                'reflective',
+            ];
             const sectors = Array.isArray(parsed.sectors)
-                ? (parsed.sectors as string[]).filter((s): s is MemorySector => validSectors.includes(s as MemorySector)).slice(0, 3)
+                ? (parsed.sectors as string[])
+                      .filter((s): s is MemorySector => validSectors.includes(s as MemorySector))
+                      .slice(0, 3)
                 : SECTOR_MAP[type];
 
             return {
@@ -314,7 +325,11 @@ Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["se
      * Self-reflection: Is the response good enough?
      * Multi-signal quality scoring that learns what works.
      */
-    async reflectOnResponse(query: string, response: string, memoryUsed: boolean): Promise<ReflectionResult & { qualityScore: number }> {
+    async reflectOnResponse(
+        query: string,
+        response: string,
+        memoryUsed: boolean
+    ): Promise<ReflectionResult & { qualityScore: number }> {
         // Signal 1: Length adequacy
         const lengthScore = Math.min(response.length / 300, 1.0); // 300 chars = full score
 
@@ -329,7 +344,11 @@ Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["se
 
         // Weighted composite
         const qualityScore = Math.round(
-            (lengthScore * 0.15 + relevanceScore * 0.35 + specificityScore * 0.25 + memoryScore * 0.25) * 100
+            (lengthScore * 0.15 +
+                relevanceScore * 0.35 +
+                specificityScore * 0.25 +
+                memoryScore * 0.25) *
+                100
         );
 
         const satisfied = qualityScore >= 50;
@@ -337,7 +356,9 @@ Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["se
         let retryStrategy: string | null = null;
         if (!satisfied) {
             if (relevanceScore < 0.3) {
-                retryStrategy = memoryUsed ? 'Try without memory context' : 'Try with memory context';
+                retryStrategy = memoryUsed
+                    ? 'Try without memory context'
+                    : 'Try with memory context';
             } else if (specificityScore < 0.3) {
                 retryStrategy = 'Request more specific, actionable response';
             } else if (lengthScore < 0.3) {
@@ -357,7 +378,10 @@ Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["se
      * Compute relevance score using keyword overlap with TF weighting.
      */
     private computeRelevanceScore(query: string, response: string): number {
-        const queryWords = query.toLowerCase().split(/\W+/).filter(w => w.length > 3);
+        const queryWords = query
+            .toLowerCase()
+            .split(/\W+/)
+            .filter((w) => w.length > 3);
         if (queryWords.length === 0) return 0.5;
 
         const responseText = response.toLowerCase();
@@ -381,9 +405,14 @@ Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["se
      */
     private computeSpecificityScore(response: string): number {
         const vagueMarkers = [
-            'it depends', 'generally speaking', 'in general',
-            'there are many', 'you could try', 'some people',
-            'it varies', 'that\'s a good question',
+            'it depends',
+            'generally speaking',
+            'in general',
+            'there are many',
+            'you could try',
+            'some people',
+            'it varies',
+            "that's a good question",
         ];
 
         const specificMarkers = [
@@ -416,7 +445,7 @@ Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["se
     /**
      * Check if memory context was actually used in the response.
      */
-    private computeMemoryUtilization(query: string, response: string): number {
+    private computeMemoryUtilization(_query: string, response: string): number {
         // Check for personal context indicators in response
         const personalIndicators = [
             /\b(you mentioned|you previously|as you said|your|based on our)\b/i,
@@ -442,33 +471,43 @@ export interface ConsolidationResult {
     merged: number;
     decayed: number;
     preserved: number;
+    consolidationScore: number; // NEW: Quality metric (0-100)
 }
 
 /**
- * Memory consolidation pipeline.
- * 1. Dedup: Merge memories with high semantic similarity
- * 2. Decay: Reduce salience of old, unreinforced memories
+ * Memory consolidation pipeline with sector-aware deduplication and temporal decay.
+ * 1. Dedup: Merge memories with high semantic similarity (grouped by sector)
+ * 2. Decay: Reduce salience of old, unreinforced memories (30+ days threshold)
  * 3. Preserve: Pin important memories from deletion
+ * 4. Score: Track consolidation quality improvements
  *
  * This is a key moat differentiator - competitors store memories,
  * we intelligently consolidate them like human memory does.
  */
 export async function consolidateMemories(
-    userId: string,
-    memories: Array<{ id: string; content: string; sector?: string; salience?: number; createdAt?: string }>,
+    _userId: string,
+    memories: Array<{
+        id: string;
+        content: string;
+        sector?: string;
+        salience?: number;
+        createdAt?: string;
+    }>,
     options?: { decayRate?: number; similarityThreshold?: number; maxAge?: number }
 ): Promise<ConsolidationResult> {
     const decayRate = options?.decayRate ?? 0.05; // 5% daily decay
     const similarityThreshold = options?.similarityThreshold ?? 0.85;
-    const maxAgeDays = options?.maxAge ?? 90; // 90 days max for unreinforced
+    const maxAgeDays = options?.maxAge ?? 30; // 30 days max for low-access memories
 
     let merged = 0;
     let decayed = 0;
     let preserved = 0;
 
     const now = Date.now();
+    const totalMemories = memories.length;
 
     // Phase 1: Group memories by sector for efficient comparison
+    // Better similarity detection: only compare within same sector
     const bySector = new Map<string, typeof memories>();
     for (const mem of memories) {
         const sector = mem.sector || 'semantic';
@@ -476,7 +515,7 @@ export async function consolidateMemories(
         bySector.get(sector)!.push(mem);
     }
 
-    // Phase 2: Find duplicates using word-level Jaccard similarity
+    // Phase 2: Find duplicates using word-level Jaccard similarity (sector-aware)
     const toMerge: Array<{ keep: string; remove: string }> = [];
 
     for (const [, sectorMemories] of bySector) {
@@ -488,7 +527,8 @@ export async function consolidateMemories(
                 );
                 if (similarity >= similarityThreshold) {
                     // Keep the one with higher salience
-                    const keepI = (sectorMemories[i].salience || 0) >= (sectorMemories[j].salience || 0);
+                    const keepI =
+                        (sectorMemories[i].salience || 0) >= (sectorMemories[j].salience || 0);
                     toMerge.push({
                         keep: keepI ? sectorMemories[i].id : sectorMemories[j].id,
                         remove: keepI ? sectorMemories[j].id : sectorMemories[i].id,
@@ -499,20 +539,21 @@ export async function consolidateMemories(
     }
     merged = toMerge.length;
 
-    // Phase 3: Apply temporal decay
+    // Phase 3: Apply temporal decay with 30-day threshold for low-access memories
     const toDecay: Array<{ id: string; newSalience: number }> = [];
     for (const mem of memories) {
         if (!mem.createdAt) continue;
         const ageMs = now - new Date(mem.createdAt).getTime();
         const ageDays = ageMs / (1000 * 60 * 60 * 24);
 
+        // Memories older than 30 days with low salience should decay
         if (ageDays > maxAgeDays && (mem.salience || 0) < 0.3) {
             // Mark for decay (will be cleaned up by background job)
             toDecay.push({ id: mem.id, newSalience: 0 });
             decayed++;
         } else if (ageDays > 7) {
             // Apply gradual decay
-            const decayFactor = Math.max(0.1, 1 - (decayRate * ageDays / 30));
+            const decayFactor = Math.max(0.1, 1 - (decayRate * ageDays) / 30);
             const newSalience = (mem.salience || 0.5) * decayFactor;
             if (newSalience < (mem.salience || 0.5)) {
                 toDecay.push({ id: mem.id, newSalience });
@@ -526,7 +567,7 @@ export async function consolidateMemories(
     preserved = memories.length - merged - decayed;
 
     // Execute mutations: delete merged duplicates
-    const removedIds = new Set(toMerge.map(m => m.remove));
+    const removedIds = new Set(toMerge.map((m) => m.remove));
     for (const id of removedIds) {
         try {
             await openMemory.deleteMemory(id);
@@ -551,7 +592,31 @@ export async function consolidateMemories(
         }
     }
 
-    return { merged, decayed, preserved };
+    // Phase 4: Compute consolidation score
+    // Higher score = more efficient memory set (fewer duplicates, better signal/noise)
+    const consolidationScore = computeConsolidationScore(totalMemories, merged, decayed, preserved);
+
+    return { merged, decayed, preserved, consolidationScore };
+}
+
+/**
+ * Compute consolidation quality score (0-100).
+ * Higher = better consolidation (removed noise, kept signal).
+ */
+function computeConsolidationScore(
+    total: number,
+    merged: number,
+    decayed: number,
+    preserved: number
+): number {
+    if (total === 0) return 0;
+
+    // Reward duplicate removal and decay of stale memories
+    const deduplicationBonus = (merged / total) * 40; // Up to 40 points for dedup
+    const decayBonus = (decayed / total) * 30; // Up to 30 points for decay
+    const preservationBonus = (preserved / total) * 30; // Up to 30 points for keeping good memories
+
+    return Math.min(100, Math.round(deduplicationBonus + decayBonus + preservationBonus));
 }
 
 /**
@@ -559,8 +624,18 @@ export async function consolidateMemories(
  * Fast O(n) comparison without embedding calls.
  */
 function jaccardSimilarity(a: string, b: string): number {
-    const wordsA = new Set(a.toLowerCase().split(/\W+/).filter(w => w.length > 2));
-    const wordsB = new Set(b.toLowerCase().split(/\W+/).filter(w => w.length > 2));
+    const wordsA = new Set(
+        a
+            .toLowerCase()
+            .split(/\W+/)
+            .filter((w) => w.length > 2)
+    );
+    const wordsB = new Set(
+        b
+            .toLowerCase()
+            .split(/\W+/)
+            .filter((w) => w.length > 2)
+    );
 
     if (wordsA.size === 0 && wordsB.size === 0) return 1;
     if (wordsA.size === 0 || wordsB.size === 0) return 0;
@@ -587,7 +662,7 @@ function jaccardSimilarity(a: string, b: string): number {
 export async function extractMemoriesFromExchange(
     userId: string,
     userMessage: string,
-    assistantResponse: string,
+    assistantResponse: string
 ): Promise<{ extracted: string[]; sector: string }[]> {
     const groq = createGroq({ apiKey: process.env.GROQ_API_KEY || '' });
 
@@ -624,7 +699,8 @@ JSON only:`,
         const results: { extracted: string[]; sector: string }[] = [];
         const validSectors = ['semantic', 'episodic', 'procedural', 'emotional'];
 
-        for (const item of parsed.slice(0, 3)) { // Max 3 facts per exchange
+        for (const item of parsed.slice(0, 3)) {
+            // Max 3 facts per exchange
             if (!item.fact || typeof item.fact !== 'string') continue;
             if (item.fact.length < 5 || item.fact.length > 500) continue;
 

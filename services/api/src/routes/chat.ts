@@ -12,7 +12,11 @@ import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
 import * as chatService from '../services/chat.service';
-import { extractMemoriesFromExchange, getMemoryAgent, type MemoryDecision } from '../services/memory-agent';
+import {
+    extractMemoriesFromExchange,
+    getMemoryAgent,
+    type MemoryDecision,
+} from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
 import { createReminder, detectCommitments, getPACSettings } from '../services/pac.service';
 import { getToolsForTier, type UserTier } from '../tools';
@@ -92,7 +96,7 @@ app.get('/:id', validateParams(chatIdParamSchema), async (c) => {
     const chat = await chatService.getChatWithMessages(chatId, userId);
 
     if (!chat) {
-        return c.json({ error: 'Chat not found' }, 404);
+        return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
     }
 
     return c.json(chat);
@@ -155,7 +159,7 @@ app.post(
         // Verify chat exists and belongs to user
         const chat = await chatService.getChat(chatId, userId);
         if (!chat) {
-            return c.json({ error: 'Chat not found' }, 404);
+            return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
         }
 
         // Determine model to use
@@ -182,7 +186,10 @@ app.post(
         }
 
         if (!costCeiling.allowed) {
-            return c.json({ error: 'Daily spending limit reached. Try again tomorrow or upgrade your plan.' }, 403);
+            return c.json(
+                { error: 'Daily spending limit reached. Try again tomorrow or upgrade your plan.' },
+                403
+            );
         }
 
         // Decrement chat quota
@@ -314,17 +321,24 @@ app.post(
                         }
 
                         // Auto-extract memories from conversation (fire-and-forget)
-                        extractMemoriesFromExchange(userId, content, text).catch(err =>
+                        extractMemoriesFromExchange(userId, content, text).catch((err) =>
                             console.error('[Memory] Auto-extraction failed:', err)
                         );
 
                         // Self-reflection: score response quality (fire-and-forget)
                         // This builds data for learning which memory/routing combos work best
-                        getMemoryAgent().reflectOnResponse(content, text, decision.useMemory).then(reflection => {
-                            if (!reflection.satisfied) {
-                                console.warn(`[Quality] Low score ${reflection.qualityScore}/100 for query "${content.slice(0, 60)}..." - ${reflection.retryStrategy || 'no strategy'}`);
-                            }
-                        }).catch(() => { /* non-blocking */ });
+                        getMemoryAgent()
+                            .reflectOnResponse(content, text, decision.useMemory)
+                            .then((reflection) => {
+                                if (!reflection.satisfied) {
+                                    console.warn(
+                                        `[Quality] Low score ${reflection.qualityScore}/100 for query "${content.slice(0, 60)}..." - ${reflection.retryStrategy || 'no strategy'}`
+                                    );
+                                }
+                            })
+                            .catch(() => {
+                                /* non-blocking */
+                            });
 
                         // MOAT: Routing feedback loop
                         // The routing decision (useMemory, queryType, sectors) is captured in X-Memory-Decision header.
@@ -356,7 +370,10 @@ app.post(
 
                 return response;
             } catch (error) {
-                console.error('[Chat] Streaming error:', error instanceof Error ? error.message : 'Unknown');
+                console.error(
+                    '[Chat] Streaming error:',
+                    error instanceof Error ? error.message : 'Unknown'
+                );
                 return c.json({ error: 'Failed to stream response' }, 500);
             }
         }
@@ -401,7 +418,10 @@ app.post(
                 toolCalls: result.toolCalls,
             });
         } catch (error) {
-            console.error('[Chat] Generation error:', error instanceof Error ? error.message : 'Unknown');
+            console.error(
+                '[Chat] Generation error:',
+                error instanceof Error ? error.message : 'Unknown'
+            );
             return c.json({ error: 'Failed to generate response' }, 500);
         }
     }
@@ -432,7 +452,7 @@ app.post(
         // Verify chat exists
         const chat = await chatService.getChat(chatId, userId);
         if (!chat) {
-            return c.json({ error: 'Chat not found' }, 404);
+            return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
         }
 
         const { content, models } = validatedBody;
@@ -589,7 +609,10 @@ app.post(
             const newChat = await chatService.forkChat(chatId, userId, validatedBody.fromMessageId);
             return c.json(newChat, 201);
         } catch (error) {
-            console.error('[Chat] Fork failed:', error instanceof Error ? error.message : 'Unknown');
+            console.error(
+                '[Chat] Fork failed:',
+                error instanceof Error ? error.message : 'Unknown'
+            );
             const msg = error instanceof Error ? error.message : '';
             if (msg.includes('not found')) {
                 return c.json({ error: 'Chat or message not found' }, 404);
@@ -609,7 +632,10 @@ app.post('/:id/share', validateParams(chatIdParamSchema), async (c) => {
         const token = await chatService.createShareToken(chatId, userId);
         return c.json({ token, url: `/chat/shared/${token}` });
     } catch (error) {
-        console.error('[Chat] Share token creation failed:', error instanceof Error ? error.message : 'Unknown');
+        console.error(
+            '[Chat] Share token creation failed:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
         const msg = error instanceof Error ? error.message : '';
         if (msg.includes('not found')) {
             return c.json({ error: 'Chat not found' }, 404);
@@ -628,7 +654,10 @@ app.delete('/:id/share', validateParams(chatIdParamSchema), async (c) => {
         await chatService.revokeShareToken(chatId, userId);
         return c.json({ success: true });
     } catch (error) {
-        console.error('[Chat] Share token revoke failed:', error instanceof Error ? error.message : 'Unknown');
+        console.error(
+            '[Chat] Share token revoke failed:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
         const msg = error instanceof Error ? error.message : '';
         if (msg.includes('not found')) {
             return c.json({ error: 'Chat not found' }, 404);

@@ -96,6 +96,7 @@ model CreditLog {
   account BillingAccount @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
 
   @@index([billingAccountId])
+  @@index([billingAccountId, createdAt])
 }
 
 // ============================================
@@ -506,6 +507,7 @@ model PACReminder {
   deliveredAt   DateTime?
   respondedAt   DateTime?
   responseType  String? // "acknowledged", "snoozed", "dismissed"
+  snoozeCount   Int            @default(0)
   metadata      Json?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -517,6 +519,7 @@ model PACReminder {
   @@index([userId, status])
   @@index([triggerAt])
   @@index([status, triggerAt])
+  @@index([userId, createdAt])
   @@map("pac_reminder")
 }
 
@@ -590,7 +593,7 @@ model CouncilSession {
   query           String            @db.Text
   status          CouncilStatus     @default(PENDING)
   selectedPersona String? // Which persona's response was selected
-  synthesisText   String?           @db.Text // Combined synthesis of all responses
+  synthesis       String?           @db.Text // Combined synthesis of all responses
   totalLatencyMs  Int               @default(0)
   metadata        Json?
   createdAt       DateTime          @default(now())
@@ -623,6 +626,7 @@ model CouncilResponse {
 
   @@index([sessionId])
   @@index([sessionId, persona])
+  @@index([sessionId, selected])
   @@map("council_response")
 }
 
