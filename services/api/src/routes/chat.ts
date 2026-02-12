@@ -75,49 +75,13 @@ app.get('/shared/:token', async (c) => {
         return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid share token' } }, 400);
     }
 
-    const { prisma } = await import('../lib/prisma');
-
-    const sharedChat = await prisma.sharedChat.findUnique({
-        where: { shareToken: token },
-        include: {
-            chat: {
-                include: {
-                    messages: {
-                        select: {
-                            role: true,
-                            content: true,
-                            modelUsed: true,
-                            createdAt: true,
-                        },
-                        orderBy: { createdAt: 'asc' },
-                    },
-                },
-            },
-        },
-    });
+    const sharedChat = await chatService.getSharedChat(token);
 
     if (!sharedChat) {
         return c.json({ error: { code: 'NOT_FOUND', message: 'Shared chat not found' } }, 404);
     }
 
-    // Check expiry
-    if (sharedChat.expiresAt && new Date() > sharedChat.expiresAt) {
-        return c.json({ error: { code: 'EXPIRED', message: 'This shared link has expired' } }, 410);
-    }
-
-    // Increment view count
-    await prisma.sharedChat.update({
-        where: { id: sharedChat.id },
-        data: { viewCount: { increment: 1 } },
-    });
-
-    return c.json({
-        title: sharedChat.chat.title,
-        model: sharedChat.chat.modelPreference,
-        messages: sharedChat.chat.messages,
-        sharedAt: sharedChat.createdAt,
-        viewCount: sharedChat.viewCount + 1,
-    });
+    return c.json(sharedChat);
 });
 
 // ============================================

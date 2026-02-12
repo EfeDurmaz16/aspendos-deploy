@@ -97,6 +97,7 @@ model CreditLog {
 
   @@index([billingAccountId])
   @@index([billingAccountId, createdAt])
+  @@index([billingAccountId, reason, createdAt])
 }
 
 // ============================================
@@ -124,6 +125,8 @@ model Chat {
   @@index([userId])
   @@index([createdAt])
   @@index([shareToken])
+  @@index([userId, createdAt])
+  @@index([userId, isArchived])
 }
 
 model Message {
@@ -146,6 +149,8 @@ model Message {
   @@index([chatId])
   @@index([userId])
   @@index([createdAt])
+  @@index([chatId, createdAt])
+  @@index([userId, createdAt])
 }
 
 // ============================================
@@ -182,6 +187,7 @@ model Memory {
   @@index([userId, isActive])
   @@index([chatId])
   @@index([type])
+  @@index([userId, isActive, lastAccessedAt])
 }
 
 model MemoryFeedback {
@@ -252,6 +258,7 @@ model ScheduledTask {
   @@index([userId, status])
   @@index([triggerAt])
   @@index([status, triggerAt])
+  @@index([status, updatedAt])
   @@map("scheduled_task")
 }
 
@@ -297,6 +304,7 @@ model Session {
 
   @@unique([token])
   @@index([userId])
+  @@index([expiresAt])
   @@map("session")
 }
 
@@ -411,6 +419,7 @@ model NotificationLog {
   @@index([userId])
   @@index([userId, status])
   @@index([createdAt])
+  @@index([userId, status, createdAt])
   @@map("notification_log")
 }
 

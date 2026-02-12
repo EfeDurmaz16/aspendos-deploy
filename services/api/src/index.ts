@@ -13,8 +13,10 @@ import { getErrorCatalog } from './lib/error-codes';
 import { AppError } from './lib/errors';
 import { getAllFlags, getUserFeatures } from './lib/feature-flags';
 import { checkReadiness } from './lib/health-checks';
+import { getPrivacyPolicy, getTermsOfService } from './lib/legal';
 import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
-import { initSentry, Sentry } from './lib/sentry';
+import { initSentry, Sentry, setSentryRequestContext, setSentryUserContext } from './lib/sentry';
+import { getWebhookCategories, getWebhookEventsCatalog } from './lib/webhook-events';
 import { apiVersion } from './middleware/api-version';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
 import { sanitizeBody } from './middleware/sanitize';
@@ -43,6 +45,8 @@ initSentry();
 type Variables = {
     user: typeof auth.$Infer.Session.user | null;
     session: typeof auth.$Infer.Session.session | null;
+    userId: string | null;
+    requestId: string;
 };
 
 const app = new Hono<{ Variables: Variables }>();
@@ -145,6 +149,18 @@ app.use('*', async (c, next) => {
     try {
         await next();
     } catch (err) {
+        // Set request context in Sentry
+        const requestId = c.get('requestId') || 'unknown';
+        setSentryRequestContext(requestId, c.req.path, c.req.method);
+
+        // Set user context if available
+        const userId = c.get('userId');
+        const user = c.get('user');
+        if (userId) {
+            const tier = ((user as Record<string, unknown>)?.tier as string) || undefined;
+            setSentryUserContext(userId, tier);
+        }
+
         // Capture error in Sentry
         // Sanitize headers before sending to Sentry (never log auth tokens)
         const SENSITIVE_HEADERS = [
@@ -264,6 +280,18 @@ app.use('*', rateLimit());
 // Global error handler with structured error handling
 app.onError((err, c) => {
     const requestId = c.get('requestId') || 'unknown';
+
+    // Set request context in Sentry
+    setSentryRequestContext(requestId, c.req.path, c.req.method);
+
+    // Set user context if available
+    const userId = c.get('userId');
+    const user = c.get('user');
+    if (userId) {
+        const tier = ((user as Record<string, unknown>)?.tier as string) || undefined;
+        setSentryUserContext(userId, tier);
+    }
+
     Sentry.captureException(err, {
         tags: { requestId },
     });
@@ -1494,6 +1522,15 @@ app.get('/api/errors', (c) => {
     return c.json({ errors: getErrorCatalog() });
 });
 
+// ─── Webhook Events Catalog ──────────────────────────────────────────────────
+app.get('/api/webhooks/events', (c) => {
+    const category = c.req.query('category');
+    return c.json({
+        events: getWebhookEventsCatalog(category),
+        categories: getWebhookCategories(),
+    });
+});
+
 // ─── Feature Flags ───────────────────────────────────────────────────────────
 app.get('/api/features', (c) => {
     const userId = c.get('userId');
@@ -1514,6 +1551,10 @@ app.get('/api/changelog', (c) => {
     const limit = parseInt(c.req.query('limit') || '20', 10);
     return c.json({ changelog: getChangelog(type, limit), latest: getLatestVersion() });
 });
+
+// ─── Legal Documents ─────────────────────────────────────────────────────────
+app.get('/api/legal/terms', (c) => c.json(getTermsOfService()));
+app.get('/api/legal/privacy', (c) => c.json(getPrivacyPolicy()));
 
 // API Routes
 app.route('/api/chat', chatRoutes);
