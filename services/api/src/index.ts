@@ -7,6 +7,7 @@ import { auth } from './lib/auth';
 import { getChangelog, getLatestVersion } from './lib/changelog';
 import { breakers } from './lib/circuit-breaker';
 import { enforceRetentionPolicies, getRetentionPolicies } from './lib/data-retention';
+import { dlq } from './lib/dead-letter-queue';
 import { validateEnv } from './lib/env';
 import { getErrorCatalog } from './lib/error-codes';
 import { AppError } from './lib/errors';
@@ -20,6 +21,7 @@ import { initSentry, Sentry, setSentryRequestContext, setSentryUserContext } fro
 import { getWebhookCategories, getWebhookEventsCatalog } from './lib/webhook-events';
 import { verifyTimingSafe } from './lib/webhook-security';
 import { apiVersion } from './middleware/api-version';
+import { auditTrail } from './middleware/audit-trail';
 import { botProtection } from './middleware/bot-protection';
 import { cacheControl } from './middleware/cache';
 import { compression } from './middleware/compression';
@@ -54,10 +56,11 @@ import pacRoutes from './routes/pac';
 import promptTemplatesRoutes from './routes/prompt-templates';
 import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
-import sessionRoutes from './routes/sessions';
 import securityRoutes from './routes/security';
+import sessionRoutes from './routes/sessions';
 import systemRoutes from './routes/system';
 import complianceRoutes from './routes/user-compliance';
+import usageRoutes from './routes/usage';
 import voiceRoutes from './routes/voice';
 import workspaceRoutes from './routes/workspace';
 
@@ -339,6 +342,9 @@ app.use('*', endpointRateLimit());
 
 // Apply idempotency middleware for POST/PUT/PATCH requests
 app.use('*', idempotency());
+
+// Apply audit trail middleware (logs all state-changing requests)
+app.use('*', auditTrail());
 
 // Global error handler with structured error handling
 app.onError((err, c) => {
@@ -1558,7 +1564,11 @@ app.get('/api/feedback/nps/summary', async (c) => {
 app.post('/api/scheduler/reengage', async (c) => {
     // Verify cron secret (timing-safe comparison to prevent timing attacks)
     const cronSecret = c.req.header('x-cron-secret');
-    if (!cronSecret || !process.env.CRON_SECRET || !verifyTimingSafe(cronSecret, process.env.CRON_SECRET)) {
+    if (
+        !cronSecret ||
+        !process.env.CRON_SECRET ||
+        !verifyTimingSafe(cronSecret, process.env.CRON_SECRET)
+    ) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -1822,6 +1832,78 @@ app.post('/api/jobs/retry/:jobId', (c) => {
     return c.json({ success });
 });
 
+// ─── Audit Trail Admin Endpoints ─────────────────────────────────────────────
+
+// GET /api/admin/audit - Query audit log with filters
+app.get('/api/admin/audit', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    // TODO: Add admin role check in production
+    // For now, any authenticated user can query their own audit log
+
+    const { auditStore } = await import('./lib/audit-store');
+
+    // Parse query parameters
+    const targetUserId = c.req.query('userId');
+    const action = c.req.query('action');
+    const resource = c.req.query('resource');
+    const fromDate = c.req.query('from') ? new Date(c.req.query('from')!) : undefined;
+    const toDate = c.req.query('to') ? new Date(c.req.query('to')!) : undefined;
+    const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 500);
+    const offset = Math.max(parseInt(c.req.query('offset') || '0', 10), 0);
+
+    try {
+        const entries = auditStore.getAuditLog({
+            userId: targetUserId,
+            action,
+            resource,
+            fromDate,
+            toDate,
+            limit,
+            offset,
+        });
+
+        const total = auditStore.getCount({
+            userId: targetUserId,
+            action,
+            resource,
+            fromDate,
+            toDate,
+        });
+
+        return c.json({
+            entries,
+            pagination: {
+                total,
+                limit,
+                offset,
+                hasMore: offset + limit < total,
+            },
+        });
+    } catch (error) {
+        console.error('[Audit] Query failed:', error);
+        return c.json({ error: 'Failed to query audit log' }, 500);
+    }
+});
+
+// GET /api/admin/audit/stats - Audit statistics
+app.get('/api/admin/audit/stats', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    // TODO: Add admin role check in production
+
+    try {
+        const { auditStore } = await import('./lib/audit-store');
+        const stats = auditStore.getAuditStats();
+        return c.json(stats);
+    } catch (error) {
+        console.error('[Audit] Stats query failed:', error);
+        return c.json({ error: 'Failed to get audit stats' }, 500);
+    }
+});
+
 // API Routes
 app.route('/api/admin', adminRoutes);
 app.route('/api/admin/backups', adminBackupsRoutes);
@@ -1844,6 +1926,55 @@ app.route('/api/workspace', workspaceRoutes);
 app.route('/api/compliance', complianceRoutes);
 app.route('/api/security', securityRoutes);
 app.route('/api/system', systemRoutes);
+app.route('/api/usage', usageRoutes);
+
+// ─── Dead Letter Queue Admin Endpoints ──────────────────────────────────────
+
+// GET /api/admin/dlq - Get DLQ stats
+app.get('/api/admin/dlq', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const stats = dlq.getStats();
+    return c.json({
+        stats,
+        timestamp: new Date().toISOString(),
+    });
+});
+
+// GET /api/admin/dlq/dead - Get dead entries
+app.get('/api/admin/dlq/dead', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const limit = Math.min(parseInt(c.req.query('limit') || '100', 10), 500);
+    const dead = dlq.getDead().slice(0, limit);
+
+    return c.json({
+        entries: dead,
+        total: dlq.getDead().length,
+        limit,
+    });
+});
+
+// POST /api/admin/dlq/:id/replay - Replay a dead entry
+app.post('/api/admin/dlq/:id/replay', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const id = c.req.param('id');
+    const entry = dlq.replayDead(id);
+
+    if (!entry) {
+        return c.json({ error: 'Entry not found or not in dead state' }, 404);
+    }
+
+    return c.json({
+        success: true,
+        entry,
+        message: 'Entry moved back to pending queue',
+    });
+});
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);
