@@ -554,4 +554,184 @@ app.get('/switching-cost', requireAuth, async (c) => {
     }
 });
 
+/**
+ * GET /api/analytics/activation - Onboarding funnel and activation milestones
+ *
+ * Tracks key activation events that indicate a user has "found value":
+ * - first_chat: Sent at least one message
+ * - first_memory: Has stored memories (personalization)
+ * - first_council: Used multi-model comparison
+ * - first_import: Imported history from ChatGPT/Claude
+ * - first_pac: Set up a proactive reminder
+ *
+ * PMF signal: Users who hit 3+ milestones within 7 days have 5x retention.
+ */
+app.get('/activation', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        const [firstChat, firstCouncil, firstImport, firstPAC, memoryCount, user] =
+            await Promise.all([
+                prisma.chat.findFirst({
+                    where: { userId },
+                    orderBy: { createdAt: 'asc' },
+                    select: { createdAt: true },
+                }),
+                prisma.councilSession.findFirst({
+                    where: { userId },
+                    orderBy: { createdAt: 'asc' },
+                    select: { createdAt: true },
+                }),
+                prisma.importJob.findFirst({
+                    where: { userId, status: 'COMPLETED' },
+                    orderBy: { createdAt: 'asc' },
+                    select: { createdAt: true },
+                }),
+                prisma.pACReminder.findFirst({
+                    where: { userId },
+                    orderBy: { createdAt: 'asc' },
+                    select: { createdAt: true },
+                }),
+                prisma.message.count({ where: { userId } }),
+                prisma.user.findUnique({
+                    where: { id: userId },
+                    select: { createdAt: true },
+                }),
+            ]);
+
+        const signupDate = user?.createdAt || new Date();
+
+        const milestones = {
+            first_chat: firstChat?.createdAt || null,
+            first_memory: memoryCount > 0 ? true : null,
+            first_council: firstCouncil?.createdAt || null,
+            first_import: firstImport?.createdAt || null,
+            first_pac: firstPAC?.createdAt || null,
+        };
+
+        // Count completed milestones
+        const completedCount = Object.values(milestones).filter(Boolean).length;
+
+        // Time to first value (first chat after signup)
+        const timeToFirstValueMs = firstChat
+            ? firstChat.createdAt.getTime() - signupDate.getTime()
+            : null;
+
+        // Milestones within 7 days of signup
+        const sevenDaysAfterSignup = new Date(signupDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        let milestonesInFirst7Days = 0;
+        for (const val of Object.values(milestones)) {
+            if (val instanceof Date && val <= sevenDaysAfterSignup) {
+                milestonesInFirst7Days++;
+            } else if (val === true) {
+                milestonesInFirst7Days++; // memory exists, count it
+            }
+        }
+
+        // Activation level
+        let activationLevel: 'not_started' | 'exploring' | 'activated' | 'power_activated';
+        if (completedCount >= 4) activationLevel = 'power_activated';
+        else if (completedCount >= 2) activationLevel = 'activated';
+        else if (completedCount >= 1) activationLevel = 'exploring';
+        else activationLevel = 'not_started';
+
+        return c.json({
+            activationLevel,
+            completedMilestones: completedCount,
+            totalMilestones: 5,
+            milestones,
+            timeToFirstValueMs,
+            milestonesInFirst7Days,
+            signupDate,
+        });
+    } catch (error) {
+        console.error('[Analytics] Error computing activation:', error);
+        return c.json({ error: 'Failed to compute activation metrics' }, 500);
+    }
+});
+
+/**
+ * GET /api/analytics/retention - Retention signals and churn risk
+ *
+ * Tracks user activity recency and predicts churn risk.
+ * Used by PAC system to trigger re-engagement notifications.
+ */
+app.get('/retention', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        const [lastMessage, lastChat, user, chatsLast30d, chatsLast7d] = await Promise.all([
+            prisma.message.findFirst({
+                where: { userId, role: 'user' },
+                orderBy: { createdAt: 'desc' },
+                select: { createdAt: true },
+            }),
+            prisma.chat.findFirst({
+                where: { userId },
+                orderBy: { createdAt: 'desc' },
+                select: { createdAt: true },
+            }),
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { createdAt: true },
+            }),
+            prisma.chat.count({
+                where: {
+                    userId,
+                    createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+                },
+            }),
+            prisma.chat.count({
+                where: {
+                    userId,
+                    createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+                },
+            }),
+        ]);
+
+        const now = Date.now();
+        const lastActiveAt = lastMessage?.createdAt || lastChat?.createdAt || user?.createdAt;
+        const daysSinceLastActive = lastActiveAt
+            ? Math.floor((now - lastActiveAt.getTime()) / (24 * 60 * 60 * 1000))
+            : 999;
+
+        // Churn risk assessment
+        let churnRisk: 'low' | 'medium' | 'high' | 'critical';
+        if (daysSinceLastActive <= 2) churnRisk = 'low';
+        else if (daysSinceLastActive <= 7) churnRisk = 'medium';
+        else if (daysSinceLastActive <= 14) churnRisk = 'high';
+        else churnRisk = 'critical';
+
+        // Weekly/monthly activity ratio (stickiness)
+        const stickiness = chatsLast30d > 0 ? Math.round((chatsLast7d / chatsLast30d) * 100) : 0;
+
+        // Re-engagement suggestion
+        let reengagementAction: string | null = null;
+        if (churnRisk === 'high') {
+            reengagementAction =
+                'Send PAC re-engagement: "Hey, I noticed something interesting related to your past conversations..."';
+        } else if (churnRisk === 'critical') {
+            reengagementAction = 'Send email re-engagement with usage summary and new features.';
+        }
+
+        return c.json({
+            daysSinceLastActive,
+            lastActiveAt,
+            churnRisk,
+            stickiness,
+            activity: {
+                chatsLast7d,
+                chatsLast30d,
+            },
+            reengagementAction,
+            accountAge: user?.createdAt
+                ? Math.floor((now - user.createdAt.getTime()) / (24 * 60 * 60 * 1000))
+                : 0,
+        });
+    } catch (error) {
+        console.error('[Analytics] Error computing retention:', error);
+        return c.json({ error: 'Failed to compute retention metrics' }, 500);
+    }
+});
+
 export default app;
