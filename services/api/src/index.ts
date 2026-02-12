@@ -6,6 +6,7 @@ import { getModelsForTier, SUPPORTED_MODELS } from './lib/ai-providers';
 import { auditLog } from './lib/audit-log';
 import { auth } from './lib/auth';
 import { breakers } from './lib/circuit-breaker';
+import { enforceRetentionPolicies, getRetentionPolicies } from './lib/data-retention';
 import { validateEnv } from './lib/env';
 import { AppError } from './lib/errors';
 import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
@@ -197,7 +198,7 @@ app.use('*', async (c, next) => {
     }
 
     // Skip for CRON endpoints (they use secret header)
-    if (path.startsWith('/api/scheduler')) {
+    if (path.startsWith('/api/scheduler') || path.startsWith('/api/cron')) {
         return next();
     }
 
@@ -375,7 +376,7 @@ app.get('/api/models/tier/:tier', (c) => {
 });
 
 // Rate limit status
-app.get('/api/rate-limit', (c) => {
+app.get('/api/rate-limit', async (c) => {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
@@ -1281,6 +1282,39 @@ app.post('/api/scheduler/reengage', async (c) => {
         console.error('[Reengage] Failed:', error);
         return c.json({ error: 'Re-engagement failed' }, 500);
     }
+});
+
+// ─── CRON: Data Retention Policy Enforcement ─────────────────────────────────
+app.post('/api/cron/retention', async (c) => {
+    const secret = c.req.header('x-cron-secret');
+    if (secret !== process.env.CRON_SECRET) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    try {
+        const results = await enforceRetentionPolicies();
+        const totalDeleted = results.reduce((sum, r) => sum + r.deleted, 0);
+        const errors = results.filter((r) => r.error);
+
+        console.info(
+            JSON.stringify({
+                event: 'retention_enforced',
+                timestamp: new Date().toISOString(),
+                totalDeleted,
+                results,
+            })
+        );
+
+        return c.json({ success: true, totalDeleted, results, errors: errors.length });
+    } catch (error) {
+        console.error('[Retention] Failed:', error);
+        return c.json({ error: 'Retention enforcement failed' }, 500);
+    }
+});
+
+// ─── CRON: Get Retention Policies ────────────────────────────────────────────
+app.get('/api/cron/retention/policies', (c) => {
+    return c.json({ policies: getRetentionPolicies() });
 });
 
 // API Routes
