@@ -291,32 +291,45 @@ app.get('/sessions/:id', validateParams(sessionIdParamSchema), async (c) => {
 /**
  * POST /api/council/sessions/:id/select - Select preferred response
  */
-app.post('/sessions/:id/select', validateParams(sessionIdParamSchema), validateBody(selectPersonaSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { id: sessionId } = c.get('validatedParams') as { id: string };
-    const { persona } = c.get('validatedBody') as { persona: PersonaType };
+app.post(
+    '/sessions/:id/select',
+    validateParams(sessionIdParamSchema),
+    validateBody(selectPersonaSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { id: sessionId } = c.get('validatedParams') as { id: string };
+        const { persona } = c.get('validatedBody') as { persona: PersonaType };
 
-    await councilService.selectResponse(sessionId, userId, persona);
+        await councilService.selectResponse(sessionId, userId, persona);
 
-    // MOAT: Council→Preference learning
-    // Track which personas users prefer to personalize future council sessions.
-    // Competitors show equal-weight responses; we learn and adapt.
-    try {
-        const session = await councilService.getCouncilSession(sessionId, userId);
-        if (session) {
-            const openMemory = await import('../services/openmemory.service');
-            await openMemory.addMemory(
-                `Preferred AI persona "${persona}" for query type: ${session.query.slice(0, 100)}`,
-                userId,
-                { sector: 'procedural', metadata: { source: 'council_preference', persona } }
-            );
+        // MOAT: Council→Preference learning (PRO+ only to control costs)
+        try {
+            const councilUser = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { tier: true },
+            });
+            const councilTier = (councilUser?.tier || 'FREE') as string;
+            if (councilTier === 'PRO' || councilTier === 'ULTRA') {
+                const session = await councilService.getCouncilSession(sessionId, userId);
+                if (session) {
+                    const openMemory = await import('../services/openmemory.service');
+                    await openMemory.addMemory(
+                        `Preferred AI persona "${persona}" for query type: ${session.query.slice(0, 100)}`,
+                        userId,
+                        {
+                            sector: 'procedural',
+                            metadata: { source: 'council_preference', persona },
+                        }
+                    );
+                }
+            }
+        } catch {
+            // Non-blocking
         }
-    } catch {
-        // Non-blocking
-    }
 
-    return c.json({ success: true });
-});
+        return c.json({ success: true });
+    }
+);
 
 /**
  * POST /api/council/sessions/:id/synthesize - Generate synthesis

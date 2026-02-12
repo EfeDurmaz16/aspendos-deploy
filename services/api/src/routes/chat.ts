@@ -321,24 +321,29 @@ app.post(
                         }
 
                         // Auto-extract memories from conversation (fire-and-forget)
-                        extractMemoriesFromExchange(userId, content, text).catch((err) =>
-                            console.error('[Memory] Auto-extraction failed:', err)
-                        );
+                        // Only for PRO+ tiers to control API costs
+                        if (userTier === 'PRO' || userTier === 'ULTRA') {
+                            extractMemoriesFromExchange(userId, content, text).catch((err) =>
+                                console.error('[Memory] Auto-extraction failed:', err)
+                            );
+                        }
 
                         // Self-reflection: score response quality (fire-and-forget)
-                        // This builds data for learning which memory/routing combos work best
-                        getMemoryAgent()
-                            .reflectOnResponse(content, text, decision.useMemory)
-                            .then((reflection) => {
-                                if (!reflection.satisfied) {
-                                    console.warn(
-                                        `[Quality] Low score ${reflection.qualityScore}/100 for query "${content.slice(0, 60)}..." - ${reflection.retryStrategy || 'no strategy'}`
-                                    );
-                                }
-                            })
-                            .catch(() => {
-                                /* non-blocking */
-                            });
+                        // Only for ULTRA tier - most expensive quality feedback loop
+                        if (userTier === 'ULTRA') {
+                            getMemoryAgent()
+                                .reflectOnResponse(content, text, decision.useMemory)
+                                .then((reflection) => {
+                                    if (!reflection.satisfied) {
+                                        console.warn(
+                                            `[Quality] Low score ${reflection.qualityScore}/100 for query "${content.slice(0, 60)}..." - ${reflection.retryStrategy || 'no strategy'}`
+                                        );
+                                    }
+                                })
+                                .catch(() => {
+                                    /* non-blocking */
+                                });
+                        }
 
                         // MOAT: Routing feedback loop
                         // The routing decision (useMemory, queryType, sectors) is captured in X-Memory-Decision header.
