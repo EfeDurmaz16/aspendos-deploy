@@ -4,10 +4,8 @@
  * Handles parallel streaming responses from 4 AI personas using different models.
  */
 
-import { createAnthropic } from '@ai-sdk/anthropic';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
+import { getModelWithFallback } from '../lib/ai-providers';
 import { prisma } from '../lib/prisma';
 
 // Persona types
@@ -87,21 +85,7 @@ Respond thoughtfully but directly (150-200 words). Your role is to make the fina
     },
 };
 
-// Get AI provider for a model
-function getProvider(modelId: string) {
-    const [provider] = modelId.split('/');
-
-    switch (provider) {
-        case 'openai':
-            return createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        case 'anthropic':
-            return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-        case 'google':
-            return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
-        default:
-            return createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    }
-}
+// Provider resolution is now centralized via ai-providers.ts with circuit breaker support
 
 /**
  * MOAT: Learn user's persona preferences from selection history.
@@ -229,11 +213,11 @@ export async function* streamPersonaResponse(
     });
 
     try {
-        const provider = getProvider(personaDef.modelId);
-        const modelName = personaDef.modelId.split('/')[1];
+        // Use centralized provider with circuit breaker fallback
+        const { model: resolvedModel } = getModelWithFallback(personaDef.modelId);
 
         const result = streamText({
-            model: provider(modelName),
+            model: resolvedModel,
             system: personaDef.systemPrompt,
             prompt: query,
         });
@@ -388,10 +372,11 @@ export async function generateSynthesis(sessionId: string) {
         })
         .join('\n\n');
 
-    const provider = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // Use centralized provider with circuit breaker fallback
+    const { model: synthesisModel } = getModelWithFallback('openai/gpt-4o');
 
     const result = await streamText({
-        model: provider('gpt-4o'),
+        model: synthesisModel,
         system: `You are synthesizing multiple perspectives on a question. Provide a balanced, actionable recommendation that:
 1. Acknowledges the key insights from each perspective
 2. Identifies areas of agreement and tension

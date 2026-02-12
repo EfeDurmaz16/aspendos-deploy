@@ -6,7 +6,7 @@
 
 import { generateText, stepCountIs, streamText } from 'ai';
 import { Hono } from 'hono';
-import { getModel, isModelAvailableForTier } from '../lib/ai-providers';
+import { getModel, getModelWithFallback, isModelAvailableForTier } from '../lib/ai-providers';
 import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
@@ -163,6 +163,18 @@ app.post(
 
         const { content, model_id, enable_thinking, stream: shouldStream } = validatedBody;
 
+        // Input length guard: prevent abuse and runaway API costs
+        const MAX_MESSAGE_LENGTH = 32_000; // ~8K tokens
+        if (content.length > MAX_MESSAGE_LENGTH) {
+            return c.json(
+                {
+                    error: `Message too long (${content.length} chars). Maximum ${MAX_MESSAGE_LENGTH} characters.`,
+                    code: 'MESSAGE_TOO_LONG',
+                },
+                413
+            );
+        }
+
         // Idempotency: reject duplicate requests within 10-minute window
         const idempotencyKey = c.req.header('Idempotency-Key');
         if (idempotencyKey) {
@@ -313,32 +325,35 @@ app.post(
         // ========================================
         if (shouldStream) {
             try {
+                // Use fallback-aware model resolution (auto-switches provider if circuit breaker is open)
+                const { model: resolvedModel, actualModelId } = getModelWithFallback(modelId);
+
                 const result = streamText({
-                    model: getModel(modelId),
+                    model: resolvedModel,
                     system: systemPrompt,
                     messages: history,
                     tools: allTools,
                     stopWhen: stepCountIs(5), // Allow up to 5 tool calls
                     temperature: 0.7,
                     onFinish: async ({ text, usage }) => {
-                        // Save assistant message to database
+                        // Save assistant message to database (track actual model used for transparency)
                         await chatService.createMessage({
                             chatId,
                             userId,
                             role: 'assistant',
                             content: text,
-                            modelUsed: modelId,
+                            modelUsed: actualModelId,
                             tokensIn: usage?.promptTokens,
                             tokensOut: usage?.completionTokens,
                         });
 
-                        // Record token usage for billing
+                        // Record token usage for billing (bill for actual model, not requested)
                         if (usage?.promptTokens || usage?.completionTokens) {
                             await billingService.recordTokenUsage(
                                 userId,
                                 usage.promptTokens || 0,
                                 usage.completionTokens || 0,
-                                modelId
+                                actualModelId
                             );
                             // Proactive spending alert (fire-and-forget)
                             maybeCreateSpendingNotification(userId).catch(() => {});
@@ -399,11 +414,9 @@ app.post(
 
                 return response;
             } catch (error) {
-                console.error(
-                    '[Chat] Streaming error:',
-                    error instanceof Error ? error.message : 'Unknown'
-                );
-                return c.json({ error: 'Failed to stream response' }, 500);
+                const errMsg = error instanceof Error ? error.message : 'Unknown';
+                console.error('[Chat] Streaming error:', errMsg);
+                return c.json(classifyAIError(errMsg), classifyAIErrorStatus(errMsg));
             }
         }
 
@@ -411,8 +424,12 @@ app.post(
         // NON-STREAMING RESPONSE
         // ========================================
         try {
+            // Use fallback-aware model resolution
+            const { model: resolvedModel, actualModelId: nonStreamModelId } =
+                getModelWithFallback(modelId);
+
             const result = await generateText({
-                model: getModel(modelId),
+                model: resolvedModel,
                 system: systemPrompt,
                 messages: history,
                 tools: allTools,
@@ -420,25 +437,27 @@ app.post(
                 temperature: 0.7,
             });
 
-            // Save assistant message
+            // Save assistant message (track actual model used)
             const assistantMessage = await chatService.createMessage({
                 chatId,
                 userId,
                 role: 'assistant',
                 content: result.text,
-                modelUsed: modelId,
+                modelUsed: nonStreamModelId,
                 tokensIn: result.usage?.promptTokens,
                 tokensOut: result.usage?.completionTokens,
             });
 
-            // Record token usage for billing
+            // Record token usage for billing (bill for actual model)
             if (result.usage?.promptTokens || result.usage?.completionTokens) {
                 await billingService.recordTokenUsage(
                     userId,
                     result.usage.promptTokens || 0,
                     result.usage.completionTokens || 0,
-                    modelId
+                    nonStreamModelId
                 );
+                // Proactive spending alert (fire-and-forget)
+                maybeCreateSpendingNotification(userId).catch(() => {});
             }
 
             return c.json({
@@ -447,11 +466,9 @@ app.post(
                 toolCalls: result.toolCalls,
             });
         } catch (error) {
-            console.error(
-                '[Chat] Generation error:',
-                error instanceof Error ? error.message : 'Unknown'
-            );
-            return c.json({ error: 'Failed to generate response' }, 500);
+            const errMsg = error instanceof Error ? error.message : 'Unknown';
+            console.error('[Chat] Generation error:', errMsg);
+            return c.json(classifyAIError(errMsg), classifyAIErrorStatus(errMsg));
         }
     }
 );
@@ -694,5 +711,68 @@ app.delete('/:id/share', validateParams(chatIdParamSchema), async (c) => {
         return c.json({ error: 'Failed to revoke share token' }, 500);
     }
 });
+
+// ============================================
+// AI ERROR CLASSIFICATION
+// ============================================
+
+/**
+ * Classify AI provider errors into structured error codes.
+ * Helps frontend show appropriate messaging and retry logic.
+ */
+function classifyAIError(message: string): { error: string; code: string; retryable: boolean } {
+    const lower = message.toLowerCase();
+
+    if (lower.includes('rate limit') || lower.includes('429') || lower.includes('too many')) {
+        return {
+            error: 'AI provider rate limited. Please wait a moment and try again.',
+            code: 'RATE_LIMITED',
+            retryable: true,
+        };
+    }
+    if (lower.includes('context') && (lower.includes('long') || lower.includes('length'))) {
+        return {
+            error: 'Conversation too long for this model. Try starting a new chat or a shorter message.',
+            code: 'CONTEXT_TOO_LONG',
+            retryable: false,
+        };
+    }
+    if (lower.includes('unavailable') || lower.includes('all ai providers')) {
+        return {
+            error: 'AI providers are temporarily unavailable. Please try again shortly.',
+            code: 'PROVIDER_UNAVAILABLE',
+            retryable: true,
+        };
+    }
+    if (lower.includes('timeout') || lower.includes('aborted')) {
+        return {
+            error: 'Request timed out. Please try again with a shorter message.',
+            code: 'TIMEOUT',
+            retryable: true,
+        };
+    }
+    if (lower.includes('invalid') && lower.includes('key')) {
+        return {
+            error: 'AI provider configuration error. Please contact support.',
+            code: 'CONFIG_ERROR',
+            retryable: false,
+        };
+    }
+
+    return {
+        error: 'Failed to generate response. Please try again.',
+        code: 'PROVIDER_ERROR',
+        retryable: true,
+    };
+}
+
+function classifyAIErrorStatus(message: string): number {
+    const lower = message.toLowerCase();
+    if (lower.includes('rate limit') || lower.includes('429')) return 429;
+    if (lower.includes('context') && lower.includes('long')) return 413;
+    if (lower.includes('unavailable') || lower.includes('all ai providers')) return 503;
+    if (lower.includes('timeout') || lower.includes('aborted')) return 504;
+    return 500;
+}
 
 export default app;
