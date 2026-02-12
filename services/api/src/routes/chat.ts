@@ -783,4 +783,49 @@ function classifyAIErrorStatus(message: string): number {
     return 500;
 }
 
+// GET /api/chat/:id/export - Export chat in Markdown or JSON
+app.get('/:id/export', validateParams(chatIdParamSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const validatedParams = c.get('validatedParams') as { id: string };
+    const chatId = validatedParams.id;
+    const format = (c.req.query('format') || 'markdown') as string;
+
+    const chat = await chatService.getChatWithMessages(chatId, userId);
+    if (!chat) {
+        return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
+    }
+
+    if (format === 'json') {
+        return c.json(chat, 200, {
+            'Content-Disposition': `attachment; filename="chat-${chatId}.json"`,
+        });
+    }
+
+    // Markdown format
+    const lines: string[] = [
+        `# ${chat.title || 'Untitled Chat'}`,
+        '',
+        `**Model:** ${chat.modelPreference || 'default'}`,
+        `**Created:** ${chat.createdAt}`,
+        `**Messages:** ${chat.messages?.length || 0}`,
+        '',
+        '---',
+        '',
+    ];
+
+    for (const msg of chat.messages || []) {
+        const role = msg.role === 'user' ? 'You' : 'YULA';
+        lines.push(`### ${role}`);
+        lines.push('');
+        lines.push(msg.content || '');
+        lines.push('');
+    }
+
+    const markdown = lines.join('\n');
+    return c.text(markdown, 200, {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Content-Disposition': `attachment; filename="chat-${chatId}.md"`,
+    });
+});
+
 export default app;

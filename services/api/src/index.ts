@@ -7,11 +7,15 @@ import { auditLog } from './lib/audit-log';
 import { auth } from './lib/auth';
 import { breakers } from './lib/circuit-breaker';
 import { enforceRetentionPolicies, getRetentionPolicies } from './lib/data-retention';
+import { getErrorCatalog } from './lib/error-codes';
 import { validateEnv } from './lib/env';
 import { AppError } from './lib/errors';
+import { checkReadiness } from './lib/health-checks';
 import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
 import { initSentry, Sentry } from './lib/sentry';
+import { apiVersion } from './middleware/api-version';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
+import { sanitizeBody } from './middleware/sanitize';
 import { requestTimeout } from './middleware/timeout';
 import analyticsRoutes from './routes/analytics';
 import apiKeysRoutes from './routes/api-keys';
@@ -126,6 +130,12 @@ app.use(
         credentials: true,
     })
 );
+
+// Input sanitization middleware
+app.use('*', sanitizeBody());
+
+// API versioning middleware
+app.use('/api/*', apiVersion());
 
 // Sentry error handling middleware
 app.use('*', async (c, next) => {
@@ -348,6 +358,57 @@ app.get('/health', async (c) => {
 
     const statusCode = overallStatus === 'unhealthy' ? 503 : 200;
     return c.json(response, statusCode);
+});
+
+// /.well-known/security.txt - Responsible disclosure
+app.get('/.well-known/security.txt', (c) => {
+    return c.text(`Contact: security@yula.dev
+Expires: 2027-01-01T00:00:00.000Z
+Preferred-Languages: en, tr
+Canonical: https://api.yula.dev/.well-known/security.txt
+Policy: https://yula.dev/security-policy
+`);
+});
+
+// /status - Service status for status page
+app.get('/status', async (c) => {
+    const startTime = Date.now();
+    const services: Record<string, { status: string; latencyMs?: number }> = {};
+
+    // Check database
+    try {
+        const { prisma } = await import('./lib/prisma');
+        const dbStart = Date.now();
+        await prisma.$queryRaw`SELECT 1`;
+        services.database = { status: 'operational', latencyMs: Date.now() - dbStart };
+    } catch {
+        services.database = { status: 'outage' };
+    }
+
+    // Overall status
+    const allOperational = Object.values(services).every((s) => s.status === 'operational');
+
+    return c.json({
+        status: allOperational ? 'operational' : 'degraded',
+        version: '1.0.0',
+        services,
+        uptime: process.uptime(),
+        responseTimeMs: Date.now() - startTime,
+        timestamp: new Date().toISOString(),
+    });
+});
+
+// Kubernetes-style readiness probe
+app.get('/ready', async (c) => {
+    const result = await checkReadiness();
+    const status = result.status === 'unhealthy' ? 503 : 200;
+    return c.json(result, status);
+});
+
+// Deep health check with all dependencies
+app.get('/health/deep', async (c) => {
+    const result = await checkReadiness();
+    return c.json(result);
 });
 
 // Models endpoint - now uses local configuration
@@ -1425,6 +1486,11 @@ app.get('/api/account/export', async (c) => {
     }
 });
 
+// ─── Error Catalog & Docs ────────────────────────────────────────────────────
+app.get('/api/errors', (c) => {
+    return c.json({ errors: getErrorCatalog() });
+});
+
 // API Routes
 app.route('/api/chat', chatRoutes);
 app.route('/api/council', councilRoutes);
@@ -1470,7 +1536,7 @@ async function startServer() {
         server.close();
 
         // Give in-flight requests time to complete
-        await new Promise((resolve) => setTimeout(resolve, 10000));
+        await new Promise((resolve) => setTimeout(resolve, 30000));
 
         try {
             await closeMCPClients();

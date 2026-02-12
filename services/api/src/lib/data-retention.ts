@@ -4,9 +4,7 @@
  * GDPR-compliant data retention with configurable policies per data type.
  * Designed to run as a daily cron job via Railway or similar scheduler.
  */
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma';
 
 // Retention policies (in days)
 const RETENTION_POLICIES = {
