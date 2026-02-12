@@ -385,7 +385,7 @@ app.get('/api/rate-limit', (c) => {
     const tier =
         ((user as Record<string, unknown>)?.tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA') || 'FREE';
 
-    return c.json(getRateLimitStatus(userId, tier));
+    return c.json(await getRateLimitStatus(userId, tier));
 });
 
 // Pinned/recommended models

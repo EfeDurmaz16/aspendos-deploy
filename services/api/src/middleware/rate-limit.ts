@@ -2,9 +2,11 @@
  * Rate Limiting Middleware
  * Token bucket algorithm with tier-based limits.
  *
- * PRODUCTION TODO: Replace with Redis-based rate limiting (@upstash/ratelimit or ioredis)
- * Current implementation uses in-memory Map which will not scale across multiple instances.
+ * Uses Upstash Redis for distributed rate limiting across multiple instances.
+ * Falls back to in-memory rate limiting if Redis is not configured.
  */
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 import type { Context, Next } from 'hono';
 
 // Rate limit configuration per tier
@@ -33,7 +35,55 @@ const TIER_LIMITS = {
 
 type UserTier = keyof typeof TIER_LIMITS;
 
-// In-memory store for rate limiting (use Redis in production)
+// Initialize Redis client (optional - falls back to in-memory if not configured)
+const redis =
+    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+        ? new Redis({
+              url: process.env.UPSTASH_REDIS_REST_URL,
+              token: process.env.UPSTASH_REDIS_REST_TOKEN,
+          })
+        : null;
+
+const isRedisEnabled = redis !== null;
+
+if (isRedisEnabled) {
+    console.info('✅ Rate limiting: Upstash Redis (distributed, production-ready)');
+} else {
+    console.warn(
+        '⚠️  Rate limiting: In-memory fallback. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production.'
+    );
+}
+
+// Create Upstash rate limiters per tier (per-minute sliding window)
+const minuteLimiters = isRedisEnabled
+    ? Object.fromEntries(
+          Object.entries(TIER_LIMITS).map(([tier, limits]) => [
+              tier,
+              new Ratelimit({
+                  redis: redis!,
+                  limiter: Ratelimit.slidingWindow(limits.requestsPerMinute, '1 m'),
+                  prefix: `rl:min:${tier.toLowerCase()}`,
+              }),
+          ])
+      )
+    : null;
+
+// Create Upstash rate limiters per tier (daily fixed window)
+const dailyLimiters = isRedisEnabled
+    ? Object.fromEntries(
+          Object.entries(TIER_LIMITS).map(([tier, limits]) => [
+              tier,
+              new Ratelimit({
+                  redis: redis!,
+                  limiter: Ratelimit.fixedWindow(limits.requestsPerDay, '1 d'),
+                  prefix: `rl:day:${tier.toLowerCase()}`,
+              }),
+          ])
+      )
+    : null;
+
+// ─── In-Memory Fallback (for development / single-instance) ──────────────────
+
 interface RateLimitState {
     tokens: number;
     lastRefill: number;
@@ -42,56 +92,40 @@ interface RateLimitState {
     resetTime: number;
 }
 
-const rateLimitStore = new Map<string, RateLimitState>();
+const fallbackStore = new Map<string, RateLimitState>();
 
-// Abuse detection: track velocity of account activity
+// Abuse detection: track velocity of free-tier activity
 const abuseTracker = new Map<
     string,
     {
         firstSeenAt: number;
         requestCount: number;
-        burstCount: number; // requests within 5 seconds
+        burstCount: number;
         lastRequestAt: number;
         flagged: boolean;
     }
 >();
 
-// Clean up abuse tracker every 5 minutes
+// Periodic cleanup for fallback store
 setInterval(() => {
-    const cutoff = Date.now() - 60 * 60 * 1000; // 1 hour
+    const now = Date.now();
+    for (const [key, state] of fallbackStore.entries()) {
+        if (now - state.resetTime > 2 * 24 * 60 * 60 * 1000) {
+            fallbackStore.delete(key);
+        }
+    }
+    const cutoff = Date.now() - 60 * 60 * 1000;
     for (const [key, state] of abuseTracker.entries()) {
         if (state.lastRequestAt < cutoff) abuseTracker.delete(key);
     }
-}, 5 * 60_000);
-
-// Log warning about in-memory rate limiting on startup
-console.warn(
-    '⚠️  WARNING: Using in-memory rate limiting. This will NOT work correctly across multiple instances.'
-);
-console.warn(
-    '   For production, implement Redis-based rate limiting (@upstash/ratelimit or ioredis).'
-);
-
-// Clean up expired entries every 60 seconds to prevent memory leaks
-setInterval(() => {
-    const now = Date.now();
-    for (const [key, state] of rateLimitStore.entries()) {
-        // Remove entries that haven't been accessed in over 2 days
-        if (now - state.resetTime > 2 * 24 * 60 * 60 * 1000) {
-            rateLimitStore.delete(key);
-        }
-    }
 }, 60_000);
 
-/**
- * Get or create rate limit state for a user
- */
-function getRateLimitState(userId: string, tier: UserTier): RateLimitState {
+function getFallbackState(userId: string, tier: UserTier): RateLimitState {
     const key = `${userId}:${tier}`;
     const now = Date.now();
     const limits = TIER_LIMITS[tier];
 
-    let state = rateLimitStore.get(key);
+    let state = fallbackStore.get(key);
 
     if (!state) {
         state = {
@@ -101,22 +135,19 @@ function getRateLimitState(userId: string, tier: UserTier): RateLimitState {
             lastReset: now,
             resetTime: now,
         };
-        rateLimitStore.set(key, state);
+        fallbackStore.set(key, state);
         return state;
     }
 
-    // Check if we need to reset daily counter
     const startOfToday = new Date().setHours(0, 0, 0, 0);
     if (state.lastReset < startOfToday) {
         state.requestsToday = 0;
         state.lastReset = now;
     }
 
-    // Refill tokens based on time elapsed
     const elapsed = now - state.lastRefill;
-    const refillRate = limits.requestsPerMinute / 60000; // tokens per ms
+    const refillRate = limits.requestsPerMinute / 60000;
     const tokensToAdd = elapsed * refillRate;
-
     state.tokens = Math.min(limits.requestsPerMinute, state.tokens + tokensToAdd);
     state.lastRefill = now;
     state.resetTime = now;
@@ -124,46 +155,90 @@ function getRateLimitState(userId: string, tier: UserTier): RateLimitState {
     return state;
 }
 
+// ─── Middleware ───────────────────────────────────────────────────────────────
+
 /**
- * Rate limit middleware
+ * Rate limit middleware - uses Redis when available, falls back to in-memory
  */
 export function rateLimit() {
     return async (c: Context, next: Next) => {
         const userId = c.get('userId');
 
-        // IP-based rate limiting for unauthenticated requests
+        // Determine identity and tier
+        let identifier: string;
+        let tier: UserTier;
+
         if (!userId) {
             const ip =
                 c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
                 c.req.header('cf-connecting-ip') ||
                 'unknown';
-            const ipState = getRateLimitState(`ip:${ip}`, 'FREE');
-            const ipLimits = TIER_LIMITS.FREE;
+            identifier = `ip:${ip}`;
+            tier = 'FREE';
+        } else {
+            identifier = userId;
+            const user = c.get('user');
+            const rawTier = (user as unknown as Record<string, unknown>)?.tier;
+            const VALID_TIERS = new Set<string>(['FREE', 'STARTER', 'PRO', 'ULTRA']);
+            tier =
+                typeof rawTier === 'string' && VALID_TIERS.has(rawTier)
+                    ? (rawTier as UserTier)
+                    : 'FREE';
+        }
 
-            if (ipState.requestsToday >= ipLimits.requestsPerDay) {
-                return c.json({ error: 'Rate limit exceeded' }, 429);
-            }
-            if (ipState.tokens < 1) {
-                return c.json({ error: 'Rate limit exceeded' }, 429);
+        const limits = TIER_LIMITS[tier];
+
+        // ─── Redis Path ─────────────────────────────────────────────
+        if (isRedisEnabled && minuteLimiters && dailyLimiters) {
+            // Check daily limit first
+            const dailyResult = await dailyLimiters[tier].limit(identifier);
+            if (!dailyResult.success) {
+                c.header('X-RateLimit-Limit', String(limits.requestsPerDay));
+                c.header('X-RateLimit-Remaining', String(dailyResult.remaining));
+                c.header('X-RateLimit-Reset', String(dailyResult.reset));
+                c.header('Retry-After', String(Math.ceil((dailyResult.reset - Date.now()) / 1000)));
+
+                return c.json(
+                    {
+                        error: 'Daily rate limit exceeded',
+                        limit: limits.requestsPerDay,
+                        resetAt: new Date(dailyResult.reset).toISOString(),
+                    },
+                    429
+                );
             }
 
-            ipState.tokens -= 1;
-            ipState.requestsToday += 1;
+            // Check per-minute limit
+            const minuteResult = await minuteLimiters[tier].limit(identifier);
+            if (!minuteResult.success) {
+                c.header('X-RateLimit-Limit', String(limits.requestsPerMinute));
+                c.header('X-RateLimit-Remaining', String(minuteResult.remaining));
+                c.header(
+                    'Retry-After',
+                    String(Math.ceil((minuteResult.reset - Date.now()) / 1000))
+                );
+
+                return c.json(
+                    {
+                        error: 'Rate limit exceeded',
+                        limit: limits.requestsPerMinute,
+                        retryAfter: Math.ceil((minuteResult.reset - Date.now()) / 1000),
+                    },
+                    429
+                );
+            }
+
+            // Set headers
+            c.header('X-RateLimit-Limit', String(limits.requestsPerMinute));
+            c.header('X-RateLimit-Remaining', String(minuteResult.remaining));
+            c.header('X-RateLimit-Daily-Remaining', String(dailyResult.remaining));
+
             await next();
             return;
         }
 
-        // Get user tier (default to FREE, validate against known tiers)
-        const user = c.get('user');
-        const rawTier = (user as unknown as Record<string, unknown>)?.tier;
-        const VALID_TIERS = new Set<string>(['FREE', 'STARTER', 'PRO', 'ULTRA']);
-        const tier: UserTier =
-            typeof rawTier === 'string' && VALID_TIERS.has(rawTier)
-                ? (rawTier as UserTier)
-                : 'FREE';
-
-        const limits = TIER_LIMITS[tier];
-        const state = getRateLimitState(userId, tier);
+        // ─── In-Memory Fallback Path ────────────────────────────────
+        const state = getFallbackState(identifier, tier);
 
         // Check daily limit
         if (state.requestsToday >= limits.requestsPerDay) {
@@ -181,10 +256,9 @@ export function rateLimit() {
             );
         }
 
-        // Check per-minute limit (token bucket)
+        // Check per-minute limit
         if (state.tokens < 1) {
             const retryAfter = Math.ceil((1 - state.tokens) / (limits.requestsPerMinute / 60));
-
             c.header('X-RateLimit-Limit', String(limits.requestsPerMinute));
             c.header('X-RateLimit-Remaining', '0');
             c.header('Retry-After', String(retryAfter));
@@ -199,12 +273,12 @@ export function rateLimit() {
             );
         }
 
-        // Consume a token
+        // Consume
         state.tokens -= 1;
         state.requestsToday += 1;
 
         // Abuse detection for FREE tier
-        if (tier === 'FREE') {
+        if (tier === 'FREE' && userId) {
             const abuseKey = `abuse:${userId}`;
             const now = Date.now();
             let abuse = abuseTracker.get(abuseKey);
@@ -221,8 +295,6 @@ export function rateLimit() {
             }
 
             abuse.requestCount++;
-
-            // Detect burst: >5 requests within 5 seconds
             if (now - abuse.lastRequestAt < 5000) {
                 abuse.burstCount++;
             } else {
@@ -230,23 +302,21 @@ export function rateLimit() {
             }
             abuse.lastRequestAt = now;
 
-            // Flag if: burst of 10+ rapid requests OR 50+ requests in first 10 minutes
             const minutesSinceFirstSeen = (now - abuse.firstSeenAt) / 60000;
             if (abuse.burstCount >= 10 || (minutesSinceFirstSeen < 10 && abuse.requestCount > 50)) {
                 abuse.flagged = true;
                 console.warn(
-                    `[Abuse] FREE tier user ${userId} flagged: burst=${abuse.burstCount}, total=${abuse.requestCount}, minutes=${Math.round(minutesSinceFirstSeen)}`
+                    `[Abuse] FREE tier user ${userId} flagged: burst=${abuse.burstCount}, total=${abuse.requestCount}`
                 );
             }
 
-            // Progressive throttle: flagged users get 2x slower rate limit refill
             if (abuse.flagged) {
-                state.tokens = Math.max(0, state.tokens - 0.5); // Extra token penalty
+                state.tokens = Math.max(0, state.tokens - 0.5);
                 c.header('X-Abuse-Warning', 'Rate throttled due to unusual activity patterns');
             }
         }
 
-        // Set rate limit headers
+        // Set headers
         c.header('X-RateLimit-Limit', String(limits.requestsPerMinute));
         c.header('X-RateLimit-Remaining', String(Math.floor(state.tokens)));
         c.header(
@@ -261,10 +331,31 @@ export function rateLimit() {
 /**
  * Get rate limit status for a user
  */
-export function getRateLimitStatus(userId: string, tier: UserTier = 'FREE') {
+export async function getRateLimitStatus(userId: string, tier: UserTier = 'FREE') {
     const limits = TIER_LIMITS[tier];
-    const state = getRateLimitState(userId, tier);
 
+    if (isRedisEnabled && minuteLimiters && dailyLimiters) {
+        const [minuteResult, dailyResult] = await Promise.all([
+            minuteLimiters[tier].getRemaining(userId),
+            dailyLimiters[tier].getRemaining(userId),
+        ]);
+
+        return {
+            tier,
+            limits: {
+                requestsPerMinute: limits.requestsPerMinute,
+                requestsPerDay: limits.requestsPerDay,
+            },
+            current: {
+                tokensRemaining: minuteResult,
+                dailyRemaining: dailyResult,
+            },
+            backend: 'redis',
+        };
+    }
+
+    // Fallback
+    const state = getFallbackState(userId, tier);
     return {
         tier,
         limits: {
@@ -276,6 +367,7 @@ export function getRateLimitStatus(userId: string, tier: UserTier = 'FREE') {
             requestsToday: state.requestsToday,
             dailyRemaining: limits.requestsPerDay - state.requestsToday,
         },
+        backend: 'memory',
         resetAt: new Date(new Date().setHours(24, 0, 0, 0)).toISOString(),
     };
 }

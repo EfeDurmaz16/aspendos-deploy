@@ -194,6 +194,18 @@ export async function DELETE() {
             // Continue even if Qdrant fails - user data in DB is already deleted
         }
 
+        // Audit log for GDPR compliance - record the deletion event
+        // This is logged after deletion since the user record no longer exists
+        console.info(
+            JSON.stringify({
+                event: 'account_deleted',
+                userId,
+                timestamp: new Date().toISOString(),
+                ip: '***',
+                gdprArticle: '17',
+            })
+        );
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('[DELETE /api/account] Error:', error);
