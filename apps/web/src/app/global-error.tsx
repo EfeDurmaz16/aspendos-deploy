@@ -10,7 +10,6 @@ export default function GlobalError({
     reset: () => void;
 }) {
     useEffect(() => {
-        // Log error to console for debugging
         console.error('Global error:', error);
     }, [error]);
 
@@ -21,9 +20,9 @@ export default function GlobalError({
                     margin: 0,
                     padding: 0,
                     fontFamily:
-                        "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                    backgroundColor: '#09090b',
-                    color: '#fafafa',
+                        "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+                    backgroundColor: '#0d0d0d',
+                    color: '#ececec',
                     minHeight: '100vh',
                     display: 'flex',
                     alignItems: 'center',
@@ -34,23 +33,39 @@ export default function GlobalError({
                     style={{
                         textAlign: 'center',
                         padding: '2rem',
-                        maxWidth: '600px',
+                        maxWidth: '480px',
                     }}
                 >
                     <div
                         style={{
-                            fontSize: '4rem',
-                            marginBottom: '1rem',
-                            opacity: 0.5,
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1.5rem',
                         }}
                     >
-                        ⚠️
+                        <svg
+                            width="32"
+                            height="32"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#ef4444"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
                     </div>
                     <h1
                         style={{
-                            fontSize: '2rem',
-                            fontWeight: 700,
-                            marginBottom: '1rem',
+                            fontSize: '1.5rem',
+                            fontWeight: 600,
+                            marginBottom: '0.75rem',
                             letterSpacing: '-0.025em',
                         }}
                     >
@@ -58,22 +73,21 @@ export default function GlobalError({
                     </h1>
                     <p
                         style={{
-                            fontSize: '1rem',
-                            color: '#a1a1aa',
-                            marginBottom: '2rem',
+                            fontSize: '0.875rem',
+                            color: '#a3a3a3',
+                            marginBottom: '1.5rem',
                             lineHeight: 1.6,
                         }}
                     >
-                        A critical error occurred that prevented the application from loading.
-                        Please try refreshing the page.
+                        A critical error occurred. Please try refreshing the page.
                     </p>
                     {error.digest && (
                         <p
                             style={{
-                                fontSize: '0.875rem',
-                                color: '#71717a',
-                                marginBottom: '2rem',
-                                fontFamily: "'JetBrains Mono', monospace",
+                                fontSize: '0.75rem',
+                                color: '#737373',
+                                marginBottom: '1.5rem',
+                                fontFamily: "'Geist Mono', 'SF Mono', monospace",
                             }}
                         >
                             Error ID: {error.digest}
@@ -82,13 +96,13 @@ export default function GlobalError({
                     <button
                         onClick={reset}
                         style={{
-                            backgroundColor: '#fafafa',
-                            color: '#09090b',
+                            backgroundColor: '#ececec',
+                            color: '#0d0d0d',
                             border: 'none',
-                            padding: '0.75rem 2rem',
-                            fontSize: '1rem',
-                            fontWeight: 600,
-                            borderRadius: '0.5rem',
+                            padding: '0.625rem 1.5rem',
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            borderRadius: '0.75rem',
                             cursor: 'pointer',
                             transition: 'opacity 0.2s',
                         }}
