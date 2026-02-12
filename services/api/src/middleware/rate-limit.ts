@@ -44,6 +44,26 @@ interface RateLimitState {
 
 const rateLimitStore = new Map<string, RateLimitState>();
 
+// Abuse detection: track velocity of account activity
+const abuseTracker = new Map<
+    string,
+    {
+        firstSeenAt: number;
+        requestCount: number;
+        burstCount: number; // requests within 5 seconds
+        lastRequestAt: number;
+        flagged: boolean;
+    }
+>();
+
+// Clean up abuse tracker every 5 minutes
+setInterval(() => {
+    const cutoff = Date.now() - 60 * 60 * 1000; // 1 hour
+    for (const [key, state] of abuseTracker.entries()) {
+        if (state.lastRequestAt < cutoff) abuseTracker.delete(key);
+    }
+}, 5 * 60_000);
+
 // Log warning about in-memory rate limiting on startup
 console.warn(
     '⚠️  WARNING: Using in-memory rate limiting. This will NOT work correctly across multiple instances.'
@@ -113,9 +133,10 @@ export function rateLimit() {
 
         // IP-based rate limiting for unauthenticated requests
         if (!userId) {
-            const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
-                || c.req.header('cf-connecting-ip')
-                || 'unknown';
+            const ip =
+                c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+                c.req.header('cf-connecting-ip') ||
+                'unknown';
             const ipState = getRateLimitState(`ip:${ip}`, 'FREE');
             const ipLimits = TIER_LIMITS.FREE;
 
@@ -137,8 +158,8 @@ export function rateLimit() {
         const rawTier = (user as unknown as Record<string, unknown>)?.tier;
         const VALID_TIERS = new Set<string>(['FREE', 'STARTER', 'PRO', 'ULTRA']);
         const tier: UserTier =
-            (typeof rawTier === 'string' && VALID_TIERS.has(rawTier))
-                ? rawTier as UserTier
+            typeof rawTier === 'string' && VALID_TIERS.has(rawTier)
+                ? (rawTier as UserTier)
                 : 'FREE';
 
         const limits = TIER_LIMITS[tier];
@@ -181,6 +202,49 @@ export function rateLimit() {
         // Consume a token
         state.tokens -= 1;
         state.requestsToday += 1;
+
+        // Abuse detection for FREE tier
+        if (tier === 'FREE') {
+            const abuseKey = `abuse:${userId}`;
+            const now = Date.now();
+            let abuse = abuseTracker.get(abuseKey);
+
+            if (!abuse) {
+                abuse = {
+                    firstSeenAt: now,
+                    requestCount: 0,
+                    burstCount: 0,
+                    lastRequestAt: now,
+                    flagged: false,
+                };
+                abuseTracker.set(abuseKey, abuse);
+            }
+
+            abuse.requestCount++;
+
+            // Detect burst: >5 requests within 5 seconds
+            if (now - abuse.lastRequestAt < 5000) {
+                abuse.burstCount++;
+            } else {
+                abuse.burstCount = 0;
+            }
+            abuse.lastRequestAt = now;
+
+            // Flag if: burst of 10+ rapid requests OR 50+ requests in first 10 minutes
+            const minutesSinceFirstSeen = (now - abuse.firstSeenAt) / 60000;
+            if (abuse.burstCount >= 10 || (minutesSinceFirstSeen < 10 && abuse.requestCount > 50)) {
+                abuse.flagged = true;
+                console.warn(
+                    `[Abuse] FREE tier user ${userId} flagged: burst=${abuse.burstCount}, total=${abuse.requestCount}, minutes=${Math.round(minutesSinceFirstSeen)}`
+                );
+            }
+
+            // Progressive throttle: flagged users get 2x slower rate limit refill
+            if (abuse.flagged) {
+                state.tokens = Math.max(0, state.tokens - 0.5); // Extra token penalty
+                c.header('X-Abuse-Warning', 'Rate throttled due to unusual activity patterns');
+            }
+        }
 
         // Set rate limit headers
         c.header('X-RateLimit-Limit', String(limits.requestsPerMinute));
