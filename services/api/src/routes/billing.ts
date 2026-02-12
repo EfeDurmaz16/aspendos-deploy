@@ -214,6 +214,13 @@ app.get('/unit-economics', requireAuth, async (c) => {
     return c.json(economics);
 });
 
+// GET /api/billing/projection - Get end-of-month cost projection
+app.get('/projection', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const projection = await billingService.getCostProjection(userId);
+    return c.json(projection);
+});
+
 // ============================================
 // WEBHOOK (NO AUTH - uses signature verification)
 // ============================================

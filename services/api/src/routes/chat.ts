@@ -11,6 +11,7 @@ import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
+import { maybeCreateSpendingNotification } from '../services/billing.service';
 import * as chatService from '../services/chat.service';
 import {
     extractMemoriesFromExchange,
@@ -339,6 +340,8 @@ app.post(
                                 usage.completionTokens || 0,
                                 modelId
                             );
+                            // Proactive spending alert (fire-and-forget)
+                            maybeCreateSpendingNotification(userId).catch(() => {});
                         }
 
                         // Auto-extract memories from conversation (fire-and-forget)

@@ -548,6 +548,115 @@ export async function getCostSummary(userId: string): Promise<{
 }
 
 /**
+ * Project end-of-month cost based on current usage trend.
+ * Helps users understand if they'll hit limits before period ends.
+ */
+export async function getCostProjection(userId: string): Promise<{
+    projectedTokens: number;
+    projectedCostUsd: number;
+    tokenLimit: number;
+    willExceedLimit: boolean;
+    daysRemaining: number;
+    dailyAvgTokens: number;
+    recommendation: string | null;
+}> {
+    const account = await getOrCreateBillingAccount(userId);
+    const tier = account.plan.toUpperCase() as TierName;
+    const config = getTierConfig(tier);
+
+    // Days elapsed since reset
+    const now = new Date();
+    const resetDate = new Date(account.resetDate);
+    const daysElapsed = Math.max(
+        1,
+        Math.ceil((now.getTime() - resetDate.getTime()) / (24 * 60 * 60 * 1000))
+    );
+
+    // Days remaining in billing period (assume 30-day cycles)
+    const daysRemaining = Math.max(0, 30 - daysElapsed);
+
+    // Current usage
+    const tokensUsed = account.creditUsed * 1000;
+    const dailyAvgTokens = Math.round(tokensUsed / daysElapsed);
+
+    // Project to end of month
+    const projectedTokens = tokensUsed + dailyAvgTokens * daysRemaining;
+    const tokenLimit = config.monthlyTokens;
+    const willExceedLimit = projectedTokens > tokenLimit;
+
+    // Estimate USD cost projection
+    const costSoFar = await getCostSummary(userId);
+    const dailyAvgCost = daysElapsed > 0 ? costSoFar.totalUsdCost / daysElapsed : 0;
+    const projectedCostUsd =
+        Math.round((costSoFar.totalUsdCost + dailyAvgCost * daysRemaining) * 100) / 100;
+
+    // Recommendation
+    let recommendation: string | null = null;
+    if (willExceedLimit && tier === 'FREE') {
+        recommendation =
+            'You are on track to exceed your free tier limit. Consider upgrading to Starter ($20/mo).';
+    } else if (willExceedLimit && tier === 'STARTER') {
+        recommendation = 'Your usage suggests Pro tier ($49/mo) would be a better fit.';
+    } else if (willExceedLimit && tier === 'PRO') {
+        recommendation = 'Heavy usage detected. Ultra tier ($99/mo) offers 4x more capacity.';
+    }
+
+    return {
+        projectedTokens,
+        projectedCostUsd,
+        tokenLimit,
+        willExceedLimit,
+        daysRemaining,
+        dailyAvgTokens,
+        recommendation,
+    };
+}
+
+/**
+ * Proactively check spending and create notifications for the user.
+ * Called after token usage recording to surface alerts in real-time.
+ */
+export async function maybeCreateSpendingNotification(userId: string): Promise<void> {
+    try {
+        const { alerts } = await getSpendingAlerts(userId);
+        if (alerts.length === 0) return;
+
+        // Only create critical/warning notifications (not info)
+        const importantAlerts = alerts.filter(
+            (a) => a.level === 'critical' || a.level === 'warning'
+        );
+        if (importantAlerts.length === 0) return;
+
+        // Deduplicate: don't create if we already sent a spending alert today
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const existingAlert = await prisma.notification.findFirst({
+            where: {
+                userId,
+                type: 'SPENDING_ALERT',
+                createdAt: { gte: startOfDay },
+            },
+        });
+
+        if (existingAlert) return; // Already alerted today
+
+        const topAlert = importantAlerts[0];
+        await prisma.notification.create({
+            data: {
+                userId,
+                type: 'SPENDING_ALERT',
+                title: topAlert.level === 'critical' ? 'Usage limit approaching' : 'Usage notice',
+                body: topAlert.message,
+                read: false,
+            },
+        });
+    } catch {
+        // Non-blocking: billing alerts should never break the main flow
+    }
+}
+
+/**
  * Get unit economics for a user: revenue vs cost per billing period.
  * This is critical for proving the business model works.
  * Tracks: monthly revenue (tier price), actual API cost, gross margin.
@@ -585,15 +694,12 @@ export async function getUnitEconomics(userId: string): Promise<{
     periodApiCost = Math.round(periodApiCost * 10000) / 10000;
 
     const grossMargin = monthlyRevenue - periodApiCost;
-    const grossMarginPercent = monthlyRevenue > 0
-        ? Math.round((grossMargin / monthlyRevenue) * 100)
-        : 0;
+    const grossMarginPercent =
+        monthlyRevenue > 0 ? Math.round((grossMargin / monthlyRevenue) * 100) : 0;
 
     // Cost per chat
     const chatsUsed = config.monthlyChats - (account.chatsRemaining || 0);
-    const costPerChat = chatsUsed > 0
-        ? Math.round((periodApiCost / chatsUsed) * 10000) / 10000
-        : 0;
+    const costPerChat = chatsUsed > 0 ? Math.round((periodApiCost / chatsUsed) * 10000) / 10000 : 0;
 
     // Simple 30-day LTV proxy
     const ltv30d = monthlyRevenue;
