@@ -1,9 +1,8 @@
 /**
- * YULA OS Design System v3.0 - Global Styles
+ * YULA OS Design System v4.0 - Clean & Minimal
  *
- * Philosophy: Warm Sophistication
- * Elegant serif headlines + Clean sans-serif body + Terracotta accents + Warm neutrals
- * Inspired by editorial design and modern luxury branding
+ * Philosophy: Clean, minimal, neutral. Inspired by ChatGPT/Claude.
+ * Geist sans-serif throughout. No glassmorphism, no glow effects.
  */
 
 @import "tailwindcss";
@@ -38,12 +37,6 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
-  /* YULA Brand Colors */
-  --color-yula-terracotta: var(--yula-terracotta);
-  --color-yula-charcoal: var(--yula-charcoal);
-  --color-yula-cream: var(--yula-cream);
-  --color-yula-warm-gray: var(--yula-warm-gray);
-
   /* Feature Accent Colors */
   --color-import: var(--feature-import);
   --color-pac: var(--feature-pac);
@@ -58,10 +51,10 @@
   --color-model-llama: var(--model-llama);
   --color-model-mistral: var(--model-mistral);
 
-  /* Typography - Playfair Display for headlines, DM Sans for body */
-  --font-serif: var(--font-playfair), 'Playfair Display', 'Georgia', 'Times New Roman', serif;
-  --font-sans: var(--font-dm-sans), 'DM Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  /* Typography - Geist throughout */
+  --font-sans: var(--font-geist-sans), 'Geist', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: var(--font-geist-sans), 'Geist', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: var(--font-geist-mono), 'Geist Mono', ui-monospace, 'SF Mono', Consolas, monospace;
 
   /* Border Radius */
   --radius-sm: 4px;
@@ -77,10 +70,7 @@
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-shimmer: shimmer 2s infinite;
-  --animate-float: float 3s ease-in-out infinite;
-  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
   --animate-fade-up: fade-up 0.5s ease-out;
-  --animate-breathing: breathing 4s ease-in-out infinite;
 
   @keyframes accordion-down {
     from { height: 0; }
@@ -97,83 +87,37 @@
     100% { transform: translateX(100%); }
   }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
-
-  @keyframes glow-pulse {
-    0%, 100% { opacity: 0.5; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.05); }
-  }
-
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
-  @keyframes breathing {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.03); }
-  }
-
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px var(--feature-pac); }
-    50% { box-shadow: 0 0 40px var(--feature-pac); }
-  }
 }
 
 /* =============================================================================
-   LIGHT MODE (Default) - Warm Cream Theme
+   LIGHT MODE (Default) - Clean White
    ============================================================================= */
 
 :root {
-  /* Font fallbacks (self-hosting optional). These map to Tailwind tokens above. */
-  --font-playfair: 'Playfair Display';
-  --font-dm-sans: 'DM Sans';
-  --font-jetbrains-mono: 'JetBrains Mono';
-
-  /* YULA Brand Colors - From Pencil Design System (QtTSw frame) */
-  --yula-navy: #0A0E27;            /* Primary dark background */
-  --yula-navy-light: #111827;      /* Surface dark */
-  --yula-terracotta: #D4714A;      /* Primary accent - terracotta */
-  --yula-terracotta-light: #E07B54; /* Terracotta hover/light */
-  --yula-terracotta-dark: #C4623B; /* Terracotta active/dark */
-  --yula-cream: #F8F6F0;           /* Light backgrounds */
-  --yula-white: #FFFFFF;           /* Pure white */
-  --yula-text-primary: #FFFFFF;    /* Text on dark backgrounds */
-  --yula-text-secondary: #94A3B8;  /* Secondary text on dark */
-  --yula-text-dark: #0A0E27;       /* Text on light backgrounds */
-  --yula-text-dark-secondary: #64748B; /* Secondary text on light */
-  --yula-border-dark: #1E293B;     /* Borders on dark backgrounds */
-  --yula-surface-glass: #FFFFFF15; /* Glass effect */
-
-  /* Feature Colors - From Pencil */
-  --yula-import-blue: #3B82F6;     /* Import feature */
-  --yula-pac-amber: #F59E0B;       /* PAC feature */
-  --yula-council-pink: #EC4899;    /* Council feature */
-  --yula-success: #22C55E;         /* Success states */
-
-  /* Base Colors - Light Mode uses cream */
-  --background: #F8F6F0;
-  --foreground: #0A0E27;
-  --card: #FFFFFF;
-  --card-foreground: #0A0E27;
+  /* Base Colors - Light Mode */
+  --background: #FFFFFF;
+  --foreground: #0d0d0d;
+  --card: #f9f9f9;
+  --card-foreground: #0d0d0d;
   --popover: #FFFFFF;
-  --popover-foreground: #0A0E27;
-  --primary: #D4714A;
-  --primary-foreground: #0A0E27;
-  --secondary: #F2F3F0;
-  --secondary-foreground: #0A0E27;
-  --muted: #F2F3F0;
-  --muted-foreground: #64748B;
-  --accent: #D4714A;
-  --accent-foreground: #0A0E27;
+  --popover-foreground: #0d0d0d;
+  --primary: #2563eb;
+  --primary-foreground: #FFFFFF;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #0d0d0d;
+  --muted: #f4f4f5;
+  --muted-foreground: #737373;
+  --accent: #2563eb;
+  --accent-foreground: #FFFFFF;
   --destructive: #DC2626;
   --destructive-foreground: #FAFAFA;
-  --border: #E5E5E5;
-  --input: #E5E5E5;
-  --ring: #D4714A;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #2563eb;
   --radius: 6px;
 
   /* Semantic Colors */
@@ -182,21 +126,21 @@
   --error: #DC2626;
   --info: #3B82F6;
 
-  /* Feature Accent Colors (YULA 3 Hooks) - From Pencil */
-  --feature-import: #3B82F6;   /* Blue */
-  --feature-pac: #F59E0B;      /* Amber */
-  --feature-council: #EC4899;  /* Pink */
-  --feature-personas: #22C55E; /* Green */
-  --feature-memory: #8B5CF6;   /* Purple */
+  /* Feature Accent Colors */
+  --feature-import: #3B82F6;
+  --feature-pac: #F59E0B;
+  --feature-council: #EC4899;
+  --feature-personas: #22C55E;
+  --feature-memory: #8B5CF6;
 
   /* Model Colors */
-  --model-gpt4o: #10B981;   /* Emerald */
-  --model-claude: #F97316;  /* Orange */
-  --model-gemini: #0EA5E9;  /* Sky */
-  --model-llama: #A855F7;   /* Purple */
-  --model-mistral: #F59E0B; /* Amber */
+  --model-gpt4o: #10B981;
+  --model-claude: #F97316;
+  --model-gemini: #0EA5E9;
+  --model-llama: #A855F7;
+  --model-mistral: #F59E0B;
 
-  /* Gray Scale - Neutral */
+  /* Gray Scale */
   --gray-0: #FFFFFF;
   --gray-50: #FAFAFA;
   --gray-100: #F5F5F5;
@@ -220,46 +164,30 @@
 }
 
 /* =============================================================================
-   DARK MODE - Warm Charcoal Theme (Primary YULA Experience)
+   DARK MODE - Clean Dark
    ============================================================================= */
 
 .dark,
 [data-theme="dark"] {
-  /* YULA Brand Colors - Dark Mode (Primary Experience) */
-  --yula-navy: #0A0E27;
-  --yula-navy-light: #111827;
-  --yula-terracotta: #D4714A;
-  --yula-terracotta-light: #E07B54;
-  --yula-terracotta-dark: #C4623B;
-  --yula-cream: #F8F6F0;
-  --yula-white: #FFFFFF;
-  --yula-text-primary: #FFFFFF;
-  --yula-text-secondary: #94A3B8;
-  --yula-text-dark: #0A0E27;
-  --yula-text-dark-secondary: #64748B;
-  --yula-border-dark: #1E293B;
-  --yula-surface-glass: #FFFFFF15;
-
-  /* Base Colors - Dark Mode uses YULA Navy */
-  --background: #0A0E27;
-  --foreground: #FFFFFF;
-  --card: #111827;
-  --card-foreground: #FFFFFF;
-  --popover: #111827;
-  --popover-foreground: #FFFFFF;
-  --primary: #D4714A;
-  --primary-foreground: #0A0E27;
-  --secondary: #1E293B;
-  --secondary-foreground: #FFFFFF;
-  --muted: #1E293B;
-  --muted-foreground: #94A3B8;
-  --accent: #D4714A;
-  --accent-foreground: #0A0E27;
+  --background: #0d0d0d;
+  --foreground: #ececec;
+  --card: #171717;
+  --card-foreground: #ececec;
+  --popover: #171717;
+  --popover-foreground: #ececec;
+  --primary: #2563eb;
+  --primary-foreground: #FFFFFF;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ececec;
+  --muted: #1a1a1a;
+  --muted-foreground: #a3a3a3;
+  --accent: #2563eb;
+  --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FAFAFA;
-  --border: #1E293B;
-  --input: #1E293B;
-  --ring: #D4714A;
+  --border: #2e2e2e;
+  --input: #2e2e2e;
+  --ring: #2563eb;
 
   /* Semantic Colors - Dark Mode */
   --success: #22C55E;
@@ -283,27 +211,27 @@
   --shadow-xl: 0 25px 50px rgba(0,0,0,0.7);
 }
 
-/* Legacy data-theme support - Light uses YULA cream */
+/* Legacy data-theme support */
 [data-theme="light"] {
-  --background: #F8F6F0;
-  --foreground: #0A0E27;
-  --card: #FFFFFF;
-  --card-foreground: #0A0E27;
+  --background: #FFFFFF;
+  --foreground: #0d0d0d;
+  --card: #f9f9f9;
+  --card-foreground: #0d0d0d;
   --popover: #FFFFFF;
-  --popover-foreground: #0A0E27;
-  --primary: #D4714A;
-  --primary-foreground: #0A0E27;
-  --secondary: #F2F3F0;
-  --secondary-foreground: #0A0E27;
-  --muted: #F2F3F0;
-  --muted-foreground: #64748B;
-  --accent: #D4714A;
-  --accent-foreground: #0A0E27;
+  --popover-foreground: #0d0d0d;
+  --primary: #2563eb;
+  --primary-foreground: #FFFFFF;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #0d0d0d;
+  --muted: #f4f4f5;
+  --muted-foreground: #737373;
+  --accent: #2563eb;
+  --accent-foreground: #FFFFFF;
   --destructive: #DC2626;
   --destructive-foreground: #FAFAFA;
-  --border: #E5E5E5;
-  --input: #E5E5E5;
-  --ring: #D4714A;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #2563eb;
 }
 
 /* =============================================================================
@@ -326,18 +254,15 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Text selection */
   ::selection {
-    @apply bg-primary text-primary-foreground;
+    @apply bg-primary/20 text-foreground;
   }
 
-  /* Focus ring */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
 
-  /* Skip link for accessibility */
   .skip-link {
     position: absolute;
     left: -9999px;
@@ -411,168 +336,6 @@
 }
 
 /* =============================================================================
-   GLASSMORPHISM
-   ============================================================================= */
-
-.glass {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.dark .glass,
-[data-theme="dark"] .glass {
-  background: rgba(39, 39, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* =============================================================================
-   GRADIENT EFFECTS
-   ============================================================================= */
-
-.gradient-text {
-  background: linear-gradient(135deg, #0A0E27 0%, #64748B 50%, #0A0E27 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.dark .gradient-text,
-[data-theme="dark"] .gradient-text {
-  background: linear-gradient(135deg, #FFFFFF 0%, #94A3B8 50%, #FFFFFF 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Gold gradient text */
-.gradient-text-accent {
-  background: linear-gradient(135deg, #D4AF37 0%, #E8D48A 50%, #D4AF37 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Gradient mesh background - YULA: Gold glow on navy */
-.gradient-mesh {
-  background:
-    radial-gradient(at 40% 20%, rgba(212, 175, 55, 0.06) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(245, 158, 11, 0.04) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, rgba(59, 130, 246, 0.03) 0px, transparent 50%),
-    radial-gradient(at 80% 100%, rgba(236, 72, 153, 0.03) 0px, transparent 50%);
-}
-
-.dark .gradient-mesh,
-[data-theme="dark"] .gradient-mesh {
-  background:
-    radial-gradient(at 40% 20%, rgba(212, 175, 55, 0.15) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(245, 158, 11, 0.10) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 100%, rgba(236, 72, 153, 0.06) 0px, transparent 50%);
-}
-
-/* Section backgrounds matching Pencil design */
-.bg-section-dark {
-  background-color: #0A0E27;
-  color: #FFFFFF;
-}
-
-.bg-section-light {
-  background-color: #F8F6F0;
-  color: #0A0E27;
-}
-
-.bg-section-cream {
-  background-color: #F8F6F0;
-  color: #0A0E27;
-}
-
-/* =============================================================================
-   GLOW EFFECTS
-   ============================================================================= */
-
-.glow {
-  box-shadow: 0 0 20px rgba(24, 24, 27, 0.1);
-}
-
-.dark .glow,
-[data-theme="dark"] .glow {
-  box-shadow: 0 0 20px rgba(250, 250, 250, 0.05);
-}
-
-.glow-import { box-shadow: 0 0 30px rgba(37, 99, 235, 0.2); }
-.glow-pac { box-shadow: 0 0 30px rgba(217, 119, 6, 0.2); }
-.glow-council { box-shadow: 0 0 30px rgba(124, 58, 237, 0.2); }
-.glow-personas { box-shadow: 0 0 30px rgba(5, 150, 105, 0.2); }
-.glow-memory { box-shadow: 0 0 30px rgba(219, 39, 119, 0.2); }
-
-/* =============================================================================
-   HOVER EFFECTS
-   ============================================================================= */
-
-.hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-}
-
-.dark .hover-lift:hover,
-[data-theme="dark"] .hover-lift:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-}
-
-.hover-raise {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.hover-raise:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.dark .hover-raise:hover,
-[data-theme="dark"] .hover-raise:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-}
-
-/* =============================================================================
-   ANIMATIONS
-   ============================================================================= */
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-breathing {
-  animation: breathing 4s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-.animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-.animate-fade-up {
-  animation: fade-up 0.6s ease forwards;
-}
-
-/* Animation delays */
-.animation-delay-100 { animation-delay: 100ms; }
-.animation-delay-200 { animation-delay: 200ms; }
-.animation-delay-300 { animation-delay: 300ms; }
-.animation-delay-400 { animation-delay: 400ms; }
-.animation-delay-500 { animation-delay: 500ms; }
-
-/* =============================================================================
    SHADOWS
    ============================================================================= */
 
@@ -603,115 +366,39 @@
 }
 
 /* =============================================================================
-   TYPOGRAPHY UTILITIES
+   ANIMATIONS
    ============================================================================= */
 
-/* Serif Headlines - Playfair Display style */
-.font-serif {
-  font-family: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+.animate-fade-up {
+  animation: fade-up 0.6s ease forwards;
 }
 
-.typography-display {
-  font-family: 'Playfair Display', 'Georgia', serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-
-.typography-display-large {
-  font-family: 'Playfair Display', 'Georgia', serif;
-  font-weight: 700;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-}
-
-.typography-heading {
-  font-family: 'Playfair Display', 'Georgia', serif;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.typography-heading-sans {
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.3;
-}
-
-.typography-body {
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.6;
-}
-
-.typography-body-large {
-  font-weight: 400;
-  font-size: 1.125rem;
-  letter-spacing: 0;
-  line-height: 1.7;
-}
-
-.typography-caption {
-  font-weight: 500;
-  font-size: 0.8125rem;
-  letter-spacing: 0.02em;
-  line-height: 1.4;
-  text-transform: uppercase;
-}
-
-.typography-label {
-  font-weight: 500;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  line-height: 1.4;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
-/* =============================================================================
-   GRID PATTERN
-   ============================================================================= */
-
-.grid-pattern {
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-
-.dark .grid-pattern,
-[data-theme="dark"] .grid-pattern {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-}
+/* Animation delays */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-500 { animation-delay: 500ms; }
 
 /* =============================================================================
    CHAT BUBBLES
    ============================================================================= */
 
 .chat-bubble-user {
-  border-radius: 16px 16px 6px 16px;
-  background-color: var(--gray-900);
-  color: white;
+  border-radius: 20px 20px 6px 20px;
+  background-color: var(--muted);
+  color: var(--foreground);
 }
 
 .dark .chat-bubble-user,
 [data-theme="dark"] .chat-bubble-user {
-  background-color: var(--gray-800);
+  background-color: var(--muted);
 }
 
 .chat-bubble-ai {
-  border-radius: 16px 16px 16px 6px;
-  background-color: var(--gray-100);
-  color: var(--gray-900);
-}
-
-.dark .chat-bubble-ai,
-[data-theme="dark"] .chat-bubble-ai {
-  background-color: var(--gray-800);
-  color: var(--gray-100);
+  border-radius: 20px 20px 20px 6px;
+  background-color: transparent;
+  color: var(--foreground);
 }
 
 /* =============================================================================
@@ -729,13 +416,6 @@
 
   html {
     scroll-behavior: auto;
-  }
-
-  .animate-float,
-  .animate-breathing,
-  .animate-pulse-glow,
-  .animate-shimmer {
-    animation: none;
   }
 }
 
@@ -756,141 +436,4 @@
     --foreground: #FFFFFF;
     --border: #FFFFFF;
   }
-}
-
-/* =============================================================================
-   YULA BRAND UTILITIES
-   ============================================================================= */
-
-/* YULA Brand Colors - From Pencil */
-.text-yula-terracotta { color: var(--yula-terracotta); }
-.text-yula-navy { color: var(--yula-navy); }
-.text-yula-cream { color: var(--yula-cream); }
-.text-yula-white { color: var(--yula-white); }
-.text-yula-secondary { color: var(--yula-text-secondary); }
-
-.bg-yula-terracotta { background-color: var(--yula-terracotta); }
-.bg-yula-navy { background-color: var(--yula-navy); }
-.bg-yula-cream { background-color: var(--yula-cream); }
-.bg-yula-surface { background-color: var(--yula-navy-light); }
-
-.border-yula-terracotta { border-color: var(--yula-terracotta); }
-.border-yula-navy { border-color: var(--yula-navy); }
-.border-yula-dark { border-color: var(--yula-border-dark); }
-
-/* YULA Button Styles - Gold on Navy */
-.btn-yula-primary {
-  background-color: var(--yula-terracotta);
-  color: var(--yula-navy);
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.btn-yula-primary:hover {
-  background-color: var(--yula-terracotta-light);
-}
-
-.btn-yula-secondary {
-  background-color: transparent;
-  color: var(--foreground);
-  padding: 0.75rem 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.btn-yula-secondary:hover {
-  background-color: var(--muted);
-}
-
-/* YULA Card Styles */
-.card-yula {
-  background-color: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.5rem;
-}
-
-.card-yula-featured {
-  background-color: var(--card);
-  border: 2px solid var(--yula-terracotta);
-  border-radius: 8px;
-  padding: 1.5rem;
-}
-
-/* YULA Feature Tags */
-.tag-yula {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  border-radius: 4px;
-  background-color: var(--yula-terracotta);
-  color: var(--yula-navy);
-}
-
-/* YULA Section Divider */
-.divider-yula {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border), transparent);
-}
-
-/* YULA Pricing Card Styles */
-.pricing-card {
-  background-color: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 2rem;
-  transition: border-color 0.2s ease;
-}
-
-.pricing-card:hover {
-  border-color: var(--yula-terracotta);
-}
-
-.pricing-card-featured {
-  background-color: var(--card);
-  border: 2px solid var(--yula-terracotta);
-  border-radius: 8px;
-  padding: 2rem;
-  position: relative;
-}
-
-/* YULA FAQ Accordion */
-.faq-item {
-  border-bottom: 1px solid var(--border);
-  padding: 1.25rem 0;
-}
-
-.faq-item:last-child {
-  border-bottom: none;
-}
-
-/* YULA Footer */
-.footer-yula {
-  background-color: var(--yula-navy);
-  color: var(--yula-text-primary);
-}
-
-.footer-yula a {
-  color: var(--yula-text-secondary);
-  transition: color 0.2s ease;
-}
-
-.footer-yula a:hover {
-  color: var(--yula-terracotta);
-}
-
-/* YULA Logo Text */
-.logo-yula {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }

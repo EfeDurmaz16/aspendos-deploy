@@ -1,32 +1,31 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import './globals.css';
-import { ThemeProvider } from '@/components/theme-provider';
-import { ErrorBoundary } from '@/components/error-boundary';
-import { cn } from '@/lib/utils';
-import { SiteDock } from '@/components/layout/site-dock';
-import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
 import { SkipLink } from '@/components/accessibility/skip-link';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
+import { ThemeProvider } from '@/components/theme-provider';
 import { CookieConsent } from '@/components/ui/cookie-consent';
 import { baseMetadata } from '@/lib/seo/metadata';
 import {
-    organizationSchema,
-    websiteSchema,
-    softwareAppSchema,
     faqSchema,
+    organizationSchema,
     serializeSchema,
+    softwareAppSchema,
+    websiteSchema,
 } from '@/lib/seo/structured-data';
+import { cn } from '@/lib/utils';
 
 // Comprehensive metadata for SEO and GEO
 export const metadata: Metadata = {
     ...baseMetadata,
 };
 
-// Viewport configuration - YULA v3 theme colors (from Pencil)
+// Viewport configuration - Clean neutral theme colors
 export const viewport: Viewport = {
     themeColor: [
-        { media: '(prefers-color-scheme: light)', color: '#F8F6F0' },
-        { media: '(prefers-color-scheme: dark)', color: '#0A0E27' },
+        { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
+        { media: '(prefers-color-scheme: dark)', color: '#0d0d0d' },
     ],
     width: 'device-width',
     initialScale: 1,
@@ -64,11 +63,7 @@ export default function RootLayout({
                 >
                     {serializeSchema(organizationSchema)}
                 </Script>
-                <Script
-                    id="website-schema"
-                    type="application/ld+json"
-                    strategy="afterInteractive"
-                >
+                <Script id="website-schema" type="application/ld+json" strategy="afterInteractive">
                     {serializeSchema(websiteSchema)}
                 </Script>
                 <Script
@@ -78,19 +73,11 @@ export default function RootLayout({
                 >
                     {serializeSchema(softwareAppSchema)}
                 </Script>
-                <Script
-                    id="faq-schema"
-                    type="application/ld+json"
-                    strategy="afterInteractive"
-                >
+                <Script id="faq-schema" type="application/ld+json" strategy="afterInteractive">
                     {serializeSchema(faqSchema)}
                 </Script>
             </head>
-            <body
-                className={cn(
-                    'antialiased min-h-screen bg-background'
-                )}
-            >
+            <body className={cn('antialiased min-h-screen bg-background')}>
                 {/* Accessibility: Skip to main content link */}
                 <SkipLink />
 
@@ -101,7 +88,6 @@ export default function RootLayout({
                             {children}
                         </main>
                     </ErrorBoundary>
-                    <SiteDock />
                     <InstallPrompt />
                     <UpdatePrompt />
                     <CookieConsent />

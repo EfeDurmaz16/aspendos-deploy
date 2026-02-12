@@ -3,11 +3,9 @@
 import { Brain, CircleNotch } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 import { PromptInputBox } from '@/components/chat/prompt-input-box';
-import { ShortcutsDock } from '@/components/chat/shortcuts-dock';
-import { SkyToggle } from '@/components/ui/sky-toggle';
 import { WelcomeGuide } from '@/components/onboarding';
+import { useAuth } from '@/hooks/use-auth';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -60,24 +58,26 @@ export default function ChatIndexPage() {
     }, [isLoaded, isSignedIn, router]);
 
     const handleNewChat = useCallback(() => {
-        // Navigate immediately to /chat/new without creating chat ID
-        // Chat will be created when user sends first message
         router.push('/chat/new');
     }, [router]);
 
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // New Chat: Cmd+N
             if (e.metaKey && e.key === 'n') {
                 e.preventDefault();
                 handleNewChat();
             }
 
-            // Focus Input: /
-            if (e.key === '/' && document.activeElement?.tagName !== 'TEXTAREA' && document.activeElement?.tagName !== 'INPUT') {
+            if (
+                e.key === '/' &&
+                document.activeElement?.tagName !== 'TEXTAREA' &&
+                document.activeElement?.tagName !== 'INPUT'
+            ) {
                 e.preventDefault();
-                const input = document.querySelector('textarea, input') as HTMLTextAreaElement | HTMLInputElement;
+                const input = document.querySelector('textarea, input') as
+                    | HTMLTextAreaElement
+                    | HTMLInputElement;
                 input?.focus();
             }
         };
@@ -107,33 +107,25 @@ export default function ChatIndexPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-black relative overflow-hidden flex flex-col items-center justify-center p-4">
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
             {/* Onboarding for new users */}
             <WelcomeGuide />
-            {/* YULA Monolith Background - Amber glow only */}
-            <div className="absolute inset-0 pointer-events-none -z-10">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-100/10 to-transparent dark:from-amber-900/10 rounded-full blur-3xl" />
-                <div className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-amber-50/8 to-transparent dark:from-amber-800/8 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-1/2 w-[700px] h-[700px] bg-gradient-to-t from-emerald-100/10 to-transparent dark:from-emerald-900/5 rounded-full blur-3xl" />
-            </div>
 
-            <div className="absolute top-6 right-6 z-50">
-                <SkyToggle />
-            </div>
-
-            <div className="max-w-2xl w-full text-center space-y-10 relative z-10">
+            <div className="max-w-2xl w-full text-center space-y-10">
                 {/* Header */}
                 <div className="space-y-4 animate-fade-up opacity-0 animation-delay-100">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 mb-2 shadow-sm border border-zinc-200 dark:border-zinc-800">
-                        <Brain
-                            className="w-8 h-8 text-zinc-900 dark:text-zinc-100"
-                            weight="regular"
-                        />
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted mb-2 border border-border">
+                        <Brain className="w-8 h-8 text-foreground" weight="regular" />
                     </div>
                     <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                         {(() => {
                             const hour = new Date().getHours();
-                            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+                            const greeting =
+                                hour < 12
+                                    ? 'Good morning'
+                                    : hour < 18
+                                      ? 'Good afternoon'
+                                      : 'Good evening';
                             return greeting;
                         })()}
                     </h1>
@@ -143,28 +135,29 @@ export default function ChatIndexPage() {
                 <div className="max-w-xl mx-auto w-full animate-fade-up opacity-0 animation-delay-200">
                     <PromptInputBox
                         onSubmit={(text) => {
-                            // In a real app, this would start a chat with the initial message
                             void text;
                             handleNewChat();
                         }}
                     />
                 </div>
 
-                {/* Capability Hints */}
+                {/* Suggestion Chips */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto pt-8 animate-fade-up opacity-0 animation-delay-300">
-                    {['Analyze a complex PDF', 'Plan a weekend trip', 'Debug a React component'].map((hint) => (
+                    {[
+                        'Analyze a complex PDF',
+                        'Plan a weekend trip',
+                        'Debug a React component',
+                    ].map((hint) => (
                         <button
                             key={hint}
                             onClick={handleNewChat}
-                            className="text-sm text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-zinc-800/50 py-3 px-4 rounded-xl transition-all text-center border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 hover:shadow-sm"
+                            className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted py-3 px-4 rounded-xl transition-all text-center border border-transparent hover:border-border"
                         >
-                            "{hint}"
+                            &ldquo;{hint}&rdquo;
                         </button>
                     ))}
                 </div>
             </div>
-            <ShortcutsDock />
         </div>
-
     );
 }
