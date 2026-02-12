@@ -255,9 +255,7 @@ async function searchMemories(
         }
 
         // Tag match
-        const matchingTags = memory.tags.filter((tag) =>
-            tag.toLowerCase().includes(queryLower)
-        );
+        const matchingTags = memory.tags.filter((tag) => tag.toLowerCase().includes(queryLower));
         score += matchingTags.length * 5;
 
         // Importance boost

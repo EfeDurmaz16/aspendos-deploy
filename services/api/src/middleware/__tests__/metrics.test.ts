@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeEach } from 'vitest';
 import { Hono } from 'hono';
-import { metricsMiddleware } from '../metrics';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { getCounter, getMetricsText, resetMetrics } from '../../lib/metrics';
+import { metricsMiddleware } from '../metrics';
 
 describe('Metrics Middleware', () => {
     let app: Hono;

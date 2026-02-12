@@ -1,17 +1,17 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-    incrementCounter,
-    observeHistogram,
-    setGauge,
-    incrementGauge,
+    AI_DURATION_BUCKETS,
     decrementGauge,
     getCounter,
     getGauge,
     getMetricsText,
-    resetMetrics,
     HTTP_DURATION_BUCKETS,
+    incrementCounter,
+    incrementGauge,
+    observeHistogram,
+    resetMetrics,
     SIZE_BUCKETS,
-    AI_DURATION_BUCKETS,
+    setGauge,
 } from '../metrics';
 
 describe('Metrics', () => {
@@ -288,20 +288,64 @@ describe('Metrics', () => {
 
     describe('Business Metrics Scenarios', () => {
         it('should track AI requests', () => {
-            incrementCounter('ai_requests_total', { provider: 'openai', model: 'gpt-4o', status: 'success' });
-            incrementCounter('ai_requests_total', { provider: 'anthropic', model: 'claude-3-5-haiku', status: 'success' });
-            incrementCounter('ai_requests_total', { provider: 'openai', model: 'gpt-4o', status: 'error' });
+            incrementCounter('ai_requests_total', {
+                provider: 'openai',
+                model: 'gpt-4o',
+                status: 'success',
+            });
+            incrementCounter('ai_requests_total', {
+                provider: 'anthropic',
+                model: 'claude-3-5-haiku',
+                status: 'success',
+            });
+            incrementCounter('ai_requests_total', {
+                provider: 'openai',
+                model: 'gpt-4o',
+                status: 'error',
+            });
 
-            expect(getCounter('ai_requests_total', { provider: 'openai', model: 'gpt-4o', status: 'success' })).toBe(1);
-            expect(getCounter('ai_requests_total', { provider: 'openai', model: 'gpt-4o', status: 'error' })).toBe(1);
+            expect(
+                getCounter('ai_requests_total', {
+                    provider: 'openai',
+                    model: 'gpt-4o',
+                    status: 'success',
+                })
+            ).toBe(1);
+            expect(
+                getCounter('ai_requests_total', {
+                    provider: 'openai',
+                    model: 'gpt-4o',
+                    status: 'error',
+                })
+            ).toBe(1);
         });
 
         it('should track token usage', () => {
-            incrementCounter('ai_tokens_used_total', { provider: 'openai', model: 'gpt-4o', type: 'input' }, 1000);
-            incrementCounter('ai_tokens_used_total', { provider: 'openai', model: 'gpt-4o', type: 'output' }, 500);
+            incrementCounter(
+                'ai_tokens_used_total',
+                { provider: 'openai', model: 'gpt-4o', type: 'input' },
+                1000
+            );
+            incrementCounter(
+                'ai_tokens_used_total',
+                { provider: 'openai', model: 'gpt-4o', type: 'output' },
+                500
+            );
 
-            expect(getCounter('ai_tokens_used_total', { provider: 'openai', model: 'gpt-4o', type: 'input' })).toBe(1000);
-            expect(getCounter('ai_tokens_used_total', { provider: 'openai', model: 'gpt-4o', type: 'output' })).toBe(500);
+            expect(
+                getCounter('ai_tokens_used_total', {
+                    provider: 'openai',
+                    model: 'gpt-4o',
+                    type: 'input',
+                })
+            ).toBe(1000);
+            expect(
+                getCounter('ai_tokens_used_total', {
+                    provider: 'openai',
+                    model: 'gpt-4o',
+                    type: 'output',
+                })
+            ).toBe(500);
         });
 
         it('should track rate limit hits', () => {
@@ -309,8 +353,12 @@ describe('Metrics', () => {
             incrementCounter('rate_limit_hits_total', { tier: 'FREE', endpoint: '/api/chat' });
             incrementCounter('rate_limit_hits_total', { tier: 'PRO', endpoint: '/api/council' });
 
-            expect(getCounter('rate_limit_hits_total', { tier: 'FREE', endpoint: '/api/chat' })).toBe(2);
-            expect(getCounter('rate_limit_hits_total', { tier: 'PRO', endpoint: '/api/council' })).toBe(1);
+            expect(
+                getCounter('rate_limit_hits_total', { tier: 'FREE', endpoint: '/api/chat' })
+            ).toBe(2);
+            expect(
+                getCounter('rate_limit_hits_total', { tier: 'PRO', endpoint: '/api/council' })
+            ).toBe(1);
         });
 
         it('should track active users gauge', () => {
@@ -344,7 +392,10 @@ describe('Metrics', () => {
             setGauge('ai_cost_total', 0.05, { provider: 'openai', model: 'gpt-4o' });
             incrementGauge('ai_cost_total', 0.02, { provider: 'openai', model: 'gpt-4o' });
 
-            expect(getGauge('ai_cost_total', { provider: 'openai', model: 'gpt-4o' })).toBeCloseTo(0.07, 2);
+            expect(getGauge('ai_cost_total', { provider: 'openai', model: 'gpt-4o' })).toBeCloseTo(
+                0.07,
+                2
+            );
         });
     });
 });

@@ -4,12 +4,10 @@
  * Tests for admin endpoints including user management, system monitoring, and audit logs.
  */
 
-import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { Hono } from 'hono';
-import adminRoutes from '../admin';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock prisma
-const mockPrisma = {
+const mockPrisma = vi.hoisted(() => ({
     user: {
         findMany: vi.fn(),
         findUnique: vi.fn(),
@@ -33,7 +31,7 @@ const mockPrisma = {
         count: vi.fn(),
         create: vi.fn(),
     },
-};
+}));
 
 vi.mock('@aspendos/db', () => ({
     prisma: mockPrisma,
@@ -42,6 +40,8 @@ vi.mock('@aspendos/db', () => ({
 vi.mock('../../lib/audit-log', () => ({
     auditLog: vi.fn(),
 }));
+
+import adminRoutes from '../admin';
 
 // Helper to create test app with admin routes
 function createTestApp() {

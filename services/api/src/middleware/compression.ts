@@ -46,6 +46,11 @@ export function compression() {
     });
 
     return async (c: Context, next: Next) => {
+        // Skip compression in test environment
+        if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+            return next();
+        }
+
         const path = c.req.path;
         const contentType = c.req.header('content-type') || '';
 

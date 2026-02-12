@@ -64,7 +64,10 @@ app.post('/transcribe', async (c) => {
             duration: audioFile.size / 16000,
         });
     } catch (error) {
-        console.error('[Voice] Transcription error:', error instanceof Error ? error.message : 'Unknown');
+        console.error(
+            '[Voice] Transcription error:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
         return c.json({ error: 'Failed to transcribe audio' }, 500);
     }
 });
@@ -90,7 +93,10 @@ app.post('/synthesize', async (c) => {
     }
 
     if (text.length > MAX_TTS_TEXT_LENGTH) {
-        return c.json({ error: `Text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters` }, 400);
+        return c.json(
+            { error: `Text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters` },
+            400
+        );
     }
 
     if (!ALLOWED_VOICES.includes(voice)) {
@@ -120,7 +126,10 @@ app.post('/synthesize', async (c) => {
             voice,
         });
     } catch (error) {
-        console.error('[Voice] Synthesis error:', error instanceof Error ? error.message : 'Unknown');
+        console.error(
+            '[Voice] Synthesis error:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
         return c.json({ error: 'Failed to synthesize speech' }, 500);
     }
 });
@@ -142,7 +151,10 @@ app.post('/synthesize/stream', async (c) => {
     }
 
     if (text.length > MAX_TTS_TEXT_LENGTH) {
-        return c.json({ error: `Text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters` }, 400);
+        return c.json(
+            { error: `Text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters` },
+            400
+        );
     }
 
     if (!ALLOWED_VOICES.includes(voice)) {
@@ -173,7 +185,10 @@ app.post('/synthesize/stream', async (c) => {
             },
         });
     } catch (error) {
-        console.error('[Voice] Streaming synthesis error:', error instanceof Error ? error.message : 'Unknown');
+        console.error(
+            '[Voice] Streaming synthesis error:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
         return c.json({ error: 'Failed to stream speech' }, 500);
     }
 });
@@ -231,7 +246,10 @@ app.post('/token', async (c) => {
             url: 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent', // Standard Gemini Live endpoint
         });
     } catch (error) {
-        console.error('[Voice] Token generation error:', error instanceof Error ? error.message : 'Unknown');
+        console.error(
+            '[Voice] Token generation error:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
         return c.json({ error: 'Failed to generate voice token' }, 500);
     }
 });

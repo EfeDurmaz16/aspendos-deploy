@@ -2,14 +2,53 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // We need to test the JobQueue class directly, so let's create a fresh instance
 class TestJobQueue {
-    private queues = new Map<string, { concurrency: number; maxRetries: number; backoffMs: number; backoffMultiplier: number; maxBackoffMs: number }>();
+    private queues = new Map<
+        string,
+        {
+            concurrency: number;
+            maxRetries: number;
+            backoffMs: number;
+            backoffMultiplier: number;
+            maxBackoffMs: number;
+        }
+    >();
     private handlers = new Map<string, (data: unknown) => Promise<unknown>>();
-    private jobs = new Map<string, { id: string; queue: string; data: unknown; status: string; priority: number; attempts: number; maxRetries: number; createdAt: number; error?: string; result?: unknown }>();
-    private deadLetterQueue: Array<{ id: string; queue: string; data: unknown; status: string; error?: string }> = [];
+    private jobs = new Map<
+        string,
+        {
+            id: string;
+            queue: string;
+            data: unknown;
+            status: string;
+            priority: number;
+            attempts: number;
+            maxRetries: number;
+            createdAt: number;
+            error?: string;
+            result?: unknown;
+        }
+    >();
+    private deadLetterQueue: Array<{
+        id: string;
+        queue: string;
+        data: unknown;
+        status: string;
+        error?: string;
+    }> = [];
     private activeCount = new Map<string, number>();
     private jobCounter = 0;
 
-    register(name: string, handler: (data: unknown) => Promise<unknown>, config: Partial<{ concurrency: number; maxRetries: number; backoffMs: number; backoffMultiplier: number; maxBackoffMs: number }> = {}) {
+    register(
+        name: string,
+        handler: (data: unknown) => Promise<unknown>,
+        config: Partial<{
+            concurrency: number;
+            maxRetries: number;
+            backoffMs: number;
+            backoffMultiplier: number;
+            maxBackoffMs: number;
+        }> = {}
+    ) {
         this.queues.set(name, {
             concurrency: config.concurrency || 3,
             maxRetries: config.maxRetries || 3,
@@ -48,7 +87,10 @@ class TestJobQueue {
     }
 
     getStats(queue?: string) {
-        let pending = 0, active = 0, completed = 0, failed = 0;
+        let pending = 0,
+            active = 0,
+            completed = 0,
+            failed = 0;
         for (const job of this.jobs.values()) {
             if (queue && job.queue !== queue) continue;
             if (job.status === 'pending') pending++;
@@ -111,7 +153,9 @@ describe('JobQueue', () => {
         });
 
         it('should throw when adding to unregistered queue', () => {
-            expect(() => queue.add('nonexistent', {})).toThrow('Queue "nonexistent" is not registered');
+            expect(() => queue.add('nonexistent', {})).toThrow(
+                'Queue "nonexistent" is not registered'
+            );
         });
     });
 
@@ -163,11 +207,15 @@ describe('JobQueue', () => {
 
         it('should retry on failure', async () => {
             let callCount = 0;
-            queue.register('test', async () => {
-                callCount++;
-                if (callCount < 3) throw new Error('fail');
-                return 'success';
-            }, { maxRetries: 3 });
+            queue.register(
+                'test',
+                async () => {
+                    callCount++;
+                    if (callCount < 3) throw new Error('fail');
+                    return 'success';
+                },
+                { maxRetries: 3 }
+            );
 
             const id = queue.add('test', {});
 
@@ -187,9 +235,13 @@ describe('JobQueue', () => {
         });
 
         it('should move to dead letter queue after max retries', async () => {
-            queue.register('test', async () => {
-                throw new Error('always fails');
-            }, { maxRetries: 2 });
+            queue.register(
+                'test',
+                async () => {
+                    throw new Error('always fails');
+                },
+                { maxRetries: 2 }
+            );
 
             const id = queue.add('test', { doomed: true });
 
@@ -264,9 +316,13 @@ describe('JobQueue', () => {
 
     describe('dead letter queue', () => {
         it('should accumulate dead jobs', async () => {
-            queue.register('test', async () => {
-                throw new Error('fail');
-            }, { maxRetries: 1 });
+            queue.register(
+                'test',
+                async () => {
+                    throw new Error('fail');
+                },
+                { maxRetries: 1 }
+            );
 
             queue.add('test', { job: 1 });
             queue.add('test', { job: 2 });
@@ -278,9 +334,13 @@ describe('JobQueue', () => {
         });
 
         it('should preserve error messages', async () => {
-            queue.register('test', async () => {
-                throw new Error('specific error message');
-            }, { maxRetries: 1 });
+            queue.register(
+                'test',
+                async () => {
+                    throw new Error('specific error message');
+                },
+                { maxRetries: 1 }
+            );
 
             queue.add('test', {});
             await queue.processNext('test');
@@ -291,9 +351,13 @@ describe('JobQueue', () => {
 
     describe('error handling', () => {
         it('should capture non-Error throws', async () => {
-            queue.register('test', async () => {
-                throw 'string error';
-            }, { maxRetries: 1 });
+            queue.register(
+                'test',
+                async () => {
+                    throw 'string error';
+                },
+                { maxRetries: 1 }
+            );
 
             const id = queue.add('test', {});
             await queue.processNext('test');
@@ -302,9 +366,15 @@ describe('JobQueue', () => {
         });
 
         it('should handle async errors', async () => {
-            queue.register('test', async () => {
-                await new Promise((_, reject) => setTimeout(() => reject(new Error('async fail')), 10));
-            }, { maxRetries: 1 });
+            queue.register(
+                'test',
+                async () => {
+                    await new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('async fail')), 10)
+                    );
+                },
+                { maxRetries: 1 }
+            );
 
             const id = queue.add('test', {});
             await queue.processNext('test');

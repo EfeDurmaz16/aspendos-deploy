@@ -6,9 +6,9 @@
 import type { Context, Next } from 'hono';
 import {
     HTTP_DURATION_BUCKETS,
-    SIZE_BUCKETS,
     incrementCounter,
     observeHistogram,
+    SIZE_BUCKETS,
 } from '../lib/metrics';
 
 /**

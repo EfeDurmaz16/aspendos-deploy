@@ -13,11 +13,11 @@ import { getErrorCatalog } from './lib/error-codes';
 import { AppError } from './lib/errors';
 import { getAllFlags, getUserFeatures } from './lib/feature-flags';
 import { checkReadiness } from './lib/health-checks';
+import { jobQueue } from './lib/job-queue';
 import { getPrivacyPolicy, getTermsOfService } from './lib/legal';
 import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
 import { initSentry, Sentry, setSentryRequestContext, setSentryUserContext } from './lib/sentry';
 import { getWebhookCategories, getWebhookEventsCatalog } from './lib/webhook-events';
-import { jobQueue } from './lib/job-queue';
 import { apiVersion } from './middleware/api-version';
 import { cacheControl } from './middleware/cache';
 import { compression } from './middleware/compression';
@@ -27,6 +27,13 @@ import { metricsMiddleware } from './middleware/metrics';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
 import { sanitizeBody } from './middleware/sanitize';
 import { requestTimeout } from './middleware/timeout';
+import {
+    exportTracesOTLP,
+    getTrace,
+    getTraceStats,
+    getTraces,
+    tracingMiddleware,
+} from './middleware/tracing';
 import adminRoutes from './routes/admin';
 import analyticsRoutes from './routes/analytics';
 import apiKeysRoutes from './routes/api-keys';
@@ -43,6 +50,8 @@ import promptTemplatesRoutes from './routes/prompt-templates';
 import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
 import voiceRoutes from './routes/voice';
+import workspaceRoutes from './routes/workspace';
+import { getOpenAPISpec } from './lib/openapi-spec';
 
 // Validate environment variables on startup
 validateEnv();
@@ -55,6 +64,11 @@ type Variables = {
     session: typeof auth.$Infer.Session.session | null;
     userId: string | null;
     requestId: string;
+    traceId: string;
+    spanId: string;
+    rootSpan: unknown;
+    trace: unknown;
+    currentSpan: unknown;
 };
 
 const app = new Hono<{ Variables: Variables }>();
@@ -64,6 +78,9 @@ let isShuttingDown = false;
 
 // Middleware
 app.use('*', logger());
+
+// Tracing middleware (must be early to track all requests)
+app.use('*', tracingMiddleware());
 
 // Metrics middleware (must be early to track all requests)
 app.use('*', metricsMiddleware());
@@ -474,6 +491,73 @@ app.get('/metrics', async (c) => {
     });
 });
 
+// ─── Tracing Endpoints ────────────────────────────────────────────────────────
+
+// GET /api/traces - List recent traces (paginated, filterable)
+app.get('/api/traces', (c) => {
+    const status = c.req.query('status') as 'ok' | 'error' | undefined;
+    const path = c.req.query('path');
+    const minDuration = c.req.query('minDuration')
+        ? parseInt(c.req.query('minDuration')!, 10)
+        : undefined;
+    const limit = c.req.query('limit') ? parseInt(c.req.query('limit')!, 10) : 100;
+    const offset = c.req.query('offset') ? parseInt(c.req.query('offset')!, 10) : 0;
+
+    const traces = getTraces({
+        status,
+        path,
+        minDuration,
+        limit: Math.min(limit, 500), // Cap at 500
+        offset,
+    });
+
+    const stats = getTraceStats();
+
+    return c.json({
+        traces: traces.map((t) => ({
+            traceId: t.traceId,
+            startTime: t.startTime,
+            endTime: t.endTime,
+            duration: t.duration,
+            status: t.status,
+            method: t.method,
+            path: t.path,
+            statusCode: t.statusCode,
+            userId: t.userId,
+            requestId: t.requestId,
+            spanCount: t.spans.length,
+        })),
+        pagination: {
+            limit,
+            offset,
+            total: stats.total,
+        },
+        stats,
+    });
+});
+
+// GET /api/traces/:traceId - Get full trace detail with spans
+app.get('/api/traces/:traceId', (c) => {
+    const traceId = c.req.param('traceId');
+    const trace = getTrace(traceId);
+
+    if (!trace) {
+        return c.json({ error: 'Trace not found' }, 404);
+    }
+
+    return c.json(trace);
+});
+
+// GET /api/traces/export/otlp - Export traces in OpenTelemetry format
+app.get('/api/traces/export/otlp', (c) => {
+    const traceIds = c.req.query('traceIds')?.split(',');
+    const otlp = exportTracesOTLP(traceIds);
+
+    return c.json(otlp, 200, {
+        'Content-Type': 'application/json',
+    });
+});
+
 // Models endpoint - now uses local configuration
 app.get('/api/models', (c) => {
     return c.json({
@@ -514,6 +598,50 @@ app.get('/api/rate-limit', async (c) => {
     return c.json(await getRateLimitStatus(userId, tier));
 });
 
+// Rate limit analytics dashboard
+app.get('/api/analytics/rate-limits', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    try {
+        const { getRateLimitDashboard, getUserRateLimitHistory, getNearLimitEvents } = await import(
+            './lib/rate-limit-analytics'
+        );
+
+        // Check if requesting user history or full dashboard
+        const scope = c.req.query('scope') || 'user';
+
+        if (scope === 'user') {
+            // Return user's own rate limit history
+            const limit = Math.min(parseInt(c.req.query('limit') || '100', 10) || 100, 500);
+            const history = getUserRateLimitHistory(userId, limit);
+
+            return c.json({
+                scope: 'user',
+                userId,
+                history,
+            });
+        } else if (scope === 'dashboard') {
+            // Return full dashboard (could be admin-only in production)
+            const dashboard = getRateLimitDashboard();
+            const nearLimits = getNearLimitEvents();
+
+            return c.json({
+                scope: 'dashboard',
+                ...dashboard,
+                nearLimitEvents: nearLimits,
+            });
+        } else {
+            return c.json({ error: 'Invalid scope. Use "user" or "dashboard"' }, 400);
+        }
+    } catch (error) {
+        console.error('[RateLimitAnalytics] Error fetching analytics:', error);
+        return c.json({ error: 'Failed to fetch rate limit analytics' }, 500);
+    }
+});
+
 // Pinned/recommended models
 app.get('/api/models/pinned', (c) => {
     const pinnedModels = [
@@ -529,6 +657,65 @@ app.get('/api/models/pinned', (c) => {
             provider: m!.provider,
         })),
     });
+});
+
+// OpenAPI JSON spec endpoint
+app.get('/api/docs/openapi.json', (c) => {
+    return c.json(getOpenAPISpec());
+});
+
+// Swagger UI endpoint
+app.get('/api/docs/ui', (c) => {
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YULA OS API Documentation</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@latest/swagger-ui.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        .swagger-ui .topbar { display: none; }
+        .swagger-ui .info { margin: 20px 0; }
+        @media (prefers-color-scheme: dark) {
+            body { background: #1a1a1a; }
+            .swagger-ui { filter: invert(88%) hue-rotate(180deg); }
+            .swagger-ui img { filter: invert(100%) hue-rotate(180deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            SwaggerUIBundle({
+                url: '/api/docs/openapi.json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: 'StandaloneLayout',
+                tryItOutEnabled: true,
+                persistAuthorization: true,
+                displayRequestDuration: true,
+                filter: true,
+                syntaxHighlight: {
+                    activate: true,
+                    theme: 'monokai'
+                }
+            });
+        };
+    </script>
+</body>
+</html>`;
+    return c.html(html);
 });
 
 // API Documentation Endpoint
@@ -1627,6 +1814,7 @@ app.route('/api/gamification', gamificationRoutes);
 app.route('/api/api-keys', apiKeysRoutes);
 app.route('/api/templates', promptTemplatesRoutes);
 app.route('/api/search', searchRoutes);
+app.route('/api/workspace', workspaceRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);
@@ -1689,6 +1877,9 @@ async function startServer() {
     return server;
 }
 
-startServer().catch(console.error);
+// Don't start server when running tests
+if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+    startServer().catch(console.error);
+}
 
 export default app;

@@ -191,7 +191,11 @@ export async function createMessage(input: CreateMessageInput): Promise<Message>
 /**
  * Get messages for a chat (with optional userId for defense-in-depth ownership check)
  */
-export async function getMessages(chatId: string, limit?: number, userId?: string): Promise<Message[]> {
+export async function getMessages(
+    chatId: string,
+    limit?: number,
+    userId?: string
+): Promise<Message[]> {
     return prisma.message.findMany({
         where: {
             chatId,

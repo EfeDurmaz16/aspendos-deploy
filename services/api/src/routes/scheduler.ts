@@ -229,7 +229,8 @@ app.patch('/tasks/:id', requireAuth, validateBody(rescheduleTaskSchema), async (
 // POST /api/scheduler/execute - Execute a scheduled task (called by QStash/cron)
 app.post('/execute', validateBody(executeTaskSchema), async (c) => {
     // Fail-closed: require CRON_SECRET for task execution
-    const cronSecret = c.req.header('x-cron-secret') || c.req.header('authorization')?.replace('Bearer ', '');
+    const cronSecret =
+        c.req.header('x-cron-secret') || c.req.header('authorization')?.replace('Bearer ', '');
     if (!verifyCronSecret(cronSecret)) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -359,7 +360,7 @@ app.post('/consolidate', async (c) => {
 
     try {
         // Get users with recent activity (last 24h)
-        const recentUsers = await import('../lib/prisma').then(m =>
+        const recentUsers = await import('../lib/prisma').then((m) =>
             m.prisma.user.findMany({
                 where: {
                     updatedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },

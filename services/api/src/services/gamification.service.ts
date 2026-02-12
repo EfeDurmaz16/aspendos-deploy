@@ -4,8 +4,8 @@
  * Handles XP, levels, achievements, streaks, and referral program.
  */
 
-import { prisma } from '../lib/prisma';
 import { nanoid } from 'nanoid';
+import { prisma } from '../lib/prisma';
 
 // ==========================================
 // LEVEL SYSTEM
@@ -20,7 +20,7 @@ export const LEVELS = [
     { level: 6, name: 'AI Whisperer', minXp: 3000, icon: '🧙' },
 ] as const;
 
-export function getLevelForXp(totalXp: number): typeof LEVELS[number] {
+export function getLevelForXp(totalXp: number): (typeof LEVELS)[number] {
     let currentLevel = LEVELS[0];
     for (const level of LEVELS) {
         if (totalXp >= level.minXp) {
@@ -32,7 +32,7 @@ export function getLevelForXp(totalXp: number): typeof LEVELS[number] {
     return currentLevel;
 }
 
-export function getNextLevel(currentLevel: number): typeof LEVELS[number] | null {
+export function getNextLevel(currentLevel: number): (typeof LEVELS)[number] | null {
     const nextLevel = LEVELS.find((l) => l.level === currentLevel + 1);
     return nextLevel || null;
 }
@@ -317,7 +317,7 @@ export async function awardXp(
     xpAwarded: number;
     totalXp: number;
     leveledUp: boolean;
-    newLevel?: typeof LEVELS[number];
+    newLevel?: (typeof LEVELS)[number];
     achievementsUnlocked: AchievementCode[];
 }> {
     const profile = await getOrCreateProfile(userId);
@@ -480,11 +480,7 @@ async function checkAchievementCriteria(
 /**
  * Unlock an achievement
  */
-export async function unlockAchievement(
-    userId: string,
-    profileId: string,
-    code: AchievementCode
-) {
+export async function unlockAchievement(userId: string, profileId: string, code: AchievementCode) {
     const achievement = ACHIEVEMENTS[code];
 
     await prisma.achievement.create({

@@ -162,6 +162,22 @@ function getFallbackState(userId: string, tier: UserTier): RateLimitState {
  */
 export function rateLimit() {
     return async (c: Context, next: Next) => {
+        const path = c.req.path;
+
+        // Skip rate limiting for health/status/docs/metrics endpoints
+        if (
+            path === '/health' ||
+            path === '/status' ||
+            path === '/ready' ||
+            path === '/metrics' ||
+            path.startsWith('/.well-known/') ||
+            path.startsWith('/api/docs') ||
+            path.startsWith('/api/auth/')
+        ) {
+            await next();
+            return;
+        }
+
         const userId = c.get('userId');
 
         // Determine identity and tier
@@ -370,6 +386,14 @@ export async function getRateLimitStatus(userId: string, tier: UserTier = 'FREE'
         backend: 'memory',
         resetAt: new Date(new Date().setHours(24, 0, 0, 0)).toISOString(),
     };
+}
+
+/**
+ * Clear all rate limits (for testing)
+ */
+export function clearGlobalRateLimits_forTesting() {
+    fallbackStore.clear();
+    abuseTracker.clear();
 }
 
 export default rateLimit;

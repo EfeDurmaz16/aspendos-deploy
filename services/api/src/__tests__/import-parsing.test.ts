@@ -635,9 +635,7 @@ describe('ParsedConversation Type', () => {
                 name: 'Test',
                 created_at: '2024-01-15T10:00:00Z',
                 updated_at: '2024-01-15T11:00:00Z',
-                chat_messages: [
-                    { sender: 'human', text: 'Hello' },
-                ],
+                chat_messages: [{ sender: 'human', text: 'Hello' }],
             },
         ];
 

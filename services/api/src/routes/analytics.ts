@@ -881,4 +881,244 @@ app.get('/retention', requireAuth, async (c) => {
     }
 });
 
+/**
+ * GET /api/analytics/costs - AI cost breakdown by provider/model/day
+ *
+ * Returns detailed cost analytics broken down by provider, model, and time period.
+ */
+app.get('/costs', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const days = Math.min(parseInt(c.req.query('days') || '30', 10) || 30, 365);
+
+    try {
+        const since = new Date();
+        since.setDate(since.getDate() - days);
+
+        const messages = await prisma.message.findMany({
+            where: {
+                userId,
+                role: 'assistant',
+                createdAt: { gte: since },
+            },
+            select: {
+                modelUsed: true,
+                costUsd: true,
+                tokensIn: true,
+                tokensOut: true,
+                createdAt: true,
+            },
+        });
+
+        // Cost by provider
+        const providerCosts = new Map<string, { costUsd: number; requests: number }>();
+        // Cost by model
+        const modelCosts = new Map<string, { costUsd: number; requests: number; tokens: number }>();
+        // Cost by day
+        const dailyCosts = new Map<string, { costUsd: number; requests: number }>();
+
+        for (const msg of messages) {
+            const model = msg.modelUsed || 'unknown';
+            const provider = model.split('/')[0] || 'unknown';
+            const day = msg.createdAt.toISOString().split('T')[0];
+
+            // Provider breakdown
+            const providerStats = providerCosts.get(provider) || { costUsd: 0, requests: 0 };
+            providerStats.costUsd += msg.costUsd;
+            providerStats.requests += 1;
+            providerCosts.set(provider, providerStats);
+
+            // Model breakdown
+            const modelStats = modelCosts.get(model) || { costUsd: 0, requests: 0, tokens: 0 };
+            modelStats.costUsd += msg.costUsd;
+            modelStats.requests += 1;
+            modelStats.tokens += msg.tokensIn + msg.tokensOut;
+            modelCosts.set(model, modelStats);
+
+            // Daily breakdown
+            const dailyStats = dailyCosts.get(day) || { costUsd: 0, requests: 0 };
+            dailyStats.costUsd += msg.costUsd;
+            dailyStats.requests += 1;
+            dailyCosts.set(day, dailyStats);
+        }
+
+        const totalCost = Array.from(providerCosts.values()).reduce((sum, p) => sum + p.costUsd, 0);
+
+        return c.json({
+            period: { days, since },
+            totalCost,
+            byProvider: Array.from(providerCosts.entries())
+                .map(([provider, stats]) => ({
+                    provider,
+                    costUsd: stats.costUsd,
+                    requests: stats.requests,
+                    percentage: totalCost > 0 ? (stats.costUsd / totalCost) * 100 : 0,
+                }))
+                .sort((a, b) => b.costUsd - a.costUsd),
+            byModel: Array.from(modelCosts.entries())
+                .map(([model, stats]) => ({
+                    model,
+                    costUsd: stats.costUsd,
+                    requests: stats.requests,
+                    tokens: stats.tokens,
+                    avgCostPerRequest: stats.requests > 0 ? stats.costUsd / stats.requests : 0,
+                }))
+                .sort((a, b) => b.costUsd - a.costUsd),
+            byDay: Array.from(dailyCosts.entries())
+                .map(([day, stats]) => ({
+                    day,
+                    costUsd: stats.costUsd,
+                    requests: stats.requests,
+                }))
+                .sort((a, b) => a.day.localeCompare(b.day)),
+        });
+    } catch (error) {
+        console.error('[Analytics] Error fetching costs:', error);
+        return c.json({ error: 'Failed to fetch cost analytics' }, 500);
+    }
+});
+
+/**
+ * GET /api/analytics/active-users - Daily/Weekly/Monthly Active Users (DAU/WAU/MAU)
+ *
+ * Returns active user counts for the current user's cohort perspective.
+ * For admin usage, this could be extended to show platform-wide metrics.
+ */
+app.get('/active-users', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        const now = Date.now();
+        const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000);
+        const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+        // User's own activity status
+        const [dailyActivity, weeklyActivity, monthlyActivity] = await Promise.all([
+            prisma.message.count({
+                where: { userId, role: 'user', createdAt: { gte: oneDayAgo } },
+            }),
+            prisma.message.count({
+                where: { userId, role: 'user', createdAt: { gte: sevenDaysAgo } },
+            }),
+            prisma.message.count({
+                where: { userId, role: 'user', createdAt: { gte: thirtyDaysAgo } },
+            }),
+        ]);
+
+        // Determine user's activity level
+        const isDAU = dailyActivity > 0;
+        const isWAU = weeklyActivity > 0;
+        const isMAU = monthlyActivity > 0;
+
+        // Calculate stickiness metrics
+        const dauWauRatio = weeklyActivity > 0 ? (dailyActivity / weeklyActivity) * 100 : 0;
+        const wauMauRatio = monthlyActivity > 0 ? (weeklyActivity / monthlyActivity) * 100 : 0;
+
+        return c.json({
+            user: {
+                isDAU,
+                isWAU,
+                isMAU,
+                dailyMessages: dailyActivity,
+                weeklyMessages: weeklyActivity,
+                monthlyMessages: monthlyActivity,
+            },
+            stickiness: {
+                dauWauRatio: Math.round(dauWauRatio),
+                wauMauRatio: Math.round(wauMauRatio),
+            },
+            period: {
+                day: oneDayAgo.toISOString(),
+                week: sevenDaysAgo.toISOString(),
+                month: thirtyDaysAgo.toISOString(),
+            },
+        });
+    } catch (error) {
+        console.error('[Analytics] Error fetching active users:', error);
+        return c.json({ error: 'Failed to fetch active user metrics' }, 500);
+    }
+});
+
+/**
+ * GET /api/analytics/popular-models - Most-used AI models ranked by usage
+ *
+ * Returns a ranked list of AI models by usage count, tokens, and cost.
+ */
+app.get('/popular-models', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+    const days = Math.min(parseInt(c.req.query('days') || '30', 10) || 30, 365);
+
+    try {
+        const since = new Date();
+        since.setDate(since.getDate() - days);
+
+        const messages = await prisma.message.findMany({
+            where: {
+                userId,
+                role: 'assistant',
+                createdAt: { gte: since },
+            },
+            select: {
+                modelUsed: true,
+                tokensIn: true,
+                tokensOut: true,
+                costUsd: true,
+            },
+        });
+
+        const modelStats = new Map<
+            string,
+            {
+                count: number;
+                tokensIn: number;
+                tokensOut: number;
+                totalTokens: number;
+                costUsd: number;
+            }
+        >();
+
+        for (const msg of messages) {
+            const model = msg.modelUsed || 'unknown';
+            const stats = modelStats.get(model) || {
+                count: 0,
+                tokensIn: 0,
+                tokensOut: 0,
+                totalTokens: 0,
+                costUsd: 0,
+            };
+
+            stats.count += 1;
+            stats.tokensIn += msg.tokensIn;
+            stats.tokensOut += msg.tokensOut;
+            stats.totalTokens += msg.tokensIn + msg.tokensOut;
+            stats.costUsd += msg.costUsd;
+
+            modelStats.set(model, stats);
+        }
+
+        const totalRequests = messages.length;
+        const popularModels = Array.from(modelStats.entries())
+            .map(([model, stats]) => ({
+                model,
+                usageCount: stats.count,
+                usagePercentage: totalRequests > 0 ? (stats.count / totalRequests) * 100 : 0,
+                totalTokens: stats.totalTokens,
+                avgTokensPerRequest:
+                    stats.count > 0 ? Math.round(stats.totalTokens / stats.count) : 0,
+                totalCost: stats.costUsd,
+                avgCostPerRequest: stats.count > 0 ? stats.costUsd / stats.count : 0,
+            }))
+            .sort((a, b) => b.usageCount - a.usageCount);
+
+        return c.json({
+            period: { days, since },
+            totalRequests,
+            models: popularModels,
+        });
+    } catch (error) {
+        console.error('[Analytics] Error fetching popular models:', error);
+        return c.json({ error: 'Failed to fetch popular models' }, 500);
+    }
+});
+
 export default app;

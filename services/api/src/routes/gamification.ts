@@ -40,7 +40,9 @@ app.get('/profile', async (c) => {
         recentXp: profile.xpLogs.map((log) => ({
             amount: log.amount,
             action: log.action,
-            description: gamificationService.XP_ACTIONS[log.action as gamificationService.XPAction]?.description || log.action,
+            description:
+                gamificationService.XP_ACTIONS[log.action as gamificationService.XPAction]
+                    ?.description || log.action,
             createdAt: log.createdAt,
         })),
     });

@@ -2,8 +2,9 @@
  * Cache Control Middleware
  * Sets Cache-Control headers, ETag support, and Vary headers based on endpoint patterns
  */
-import type { Context, Next } from 'hono';
+
 import { createHash } from 'node:crypto';
+import type { Context, Next } from 'hono';
 
 interface CacheRule {
     pattern: RegExp | string;

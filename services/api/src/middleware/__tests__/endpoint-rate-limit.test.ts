@@ -1,6 +1,10 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearRateLimits_forTesting, endpointRateLimit, getRateLimitEntry_forTesting } from '../endpoint-rate-limit';
+import {
+    clearRateLimits_forTesting,
+    endpointRateLimit,
+    getRateLimitEntry_forTesting,
+} from '../endpoint-rate-limit';
 
 describe('Endpoint Rate Limit Middleware', () => {
     let app: Hono;
@@ -268,13 +272,17 @@ describe('Endpoint Rate Limit Middleware', () => {
         });
 
         it('should reset counter after window expires', async () => {
-            const entry = getRateLimitEntry_forTesting('endpoint:test-user-123:POST /api/council:minute');
+            const entry = getRateLimitEntry_forTesting(
+                'endpoint:test-user-123:POST /api/council:minute'
+            );
             expect(entry).toBeUndefined();
 
             // Make a request
             await app.request('/api/council', { method: 'POST' });
 
-            const entry2 = getRateLimitEntry_forTesting('endpoint:test-user-123:POST /api/council:minute');
+            const entry2 = getRateLimitEntry_forTesting(
+                'endpoint:test-user-123:POST /api/council:minute'
+            );
             expect(entry2).toBeDefined();
             expect(entry2?.count).toBe(1);
         });

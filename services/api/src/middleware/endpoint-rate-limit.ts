@@ -109,15 +109,18 @@ export function endpointRateLimit() {
             path === '/health' ||
             path === '/status' ||
             path === '/ready' ||
+            path === '/metrics' ||
             path.startsWith('/.well-known/') ||
-            path.startsWith('/api/auth/')
+            path.startsWith('/api/auth/') ||
+            path.startsWith('/api/docs')
         ) {
             await next();
             return;
         }
 
         // Determine identity
-        const identifier = userId || c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+        const identifier =
+            userId || c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 
         // Match endpoint pattern
         const endpointPattern = matchEndpointPattern(method, path);
@@ -194,7 +197,10 @@ export function endpointRateLimit() {
             const hourEntry = rateLimitStore.get(hourKey);
             if (hourEntry) {
                 c.header('X-RateLimit-Limit-Hourly', String(limits.requestsPerHour));
-                c.header('X-RateLimit-Remaining-Hourly', String(limits.requestsPerHour - hourEntry.count));
+                c.header(
+                    'X-RateLimit-Remaining-Hourly',
+                    String(limits.requestsPerHour - hourEntry.count)
+                );
             }
         }
 

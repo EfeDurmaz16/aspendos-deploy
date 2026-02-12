@@ -2,11 +2,7 @@
  * Environment variable validation - fails fast on missing required vars
  */
 
-const requiredEnvVars = [
-    'DATABASE_URL',
-    'BETTER_AUTH_SECRET',
-    'BETTER_AUTH_URL',
-] as const;
+const requiredEnvVars = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL'] as const;
 
 const optionalEnvVars = [
     'SENTRY_DSN',
@@ -25,6 +21,11 @@ const optionalEnvVars = [
 ] as const;
 
 export function validateEnv() {
+    // Skip validation in test environment
+    if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+        return;
+    }
+
     const missing: string[] = [];
 
     for (const envVar of requiredEnvVars) {
@@ -47,8 +48,6 @@ export function validateEnv() {
     }
 
     if (missingOptional.length > 0) {
-        console.warn(
-            `[env] Missing optional environment variables: ${missingOptional.join(', ')}`
-        );
+        console.warn(`[env] Missing optional environment variables: ${missingOptional.join(', ')}`);
     }
 }

@@ -1,6 +1,10 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearIdempotencyCache_forTesting, getCacheEntry_forTesting, idempotency } from '../idempotency';
+import {
+    clearIdempotencyCache_forTesting,
+    getCacheEntry_forTesting,
+    idempotency,
+} from '../idempotency';
 
 describe('Idempotency Middleware', () => {
     let app: Hono;

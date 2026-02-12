@@ -36,8 +36,12 @@ app.post('/subscribe', requireAuth, async (c) => {
     } catch {
         return c.json({ error: 'endpoint must be a valid URL' }, 400);
     }
-    if (!body.keys?.p256dh || !body.keys?.auth ||
-        typeof body.keys.p256dh !== 'string' || typeof body.keys.auth !== 'string') {
+    if (
+        !body.keys?.p256dh ||
+        !body.keys?.auth ||
+        typeof body.keys.p256dh !== 'string' ||
+        typeof body.keys.auth !== 'string'
+    ) {
         return c.json({ error: 'keys.p256dh and keys.auth are required' }, 400);
     }
     const ALLOWED_DEVICE_TYPES = ['web', 'android', 'ios'];
@@ -103,7 +107,12 @@ app.patch('/preferences', requireAuth, async (c) => {
     const body = await c.req.json();
 
     // Whitelist allowed preference fields
-    const BOOLEAN_FIELDS = ['pushEnabled', 'emailEnabled', 'inAppEnabled', 'quietHoursEnabled'] as const;
+    const BOOLEAN_FIELDS = [
+        'pushEnabled',
+        'emailEnabled',
+        'inAppEnabled',
+        'quietHoursEnabled',
+    ] as const;
     const TIME_FIELDS = ['quietHoursStart', 'quietHoursEnd'] as const;
     const TIME_REGEX = /^\d{2}:\d{2}$/;
 
@@ -112,7 +121,8 @@ app.patch('/preferences', requireAuth, async (c) => {
         if (typeof body[field] === 'boolean') sanitized[field] = body[field];
     }
     for (const field of TIME_FIELDS) {
-        if (typeof body[field] === 'string' && TIME_REGEX.test(body[field])) sanitized[field] = body[field];
+        if (typeof body[field] === 'string' && TIME_REGEX.test(body[field]))
+            sanitized[field] = body[field];
     }
 
     if (Object.keys(sanitized).length === 0) {
@@ -144,9 +154,7 @@ app.get('/stream', requireAuth, async (c) => {
 
             // Send initial connection message (no userId to prevent leaking internal IDs)
             controller.enqueue(
-                new TextEncoder().encode(
-                    `:connected\ndata: {"type":"connected"}\n\n`
-                )
+                new TextEncoder().encode(`:connected\ndata: {"type":"connected"}\n\n`)
             );
 
             // Function to send a notification through SSE

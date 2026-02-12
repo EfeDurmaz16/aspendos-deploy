@@ -60,6 +60,26 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                 name: 'Health',
                 description: 'System health monitoring',
             },
+            {
+                name: 'Admin',
+                description: 'Administrative operations',
+            },
+            {
+                name: 'Search',
+                description: 'Global search across conversations and memories',
+            },
+            {
+                name: 'Jobs',
+                description: 'Background job management',
+            },
+            {
+                name: 'System',
+                description: 'System information and metrics',
+            },
+            {
+                name: 'Templates',
+                description: 'Prompt template management',
+            },
         ],
         paths: {
             '/api/chat': {
@@ -790,6 +810,237 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                     },
                 },
             },
+            '/api/search': {
+                post: {
+                    tags: ['Search'],
+                    summary: 'Global search',
+                    description: 'Search across chats, memories, and messages',
+                    operationId: 'globalSearch',
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    required: ['query'],
+                                    properties: {
+                                        query: {
+                                            type: 'string',
+                                            description: 'Search query',
+                                            example: 'project deadline',
+                                        },
+                                        scope: {
+                                            type: 'array',
+                                            items: {
+                                                type: 'string',
+                                                enum: ['chats', 'memories', 'messages'],
+                                            },
+                                            description: 'Search scope',
+                                        },
+                                        limit: {
+                                            type: 'integer',
+                                            default: 20,
+                                            minimum: 1,
+                                            maximum: 100,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    responses: {
+                        '200': {
+                            description: 'Search results',
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        properties: {
+                                            results: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        '401': {
+                            $ref: '#/components/responses/Unauthorized',
+                        },
+                    },
+                },
+            },
+            '/api/admin/users': {
+                get: {
+                    tags: ['Admin'],
+                    summary: 'List users',
+                    description: 'List all users (admin only)',
+                    operationId: 'listUsers',
+                    security: [{ bearerAuth: [] }],
+                    responses: {
+                        '200': {
+                            description: 'User list',
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        properties: {
+                                            users: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        '401': {
+                            $ref: '#/components/responses/Unauthorized',
+                        },
+                        '403': {
+                            $ref: '#/components/responses/Forbidden',
+                        },
+                    },
+                },
+            },
+            '/api/jobs/stats': {
+                get: {
+                    tags: ['Jobs'],
+                    summary: 'Job queue statistics',
+                    description: 'Get statistics for background job queues',
+                    operationId: 'getJobStats',
+                    parameters: [
+                        {
+                            name: 'queue',
+                            in: 'query',
+                            description: 'Specific queue name',
+                            schema: {
+                                type: 'string',
+                            },
+                        },
+                    ],
+                    responses: {
+                        '200': {
+                            description: 'Job statistics',
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        properties: {
+                                            stats: {
+                                                type: 'object',
+                                            },
+                                            deadLetterQueue: {
+                                                type: 'integer',
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        '401': {
+                            $ref: '#/components/responses/Unauthorized',
+                        },
+                    },
+                },
+            },
+            '/metrics': {
+                get: {
+                    tags: ['System'],
+                    summary: 'Prometheus metrics',
+                    description: 'Prometheus-compatible metrics endpoint',
+                    operationId: 'getMetrics',
+                    security: [],
+                    responses: {
+                        '200': {
+                            description: 'Metrics in Prometheus format',
+                            content: {
+                                'text/plain': {
+                                    schema: {
+                                        type: 'string',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            '/api/templates': {
+                get: {
+                    tags: ['Templates'],
+                    summary: 'List prompt templates',
+                    description: 'Get available prompt templates',
+                    operationId: 'listTemplates',
+                    responses: {
+                        '200': {
+                            description: 'Template list',
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        properties: {
+                                            templates: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        '401': {
+                            $ref: '#/components/responses/Unauthorized',
+                        },
+                    },
+                },
+                post: {
+                    tags: ['Templates'],
+                    summary: 'Create template',
+                    description: 'Create a new prompt template',
+                    operationId: 'createTemplate',
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    required: ['name', 'content'],
+                                    properties: {
+                                        name: {
+                                            type: 'string',
+                                        },
+                                        content: {
+                                            type: 'string',
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    responses: {
+                        '201': {
+                            description: 'Template created',
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                    },
+                                },
+                            },
+                        },
+                        '401': {
+                            $ref: '#/components/responses/Unauthorized',
+                        },
+                    },
+                },
+            },
         },
         components: {
             securitySchemes: {
@@ -798,6 +1049,12 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
                     description: 'JWT token from Better Auth',
+                },
+                apiKey: {
+                    type: 'apiKey',
+                    in: 'header',
+                    name: 'X-API-Key',
+                    description: 'API key for programmatic access',
                 },
             },
             headers: {

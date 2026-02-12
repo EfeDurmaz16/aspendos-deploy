@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeEach } from 'vitest';
 import { Hono } from 'hono';
-import { metricsMiddleware } from '../middleware/metrics';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { getMetricsText, resetMetrics } from '../lib/metrics';
+import { metricsMiddleware } from '../middleware/metrics';
 
 describe('Metrics Endpoint Integration', () => {
     let app: Hono;
@@ -68,8 +68,12 @@ describe('Metrics Endpoint Integration', () => {
         const text = await res.text();
 
         expect(text).toContain('http_requests_total{method="GET",path="/api/chat",status="200"} 2');
-        expect(text).toContain('http_requests_total{method="GET",path="/api/memory",status="200"} 1');
-        expect(text).toContain('http_requests_total{method="POST",path="/api/chat",status="201"} 1');
+        expect(text).toContain(
+            'http_requests_total{method="GET",path="/api/memory",status="200"} 1'
+        );
+        expect(text).toContain(
+            'http_requests_total{method="POST",path="/api/chat",status="201"} 1'
+        );
     });
 
     it('should include histogram buckets', async () => {
@@ -98,7 +102,9 @@ describe('Metrics Endpoint Integration', () => {
         const res = await app.request('/metrics');
         const text = await res.text();
 
-        expect(text).toContain('http_requests_total{method="GET",path="/api/test",status="200"} 10');
+        expect(text).toContain(
+            'http_requests_total{method="GET",path="/api/test",status="200"} 10'
+        );
     });
 
     it('should track different status codes', async () => {

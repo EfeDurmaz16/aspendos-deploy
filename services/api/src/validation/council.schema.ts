@@ -14,7 +14,9 @@ export const createCouncilSessionSchema = z.object({
 
 export const selectPersonaSchema = z.object({
     persona: z.enum(VALID_PERSONAS, {
-        errorMap: () => ({ message: 'Invalid persona. Must be SCHOLAR, CREATIVE, PRACTICAL, or DEVILS_ADVOCATE' }),
+        errorMap: () => ({
+            message: 'Invalid persona. Must be SCHOLAR, CREATIVE, PRACTICAL, or DEVILS_ADVOCATE',
+        }),
     }),
 });
 

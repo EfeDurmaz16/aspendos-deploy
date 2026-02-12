@@ -191,7 +191,11 @@ export async function generateReengagementMessage(task: ScheduledTask): Promise<
         });
 
         if (!response.ok) {
-            console.error('Re-engagement generation API error:', response.status, response.statusText);
+            console.error(
+                'Re-engagement generation API error:',
+                response.status,
+                response.statusText
+            );
             throw new Error('Failed to generate re-engagement message');
         }
 

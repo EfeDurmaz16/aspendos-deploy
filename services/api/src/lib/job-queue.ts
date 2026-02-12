@@ -258,7 +258,11 @@ class JobQueue {
                 continue;
             }
 
-            if (!nextJob || job.priority > nextJob.priority || (job.priority === nextJob.priority && job.createdAt < nextJob.createdAt)) {
+            if (
+                !nextJob ||
+                job.priority > nextJob.priority ||
+                (job.priority === nextJob.priority && job.createdAt < nextJob.createdAt)
+            ) {
                 nextJob = job;
             }
         }
@@ -285,7 +289,7 @@ class JobQueue {
                 // Schedule retry with exponential backoff + jitter
                 nextJob.status = 'pending';
                 const backoff = Math.min(
-                    config.backoffMs * Math.pow(config.backoffMultiplier, nextJob.attempts - 1),
+                    config.backoffMs * config.backoffMultiplier ** (nextJob.attempts - 1),
                     config.maxBackoffMs
                 );
                 const jitter = Math.random() * backoff * 0.1;
@@ -321,56 +325,71 @@ class JobQueue {
 export const jobQueue = new JobQueue();
 
 // Pre-register common queues
-jobQueue.register('webhook-delivery', async (data: { url: string; payload: unknown; headers?: Record<string, string> }) => {
-    const response = await fetch(data.url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'YULA-Webhook/1.0',
-            ...data.headers,
-        },
-        body: JSON.stringify(data.payload),
-        signal: AbortSignal.timeout(10000),
-    });
+jobQueue.register(
+    'webhook-delivery',
+    async (data: { url: string; payload: unknown; headers?: Record<string, string> }) => {
+        const response = await fetch(data.url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'YULA-Webhook/1.0',
+                ...data.headers,
+            },
+            body: JSON.stringify(data.payload),
+            signal: AbortSignal.timeout(10000),
+        });
 
-    if (!response.ok) {
-        throw new Error(`Webhook delivery failed: ${response.status} ${response.statusText}`);
+        if (!response.ok) {
+            throw new Error(`Webhook delivery failed: ${response.status} ${response.statusText}`);
+        }
+
+        return { status: response.status };
+    },
+    {
+        concurrency: 5,
+        maxRetries: 5,
+        backoffMs: 5000,
+        backoffMultiplier: 3,
+        maxBackoffMs: 300000,
     }
+);
 
-    return { status: response.status };
-}, {
-    concurrency: 5,
-    maxRetries: 5,
-    backoffMs: 5000,
-    backoffMultiplier: 3,
-    maxBackoffMs: 300000,
-});
+jobQueue.register(
+    'email-notification',
+    async (data: { userId: string; type: string; payload: unknown }) => {
+        // Placeholder for email sending logic
+        console.log(`[JobQueue] Email notification: ${data.type} to ${data.userId}`);
+        return { sent: true };
+    },
+    {
+        concurrency: 10,
+        maxRetries: 3,
+        backoffMs: 2000,
+    }
+);
 
-jobQueue.register('email-notification', async (data: { userId: string; type: string; payload: unknown }) => {
-    // Placeholder for email sending logic
-    console.log(`[JobQueue] Email notification: ${data.type} to ${data.userId}`);
-    return { sent: true };
-}, {
-    concurrency: 10,
-    maxRetries: 3,
-    backoffMs: 2000,
-});
-
-jobQueue.register('memory-consolidation', async (data: { userId: string }) => {
-    console.log(`[JobQueue] Memory consolidation for ${data.userId}`);
-    return { consolidated: true };
-}, {
-    concurrency: 2,
-    maxRetries: 2,
-    backoffMs: 10000,
-});
+jobQueue.register(
+    'memory-consolidation',
+    async (data: { userId: string }) => {
+        console.log(`[JobQueue] Memory consolidation for ${data.userId}`);
+        return { consolidated: true };
+    },
+    {
+        concurrency: 2,
+        maxRetries: 2,
+        backoffMs: 10000,
+    }
+);
 
 // Periodic cleanup every 30 minutes
-setInterval(() => {
-    const cleaned = jobQueue.cleanup();
-    if (cleaned > 0) {
-        console.log(`[JobQueue] Cleaned ${cleaned} old jobs`);
-    }
-}, 30 * 60 * 1000);
+setInterval(
+    () => {
+        const cleaned = jobQueue.cleanup();
+        if (cleaned > 0) {
+            console.log(`[JobQueue] Cleaned ${cleaned} old jobs`);
+        }
+    },
+    30 * 60 * 1000
+);
 
 export type { Job, JobStatus, QueueConfig };
