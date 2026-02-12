@@ -9,11 +9,23 @@ import type { TierName } from '../config/tiers';
 import { getLimit } from '../config/tiers';
 import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateParams } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
 import type { PersonaType } from '../services/council.service';
 import * as councilService from '../services/council.service';
+import {
+    createCouncilSessionSchema,
+    selectPersonaSchema,
+    sessionIdParamSchema,
+} from '../validation/council.schema';
 
-const app = new Hono();
+type Variables = {
+    validatedBody?: unknown;
+    validatedQuery?: unknown;
+    validatedParams?: unknown;
+};
+
+const app = new Hono<{ Variables: Variables }>();
 
 // All routes require authentication
 app.use('*', requireAuth);
@@ -24,19 +36,9 @@ app.use('*', requireAuth);
  * Returns a streaming response with all 4 personas responding in parallel.
  * Format: Server-Sent Events (SSE)
  */
-app.post('/sessions', async (c) => {
+app.post('/sessions', validateBody(createCouncilSessionSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
-
-    const { query } = body;
-
-    if (!query || typeof query !== 'string' || query.trim().length === 0) {
-        return c.json({ error: 'query is required' }, 400);
-    }
-
-    if (query.length > 2000) {
-        return c.json({ error: 'Query too long. Maximum 2,000 characters.' }, 400);
-    }
+    const { query } = c.get('validatedBody') as { query: string };
 
     // Check council session limit based on user's tier
     const user = await prisma.user.findUnique({
@@ -114,9 +116,9 @@ app.post('/sessions', async (c) => {
  *
  * Server-Sent Events stream with parallel responses.
  */
-app.get('/sessions/:id/stream', async (c) => {
+app.get('/sessions/:id/stream', validateParams(sessionIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const sessionId = c.req.param('id');
+    const { id: sessionId } = c.get('validatedParams') as { id: string };
 
     // Verify session belongs to user
     const session = await councilService.getCouncilSession(sessionId, userId);
@@ -254,9 +256,9 @@ app.get('/sessions', async (c) => {
 /**
  * GET /api/council/sessions/:id - Get session details
  */
-app.get('/sessions/:id', async (c) => {
+app.get('/sessions/:id', validateParams(sessionIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const sessionId = c.req.param('id');
+    const { id: sessionId } = c.get('validatedParams') as { id: string };
 
     const session = await councilService.getCouncilSession(sessionId, userId);
 
@@ -289,17 +291,10 @@ app.get('/sessions/:id', async (c) => {
 /**
  * POST /api/council/sessions/:id/select - Select preferred response
  */
-app.post('/sessions/:id/select', async (c) => {
+app.post('/sessions/:id/select', validateParams(sessionIdParamSchema), validateBody(selectPersonaSchema), async (c) => {
     const userId = c.get('userId')!;
-    const sessionId = c.req.param('id');
-    const body = await c.req.json();
-
-    const { persona } = body;
-
-    const validPersonas: PersonaType[] = ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
-    if (!persona || !validPersonas.includes(persona)) {
-        return c.json({ error: 'Invalid persona' }, 400);
-    }
+    const { id: sessionId } = c.get('validatedParams') as { id: string };
+    const { persona } = c.get('validatedBody') as { persona: PersonaType };
 
     await councilService.selectResponse(sessionId, userId, persona);
 
@@ -326,9 +321,9 @@ app.post('/sessions/:id/select', async (c) => {
 /**
  * POST /api/council/sessions/:id/synthesize - Generate synthesis
  */
-app.post('/sessions/:id/synthesize', async (c) => {
+app.post('/sessions/:id/synthesize', validateParams(sessionIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const sessionId = c.req.param('id');
+    const { id: sessionId } = c.get('validatedParams') as { id: string };
 
     // Verify session belongs to user
     const session = await councilService.getCouncilSession(sessionId, userId);

@@ -6,7 +6,16 @@
 import { Hono } from 'hono';
 import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateParams } from '../middleware/validate';
 import * as importService from '../services/import.service';
+import {
+    bulkSelectSchema,
+    createImportJobSchema,
+    entityIdParamSchema,
+    executeImportSchema,
+    jobIdParamSchema,
+    updateEntitySelectionSchema,
+} from '../validation/import.schema';
 
 /**
  * Auto-detect import format from content structure.
@@ -76,7 +85,13 @@ function sanitizeImportContent(obj: unknown, depth = 0): unknown {
     return obj;
 }
 
-const app = new Hono();
+type Variables = {
+    validatedBody?: unknown;
+    validatedQuery?: unknown;
+    validatedParams?: unknown;
+};
+
+const app = new Hono<{ Variables: Variables }>();
 
 // All routes require authentication
 app.use('*', requireAuth);
@@ -90,15 +105,16 @@ app.use('*', requireAuth);
  * - fileSize: number
  * - content: parsed JSON from the export file
  */
-app.post('/jobs', async (c) => {
+app.post('/jobs', validateBody(createImportJobSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const validatedBody = c.get('validatedBody') as {
+        source?: 'CHATGPT' | 'CLAUDE';
+        fileName: string;
+        fileSize: number;
+        content: unknown;
+    };
 
-    const { source: rawSource, fileName, fileSize, content } = body;
-
-    if (!content || typeof content !== 'object') {
-        return c.json({ error: 'content is required and must be a JSON object or array' }, 400);
-    }
+    const { source: rawSource, fileName, fileSize, content } = validatedBody;
 
     // Auto-detect format if source not specified or validate if specified
     let source = rawSource;
@@ -221,9 +237,9 @@ app.get('/jobs', async (c) => {
 /**
  * GET /api/import/jobs/:id - Get import job details
  */
-app.get('/jobs/:id', async (c) => {
+app.get('/jobs/:id', validateParams(jobIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
-    const jobId = c.req.param('id');
+    const { id: jobId } = c.get('validatedParams') as { id: string };
 
     const job = await importService.getImportJob(jobId, userId);
 
@@ -257,11 +273,10 @@ app.get('/jobs/:id', async (c) => {
 /**
  * PATCH /api/import/jobs/:id/entities/:entityId - Update entity selection
  */
-app.patch('/jobs/:id/entities/:entityId', async (c) => {
+app.patch('/jobs/:id/entities/:entityId', validateParams(entityIdParamSchema), validateBody(updateEntitySelectionSchema), async (c) => {
     const userId = c.get('userId')!;
-    const jobId = c.req.param('id');
-    const entityId = c.req.param('entityId');
-    const body = await c.req.json();
+    const { id: jobId, entityId } = c.get('validatedParams') as { id: string; entityId: string };
+    const { selected } = c.get('validatedBody') as { selected: boolean };
 
     // Verify job belongs to user
     const job = await importService.getImportJob(jobId, userId);
@@ -269,11 +284,7 @@ app.patch('/jobs/:id/entities/:entityId', async (c) => {
         return c.json({ error: 'Import job not found' }, 404);
     }
 
-    if (typeof body.selected !== 'boolean') {
-        return c.json({ error: 'selected must be a boolean' }, 400);
-    }
-
-    await importService.updateEntitySelection(entityId, jobId, body.selected);
+    await importService.updateEntitySelection(entityId, jobId, selected);
 
     return c.json({ success: true });
 });
@@ -281,25 +292,15 @@ app.patch('/jobs/:id/entities/:entityId', async (c) => {
 /**
  * POST /api/import/jobs/:id/entities/bulk-select - Bulk update entity selection
  */
-app.post('/jobs/:id/entities/bulk-select', async (c) => {
+app.post('/jobs/:id/entities/bulk-select', validateParams(jobIdParamSchema), validateBody(bulkSelectSchema), async (c) => {
     const userId = c.get('userId')!;
-    const jobId = c.req.param('id');
-    const body = await c.req.json();
+    const { id: jobId } = c.get('validatedParams') as { id: string };
+    const { entityIds, selected } = c.get('validatedBody') as { entityIds: string[]; selected: boolean };
 
     // Verify job belongs to user
     const job = await importService.getImportJob(jobId, userId);
     if (!job) {
         return c.json({ error: 'Import job not found' }, 404);
-    }
-
-    const { entityIds, selected } = body;
-
-    if (!Array.isArray(entityIds) || typeof selected !== 'boolean') {
-        return c.json({ error: 'entityIds array and selected boolean are required' }, 400);
-    }
-
-    if (entityIds.length > 500) {
-        return c.json({ error: 'Maximum 500 entities per bulk operation' }, 400);
     }
 
     for (const entityId of entityIds) {
@@ -312,11 +313,10 @@ app.post('/jobs/:id/entities/bulk-select', async (c) => {
 /**
  * POST /api/import/jobs/:id/execute - Execute import for selected entities
  */
-app.post('/jobs/:id/execute', async (c) => {
+app.post('/jobs/:id/execute', validateParams(jobIdParamSchema), validateBody(executeImportSchema), async (c) => {
     const userId = c.get('userId')!;
-    const jobId = c.req.param('id');
-    const body = await c.req.json();
-    const selectedIds = body.selectedIds as string[] | undefined;
+    const { id: jobId } = c.get('validatedParams') as { id: string };
+    const { selectedIds } = c.get('validatedBody') as { selectedIds?: string[] };
 
     // Verify job belongs to user
     const job = await importService.getImportJob(jobId, userId);
