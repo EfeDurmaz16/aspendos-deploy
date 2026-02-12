@@ -3,6 +3,7 @@
  * Handles billing status, checkout, and Polar webhooks.
  */
 import { Hono } from 'hono';
+import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
@@ -116,6 +117,14 @@ app.post('/checkout', requireAuth, validateBody(createCheckoutSchema), async (c)
             cancelUrl: safeCancelUrl,
         });
 
+        // Audit log the checkout creation
+        await auditLog({
+            userId,
+            action: 'CHECKOUT_CREATE',
+            resource: 'subscription',
+            metadata: { plan, cycle, checkoutId },
+        });
+
         return c.json({
             checkout_url: checkoutUrl,
             checkout_id: checkoutId,
@@ -143,6 +152,14 @@ app.post('/cancel', requireAuth, async (c) => {
 
     try {
         await polarService.cancelSubscription(billingAccount.subscriptionId);
+
+        // Audit log the subscription cancellation
+        await auditLog({
+            userId,
+            action: 'SUBSCRIPTION_CANCEL',
+            resource: 'subscription',
+            metadata: { subscriptionId: billingAccount.subscriptionId },
+        });
 
         return c.json({
             success: true,

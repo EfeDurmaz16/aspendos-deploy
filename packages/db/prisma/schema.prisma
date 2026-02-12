@@ -712,3 +712,23 @@ model XPLog {
   @@index([profileId, createdAt])
   @@map("xp_log")
 }
+
+// ============================================
+// AUDIT LOG (Security & Compliance)
+// ============================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String // e.g., "ACCOUNT_DELETE", "DATA_EXPORT", "LOGIN", "SETTINGS_UPDATE"
+  resource   String // e.g., "user", "memory", "billing"
+  resourceId String?
+  ip         String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_log")
+}

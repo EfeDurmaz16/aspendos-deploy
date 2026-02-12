@@ -5,6 +5,7 @@
  * decay, waypoints, and explainable traces.
  */
 import { Hono } from 'hono';
+import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
 import { consolidateMemories } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
@@ -152,6 +153,14 @@ app.post('/dashboard/bulk-delete', async (c) => {
             // Continue with next
         }
     }
+
+    // Audit log the bulk delete
+    await auditLog({
+        userId,
+        action: 'BULK_DELETE',
+        resource: 'memory',
+        metadata: { count: deleted, requestedIds: ids.length },
+    });
 
     return c.json({ success: true, deleted });
 });

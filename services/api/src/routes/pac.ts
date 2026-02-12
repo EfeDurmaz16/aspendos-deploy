@@ -4,6 +4,7 @@
  * Handles reminder management and settings.
  */
 import { Hono } from 'hono';
+import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
 import * as pacService from '../services/pac.service';
 
@@ -199,6 +200,14 @@ app.patch('/settings', async (c) => {
     }
 
     const settings = await pacService.updatePACSettings(userId, sanitized);
+
+    // Audit log the settings update
+    await auditLog({
+        userId,
+        action: 'SETTINGS_UPDATE',
+        resource: 'pac_settings',
+        metadata: sanitized,
+    });
 
     return c.json({
         success: true,

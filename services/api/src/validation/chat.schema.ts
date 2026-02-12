@@ -77,19 +77,19 @@ export const messageFeedbackSchema = z.object({
  * Fork chat schema
  */
 export const forkChatSchema = z.object({
-    fromMessageId: z.string().uuid('fromMessageId must be a valid UUID').optional(),
+    fromMessageId: z.string().min(1, 'fromMessageId is required').optional(),
 });
 
 /**
- * Chat ID parameter schema
+ * Chat ID parameter schema (Prisma uses cuid(), not UUID)
  */
 export const chatIdParamSchema = z.object({
-    id: z.string().uuid('Chat ID must be a valid UUID'),
+    id: z.string().min(1, 'Chat ID is required'),
 });
 
 /**
- * Message ID parameter schema
+ * Message ID parameter schema (Prisma uses cuid(), not UUID)
  */
 export const messageIdParamSchema = z.object({
-    messageId: z.string().uuid('Message ID must be a valid UUID'),
+    messageId: z.string().min(1, 'Message ID is required'),
 });

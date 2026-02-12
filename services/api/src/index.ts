@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { getModelsForTier, SUPPORTED_MODELS } from './lib/ai-providers';
+import { auditLog } from './lib/audit-log';
 import { auth } from './lib/auth';
 import { breakers } from './lib/circuit-breaker';
 import { validateEnv } from './lib/env';
@@ -228,6 +229,11 @@ app.use('*', rateLimit());
 app.onError((err, c) => {
     Sentry.captureException(err);
     console.error('Unhandled error:', err);
+
+    // Handle JSON parse errors
+    if (err instanceof SyntaxError && 'body' in err) {
+        return c.json({ error: 'Invalid JSON in request body', code: 'INVALID_JSON' }, 400);
+    }
 
     // Handle AppError instances
     if (err instanceof AppError) {
@@ -765,6 +771,14 @@ app.delete('/api/account', async (c) => {
             // Best-effort memory deletion
         }
 
+        // Audit log the account deletion
+        await auditLog({
+            userId,
+            action: 'ACCOUNT_DELETE',
+            resource: 'user',
+            ip: c.req.header('x-forwarded-for') || 'unknown',
+        });
+
         return c.json({ success: true, message: 'Account and all data deleted permanently.' });
     } catch (error) {
         console.error('[Account] Deletion failed:', error);
@@ -865,6 +879,14 @@ app.get('/api/export', async (c) => {
                 },
             }),
         ]);
+
+        // Audit log the data export
+        await auditLog({
+            userId,
+            action: 'DATA_EXPORT',
+            resource: 'user',
+            ip: c.req.header('x-forwarded-for') || 'unknown',
+        });
 
         return c.json({
             exportedAt: new Date().toISOString(),
