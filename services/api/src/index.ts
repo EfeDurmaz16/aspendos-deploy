@@ -14,6 +14,7 @@ import { initSentry, Sentry } from './lib/sentry';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
 import { requestTimeout } from './middleware/timeout';
 import analyticsRoutes from './routes/analytics';
+import apiKeysRoutes from './routes/api-keys';
 import billingRoutes from './routes/billing';
 // Routes
 import chatRoutes from './routes/chat';
@@ -1317,6 +1318,113 @@ app.get('/api/cron/retention/policies', (c) => {
     return c.json({ policies: getRetentionPolicies() });
 });
 
+// ─── GDPR Article 20: Data Portability ───────────────────────────────────────
+app.get('/api/account/export', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    try {
+        const { prisma } = await import('./lib/prisma');
+
+        const [
+            user,
+            chats,
+            memories,
+            billingAccount,
+            pacReminders,
+            pacSettings,
+            councilSessions,
+            gamificationProfile,
+            notificationPreferences,
+        ] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, email: true, name: true, tier: true, createdAt: true },
+            }),
+            prisma.chat.findMany({
+                where: { userId },
+                include: {
+                    messages: {
+                        select: {
+                            role: true,
+                            content: true,
+                            modelUsed: true,
+                            tokensIn: true,
+                            tokensOut: true,
+                            costUsd: true,
+                            createdAt: true,
+                        },
+                    },
+                },
+            }),
+            prisma.memory.findMany({
+                where: { userId },
+                select: {
+                    content: true,
+                    summary: true,
+                    type: true,
+                    sector: true,
+                    importance: true,
+                    tags: true,
+                    createdAt: true,
+                },
+            }),
+            prisma.billingAccount.findUnique({
+                where: { userId },
+                include: {
+                    creditHistory: { select: { amount: true, reason: true, createdAt: true } },
+                },
+            }),
+            prisma.pACReminder.findMany({
+                where: { userId },
+                select: { message: true, status: true, scheduledFor: true, createdAt: true },
+            }),
+            prisma.pACSettings.findUnique({ where: { userId } }),
+            prisma.councilSession.findMany({
+                where: { userId },
+                include: {
+                    responses: { select: { modelId: true, content: true, createdAt: true } },
+                },
+            }),
+            prisma.gamificationProfile.findUnique({
+                where: { userId },
+                include: { achievements: true, xpLogs: true },
+            }),
+            prisma.notificationPreferences.findUnique({ where: { userId } }),
+        ]);
+
+        const exportData = {
+            exportedAt: new Date().toISOString(),
+            gdprArticle: '20',
+            user,
+            chats: chats.map((chat) => ({
+                title: chat.title,
+                model: chat.modelPreference,
+                createdAt: chat.createdAt,
+                messages: chat.messages,
+            })),
+            memories,
+            billing: billingAccount,
+            pacReminders,
+            pacSettings,
+            councilSessions: councilSessions.map((s) => ({
+                query: s.query,
+                responses: s.responses,
+                createdAt: s.createdAt,
+            })),
+            gamification: gamificationProfile,
+            notificationPreferences,
+        };
+
+        return c.json(exportData, 200, {
+            'Content-Disposition': `attachment; filename="yula-export-${userId}.json"`,
+        });
+    } catch (error) {
+        console.error('[GDPR Export] Failed:', error);
+        return c.json({ error: 'Export failed' }, 500);
+    }
+});
+
 // API Routes
 app.route('/api/chat', chatRoutes);
 app.route('/api/council', councilRoutes);
@@ -1329,6 +1437,7 @@ app.route('/api/scheduler', schedulerRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/analytics', analyticsRoutes);
 app.route('/api/gamification', gamificationRoutes);
+app.route('/api/api-keys', apiKeysRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);
