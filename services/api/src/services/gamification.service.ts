@@ -21,7 +21,7 @@ export const LEVELS = [
 ] as const;
 
 export function getLevelForXp(totalXp: number): (typeof LEVELS)[number] {
-    let currentLevel = LEVELS[0];
+    let currentLevel: (typeof LEVELS)[number] = LEVELS[0];
     for (const level of LEVELS) {
         if (totalXp >= level.minXp) {
             currentLevel = level;
@@ -334,7 +334,7 @@ export async function awardXp(
                 create: {
                     amount: xpAmount,
                     action,
-                    metadata: metadata || {},
+                    metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : undefined,
                 },
             },
         },
