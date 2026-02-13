@@ -31,6 +31,7 @@ model User {
   agents                   Agent[]
   billingAccount           BillingAccount?
   apiKeys                  ApiKey[]
+  promptTemplates          PromptTemplate[]
   scheduledTasks           ScheduledTask[]
   pushSubscriptions        PushSubscription[]
   notificationPreferences  NotificationPreferences?
@@ -290,6 +291,26 @@ model ApiKey {
 
   @@index([userId])
   @@index([keyHash])
+}
+
+model PromptTemplate {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String
+  content    String   @db.Text
+  category   String   @default("general")
+  variables  String[] @default([])
+  usageCount Int      @default(0)
+  isPublic   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, category])
+  @@index([isPublic, usageCount])
+  @@map("prompt_template")
 }
 
 model Session {
