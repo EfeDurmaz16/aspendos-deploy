@@ -58,9 +58,10 @@ import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
 import securityRoutes from './routes/security';
 import sessionRoutes from './routes/sessions';
+import statusRoutes from './routes/status';
 import systemRoutes from './routes/system';
-import complianceRoutes from './routes/user-compliance';
 import usageRoutes from './routes/usage';
+import complianceRoutes from './routes/user-compliance';
 import voiceRoutes from './routes/voice';
 import workspaceRoutes from './routes/workspace';
 
@@ -87,6 +88,16 @@ const app = new Hono<{ Variables: Variables }>();
 
 // Track shutdown state
 let isShuttingDown = false;
+const adminUserIds = new Set(
+    (process.env.ADMIN_USER_IDS || '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean)
+);
+
+function isAdminUser(userId: string | null): boolean {
+    return !!userId && adminUserIds.has(userId);
+}
 
 // Middleware
 app.use('*', logger());
@@ -652,7 +663,10 @@ app.get('/api/analytics/rate-limits', async (c) => {
                 history,
             });
         } else if (scope === 'dashboard') {
-            // Return full dashboard (could be admin-only in production)
+            // Return full dashboard (admin-only)
+            if (!isAdminUser(userId)) {
+                return c.json({ error: 'Forbidden' }, 403);
+            }
             const dashboard = getRateLimitDashboard();
             const nearLimits = getNearLimitEvents();
 
@@ -1784,6 +1798,45 @@ app.get('/api/webhooks/events', (c) => {
     });
 });
 
+// ─── A/B Testing Endpoints ───────────────────────────────────────────────────
+
+// GET /api/experiments - List experiments
+app.get('/api/experiments', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { listExperiments } = require('./lib/ab-testing');
+    const status = c.req.query('status') as
+        | 'draft'
+        | 'running'
+        | 'paused'
+        | 'completed'
+        | undefined;
+    const experiments = listExperiments(status);
+
+    return c.json({ experiments });
+});
+
+// GET /api/experiments/:id/results - Get experiment results
+app.get('/api/experiments/:id/results', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { getExperimentResults } = require('./lib/ab-testing');
+    const experimentId = c.req.param('id');
+    const confidenceLevel = c.req.query('confidence')
+        ? parseFloat(c.req.query('confidence')!)
+        : 0.95;
+
+    try {
+        const results = getExperimentResults(experimentId, confidenceLevel);
+        return c.json(results);
+    } catch (error) {
+        const err = error as Error;
+        return c.json({ error: err.message }, 404);
+    }
+});
+
 // ─── Feature Flags ───────────────────────────────────────────────────────────
 app.get('/api/features', (c) => {
     const userId = c.get('userId');
@@ -1838,14 +1891,16 @@ app.post('/api/jobs/retry/:jobId', (c) => {
 app.get('/api/admin/audit', async (c) => {
     const userId = c.get('userId');
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
-
-    // TODO: Add admin role check in production
-    // For now, any authenticated user can query their own audit log
+    const admin = isAdminUser(userId);
 
     const { auditStore } = await import('./lib/audit-store');
 
     // Parse query parameters
     const targetUserId = c.req.query('userId');
+    if (!admin && targetUserId && targetUserId !== userId) {
+        return c.json({ error: 'Forbidden' }, 403);
+    }
+    const effectiveUserId = admin ? targetUserId : userId;
     const action = c.req.query('action');
     const resource = c.req.query('resource');
     const fromDate = c.req.query('from') ? new Date(c.req.query('from')!) : undefined;
@@ -1855,7 +1910,7 @@ app.get('/api/admin/audit', async (c) => {
 
     try {
         const entries = auditStore.getAuditLog({
-            userId: targetUserId,
+            userId: effectiveUserId,
             action,
             resource,
             fromDate,
@@ -1865,7 +1920,7 @@ app.get('/api/admin/audit', async (c) => {
         });
 
         const total = auditStore.getCount({
-            userId: targetUserId,
+            userId: effectiveUserId,
             action,
             resource,
             fromDate,
@@ -1891,8 +1946,7 @@ app.get('/api/admin/audit', async (c) => {
 app.get('/api/admin/audit/stats', async (c) => {
     const userId = c.get('userId');
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
-
-    // TODO: Add admin role check in production
+    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
 
     try {
         const { auditStore } = await import('./lib/audit-store');
@@ -1925,6 +1979,7 @@ app.route('/api/sessions', sessionRoutes);
 app.route('/api/workspace', workspaceRoutes);
 app.route('/api/compliance', complianceRoutes);
 app.route('/api/security', securityRoutes);
+app.route('/api/status', statusRoutes);
 app.route('/api/system', systemRoutes);
 app.route('/api/usage', usageRoutes);
 
@@ -1934,6 +1989,7 @@ app.route('/api/usage', usageRoutes);
 app.get('/api/admin/dlq', (c) => {
     const userId = c.get('userId');
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
 
     const stats = dlq.getStats();
     return c.json({
@@ -1946,6 +2002,7 @@ app.get('/api/admin/dlq', (c) => {
 app.get('/api/admin/dlq/dead', (c) => {
     const userId = c.get('userId');
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
 
     const limit = Math.min(parseInt(c.req.query('limit') || '100', 10), 500);
     const dead = dlq.getDead().slice(0, limit);
@@ -1961,6 +2018,7 @@ app.get('/api/admin/dlq/dead', (c) => {
 app.post('/api/admin/dlq/:id/replay', (c) => {
     const userId = c.get('userId');
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
 
     const id = c.req.param('id');
     const entry = dlq.replayDead(id);
