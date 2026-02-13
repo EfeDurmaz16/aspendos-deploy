@@ -24,6 +24,12 @@ type Variables = {
     validatedQuery?: unknown;
     validatedParams?: unknown;
 };
+type PersonaStreamChunk = {
+    type: 'text' | 'done' | 'error';
+    content?: string;
+    latencyMs?: number;
+    usage?: { promptTokens: number; completionTokens: number };
+};
 
 const app = new Hono<{ Variables: Variables }>();
 
@@ -152,7 +158,7 @@ app.get('/sessions/:id/stream', validateParams(sessionIdParamSchema), async (c) 
 
         // Track completion and per-persona token usage for accurate billing
         const completed = new Set<PersonaType>();
-        const activeStreams = new Map<PersonaType, AsyncGenerator>();
+        const activeStreams = new Map<PersonaType, AsyncGenerator<PersonaStreamChunk>>();
         const perPersonaUsage = new Map<
             PersonaType,
             { promptTokens: number; completionTokens: number }

@@ -114,7 +114,9 @@ export function inputLimits() {
             }
 
             // Re-attach the validated body to the request
-            c.req.bodyCache = { bodyCache: body };
+            (c.req as unknown as { bodyCache: { bodyCache: unknown } }).bodyCache = {
+                bodyCache: body,
+            };
 
             return next();
         } catch (error) {

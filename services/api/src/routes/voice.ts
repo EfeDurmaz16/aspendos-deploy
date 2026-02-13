@@ -87,7 +87,10 @@ app.post('/synthesize', validateBody(synthesizeSchema), async (c) => {
         return c.json({ error: 'Voice minutes quota exceeded. Please upgrade your plan.' }, 403);
     }
 
-    const { text, voice } = c.get('validatedBody');
+    const { text, voice } = c.get('validatedBody') as {
+        text: string;
+        voice: (typeof ALLOWED_VOICES)[number];
+    };
 
     try {
         const mp3 = await getOpenAI().audio.speech.create({

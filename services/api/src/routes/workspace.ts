@@ -27,7 +27,7 @@ app.post('/', validateBody(createWorkspaceSchema), async (c) => {
     const userId = c.get('userId')!;
 
     try {
-        const { name } = c.get('validatedBody');
+        const { name } = c.get('validatedBody') as { name: string };
 
         const workspace = await workspaceService.createWorkspace(name, userId);
 
@@ -143,7 +143,10 @@ app.post('/:id/members', validateBody(addMemberSchema), async (c) => {
     const workspaceId = c.req.param('id');
 
     try {
-        const { userId: newUserId, role } = c.get('validatedBody');
+        const { userId: newUserId, role } = c.get('validatedBody') as {
+            userId: string;
+            role: 'member' | 'admin';
+        };
 
         // Check if user has admin permission
         const hasPermission = await workspaceService.checkPermission(workspaceId, userId, 'admin');
@@ -206,7 +209,7 @@ app.patch('/:id/members/:userId', validateBody(updateMemberRoleSchema), async (c
     const memberUserId = c.req.param('userId');
 
     try {
-        const { role } = c.get('validatedBody');
+        const { role } = c.get('validatedBody') as { role: 'member' | 'admin' };
 
         // Check if user has admin permission
         const hasPermission = await workspaceService.checkPermission(workspaceId, userId, 'admin');

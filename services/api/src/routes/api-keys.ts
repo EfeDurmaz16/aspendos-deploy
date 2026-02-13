@@ -75,7 +75,9 @@ app.post('/', requireAuth, async (c) => {
     try {
         const body = await c.req.json();
         const name = typeof body.name === 'string' ? body.name.trim() : '';
-        const permissions = Array.isArray(body.permissions) ? body.permissions : [];
+        const permissions: string[] = Array.isArray(body.permissions)
+            ? body.permissions.filter((p: unknown): p is string => typeof p === 'string')
+            : [];
         const expiresInDays = typeof body.expiresInDays === 'number' ? body.expiresInDays : null;
 
         // Validate name

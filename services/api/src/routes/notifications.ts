@@ -10,6 +10,7 @@ import { requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import {
     getUserNotificationPreferences,
+    type NotificationPreferences,
     registerPushSubscription,
     updateNotificationPreferences,
 } from '../services/notification.service';
@@ -27,7 +28,11 @@ const app = new Hono();
 // POST /api/notifications/subscribe - Register push subscription
 app.post('/subscribe', requireAuth, validateBody(pushSubscriptionSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = c.get('validatedBody');
+    const body = c.get('validatedBody') as {
+        endpoint: string;
+        keys: { p256dh: string; auth: string };
+        deviceType?: string;
+    };
 
     try {
         await registerPushSubscription(userId, {
@@ -49,9 +54,13 @@ app.post('/subscribe', requireAuth, validateBody(pushSubscriptionSchema), async 
 // DELETE /api/notifications/subscribe - Unsubscribe from push
 app.delete('/subscribe', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const body = (await c.req.json()) as { endpoint?: string };
 
     try {
+        if (!body.endpoint) {
+            return c.json({ error: 'Endpoint is required' }, 400);
+        }
+
         await prisma.pushSubscription.deleteMany({
             where: {
                 userId,
@@ -86,7 +95,7 @@ app.get('/preferences', requireAuth, async (c) => {
 // PATCH /api/notifications/preferences - Update preferences
 app.patch('/preferences', requireAuth, validateBody(notificationPreferencesSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = c.get('validatedBody');
+    const body = c.get('validatedBody') as Partial<NotificationPreferences>;
 
     try {
         await updateNotificationPreferences(userId, body);

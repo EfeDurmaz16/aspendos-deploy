@@ -231,7 +231,7 @@ export async function listMemories(
  */
 export async function updateMemory(
     id: string,
-    content: string,
+    content?: string,
     options?: {
         sector?: string;
         tags?: string[];
@@ -240,6 +240,7 @@ export async function updateMemory(
 ): Promise<void> {
     const memData = await q.get_mem.get(id);
     if (!memData) throw new Error('Memory not found');
+    const nextContent = content ?? memData.memory;
 
     const currentMeta = memData.meta ? JSON.parse(memData.meta) : {};
     const newMeta = JSON.stringify({
@@ -252,9 +253,16 @@ export async function updateMemory(
     const tagsStr = options?.tags ? options.tags.join(',') : memData.tags;
 
     if (options?.sector) {
-        await q.upd_mem_with_sector.run(content, options.sector, tagsStr, newMeta, Date.now(), id);
+        await q.upd_mem_with_sector.run(
+            nextContent,
+            options.sector,
+            tagsStr,
+            newMeta,
+            Date.now(),
+            id
+        );
     } else {
-        await q.upd_mem.run(content, tagsStr, newMeta, Date.now(), id);
+        await q.upd_mem.run(nextContent, tagsStr, newMeta, Date.now(), id);
     }
 }
 
