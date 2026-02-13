@@ -83,7 +83,7 @@ export interface ExportData {
     notifications: Array<{
         type: string;
         title: string;
-        message: string;
+        body: string | null;
         createdAt: Date;
     }>;
 }
@@ -225,6 +225,9 @@ async function processExportJob(jobId: string, userId: string): Promise<void> {
  * Gather all user data for export (GDPR Art. 20 - Data Portability).
  */
 export async function exportUserData(userId: string): Promise<ExportData> {
+    const prismaAny = prisma as any;
+    const notificationModel = prismaAny.notificationLog ?? prismaAny.notification;
+
     const [user, chats, memories, reminders, billingAccount, councilSessions, notifications] =
         await Promise.all([
             prisma.user.findUnique({
@@ -270,9 +273,11 @@ export async function exportUserData(userId: string): Promise<ExportData> {
                 },
                 orderBy: { createdAt: 'desc' },
             }),
-            prisma.notificationLog.findMany({
+            notificationModel.findMany({
                 where: { userId },
-                select: { type: true, title: true, message: true, createdAt: true },
+                select: prismaAny.notificationLog
+                    ? { type: true, title: true, message: true, createdAt: true }
+                    : { type: true, title: true, body: true, createdAt: true },
                 orderBy: { createdAt: 'desc' },
             }),
         ]);
@@ -297,7 +302,12 @@ export async function exportUserData(userId: string): Promise<ExportData> {
             createdAt: s.createdAt,
             responses: s.responses,
         })),
-        notifications,
+        notifications: notifications.map((n: any) => ({
+            type: n.type,
+            title: n.title,
+            body: n.message ?? n.body ?? null,
+            createdAt: n.createdAt,
+        })),
     };
 }
 
@@ -307,6 +317,9 @@ export async function exportUserData(userId: string): Promise<ExportData> {
  * Get a summary of all stored data for a user (GDPR Art. 15 - Right of Access).
  */
 export async function getDataSummary(userId: string): Promise<DataSummary> {
+    const prismaAny = prisma as any;
+    const notificationModel = prismaAny.notificationLog ?? prismaAny.notification;
+
     const [
         chatCount,
         messageCount,
@@ -328,7 +341,7 @@ export async function getDataSummary(userId: string): Promise<DataSummary> {
         prisma.councilSession.count({ where: { userId } }),
         prisma.importJob.count({ where: { userId } }),
         prisma.achievement.count({ where: { profile: { userId } } }),
-        prisma.notificationLog.count({ where: { userId } }),
+        notificationModel.count({ where: { userId } }),
         prisma.auditLog.count({ where: { userId } }),
         prisma.apiKey.count({ where: { userId } }),
         prisma.user.findUnique({
@@ -438,6 +451,12 @@ export async function anonymizeUser(userId: string): Promise<void> {
     const anonymizedName = 'Anonymized User';
 
     await prisma.$transaction(async (tx) => {
+        const txAny = tx as any;
+        const notificationModel = txAny.notificationLog ?? txAny.notification;
+        const notificationData = txAny.notificationLog
+            ? { title: '[anonymized]', message: '[anonymized]' }
+            : { title: '[anonymized]', body: '[anonymized]' };
+
         // Anonymize user record
         await tx.user.update({
             where: { id: userId },
@@ -455,12 +474,9 @@ export async function anonymizeUser(userId: string): Promise<void> {
         await tx.account.deleteMany({ where: { userId } });
 
         // Anonymize notification content
-        await tx.notificationLog.updateMany({
+        await notificationModel.updateMany({
             where: { userId },
-            data: {
-                title: '[anonymized]',
-                message: '[anonymized]',
-            },
+            data: notificationData,
         });
 
         // Delete API keys
