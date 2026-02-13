@@ -10,6 +10,7 @@ import {
     observeHistogram,
     SIZE_BUCKETS,
 } from '../lib/metrics';
+import { recordRequest } from '../lib/sla-monitor';
 
 /**
  * Normalize path by replacing UUIDs and numeric IDs with placeholders
@@ -66,7 +67,9 @@ export function metricsMiddleware() {
             await next();
         } finally {
             const duration = (Date.now() - start) / 1000; // Convert to seconds
+            const durationMs = Date.now() - start; // Duration in milliseconds for SLA
             const status = String(c.res.status);
+            const statusCode = c.res.status;
 
             // Track request count
             incrementCounter('http_requests_total', {
@@ -96,6 +99,9 @@ export function metricsMiddleware() {
                     );
                 }
             }
+
+            // Record SLA metrics
+            recordRequest(normalizedPath, method, statusCode, durationMs);
         }
     };
 }
