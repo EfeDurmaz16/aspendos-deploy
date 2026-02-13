@@ -800,7 +800,7 @@ function classifyAIError(message: string): { error: string; code: string; retrya
     };
 }
 
-function classifyAIErrorStatus(message: string): number {
+function classifyAIErrorStatus(message: string): 413 | 429 | 500 | 503 | 504 {
     const lower = message.toLowerCase();
     if (lower.includes('rate limit') || lower.includes('429')) return 429;
     if (lower.includes('context') && lower.includes('long')) return 413;

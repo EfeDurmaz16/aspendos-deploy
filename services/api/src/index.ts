@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { getModelsForTier, SUPPORTED_MODELS } from './lib/ai-providers';
@@ -384,12 +385,13 @@ app.onError((err, c) => {
 
     // Handle AppError instances
     if (err instanceof AppError) {
+        const status = err.statusCode as ContentfulStatusCode;
         return c.json(
             {
                 error: err.message,
                 code: err.code,
             },
-            err.statusCode
+            status
         );
     }
 
@@ -467,7 +469,7 @@ app.get('/health', async (c) => {
         circuitBreakers,
     };
 
-    const statusCode = overallStatus === 'unhealthy' ? 503 : 200;
+    const statusCode: 200 | 503 = overallStatus === 'unhealthy' ? 503 : 200;
     return c.json(response, statusCode);
 });
 
@@ -512,7 +514,7 @@ app.get('/status', async (c) => {
 // Kubernetes-style readiness probe
 app.get('/ready', async (c) => {
     const result = await checkReadiness();
-    const status = result.status === 'unhealthy' ? 503 : 200;
+    const status: 200 | 503 = result.status === 'unhealthy' ? 503 : 200;
     return c.json(result, status);
 });
 
