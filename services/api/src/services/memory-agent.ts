@@ -162,7 +162,7 @@ export class MemoryDecisionAgent {
         try {
             const { text } = await generateText({
                 model: this.groq('llama-3.1-8b-instant'),
-                maxTokens: 100,
+                maxOutputTokens: 100,
                 temperature: 0,
                 prompt: `Classify this user query into exactly one category and decide if the user's personal memory/history would help answer it better.
 
@@ -672,7 +672,7 @@ export async function extractMemoriesFromExchange(
     try {
         const { text } = await generateText({
             model: groq('llama-3.1-8b-instant'),
-            maxTokens: 300,
+            maxOutputTokens: 300,
             temperature: 0,
             prompt: `Extract personal facts, preferences, or skills from this conversation exchange. Only extract information about the USER, not general facts.
 

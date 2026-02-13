@@ -157,7 +157,7 @@ export async function searchMemories(
                 })
         );
 
-        const mapped = results.map((r) => ({
+        const mapped = results.map((r: any) => ({
             id: r.id,
             content: r.content,
             sector: ((r.metadata as Record<string, unknown>)?.sector as string) || 'semantic',
@@ -175,7 +175,7 @@ export async function searchMemories(
         // Remove the score field and return as MemoryResult[]
         return boosted.map((item) => {
             const { score: _score, ...rest } = item;
-            return rest as MemoryResult;
+            return rest as unknown as MemoryResult;
         });
     } catch (error) {
         console.warn(
@@ -215,7 +215,7 @@ export async function listMemories(
         []
     );
 
-    return results.map((r) => ({
+    return results.map((r: any) => ({
         id: r.id,
         content: r.content,
         sector: ((r.metadata as Record<string, unknown>)?.sector as string) || 'semantic',
