@@ -25,7 +25,7 @@ vi.mock('../../middleware/auth', () => ({
 }));
 
 describe('Usage Routes', () => {
-    let app: Hono;
+    let app: Hono<{ Variables: { userId?: string } }>;
 
     beforeEach(() => {
         usageLedger.clearLedger_forTesting();

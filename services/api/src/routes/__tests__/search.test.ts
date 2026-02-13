@@ -41,7 +41,7 @@ describe('Search Routes', () => {
 
     describe('GET /search', () => {
         it('should require query parameter', async () => {
-            const query = '';
+            const query: string = '';
             const isValid = query && query.trim().length > 0;
 
             expect(isValid).toBeFalsy();
@@ -300,7 +300,7 @@ describe('Search Routes', () => {
 
     describe('Search type filtering', () => {
         it('should search only chats when type=chats', async () => {
-            const type = 'chats';
+            const type = 'chats' as string;
             const shouldSearchChats = type === 'all' || type === 'chats';
             const shouldSearchMemories = type === 'all' || type === 'memories';
 
@@ -309,7 +309,7 @@ describe('Search Routes', () => {
         });
 
         it('should search only memories when type=memories', async () => {
-            const type = 'memories';
+            const type = 'memories' as string;
             const shouldSearchChats = type === 'all' || type === 'chats';
             const shouldSearchMemories = type === 'all' || type === 'memories';
 
