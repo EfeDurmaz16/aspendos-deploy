@@ -377,16 +377,16 @@ app.post(
                             role: 'assistant',
                             content: text,
                             modelUsed: actualModelId,
-                            tokensIn: usage?.promptTokens,
-                            tokensOut: usage?.completionTokens,
+                            tokensIn: usage?.inputTokens,
+                            tokensOut: usage?.outputTokens,
                         });
 
                         // Record token usage for billing (bill for actual model, not requested)
-                        if (usage?.promptTokens || usage?.completionTokens) {
+                        if (usage?.inputTokens || usage?.outputTokens) {
                             await billingService.recordTokenUsage(
                                 userId,
-                                usage.promptTokens || 0,
-                                usage.completionTokens || 0,
+                                usage.inputTokens || 0,
+                                usage.outputTokens || 0,
                                 actualModelId
                             );
                             // Proactive spending alert (fire-and-forget)
@@ -478,16 +478,16 @@ app.post(
                 role: 'assistant',
                 content: result.text,
                 modelUsed: nonStreamModelId,
-                tokensIn: result.usage?.promptTokens,
-                tokensOut: result.usage?.completionTokens,
+                tokensIn: result.usage?.inputTokens,
+                tokensOut: result.usage?.outputTokens,
             });
 
             // Record token usage for billing (bill for actual model)
-            if (result.usage?.promptTokens || result.usage?.completionTokens) {
+            if (result.usage?.inputTokens || result.usage?.outputTokens) {
                 await billingService.recordTokenUsage(
                     userId,
-                    result.usage.promptTokens || 0,
-                    result.usage.completionTokens || 0,
+                    result.usage.inputTokens || 0,
+                    result.usage.outputTokens || 0,
                     nonStreamModelId
                 );
                 // Proactive spending alert (fire-and-forget)
