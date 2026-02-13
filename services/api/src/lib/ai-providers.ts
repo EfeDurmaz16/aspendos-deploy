@@ -17,8 +17,9 @@ const anthropic = createAnthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 const google = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    apiKey: googleApiKey,
 });
 
 /**

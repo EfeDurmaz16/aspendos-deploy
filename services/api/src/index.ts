@@ -1,5 +1,5 @@
-import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { getModelsForTier, SUPPORTED_MODELS } from './lib/ai-providers';
@@ -8,6 +8,7 @@ import { auth } from './lib/auth';
 import { getChangelog, getLatestVersion } from './lib/changelog';
 import { breakers } from './lib/circuit-breaker';
 import { enforceRetentionPolicies, getRetentionPolicies } from './lib/data-retention';
+import { dlq } from './lib/dead-letter-queue';
 import { validateEnv } from './lib/env';
 import { getErrorCatalog } from './lib/error-codes';
 import { AppError } from './lib/errors';
@@ -16,12 +17,18 @@ import { checkReadiness } from './lib/health-checks';
 import { jobQueue } from './lib/job-queue';
 import { getPrivacyPolicy, getTermsOfService } from './lib/legal';
 import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
+import { getOpenAPISpec } from './lib/openapi-spec';
 import { initSentry, Sentry, setSentryRequestContext, setSentryUserContext } from './lib/sentry';
 import { getWebhookCategories, getWebhookEventsCatalog } from './lib/webhook-events';
+import { verifyTimingSafe } from './lib/webhook-security';
 import { apiVersion } from './middleware/api-version';
+import { auditTrail } from './middleware/audit-trail';
+import { botProtection } from './middleware/bot-protection';
 import { cacheControl } from './middleware/cache';
 import { compression } from './middleware/compression';
+import { correlationIdMiddleware } from './middleware/correlation-id';
 import { endpointRateLimit } from './middleware/endpoint-rate-limit';
+import { featureHealthMiddleware } from './middleware/feature-health';
 import { idempotency } from './middleware/idempotency';
 import { metricsMiddleware } from './middleware/metrics';
 import { getRateLimitStatus, rateLimit } from './middleware/rate-limit';
@@ -35,6 +42,7 @@ import {
     tracingMiddleware,
 } from './middleware/tracing';
 import adminRoutes from './routes/admin';
+import adminBackupsRoutes from './routes/admin-backups';
 import analyticsRoutes from './routes/analytics';
 import apiKeysRoutes from './routes/api-keys';
 import billingRoutes from './routes/billing';
@@ -49,12 +57,14 @@ import pacRoutes from './routes/pac';
 import promptTemplatesRoutes from './routes/prompt-templates';
 import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
+import securityRoutes from './routes/security';
+import sessionRoutes from './routes/sessions';
+import statusRoutes from './routes/status';
+import systemRoutes from './routes/system';
+import usageRoutes from './routes/usage';
+import complianceRoutes from './routes/user-compliance';
 import voiceRoutes from './routes/voice';
 import workspaceRoutes from './routes/workspace';
-import complianceRoutes from './routes/user-compliance';
-import securityRoutes from './routes/security';
-import systemRoutes from './routes/system';
-import { getOpenAPISpec } from './lib/openapi-spec';
 
 // Validate environment variables on startup
 validateEnv();
@@ -72,18 +82,32 @@ type Variables = {
     rootSpan: unknown;
     trace: unknown;
     currentSpan: unknown;
+    cspNonce: string;
 };
 
 const app = new Hono<{ Variables: Variables }>();
 
 // Track shutdown state
 let isShuttingDown = false;
+const adminUserIds = new Set(
+    (process.env.ADMIN_USER_IDS || '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean)
+);
+
+function isAdminUser(userId: string | null): boolean {
+    return !!userId && adminUserIds.has(userId);
+}
 
 // Middleware
 app.use('*', logger());
 
 // Tracing middleware (must be early to track all requests)
 app.use('*', tracingMiddleware());
+
+// Correlation ID middleware (right after tracing for trace propagation)
+app.use('*', correlationIdMiddleware());
 
 // Metrics middleware (must be early to track all requests)
 app.use('*', metricsMiddleware());
@@ -104,6 +128,10 @@ app.use('*', async (c, next) => {
     // Generate request ID for tracing
     const requestId = crypto.randomUUID();
     c.set('requestId', requestId);
+
+    // Generate CSP nonce for inline scripts
+    const nonce = crypto.randomUUID();
+    c.set('cspNonce', nonce);
 
     // Add request timing
     const start = Date.now();
@@ -134,10 +162,10 @@ app.use('*', async (c, next) => {
         c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     }
 
-    // Content-Security-Policy (basic policy)
+    // Content-Security-Policy with nonce-based inline script protection
     c.header(
         'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+        `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline';`
     );
 });
 
@@ -173,6 +201,9 @@ app.use(
 // Input sanitization middleware
 app.use('*', sanitizeBody());
 
+// Bot protection middleware (blocks automated abuse)
+app.use('*', botProtection());
+
 // API versioning middleware
 app.use('/api/*', apiVersion());
 
@@ -181,6 +212,9 @@ app.use('*', compression());
 
 // Cache control middleware (Cache-Control headers, ETag support)
 app.use('*', cacheControl());
+
+// Feature health middleware (X-Degraded-Features header)
+app.use('*', featureHealthMiddleware());
 
 // Sentry error handling middleware
 app.use('*', async (c, next) => {
@@ -321,6 +355,9 @@ app.use('*', endpointRateLimit());
 // Apply idempotency middleware for POST/PUT/PATCH requests
 app.use('*', idempotency());
 
+// Apply audit trail middleware (logs all state-changing requests)
+app.use('*', auditTrail());
+
 // Global error handler with structured error handling
 app.onError((err, c) => {
     const requestId = c.get('requestId') || 'unknown';
@@ -348,12 +385,13 @@ app.onError((err, c) => {
 
     // Handle AppError instances
     if (err instanceof AppError) {
+        const status = err.statusCode as ContentfulStatusCode;
         return c.json(
             {
                 error: err.message,
                 code: err.code,
             },
-            err.statusCode
+            status
         );
     }
 
@@ -431,7 +469,7 @@ app.get('/health', async (c) => {
         circuitBreakers,
     };
 
-    const statusCode = overallStatus === 'unhealthy' ? 503 : 200;
+    const statusCode: 200 | 503 = overallStatus === 'unhealthy' ? 503 : 200;
     return c.json(response, statusCode);
 });
 
@@ -476,7 +514,7 @@ app.get('/status', async (c) => {
 // Kubernetes-style readiness probe
 app.get('/ready', async (c) => {
     const result = await checkReadiness();
-    const status = result.status === 'unhealthy' ? 503 : 200;
+    const status: 200 | 503 = result.status === 'unhealthy' ? 503 : 200;
     return c.json(result, status);
 });
 
@@ -627,7 +665,10 @@ app.get('/api/analytics/rate-limits', async (c) => {
                 history,
             });
         } else if (scope === 'dashboard') {
-            // Return full dashboard (could be admin-only in production)
+            // Return full dashboard (admin-only)
+            if (!isAdminUser(userId)) {
+                return c.json({ error: 'Forbidden' }, 403);
+            }
             const dashboard = getRateLimitDashboard();
             const nearLimits = getNearLimitEvents();
 
@@ -669,6 +710,7 @@ app.get('/api/docs/openapi.json', (c) => {
 
 // Swagger UI endpoint
 app.get('/api/docs/ui', (c) => {
+    const nonce = c.get('cspNonce');
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -689,9 +731,9 @@ app.get('/api/docs/ui', (c) => {
 </head>
 <body>
     <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-bundle.js"></script>
-    <script src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-standalone-preset.js"></script>
-    <script>
+    <script nonce="${nonce}" src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-bundle.js"></script>
+    <script nonce="${nonce}" src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-standalone-preset.js"></script>
+    <script nonce="${nonce}">
         window.onload = function() {
             SwaggerUIBundle({
                 url: '/api/docs/openapi.json',
@@ -1093,11 +1135,10 @@ app.delete('/api/account', async (c) => {
             }
 
             // Delete gamification
-            await tx.achievement.deleteMany({ where: { userId } });
-            await tx.xPEvent.deleteMany({ where: { userId } });
+            await tx.gamificationProfile.deleteMany({ where: { userId } });
 
             // Delete notifications
-            await tx.notification.deleteMany({ where: { userId } });
+            await tx.notificationLog.deleteMany({ where: { userId } });
 
             // Delete user sessions and accounts (Better Auth)
             await tx.session.deleteMany({ where: { userId } });
@@ -1235,23 +1276,24 @@ app.get('/api/export', async (c) => {
                 },
             }),
             prisma.achievement.findMany({
-                where: { userId },
-                select: { id: true, type: true, unlockedAt: true, metadata: true },
+                where: { profile: { userId } },
+                select: { id: true, code: true, unlockedAt: true, notified: true },
             }),
-            prisma.xPEvent.findMany({
-                where: { userId },
-                select: { id: true, amount: true, reason: true, createdAt: true },
+            prisma.xPLog.findMany({
+                where: { profile: { userId } },
+                select: { id: true, amount: true, action: true, createdAt: true },
                 orderBy: { createdAt: 'desc' },
                 take: 500,
             }),
-            prisma.notification.findMany({
+            prisma.notificationLog.findMany({
                 where: { userId },
                 select: {
                     id: true,
                     type: true,
                     title: true,
-                    body: true,
-                    read: true,
+                    message: true,
+                    status: true,
+                    readAt: true,
                     createdAt: true,
                 },
                 orderBy: { createdAt: 'desc' },
@@ -1277,13 +1319,13 @@ app.get('/api/export', async (c) => {
                 totalPages: Math.ceil(chatCount / chatLimit),
             },
             user,
-            chats: chats.map((chat) => ({
+            chats: chats.map((chat: any) => ({
                 id: chat.id,
                 title: chat.title,
                 createdAt: chat.createdAt,
                 messages: chat.messages,
             })),
-            memories: memories.map((m) => ({
+            memories: memories.map((m: any) => ({
                 id: m.id,
                 content: m.content,
                 sector: m.sector,
@@ -1300,7 +1342,7 @@ app.get('/api/export', async (c) => {
                   }
                 : null,
             billing: billingAccount,
-            councilSessions: councilSessions.map((s) => ({
+            councilSessions: councilSessions.map((s: any) => ({
                 id: s.id,
                 query: s.query,
                 status: s.status,
@@ -1453,7 +1495,7 @@ app.post('/api/feedback/nps', async (c) => {
         // Rate limit: 1 NPS per user per day
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
-        const existing = await prisma.notification.findFirst({
+        const existing = await prisma.notificationLog.findFirst({
             where: { userId, type: 'NPS_RESPONSE', createdAt: { gte: startOfDay } },
         });
         if (existing) {
@@ -1461,13 +1503,16 @@ app.post('/api/feedback/nps', async (c) => {
         }
 
         // Store as notification record (reusing existing table)
-        await prisma.notification.create({
+        await prisma.notificationLog.create({
             data: {
                 userId,
                 type: 'NPS_RESPONSE',
                 title: `NPS: ${score}`,
-                body: comment || `Score: ${score}/10`,
-                read: true, // Not a user-facing notification
+                message: comment || `Score: ${score}/10`,
+                channel: 'in_app',
+                status: 'delivered',
+                deliveredAt: new Date(),
+                readAt: new Date(), // Not a user-facing notification
                 metadata: { score, comment, submittedAt: new Date().toISOString() },
             },
         });
@@ -1490,7 +1535,7 @@ app.get('/api/feedback/nps/summary', async (c) => {
         const { prisma } = await import('./lib/prisma');
 
         // Get all NPS responses (admin could see all, users see own)
-        const responses = await prisma.notification.findMany({
+        const responses = await prisma.notificationLog.findMany({
             where: { type: 'NPS_RESPONSE' },
             select: { metadata: true, createdAt: true },
             orderBy: { createdAt: 'desc' },
@@ -1536,9 +1581,13 @@ app.get('/api/feedback/nps/summary', async (c) => {
 
 // POST /api/scheduler/reengage - Trigger re-engagement for churning users (cron job)
 app.post('/api/scheduler/reengage', async (c) => {
-    // Verify cron secret
+    // Verify cron secret (timing-safe comparison to prevent timing attacks)
     const cronSecret = c.req.header('x-cron-secret');
-    if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+    if (
+        !cronSecret ||
+        !process.env.CRON_SECRET ||
+        !verifyTimingSafe(cronSecret, process.env.CRON_SECRET)
+    ) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -1569,7 +1618,7 @@ app.post('/api/scheduler/reengage', async (c) => {
             if (recentMessage) continue; // Still active, skip
 
             // Check if we already sent a re-engagement this week
-            const existingNotification = await prisma.notification.findFirst({
+            const existingNotification = await prisma.notificationLog.findFirst({
                 where: {
                     userId: user.userId,
                     type: 'REENGAGEMENT',
@@ -1580,13 +1629,15 @@ app.post('/api/scheduler/reengage', async (c) => {
             if (existingNotification) continue; // Already notified
 
             // Create re-engagement notification
-            await prisma.notification.create({
+            await prisma.notificationLog.create({
                 data: {
                     userId: user.userId,
                     type: 'REENGAGEMENT',
                     title: 'We miss you!',
-                    body: "It's been a while since we chatted. I've been thinking about some topics from our last conversation...",
-                    read: false,
+                    message:
+                        "It's been a while since we chatted. I've been thinking about some topics from our last conversation...",
+                    channel: 'in_app',
+                    status: 'pending',
                 },
             });
             reengaged++;
@@ -1601,8 +1652,9 @@ app.post('/api/scheduler/reengage', async (c) => {
 
 // ─── CRON: Data Retention Policy Enforcement ─────────────────────────────────
 app.post('/api/cron/retention', async (c) => {
+    // Timing-safe comparison to prevent timing attacks
     const secret = c.req.header('x-cron-secret');
-    if (secret !== process.env.CRON_SECRET) {
+    if (!secret || !process.env.CRON_SECRET || !verifyTimingSafe(secret, process.env.CRON_SECRET)) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -1691,7 +1743,7 @@ app.get('/api/account/export', async (c) => {
             }),
             prisma.pACReminder.findMany({
                 where: { userId },
-                select: { message: true, status: true, scheduledFor: true, createdAt: true },
+                select: { content: true, status: true, triggerAt: true, createdAt: true },
             }),
             prisma.pACSettings.findUnique({ where: { userId } }),
             prisma.councilSession.findMany({
@@ -1753,13 +1805,52 @@ app.get('/api/webhooks/events', (c) => {
     });
 });
 
+// ─── A/B Testing Endpoints ───────────────────────────────────────────────────
+
+// GET /api/experiments - List experiments
+app.get('/api/experiments', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { listExperiments } = require('./lib/ab-testing');
+    const status = c.req.query('status') as
+        | 'draft'
+        | 'running'
+        | 'paused'
+        | 'completed'
+        | undefined;
+    const experiments = listExperiments(status);
+
+    return c.json({ experiments });
+});
+
+// GET /api/experiments/:id/results - Get experiment results
+app.get('/api/experiments/:id/results', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { getExperimentResults } = require('./lib/ab-testing');
+    const experimentId = c.req.param('id');
+    const confidenceLevel = c.req.query('confidence')
+        ? parseFloat(c.req.query('confidence')!)
+        : 0.95;
+
+    try {
+        const results = getExperimentResults(experimentId, confidenceLevel);
+        return c.json(results);
+    } catch (error) {
+        const err = error as Error;
+        return c.json({ error: err.message }, 404);
+    }
+});
+
 // ─── Feature Flags ───────────────────────────────────────────────────────────
 app.get('/api/features', (c) => {
     const userId = c.get('userId');
     const user = c.get('user');
     const tier = ((user as unknown as Record<string, unknown>)?.tier as string) || 'FREE';
     return c.json({
-        features: getUserFeatures(userId, tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA'),
+        features: getUserFeatures(userId ?? undefined, tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA'),
     });
 });
 
@@ -1801,8 +1892,82 @@ app.post('/api/jobs/retry/:jobId', (c) => {
     return c.json({ success });
 });
 
+// ─── Audit Trail Admin Endpoints ─────────────────────────────────────────────
+
+// GET /api/admin/audit - Query audit log with filters
+app.get('/api/admin/audit', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    const admin = isAdminUser(userId);
+
+    const { auditStore } = await import('./lib/audit-store');
+
+    // Parse query parameters
+    const targetUserId = c.req.query('userId');
+    if (!admin && targetUserId && targetUserId !== userId) {
+        return c.json({ error: 'Forbidden' }, 403);
+    }
+    const effectiveUserId = admin ? targetUserId : userId;
+    const action = c.req.query('action');
+    const resource = c.req.query('resource');
+    const fromDate = c.req.query('from') ? new Date(c.req.query('from')!) : undefined;
+    const toDate = c.req.query('to') ? new Date(c.req.query('to')!) : undefined;
+    const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 500);
+    const offset = Math.max(parseInt(c.req.query('offset') || '0', 10), 0);
+
+    try {
+        const entries = auditStore.getAuditLog({
+            userId: effectiveUserId,
+            action,
+            resource,
+            fromDate,
+            toDate,
+            limit,
+            offset,
+        });
+
+        const total = auditStore.getCount({
+            userId: effectiveUserId,
+            action,
+            resource,
+            fromDate,
+            toDate,
+        });
+
+        return c.json({
+            entries,
+            pagination: {
+                total,
+                limit,
+                offset,
+                hasMore: offset + limit < total,
+            },
+        });
+    } catch (error) {
+        console.error('[Audit] Query failed:', error);
+        return c.json({ error: 'Failed to query audit log' }, 500);
+    }
+});
+
+// GET /api/admin/audit/stats - Audit statistics
+app.get('/api/admin/audit/stats', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
+
+    try {
+        const { auditStore } = await import('./lib/audit-store');
+        const stats = auditStore.getAuditStats();
+        return c.json(stats);
+    } catch (error) {
+        console.error('[Audit] Stats query failed:', error);
+        return c.json({ error: 'Failed to get audit stats' }, 500);
+    }
+});
+
 // API Routes
 app.route('/api/admin', adminRoutes);
+app.route('/api/admin/backups', adminBackupsRoutes);
 app.route('/api/chat', chatRoutes);
 app.route('/api/council', councilRoutes);
 app.route('/api/import', importRoutes);
@@ -1817,10 +1982,64 @@ app.route('/api/gamification', gamificationRoutes);
 app.route('/api/api-keys', apiKeysRoutes);
 app.route('/api/templates', promptTemplatesRoutes);
 app.route('/api/search', searchRoutes);
+app.route('/api/sessions', sessionRoutes);
 app.route('/api/workspace', workspaceRoutes);
 app.route('/api/compliance', complianceRoutes);
 app.route('/api/security', securityRoutes);
+app.route('/api/status', statusRoutes);
 app.route('/api/system', systemRoutes);
+app.route('/api/usage', usageRoutes);
+
+// ─── Dead Letter Queue Admin Endpoints ──────────────────────────────────────
+
+// GET /api/admin/dlq - Get DLQ stats
+app.get('/api/admin/dlq', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
+
+    const stats = dlq.getStats();
+    return c.json({
+        stats,
+        timestamp: new Date().toISOString(),
+    });
+});
+
+// GET /api/admin/dlq/dead - Get dead entries
+app.get('/api/admin/dlq/dead', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
+
+    const limit = Math.min(parseInt(c.req.query('limit') || '100', 10), 500);
+    const dead = dlq.getDead().slice(0, limit);
+
+    return c.json({
+        entries: dead,
+        total: dlq.getDead().length,
+        limit,
+    });
+});
+
+// POST /api/admin/dlq/:id/replay - Replay a dead entry
+app.post('/api/admin/dlq/:id/replay', (c) => {
+    const userId = c.get('userId');
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
+
+    const id = c.req.param('id');
+    const entry = dlq.replayDead(id);
+
+    if (!entry) {
+        return c.json({ error: 'Entry not found or not in dead state' }, 404);
+    }
+
+    return c.json({
+        success: true,
+        entry,
+        message: 'Entry moved back to pending queue',
+    });
+});
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);
@@ -1836,6 +2055,7 @@ async function startServer() {
         // Continue without MCP - it's optional
     }
 
+    const { serve } = await import('@hono/node-server');
     const server = serve({
         fetch: app.fetch,
         port,

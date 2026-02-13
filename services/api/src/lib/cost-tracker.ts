@@ -38,12 +38,19 @@ export async function trackUsage(params: {
     const { userId, modelId, tokensIn, tokensOut, reason } = params;
 
     const costUsd = calculateCost(modelId, tokensIn, tokensOut);
+    const account = await prisma.billingAccount.findUnique({
+        where: { userId },
+        select: { id: true },
+    });
+
+    if (!account) {
+        return { costUsd };
+    }
 
     await prisma.creditLog.create({
         data: {
-            userId,
-            amount: -costUsd,
-            type: 'usage',
+            billingAccountId: account.id,
+            amount: -Math.round(costUsd * 1_000_000),
             reason: reason || `${modelId} usage: ${tokensIn} in, ${tokensOut} out`,
             metadata: {
                 modelId,
@@ -61,10 +68,30 @@ export async function trackUsage(params: {
  * Get usage summary for a user within a date range
  */
 export async function getUsageSummary(userId: string, startDate?: Date, endDate?: Date) {
+    const account = await prisma.billingAccount.findUnique({
+        where: { userId },
+        select: { id: true },
+    });
+
+    if (!account) {
+        return {
+            totalCost: 0,
+            logs: [],
+            groupedByReason: {} as Record<
+                string,
+                {
+                    count: number;
+                    totalCost: number;
+                    totalTokensIn: number;
+                    totalTokensOut: number;
+                }
+            >,
+        };
+    }
+
     const logs = await prisma.creditLog.findMany({
         where: {
-            userId,
-            type: 'usage',
+            billingAccountId: account.id,
             createdAt: {
                 ...(startDate && { gte: startDate }),
                 ...(endDate && { lte: endDate }),
@@ -88,7 +115,7 @@ export async function getUsageSummary(userId: string, startDate?: Date, endDate?
             }
 
             acc[reason].count += 1;
-            acc[reason].totalCost += Math.abs(log.amount);
+            acc[reason].totalCost += Math.abs(log.amount) / 1_000_000;
 
             if (log.metadata && typeof log.metadata === 'object') {
                 const metadata = log.metadata as {
@@ -112,7 +139,7 @@ export async function getUsageSummary(userId: string, startDate?: Date, endDate?
         >
     );
 
-    const totalCost = logs.reduce((sum, log) => sum + Math.abs(log.amount), 0);
+    const totalCost = logs.reduce((sum, log) => sum + Math.abs(log.amount) / 1_000_000, 0);
 
     return {
         totalCost,

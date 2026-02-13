@@ -152,7 +152,7 @@ const SpotlightMask = ({
     const transitionProps = prefersReducedMotion
         ? {}
         : {
-              transition: { duration: TRANSITION_DURATION, ease: 'easeInOut' },
+              transition: { duration: TRANSITION_DURATION, ease: 'easeInOut' as const },
           };
 
     return (
@@ -231,7 +231,7 @@ const SpotlightTooltip = ({
               initial: { opacity: 0, scale: 0.95, y: 10 },
               animate: { opacity: 1, scale: 1, y: 0 },
               exit: { opacity: 0, scale: 0.95, y: 10 },
-              transition: { duration: TRANSITION_DURATION, ease: 'easeOut' },
+              transition: { duration: TRANSITION_DURATION, ease: 'easeOut' as const },
           };
 
     return (
@@ -464,7 +464,7 @@ export function SpotlightOverlay({ children, className }: SpotlightOverlayProps)
                         transition={
                             prefersReducedMotion
                                 ? {}
-                                : { duration: TRANSITION_DURATION, ease: 'easeInOut' }
+                                : { duration: TRANSITION_DURATION, ease: 'easeInOut' as const }
                         }
                     />
                 )}

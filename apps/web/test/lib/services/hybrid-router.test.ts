@@ -36,7 +36,14 @@ import { searchMemories } from '@/lib/services/qdrant';
 
 describe('Hybrid Router', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.resetAllMocks();
+        vi.mocked(routeUserMessage).mockResolvedValue({
+            type: 'direct_reply',
+            model: 'gpt-4o-mini',
+            reason: 'default',
+        });
+        vi.mocked(createEmbedding).mockResolvedValue(new Array(1536).fill(0));
+        vi.mocked(searchMemories).mockResolvedValue([]);
     });
 
     describe('executeHybridRoute', () => {

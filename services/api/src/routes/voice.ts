@@ -5,7 +5,9 @@
 import { Hono } from 'hono';
 import OpenAI from 'openai';
 import { requireAuth } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
 import { hasVoiceMinutes, recordVoiceUsage } from '../services/billing.service';
+import { synthesizeSchema } from '../validation/voice.schema';
 
 const app = new Hono();
 
@@ -77,7 +79,7 @@ const ALLOWED_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] as 
 const MAX_TTS_TEXT_LENGTH = 4096; // OpenAI TTS limit
 
 // POST /api/voice/synthesize - Convert text to speech
-app.post('/synthesize', async (c) => {
+app.post('/synthesize', validateBody(synthesizeSchema), async (c) => {
     const userId = c.get('userId')!;
 
     // Check voice minutes quota
@@ -85,23 +87,10 @@ app.post('/synthesize', async (c) => {
         return c.json({ error: 'Voice minutes quota exceeded. Please upgrade your plan.' }, 403);
     }
 
-    const body = await c.req.json();
-    const { text, voice = 'alloy' } = body;
-
-    if (!text || typeof text !== 'string') {
-        return c.json({ error: 'No text provided' }, 400);
-    }
-
-    if (text.length > MAX_TTS_TEXT_LENGTH) {
-        return c.json(
-            { error: `Text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters` },
-            400
-        );
-    }
-
-    if (!ALLOWED_VOICES.includes(voice)) {
-        return c.json({ error: 'Invalid voice parameter' }, 400);
-    }
+    const { text, voice } = c.get('validatedBody') as {
+        text: string;
+        voice: (typeof ALLOWED_VOICES)[number];
+    };
 
     try {
         const mp3 = await getOpenAI().audio.speech.create({

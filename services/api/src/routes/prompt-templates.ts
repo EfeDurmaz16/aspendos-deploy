@@ -5,6 +5,19 @@ import { requireAuth } from '../middleware/auth';
 type Variables = { userId: string };
 const app = new Hono<{ Variables: Variables }>();
 
+function toStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    return value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 30);
+}
+
+function escapeRegExp(input: string): string {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // GET / - List user's prompt templates
 app.get('/', requireAuth, async (c) => {
     const userId = c.get('userId');
@@ -13,7 +26,7 @@ app.get('/', requireAuth, async (c) => {
     const templates = await prisma.promptTemplate.findMany({
         where: {
             userId,
-            ...(category && { category }),
+            ...(category ? { category } : {}),
         },
         orderBy: { usageCount: 'desc' },
     });
@@ -24,10 +37,13 @@ app.get('/', requireAuth, async (c) => {
 // POST / - Create a new prompt template
 app.post('/', requireAuth, async (c) => {
     const userId = c.get('userId');
-    const body = await c.req.json();
+    const body = (await c.req.json()) as Record<string, unknown>;
 
-    // Validate
-    const { title, content, category, variables } = body;
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    const content = typeof body.content === 'string' ? body.content.trim() : '';
+    const category = typeof body.category === 'string' ? body.category.trim() : 'general';
+    const variables = toStringArray(body.variables);
+
     if (!title || !content) {
         return c.json({ error: 'Title and content are required' }, 400);
     }
@@ -38,7 +54,7 @@ app.post('/', requireAuth, async (c) => {
             title: title.slice(0, 200),
             content: content.slice(0, 10000),
             category: category || 'general',
-            variables: variables || [], // e.g. ["topic", "tone"]
+            variables,
             usageCount: 0,
         },
     });
@@ -50,21 +66,26 @@ app.post('/', requireAuth, async (c) => {
 app.patch('/:id', requireAuth, async (c) => {
     const userId = c.get('userId');
     const id = c.req.param('id');
-    const body = await c.req.json();
+    const body = (await c.req.json()) as Record<string, unknown>;
 
     const existing = await prisma.promptTemplate.findFirst({
         where: { id, userId },
     });
-
     if (!existing) return c.json({ error: 'Template not found' }, 404);
+
+    const title = typeof body.title === 'string' ? body.title.trim().slice(0, 200) : undefined;
+    const content =
+        typeof body.content === 'string' ? body.content.trim().slice(0, 10000) : undefined;
+    const category = typeof body.category === 'string' ? body.category.trim() : undefined;
+    const variables = body.variables !== undefined ? toStringArray(body.variables) : undefined;
 
     const template = await prisma.promptTemplate.update({
         where: { id },
         data: {
-            ...(body.title && { title: body.title.slice(0, 200) }),
-            ...(body.content && { content: body.content.slice(0, 10000) }),
-            ...(body.category && { category: body.category }),
-            ...(body.variables && { variables: body.variables }),
+            ...(title !== undefined ? { title } : {}),
+            ...(content !== undefined ? { content } : {}),
+            ...(category !== undefined ? { category } : {}),
+            ...(variables !== undefined ? { variables } : {}),
         },
     });
 
@@ -79,7 +100,6 @@ app.delete('/:id', requireAuth, async (c) => {
     const existing = await prisma.promptTemplate.findFirst({
         where: { id, userId },
     });
-
     if (!existing) return c.json({ error: 'Template not found' }, 404);
 
     await prisma.promptTemplate.delete({ where: { id } });
@@ -90,22 +110,23 @@ app.delete('/:id', requireAuth, async (c) => {
 app.post('/:id/use', requireAuth, async (c) => {
     const userId = c.get('userId');
     const id = c.req.param('id');
-    const body = await c.req.json();
-    const vars = body.variables || {};
+    const body = (await c.req.json()) as Record<string, unknown>;
+    const vars = (body.variables && typeof body.variables === 'object'
+        ? body.variables
+        : {}) as Record<string, unknown>;
 
     const template = await prisma.promptTemplate.findFirst({
         where: { id, userId },
     });
-
     if (!template) return c.json({ error: 'Template not found' }, 404);
 
-    // Fill variables: replace {{variable}} with values
     let filled = template.content;
     for (const [key, value] of Object.entries(vars)) {
-        filled = filled.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value));
+        if (!key) continue;
+        const safeKey = escapeRegExp(key);
+        filled = filled.replace(new RegExp(`\\{\\{${safeKey}\\}\\}`, 'g'), String(value ?? ''));
     }
 
-    // Increment usage count
     await prisma.promptTemplate.update({
         where: { id },
         data: { usageCount: { increment: 1 } },

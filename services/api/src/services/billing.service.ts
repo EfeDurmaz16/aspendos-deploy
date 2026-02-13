@@ -631,7 +631,7 @@ export async function maybeCreateSpendingNotification(userId: string): Promise<v
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
 
-        const existingAlert = await prisma.notification.findFirst({
+        const existingAlert = await prisma.notificationLog.findFirst({
             where: {
                 userId,
                 type: 'SPENDING_ALERT',
@@ -642,13 +642,14 @@ export async function maybeCreateSpendingNotification(userId: string): Promise<v
         if (existingAlert) return; // Already alerted today
 
         const topAlert = importantAlerts[0];
-        await prisma.notification.create({
+        await prisma.notificationLog.create({
             data: {
                 userId,
                 type: 'SPENDING_ALERT',
                 title: topAlert.level === 'critical' ? 'Usage limit approaching' : 'Usage notice',
-                body: topAlert.message,
-                read: false,
+                message: topAlert.message,
+                channel: 'in_app',
+                status: 'pending',
             },
         });
     } catch {

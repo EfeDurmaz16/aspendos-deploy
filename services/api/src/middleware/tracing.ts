@@ -105,8 +105,9 @@ export function getTraces(options?: {
 
     // Filter by path (exact match or starts with)
     if (options?.path) {
+        const path = options.path;
         filtered = filtered.filter(
-            (t) => t.path === options.path || t.path.startsWith(options.path)
+            (t) => t.path === path || t.path.startsWith(path)
         );
     }
 

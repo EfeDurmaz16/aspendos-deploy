@@ -7,11 +7,17 @@
 import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
+import { validateBody } from '../middleware/validate';
 import {
     getUserNotificationPreferences,
+    type NotificationPreferences,
     registerPushSubscription,
     updateNotificationPreferences,
 } from '../services/notification.service';
+import {
+    pushSubscriptionSchema,
+    notificationPreferencesSchema,
+} from '../validation/notifications.schema';
 
 const app = new Hono();
 
@@ -20,32 +26,13 @@ const app = new Hono();
 // ============================================
 
 // POST /api/notifications/subscribe - Register push subscription
-app.post('/subscribe', requireAuth, async (c) => {
+app.post('/subscribe', requireAuth, validateBody(pushSubscriptionSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
-
-    // Validate push subscription fields
-    if (!body.endpoint || typeof body.endpoint !== 'string') {
-        return c.json({ error: 'endpoint is required' }, 400);
-    }
-    try {
-        const url = new URL(body.endpoint);
-        if (!['https:'].includes(url.protocol)) {
-            return c.json({ error: 'endpoint must be HTTPS' }, 400);
-        }
-    } catch {
-        return c.json({ error: 'endpoint must be a valid URL' }, 400);
-    }
-    if (
-        !body.keys?.p256dh ||
-        !body.keys?.auth ||
-        typeof body.keys.p256dh !== 'string' ||
-        typeof body.keys.auth !== 'string'
-    ) {
-        return c.json({ error: 'keys.p256dh and keys.auth are required' }, 400);
-    }
-    const ALLOWED_DEVICE_TYPES = ['web', 'android', 'ios'];
-    const deviceType = ALLOWED_DEVICE_TYPES.includes(body.deviceType) ? body.deviceType : 'web';
+    const body = c.get('validatedBody') as {
+        endpoint: string;
+        keys: { p256dh: string; auth: string };
+        deviceType?: string;
+    };
 
     try {
         await registerPushSubscription(userId, {
@@ -54,7 +41,7 @@ app.post('/subscribe', requireAuth, async (c) => {
                 p256dh: body.keys.p256dh,
                 auth: body.keys.auth,
             },
-            deviceType,
+            deviceType: body.deviceType,
         });
 
         return c.json({ success: true }, 201);
@@ -67,9 +54,13 @@ app.post('/subscribe', requireAuth, async (c) => {
 // DELETE /api/notifications/subscribe - Unsubscribe from push
 app.delete('/subscribe', requireAuth, async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
+    const body = (await c.req.json()) as { endpoint?: string };
 
     try {
+        if (!body.endpoint) {
+            return c.json({ error: 'Endpoint is required' }, 400);
+        }
+
         await prisma.pushSubscription.deleteMany({
             where: {
                 userId,
@@ -102,35 +93,12 @@ app.get('/preferences', requireAuth, async (c) => {
 });
 
 // PATCH /api/notifications/preferences - Update preferences
-app.patch('/preferences', requireAuth, async (c) => {
+app.patch('/preferences', requireAuth, validateBody(notificationPreferencesSchema), async (c) => {
     const userId = c.get('userId')!;
-    const body = await c.req.json();
-
-    // Whitelist allowed preference fields
-    const BOOLEAN_FIELDS = [
-        'pushEnabled',
-        'emailEnabled',
-        'inAppEnabled',
-        'quietHoursEnabled',
-    ] as const;
-    const TIME_FIELDS = ['quietHoursStart', 'quietHoursEnd'] as const;
-    const TIME_REGEX = /^\d{2}:\d{2}$/;
-
-    const sanitized: Record<string, boolean | string> = {};
-    for (const field of BOOLEAN_FIELDS) {
-        if (typeof body[field] === 'boolean') sanitized[field] = body[field];
-    }
-    for (const field of TIME_FIELDS) {
-        if (typeof body[field] === 'string' && TIME_REGEX.test(body[field]))
-            sanitized[field] = body[field];
-    }
-
-    if (Object.keys(sanitized).length === 0) {
-        return c.json({ error: 'No valid preference fields provided' }, 400);
-    }
+    const body = c.get('validatedBody') as Partial<NotificationPreferences>;
 
     try {
-        await updateNotificationPreferences(userId, sanitized);
+        await updateNotificationPreferences(userId, body);
         return c.json({ success: true });
     } catch (error) {
         console.error('[Notifications] Error updating preferences:', error);

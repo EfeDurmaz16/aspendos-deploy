@@ -9,6 +9,7 @@ const optionalEnvVars = [
     'OPENAI_API_KEY',
     'ANTHROPIC_API_KEY',
     'GROQ_API_KEY',
+    'GOOGLE_GENERATIVE_AI_API_KEY',
     'GOOGLE_AI_API_KEY',
     'QDRANT_URL',
     'QDRANT_API_KEY',
@@ -42,6 +43,12 @@ export function validateEnv() {
 
     const missingOptional: string[] = [];
     for (const envVar of optionalEnvVars) {
+        if (
+            (envVar === 'GOOGLE_AI_API_KEY' || envVar === 'GOOGLE_GENERATIVE_AI_API_KEY') &&
+            (process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY)
+        ) {
+            continue;
+        }
         if (!process.env[envVar]) {
             missingOptional.push(envVar);
         }

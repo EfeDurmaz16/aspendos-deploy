@@ -105,7 +105,7 @@ export function useCouncil() {
                     const verdict: CouncilVerdict = {
                         recommendation:
                             data.synthesis || generateLocalConsensus(question, thoughts),
-                        confidence: undefined,
+                        confidence: 0.85,
                         reasoning:
                             'After careful deliberation, the Council has reached a balanced consensus that considers logical analysis, creative possibilities, and prudent risk assessment.',
                         contributions: thoughts,
@@ -114,7 +114,7 @@ export function useCouncil() {
                 } else {
                     const verdict: CouncilVerdict = {
                         recommendation: generateLocalConsensus(question, thoughts),
-                        confidence: undefined,
+                        confidence: 0.8,
                         reasoning:
                             'After careful deliberation, the Council has reached a balanced consensus.',
                         contributions: thoughts,
@@ -124,7 +124,7 @@ export function useCouncil() {
             } catch {
                 const verdict: CouncilVerdict = {
                     recommendation: generateLocalConsensus(question, thoughts),
-                    confidence: undefined,
+                    confidence: 0.8,
                     reasoning:
                         'After careful deliberation, the Council has reached a balanced consensus.',
                     contributions: thoughts,
@@ -187,7 +187,8 @@ export function useCouncil() {
                                 const councilThought: CouncilThought = {
                                     persona: frontendPersona,
                                     thought: thoughts[frontendPersona] || data.content,
-                                    confidence: undefined,
+                                    confidence:
+                                        typeof data.confidence === 'number' ? data.confidence : 0.75,
                                     timestamp: new Date(),
                                 };
                                 addCouncilThought(councilThought);

@@ -106,7 +106,8 @@ class TestJobQueue {
         const config = this.queues.get(queueName);
         if (!handler || !config) return false;
 
-        let nextJob: typeof this.jobs extends Map<string, infer V> ? V : never | undefined;
+        let nextJob: (typeof this.jobs extends Map<string, infer V> ? V : never) | undefined =
+            undefined;
         for (const job of this.jobs.values()) {
             if (job.queue === queueName && job.status === 'pending') {
                 if (!nextJob || job.priority > nextJob.priority) {
@@ -256,8 +257,8 @@ describe('JobQueue', () => {
 
         it('should process highest priority first', async () => {
             const processed: number[] = [];
-            queue.register('test', async (data: { p: number }) => {
-                processed.push(data.p);
+            queue.register('test', async (data: unknown) => {
+                processed.push((data as { p: number }).p);
             });
 
             queue.add('test', { p: 1 }, { priority: 1 });

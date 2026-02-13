@@ -54,7 +54,7 @@ type GraphNode = NodeObject & {
 
 export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const graphRef = useRef<ForceGraphMethods | null>(null);
+    const graphRef = useRef<ForceGraphMethods | undefined>(undefined);
     const [dimensions, setDimensions] = useState({ width: width || 400, height });
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<MemoryNodeCategory | null>(null);
@@ -118,20 +118,22 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
 
     // Custom node rendering
     const nodeCanvasObject = useCallback(
-        (node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+        (node: NodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
             if (typeof node.x !== 'number' || typeof node.y !== 'number') return;
-            const label = node.name;
+            const label = typeof node.name === 'string' ? node.name : '';
             const fontSize = 12 / globalScale;
             const nodeRadius = 8;
 
             // Draw node circle
             ctx.beginPath();
             ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI);
-            ctx.fillStyle = node.color;
+            ctx.fillStyle = typeof node.color === 'string' ? node.color : '#8b5cf6';
             ctx.fill();
 
             // Draw border
-            ctx.strokeStyle = categoryColors[node.category as MemoryNodeCategory].border;
+            const category =
+                typeof node.category === 'string' ? (node.category as MemoryNodeCategory) : null;
+            ctx.strokeStyle = category ? categoryColors[category].border : 'rgba(255,255,255,0.3)';
             ctx.lineWidth = 2 / globalScale;
             ctx.stroke();
 
@@ -147,8 +149,11 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
 
     // Handle node click
     const handleNodeClick = useCallback(
-        (node: GraphNode) => {
-            selectNode(node.id);
+        (node: NodeObject) => {
+            const nodeId =
+                typeof node.id === 'number' ? node.id.toString() : typeof node.id === 'string' ? node.id : null;
+            if (!nodeId) return;
+            selectNode(nodeId);
             // Center on node
             if (graphRef.current && typeof node.x === 'number' && typeof node.y === 'number') {
                 graphRef.current.centerAt(node.x, node.y, 500);
@@ -160,8 +165,11 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
 
     // Handle node hover
     const handleNodeHover = useCallback(
-        (node: GraphNode | null) => {
-            hoverNode(node?.id || null);
+        (node: NodeObject | null) => {
+            const nodeId = node
+                ? typeof node.id === 'number' ? node.id.toString() : typeof node.id === 'string' ? node.id : null
+                : null;
+            hoverNode(nodeId);
         },
         [hoverNode]
     );

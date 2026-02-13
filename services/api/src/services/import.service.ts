@@ -6,6 +6,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { type Prisma } from '@aspendos/db';
 import { prisma } from '../lib/prisma';
 import * as importParsers from './import-parsers';
 import * as openMemory from './openmemory.service';
@@ -35,10 +36,12 @@ export async function createImportJob(
     fileName: string,
     fileSize: number
 ) {
+    const normalizedSource = source === 'PERPLEXITY' ? 'OTHER' : source;
+
     return prisma.importJob.create({
         data: {
             userId,
-            source,
+            source: normalizedSource,
             fileName,
             fileSize,
             status: 'PENDING',
@@ -51,7 +54,15 @@ export async function createImportJob(
  */
 export async function updateImportJobStatus(
     jobId: string,
-    status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED',
+    status:
+        | 'PENDING'
+        | 'UPLOADING'
+        | 'PARSING'
+        | 'PREVIEWING'
+        | 'IMPORTING'
+        | 'COMPLETED'
+        | 'FAILED'
+        | 'CANCELED',
     error?: string
 ) {
     return prisma.importJob.update({
@@ -376,11 +387,15 @@ export async function storeImportEntities(jobId: string, conversations: ParsedCo
         externalId: conv.externalId,
         title: conv.title,
         content: {
-            messages: conv.messages,
+            messages: conv.messages.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+                createdAt: msg.createdAt.toISOString(),
+            })),
             source: conv.source,
             createdAt: conv.createdAt.toISOString(),
             updatedAt: conv.updatedAt.toISOString(),
-        },
+        } as Prisma.InputJsonValue,
         selected: true,
         imported: false,
     }));
@@ -425,13 +440,13 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
     }
 
     // Update job status
-    await updateImportJobStatus(jobId, 'PROCESSING');
+    await updateImportJobStatus(jobId, 'IMPORTING');
 
     let importedCount = 0;
 
     for (const entity of entities) {
         try {
-            const content = entity.content as {
+            const content = entity.content as unknown as {
                 messages: ParsedMessage[];
                 source: string;
                 createdAt: string;
@@ -561,7 +576,7 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
         if (memoriesCreated >= maxMemoriesPerImport) break;
 
         try {
-            const content = entity.content as {
+            const content = entity.content as unknown as {
                 messages: ParsedMessage[];
                 source: string;
                 createdAt: string;

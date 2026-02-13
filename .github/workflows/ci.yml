@@ -53,7 +53,7 @@ jobs:
         continue-on-error: true
 
       - name: Type check Web
-        run: cd apps/web && bunx tsc --noEmit
+        run: cd apps/web && bun run typecheck
         continue-on-error: false
 
       - name: Biome check
@@ -160,12 +160,12 @@ jobs:
           BETTER_AUTH_SECRET: test-better-auth-secret-key
 
       - name: Run Web tests
-        run: cd apps/web && bun run test 2>/dev/null || true
+        run: cd apps/web && bun run test
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080
 
       - name: Run AI SDK Router tests
-        run: cd apps/web && bun run test:router 2>/dev/null || true
+        run: cd apps/web && bun run test:router
         env:
           OPENAI_API_KEY: test-key
           ANTHROPIC_API_KEY: test-key
@@ -203,7 +203,7 @@ jobs:
         run: cd packages/db && bunx prisma generate
 
       - name: Build API
-        run: cd services/api && bun run build 2>/dev/null || echo "No build script"
+        run: cd services/api && bun run build
 
       - name: Build Web
         run: cd apps/web && bun run build

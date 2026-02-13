@@ -1,6 +1,6 @@
 import { prisma } from '@aspendos/db';
 import { passkey } from '@better-auth/passkey';
-import { polar } from '@polar-sh/better-auth';
+import { checkout, polar, portal, webhooks } from '@polar-sh/better-auth';
 import { Polar } from '@polar-sh/sdk';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
@@ -99,25 +99,26 @@ export const authInstance = betterAuth({
         polar({
             client: polarClient,
             createCustomerOnSignUp: true,
-            enableCustomerPortal: true,
-            checkout: {
-                enabled: true,
-                products: [
-                    {
-                        productId: process.env.POLAR_PRO_PRODUCT_ID!,
-                        slug: 'pro',
-                    },
-                    {
-                        productId: process.env.POLAR_ULTRA_PRODUCT_ID!,
-                        slug: 'ultra',
-                    },
-                ],
-                successUrl: '/chat?upgraded=true',
-                cancelUrl: '/pricing',
-            },
-            webhooks: {
-                secret: process.env.POLAR_WEBHOOK_SECRET!,
-            },
+            use: [
+                checkout({
+                    products: [
+                        {
+                            productId: process.env.POLAR_PRO_PRODUCT_ID!,
+                            slug: 'pro',
+                        },
+                        {
+                            productId: process.env.POLAR_ULTRA_PRODUCT_ID!,
+                            slug: 'ultra',
+                        },
+                    ],
+                    successUrl: '/chat?upgraded=true',
+                    returnUrl: '/pricing',
+                }),
+                portal(),
+                webhooks({
+                    secret: process.env.POLAR_WEBHOOK_SECRET!,
+                }),
+            ],
         }),
     ],
 });

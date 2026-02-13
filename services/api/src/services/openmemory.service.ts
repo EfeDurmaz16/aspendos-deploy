@@ -7,6 +7,7 @@
 
 import { Memory } from 'openmemory-js';
 import { breakers } from '../lib/circuit-breaker';
+import { queueFallbackWrite, searchFallback } from '../lib/memory-fallback';
 
 // Initialize OpenMemory client
 const mem = new Memory();
@@ -92,37 +93,48 @@ export async function addMemory(
         metadata?: Record<string, unknown>;
     }
 ): Promise<MemoryResult> {
-    const result = await withQdrantFallback(
-        async () =>
-            await mem.add(content, {
-                user_id: userId,
-                tags: options?.tags,
-                metadata: {
-                    sector: options?.sector,
-                    ...options?.metadata,
-                },
-            }),
-        {
-            id: `fallback-${Date.now()}`,
-            content,
-            user_id: userId,
-            salience: 1.0,
-            created_at: new Date().toISOString(),
-            metadata: {
-                sector: options?.sector,
-                ...options?.metadata,
-            },
-        }
-    );
+    try {
+        const result = await breakers.qdrant.execute(
+            async () =>
+                await mem.add(content, {
+                    user_id: userId,
+                    tags: options?.tags,
+                    metadata: {
+                        sector: options?.sector,
+                        ...options?.metadata,
+                    },
+                })
+        );
 
-    return {
-        id: result.id,
-        content: result.content || content,
-        sector: options?.sector,
-        salience: result.salience,
-        createdAt: result.created_at,
-        metadata: result.metadata,
-    };
+        return {
+            id: result.id,
+            content: result.content || content,
+            sector: options?.sector,
+            salience: result.salience,
+            createdAt: result.created_at,
+            metadata: result.metadata,
+        };
+    } catch (error) {
+        console.warn(
+            '[Qdrant] addMemory failed, using PostgreSQL fallback:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
+
+        const fallback = await queueFallbackWrite(userId, content, {
+            tags: options?.tags,
+            sector: options?.sector,
+            metadata: options?.metadata,
+        });
+
+        return {
+            id: fallback.id,
+            content: fallback.content,
+            sector: fallback.sector,
+            salience: fallback.salience,
+            createdAt: fallback.createdAt,
+            metadata: fallback.metadata,
+        };
+    }
 }
 
 /**
@@ -136,35 +148,52 @@ export async function searchMemories(
         threshold?: number;
     }
 ): Promise<MemoryResult[]> {
-    const results = await withQdrantFallback(
-        async () =>
-            await mem.search(query, {
-                user_id: userId,
-                limit: options?.limit || 5,
-            }),
-        []
-    );
+    try {
+        const results = await breakers.qdrant.execute(
+            async () =>
+                await mem.search(query, {
+                    user_id: userId,
+                    limit: options?.limit || 5,
+                })
+        );
 
-    const mapped = results.map((r) => ({
-        id: r.id,
-        content: r.content,
-        sector: ((r.metadata as Record<string, unknown>)?.sector as string) || 'semantic',
-        salience: r.salience || 0,
-        score: r.salience || 0,
-        createdAt: r.created_at,
-        metadata: r.metadata,
-        isPinned: !!(r.metadata as Record<string, unknown>)?.isPinned,
-        trace: r.trace,
-    }));
+        const mapped = results.map((r: any) => ({
+            id: r.id,
+            content: r.content,
+            sector: ((r.metadata as Record<string, unknown>)?.sector as string) || 'semantic',
+            salience: r.salience || 0,
+            score: r.salience || 0,
+            createdAt: r.created_at,
+            metadata: r.metadata,
+            isPinned: !!(r.metadata as Record<string, unknown>)?.isPinned,
+            trace: r.trace,
+        }));
 
-    // Apply recency boost to surface recent context
-    const boosted = applyRecencyBoost(mapped);
+        // Apply recency boost to surface recent context
+        const boosted = applyRecencyBoost(mapped);
 
-    // Remove the score field and return as MemoryResult[]
-    return boosted.map((item) => {
-        const { score: _score, ...rest } = item;
-        return rest as MemoryResult;
-    });
+        // Remove the score field and return as MemoryResult[]
+        return boosted.map((item) => {
+            const { score: _score, ...rest } = item;
+            return rest as unknown as MemoryResult;
+        });
+    } catch (error) {
+        console.warn(
+            '[Qdrant] searchMemories failed, using PostgreSQL fallback:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
+
+        const fallbackResults = await searchFallback(userId, query, options?.limit || 5);
+
+        return fallbackResults.map((r) => ({
+            id: r.id,
+            content: r.content,
+            sector: r.sector,
+            salience: r.salience,
+            createdAt: r.createdAt,
+            metadata: r.metadata,
+        }));
+    }
 }
 
 /**
@@ -186,7 +215,7 @@ export async function listMemories(
         []
     );
 
-    return results.map((r) => ({
+    return results.map((r: any) => ({
         id: r.id,
         content: r.content,
         sector: ((r.metadata as Record<string, unknown>)?.sector as string) || 'semantic',
@@ -202,7 +231,7 @@ export async function listMemories(
  */
 export async function updateMemory(
     id: string,
-    content: string,
+    content?: string,
     options?: {
         sector?: string;
         tags?: string[];
@@ -211,6 +240,7 @@ export async function updateMemory(
 ): Promise<void> {
     const memData = await q.get_mem.get(id);
     if (!memData) throw new Error('Memory not found');
+    const nextContent = content ?? memData.memory;
 
     const currentMeta = memData.meta ? JSON.parse(memData.meta) : {};
     const newMeta = JSON.stringify({
@@ -223,9 +253,16 @@ export async function updateMemory(
     const tagsStr = options?.tags ? options.tags.join(',') : memData.tags;
 
     if (options?.sector) {
-        await q.upd_mem_with_sector.run(content, options.sector, tagsStr, newMeta, Date.now(), id);
+        await q.upd_mem_with_sector.run(
+            nextContent,
+            options.sector,
+            tagsStr,
+            newMeta,
+            Date.now(),
+            id
+        );
     } else {
-        await q.upd_mem.run(content, tagsStr, newMeta, Date.now(), id);
+        await q.upd_mem.run(nextContent, tagsStr, newMeta, Date.now(), id);
     }
 }
 

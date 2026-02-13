@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@aspendos/db';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@aspendos/db';
 
 type TransactionClient = Omit<
     PrismaClient,
