@@ -153,7 +153,7 @@ export async function enforceRetentionPolicies(): Promise<RetentionResult[]> {
         );
         const result = await prisma.scheduledTask.deleteMany({
             where: {
-                status: { in: ['completed', 'failed'] },
+                status: { in: ['COMPLETED', 'FAILED'] },
                 updatedAt: { lt: cutoff },
             },
         });

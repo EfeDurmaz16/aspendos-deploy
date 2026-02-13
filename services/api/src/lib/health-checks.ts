@@ -15,7 +15,7 @@ interface HealthCheckResult {
 }
 
 export async function checkReadiness(): Promise<HealthCheckResult> {
-    const checks = {
+    const checks: HealthCheckResult['checks'] = {
         database: { status: 'unknown' as string },
         qdrant: { status: 'unknown' as string },
         redis: { status: 'unknown' as string },
