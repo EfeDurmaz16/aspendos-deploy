@@ -157,6 +157,7 @@ describe('Credit System', () => {
 
             const release2 = await releaseCredits(reservation.reservationId);
             expect(release2.success).toBe(false);
+            if (release2.success) return;
             expect(release2.reason).toBe('reservation_not_found');
 
             expect(getBalance('user1')).toBe(100);

@@ -186,8 +186,8 @@ describe('graceful-shutdown', () => {
 
     describe('SSE stream management', () => {
         it('should track registered SSE streams', () => {
-            const controller1 = { close: vi.fn() } as never;
-            const controller2 = { close: vi.fn() } as never;
+            const controller1 = { close: vi.fn() } as unknown as ReadableStreamDefaultController;
+            const controller2 = { close: vi.fn() } as unknown as ReadableStreamDefaultController;
 
             registerSSEStream(controller1);
             expect(getServerStatus().sseStreamCount).toBe(1);
@@ -197,7 +197,7 @@ describe('graceful-shutdown', () => {
         });
 
         it('should unregister SSE streams', () => {
-            const controller = { close: vi.fn() } as never;
+            const controller = { close: vi.fn() } as unknown as ReadableStreamDefaultController;
 
             registerSSEStream(controller);
             expect(getServerStatus().sseStreamCount).toBe(1);
@@ -207,8 +207,8 @@ describe('graceful-shutdown', () => {
         });
 
         it('should close all SSE streams during shutdown', async () => {
-            const controller1 = { close: vi.fn() } as never;
-            const controller2 = { close: vi.fn() } as never;
+            const controller1 = { close: vi.fn() } as unknown as ReadableStreamDefaultController;
+            const controller2 = { close: vi.fn() } as unknown as ReadableStreamDefaultController;
 
             registerSSEStream(controller1);
             registerSSEStream(controller2);
@@ -225,7 +225,7 @@ describe('graceful-shutdown', () => {
                 close: vi.fn().mockImplementation(() => {
                     throw new Error('Close error');
                 }),
-            } as never;
+            } as unknown as ReadableStreamDefaultController;
 
             registerSSEStream(controller);
 
