@@ -280,7 +280,7 @@ app.get('/jobs/:id', validateParams(jobIdParamSchema), async (c) => {
             fileSize: job.fileSize,
             totalItems: job.totalItems,
             importedItems: job.importedItems,
-            error: job.error,
+            error: job.errorMessage,
             createdAt: job.createdAt,
             completedAt: job.completedAt,
         },
@@ -373,7 +373,7 @@ app.post(
             return c.json({ error: 'Import job already completed' }, 400);
         }
 
-        if (job.status === 'PROCESSING') {
+        if (job.status === 'IMPORTING') {
             return c.json({ error: 'Import job already in progress' }, 400);
         }
 
@@ -387,7 +387,7 @@ app.post(
                 const openMemory = await import('../services/openmemory.service');
                 // Extract key memories from imported content
                 const importedEntities = await prisma.importEntity.findMany({
-                    where: { jobId: job.id, status: 'completed' },
+                    where: { jobId: job.id, imported: true },
                     take: 50,
                     select: { content: true, title: true },
                 });
