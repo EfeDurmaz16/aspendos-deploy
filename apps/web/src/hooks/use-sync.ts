@@ -49,18 +49,6 @@ export function useSync(authToken: string | null) {
         return () => clearInterval(interval);
     }, []);
 
-    // Auto-sync when coming back online
-    useEffect(() => {
-        if (isOnline && authToken) {
-            // Quick sync on reconnection
-            hasPendingChanges().then((hasPending) => {
-                if (hasPending) {
-                    performQuickSync();
-                }
-            });
-        }
-    }, [isOnline, authToken, performQuickSync]);
-
     // Full sync - fetch all data from server
     const performFullSyncAction = useCallback(async () => {
         if (!authToken || !isOnline) {
@@ -118,6 +106,18 @@ export function useSync(authToken: string | null) {
             }));
         }
     }, [authToken, isOnline]);
+
+    // Auto-sync when coming back online
+    useEffect(() => {
+        if (isOnline && authToken) {
+            // Quick sync on reconnection
+            hasPendingChanges().then((hasPending) => {
+                if (hasPending) {
+                    performQuickSync();
+                }
+            });
+        }
+    }, [isOnline, authToken, performQuickSync]);
 
     return {
         ...state,

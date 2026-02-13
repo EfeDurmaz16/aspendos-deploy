@@ -110,7 +110,7 @@ export function StreakIndicator({
                             <SnowflakeIcon
                                 key={i}
                                 className="w-4 h-4 text-cyan-400"
-                                title="Streak Freeze Available"
+                                aria-label="Streak Freeze Available"
                             />
                         ))}
                     </div>

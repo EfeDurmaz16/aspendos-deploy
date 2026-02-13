@@ -65,6 +65,30 @@ export function ImportUploader({
     const [isDragging, setIsDragging] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+    const processFiles = React.useCallback(
+        (newFiles: File[]) => {
+            const remainingSlots = maxFiles - files.length;
+            const filesToProcess = newFiles.slice(0, remainingSlots);
+
+            const processedFiles: UploadedFile[] = filesToProcess
+                .filter((file) => {
+                    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+                    return ACCEPTED_TYPES.includes(ext) && file.size <= MAX_FILE_SIZE;
+                })
+                .map((file) => ({
+                    file,
+                    id: `${file.name}-${crypto.randomUUID()}`,
+                    source: detectSource(file.name),
+                    status: 'pending' as const,
+                }));
+
+            if (processedFiles.length > 0) {
+                onFilesSelected(processedFiles);
+            }
+        },
+        [files, maxFiles, onFilesSelected]
+    );
+
     const handleDragOver = React.useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -99,30 +123,6 @@ export function ImportUploader({
             }
         },
         [processFiles]
-    );
-
-    const processFiles = React.useCallback(
-        (newFiles: File[]) => {
-            const remainingSlots = maxFiles - files.length;
-            const filesToProcess = newFiles.slice(0, remainingSlots);
-
-            const processedFiles: UploadedFile[] = filesToProcess
-                .filter((file) => {
-                    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
-                    return ACCEPTED_TYPES.includes(ext) && file.size <= MAX_FILE_SIZE;
-                })
-                .map((file) => ({
-                    file,
-                    id: `${file.name}-${crypto.randomUUID()}`,
-                    source: detectSource(file.name),
-                    status: 'pending' as const,
-                }));
-
-            if (processedFiles.length > 0) {
-                onFilesSelected(processedFiles);
-            }
-        },
-        [files, maxFiles, onFilesSelected]
     );
 
     const canAddMore = files.length < maxFiles;

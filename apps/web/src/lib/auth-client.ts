@@ -13,10 +13,12 @@ export const {
     signUp,
     useSession,
     passkey, // For passkey registration: passkey.addPasskey(), passkey.listUserPasskeys(), etc.
-    forgetPassword,
+    requestPasswordReset,
     resetPassword,
     sendVerificationEmail,
 } = authClient;
+
+export const forgetPassword = requestPasswordReset;
 
 // Polar checkout - navigate to checkout page with product slug
 export const checkout = async ({ slug }: { slug: string }) => {
@@ -25,16 +27,12 @@ export const checkout = async ({ slug }: { slug: string }) => {
         products: [slug],
     });
 
-    if (response?.url) {
-        window.location.href = response.url;
+    if ('data' in response && response.data?.url) {
+        window.location.href = response.data.url;
     }
 };
 
 // Polar customer portal - manage subscriptions
 export const openCustomerPortal = async () => {
-    const response = await authClient.customerPortal();
-
-    if (response?.url) {
-        window.location.href = response.url;
-    }
+    window.location.href = '/portal';
 };

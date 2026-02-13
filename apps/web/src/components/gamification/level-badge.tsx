@@ -79,40 +79,58 @@ export function LevelBadge({
         xl: 'text-3xl',
     };
 
-    const Badge = animated ? motion.div : 'div';
-    const animationProps = animated
-        ? {
-              initial: { scale: 0, rotate: -180 },
-              animate: { scale: 1, rotate: 0 },
-              transition: { type: 'spring', stiffness: 200, damping: 15 },
-          }
-        : {};
-
     return (
         <div className={cn('flex items-center gap-2', className)}>
-            <Badge
-                className={cn(
-                    'relative flex items-center justify-center rounded-full',
-                    `bg-gradient-to-br ${config.gradient}`,
-                    'shadow-lg',
-                    sizeClasses[size]
-                )}
-                {...animationProps}
-            >
-                <span className={iconSizes[size]}>{config.icon}</span>
-                {showLevel && (
-                    <span
-                        className={cn(
-                            'absolute -bottom-1 -right-1 flex items-center justify-center',
-                            'bg-background border-2 border-background rounded-full',
-                            'text-[10px] font-bold text-foreground',
-                            size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
-                        )}
-                    >
-                        {level}
-                    </span>
-                )}
-            </Badge>
+            {animated ? (
+                <motion.div
+                    className={cn(
+                        'relative flex items-center justify-center rounded-full',
+                        `bg-gradient-to-br ${config.gradient}`,
+                        'shadow-lg',
+                        sizeClasses[size]
+                    )}
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                >
+                    <span className={iconSizes[size]}>{config.icon}</span>
+                    {showLevel && (
+                        <span
+                            className={cn(
+                                'absolute -bottom-1 -right-1 flex items-center justify-center',
+                                'bg-background border-2 border-background rounded-full',
+                                'text-[10px] font-bold text-foreground',
+                                size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
+                            )}
+                        >
+                            {level}
+                        </span>
+                    )}
+                </motion.div>
+            ) : (
+                <div
+                    className={cn(
+                        'relative flex items-center justify-center rounded-full',
+                        `bg-gradient-to-br ${config.gradient}`,
+                        'shadow-lg',
+                        sizeClasses[size]
+                    )}
+                >
+                    <span className={iconSizes[size]}>{config.icon}</span>
+                    {showLevel && (
+                        <span
+                            className={cn(
+                                'absolute -bottom-1 -right-1 flex items-center justify-center',
+                                'bg-background border-2 border-background rounded-full',
+                                'text-[10px] font-bold text-foreground',
+                                size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
+                            )}
+                        >
+                            {level}
+                        </span>
+                    )}
+                </div>
+            )}
 
             {showName && (
                 <div className="flex flex-col">

@@ -9,6 +9,7 @@ import { WelcomeGuideTrigger } from '@/components/onboarding';
 // Components
 import { PACTimeline } from '@/components/pac-timeline';
 import { EngineIndicator, HybridEngineToggle } from '@/components/settings';
+import { useYulaStore } from '@/stores/yula-store';
 import { cn } from '@/lib/utils';
 
 type ActiveView = 'chat' | 'council' | 'memory';
