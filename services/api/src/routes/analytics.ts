@@ -516,7 +516,7 @@ app.get('/engagement', requireAuth, async (c) => {
             prisma.pACReminder.count({ where: { userId } }),
             prisma.pACReminder.count({ where: { userId, status: 'ACKNOWLEDGED' } }),
             prisma.importJob.count({ where: { userId, status: 'COMPLETED' } }),
-            prisma.achievement.count({ where: { userId } }),
+            prisma.achievement.count({ where: { profile: { userId } } }),
         ]);
 
         // Score components (each 0-25, total 0-100)
@@ -607,7 +607,7 @@ app.get('/switching-cost', requireAuth, async (c) => {
                 prisma.councilSession.count({ where: { userId } }),
                 prisma.pACReminder.count({ where: { userId } }),
                 prisma.importJob.count({ where: { userId, status: 'COMPLETED' } }),
-                prisma.achievement.count({ where: { userId } }),
+                prisma.achievement.count({ where: { profile: { userId } } }),
             ]);
 
         // Calculate score components

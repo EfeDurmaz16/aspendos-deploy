@@ -1135,11 +1135,10 @@ app.delete('/api/account', async (c) => {
             }
 
             // Delete gamification
-            await tx.achievement.deleteMany({ where: { userId } });
-            await tx.xPEvent.deleteMany({ where: { userId } });
+            await tx.gamificationProfile.deleteMany({ where: { userId } });
 
             // Delete notifications
-            await tx.notification.deleteMany({ where: { userId } });
+            await tx.notificationLog.deleteMany({ where: { userId } });
 
             // Delete user sessions and accounts (Better Auth)
             await tx.session.deleteMany({ where: { userId } });
@@ -1277,23 +1276,24 @@ app.get('/api/export', async (c) => {
                 },
             }),
             prisma.achievement.findMany({
-                where: { userId },
-                select: { id: true, type: true, unlockedAt: true, metadata: true },
+                where: { profile: { userId } },
+                select: { id: true, code: true, unlockedAt: true, notified: true },
             }),
-            prisma.xPEvent.findMany({
-                where: { userId },
-                select: { id: true, amount: true, reason: true, createdAt: true },
+            prisma.xPLog.findMany({
+                where: { profile: { userId } },
+                select: { id: true, amount: true, action: true, createdAt: true },
                 orderBy: { createdAt: 'desc' },
                 take: 500,
             }),
-            prisma.notification.findMany({
+            prisma.notificationLog.findMany({
                 where: { userId },
                 select: {
                     id: true,
                     type: true,
                     title: true,
-                    body: true,
-                    read: true,
+                    message: true,
+                    status: true,
+                    readAt: true,
                     createdAt: true,
                 },
                 orderBy: { createdAt: 'desc' },
@@ -1319,13 +1319,13 @@ app.get('/api/export', async (c) => {
                 totalPages: Math.ceil(chatCount / chatLimit),
             },
             user,
-            chats: chats.map((chat) => ({
+            chats: chats.map((chat: any) => ({
                 id: chat.id,
                 title: chat.title,
                 createdAt: chat.createdAt,
                 messages: chat.messages,
             })),
-            memories: memories.map((m) => ({
+            memories: memories.map((m: any) => ({
                 id: m.id,
                 content: m.content,
                 sector: m.sector,
@@ -1342,7 +1342,7 @@ app.get('/api/export', async (c) => {
                   }
                 : null,
             billing: billingAccount,
-            councilSessions: councilSessions.map((s) => ({
+            councilSessions: councilSessions.map((s: any) => ({
                 id: s.id,
                 query: s.query,
                 status: s.status,
@@ -1495,7 +1495,7 @@ app.post('/api/feedback/nps', async (c) => {
         // Rate limit: 1 NPS per user per day
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
-        const existing = await prisma.notification.findFirst({
+        const existing = await prisma.notificationLog.findFirst({
             where: { userId, type: 'NPS_RESPONSE', createdAt: { gte: startOfDay } },
         });
         if (existing) {
@@ -1503,13 +1503,16 @@ app.post('/api/feedback/nps', async (c) => {
         }
 
         // Store as notification record (reusing existing table)
-        await prisma.notification.create({
+        await prisma.notificationLog.create({
             data: {
                 userId,
                 type: 'NPS_RESPONSE',
                 title: `NPS: ${score}`,
-                body: comment || `Score: ${score}/10`,
-                read: true, // Not a user-facing notification
+                message: comment || `Score: ${score}/10`,
+                channel: 'in_app',
+                status: 'delivered',
+                deliveredAt: new Date(),
+                readAt: new Date(), // Not a user-facing notification
                 metadata: { score, comment, submittedAt: new Date().toISOString() },
             },
         });
@@ -1532,7 +1535,7 @@ app.get('/api/feedback/nps/summary', async (c) => {
         const { prisma } = await import('./lib/prisma');
 
         // Get all NPS responses (admin could see all, users see own)
-        const responses = await prisma.notification.findMany({
+        const responses = await prisma.notificationLog.findMany({
             where: { type: 'NPS_RESPONSE' },
             select: { metadata: true, createdAt: true },
             orderBy: { createdAt: 'desc' },
@@ -1615,7 +1618,7 @@ app.post('/api/scheduler/reengage', async (c) => {
             if (recentMessage) continue; // Still active, skip
 
             // Check if we already sent a re-engagement this week
-            const existingNotification = await prisma.notification.findFirst({
+            const existingNotification = await prisma.notificationLog.findFirst({
                 where: {
                     userId: user.userId,
                     type: 'REENGAGEMENT',
@@ -1626,13 +1629,15 @@ app.post('/api/scheduler/reengage', async (c) => {
             if (existingNotification) continue; // Already notified
 
             // Create re-engagement notification
-            await prisma.notification.create({
+            await prisma.notificationLog.create({
                 data: {
                     userId: user.userId,
                     type: 'REENGAGEMENT',
                     title: 'We miss you!',
-                    body: "It's been a while since we chatted. I've been thinking about some topics from our last conversation...",
-                    read: false,
+                    message:
+                        "It's been a while since we chatted. I've been thinking about some topics from our last conversation...",
+                    channel: 'in_app',
+                    status: 'pending',
                 },
             });
             reengaged++;
@@ -1738,7 +1743,7 @@ app.get('/api/account/export', async (c) => {
             }),
             prisma.pACReminder.findMany({
                 where: { userId },
-                select: { message: true, status: true, scheduledFor: true, createdAt: true },
+                select: { content: true, status: true, triggerAt: true, createdAt: true },
             }),
             prisma.pACSettings.findUnique({ where: { userId } }),
             prisma.councilSession.findMany({
@@ -1845,7 +1850,7 @@ app.get('/api/features', (c) => {
     const user = c.get('user');
     const tier = ((user as unknown as Record<string, unknown>)?.tier as string) || 'FREE';
     return c.json({
-        features: getUserFeatures(userId, tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA'),
+        features: getUserFeatures(userId ?? undefined, tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA'),
     });
 });
 

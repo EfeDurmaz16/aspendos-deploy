@@ -83,7 +83,7 @@ export interface ExportData {
     notifications: Array<{
         type: string;
         title: string;
-        body: string | null;
+        message: string;
         createdAt: Date;
     }>;
 }
@@ -270,9 +270,9 @@ export async function exportUserData(userId: string): Promise<ExportData> {
                 },
                 orderBy: { createdAt: 'desc' },
             }),
-            prisma.notification.findMany({
+            prisma.notificationLog.findMany({
                 where: { userId },
-                select: { type: true, title: true, body: true, createdAt: true },
+                select: { type: true, title: true, message: true, createdAt: true },
                 orderBy: { createdAt: 'desc' },
             }),
         ]);
@@ -281,7 +281,7 @@ export async function exportUserData(userId: string): Promise<ExportData> {
         exportedAt: new Date().toISOString(),
         format: 'YULA_GDPR_EXPORT_V1',
         user,
-        chats: chats.map((chat) => ({
+        chats: chats.map((chat: any) => ({
             id: chat.id,
             title: chat.title,
             createdAt: chat.createdAt,
@@ -290,7 +290,7 @@ export async function exportUserData(userId: string): Promise<ExportData> {
         memories,
         reminders,
         billing: billingAccount,
-        councilSessions: councilSessions.map((s) => ({
+        councilSessions: councilSessions.map((s: any) => ({
             id: s.id,
             query: s.query,
             status: s.status,
@@ -327,8 +327,8 @@ export async function getDataSummary(userId: string): Promise<DataSummary> {
         prisma.pACReminder.count({ where: { userId } }),
         prisma.councilSession.count({ where: { userId } }),
         prisma.importJob.count({ where: { userId } }),
-        prisma.achievement.count({ where: { userId } }),
-        prisma.notification.count({ where: { userId } }),
+        prisma.achievement.count({ where: { profile: { userId } } }),
+        prisma.notificationLog.count({ where: { userId } }),
         prisma.auditLog.count({ where: { userId } }),
         prisma.apiKey.count({ where: { userId } }),
         prisma.user.findUnique({
@@ -455,11 +455,11 @@ export async function anonymizeUser(userId: string): Promise<void> {
         await tx.account.deleteMany({ where: { userId } });
 
         // Anonymize notification content
-        await tx.notification.updateMany({
+        await tx.notificationLog.updateMany({
             where: { userId },
             data: {
                 title: '[anonymized]',
-                body: '[anonymized]',
+                message: '[anonymized]',
             },
         });
 
