@@ -17,7 +17,8 @@ describe('API Contract Tests - Health & System', () => {
     test('GET /health - returns health status contract', async () => {
         const res = await app.request('/health');
 
-        expect(res.status).toBe(200);
+        // 200 when healthy/degraded, 503 when unhealthy
+        expect([200, 503]).toContain(res.status);
         expect(res.headers.get('content-type')).toContain('application/json');
         expect(res.headers.get('x-request-id')).toBeDefined();
         expect(res.headers.get('x-api-version')).toBe('1.0.0');

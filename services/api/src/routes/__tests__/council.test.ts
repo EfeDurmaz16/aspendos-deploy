@@ -17,6 +17,19 @@ vi.mock('../../lib/auth', () => ({
     },
 }));
 
+vi.mock('openmemory-js', () => ({
+    Memory: vi.fn(function () {
+        return {
+            add: vi.fn().mockResolvedValue({ id: 'mock-id' }),
+            search: vi.fn().mockResolvedValue([]),
+            get: vi.fn().mockResolvedValue(null),
+            update: vi.fn().mockResolvedValue(undefined),
+            delete: vi.fn().mockResolvedValue(undefined),
+            clear: vi.fn().mockResolvedValue(undefined),
+        };
+    }),
+}));
+
 import { auth } from '../../lib/auth';
 const mockAuth = auth as any;
 

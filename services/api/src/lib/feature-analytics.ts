@@ -339,12 +339,12 @@ export function getFeatureGrowth(feature: FeatureName, days = 30): FeatureGrowth
     // Fill in missing dates with zeros
     const result: FeatureGrowthPoint[] = [];
     const now = new Date();
+    const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
     // Start from 'days' ago and go up to today
     for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        date.setHours(0, 0, 0, 0); // Normalize to start of day
+        const date = new Date(todayUtc);
+        date.setUTCDate(todayUtc.getUTCDate() - i);
         const dateKey = date.toISOString().split('T')[0];
 
         const stats = dailyStats.get(dateKey);
