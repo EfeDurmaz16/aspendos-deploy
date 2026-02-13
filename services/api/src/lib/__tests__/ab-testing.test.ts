@@ -425,8 +425,8 @@ describe('ab-testing', () => {
 
             const variant1 = assignVariant('results-exp', 'user-1');
             const variant2 = assignVariant('results-exp', 'user-2');
-            const variant3 = assignVariant('results-exp', 'user-3');
-            const variant4 = assignVariant('results-exp', 'user-4');
+            const _variant3 = assignVariant('results-exp', 'user-3');
+            const _variant4 = assignVariant('results-exp', 'user-4');
 
             // Record conversions for first two users, regardless of variant
             if (variant1) recordConversion('results-exp', 'user-1', variant1.id, 'click');
