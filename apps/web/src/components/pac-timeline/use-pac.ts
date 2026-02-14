@@ -1,41 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
-import { type PACItem, type PACItemType, useYulaStore } from '@/stores/yula-store';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type PACItem, type PACItemType } from '@/stores/yula-store';
 
-// Sample PAC items for demo
-const samplePACItems: Omit<PACItem, 'id' | 'createdAt' | 'status'>[] = [
-    {
-        type: 'reminder',
-        title: 'Flight check-in opens',
-        description: 'Your flight to Tokyo (JAL 123) check-in opens in 2 hours',
-        scheduledFor: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    },
-    {
-        type: 'suggestion',
-        title: 'Take an umbrella',
-        description: 'Rain expected this afternoon (70% chance)',
-        scheduledFor: new Date(Date.now() + 4 * 60 * 60 * 1000),
-    },
-    {
-        type: 'alert',
-        title: 'Meeting in 30 minutes',
-        description: 'Weekly sync with the team via Zoom',
-        scheduledFor: new Date(Date.now() + 30 * 60 * 1000),
-    },
-    {
-        type: 'suggestion',
-        title: 'Review draft document',
-        description: 'You mentioned wanting to review the Q1 report today',
-        scheduledFor: new Date(Date.now() + 6 * 60 * 60 * 1000),
-    },
-    {
-        type: 'reminder',
-        title: 'Call Mom',
-        description: "It's been a week since your last call",
-        scheduledFor: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+type PACReminderApi = {
+    id: string;
+    content: string;
+    type: 'EXPLICIT' | 'IMPLICIT';
+    status: 'PENDING' | 'SNOOZED' | 'ACKNOWLEDGED' | 'DISMISSED' | 'COMPLETED';
+    triggerAt: string;
+    createdAt: string;
+};
 
 // Type styling definitions
 export const pacTypeStyles: Record<
@@ -63,27 +40,52 @@ export const pacTypeStyles: Record<
 };
 
 export function usePAC() {
-    const {
-        pac,
-        addPACItem,
-        snoozePACItem,
-        approvePACItem,
-        dismissPACItem,
-        togglePACExpanded,
-        removePACItem,
-    } = useYulaStore();
+    const [items, setItems] = useState<PACItem[]>([]);
+    const [isExpanded, setIsExpanded] = useState(true);
 
-    // Initialize with sample data if empty (only on first mount, check localStorage)
-    useEffect(() => {
-        const hasInitialized = localStorage.getItem('yula-pac-initialized');
-        if (!hasInitialized && pac.items.length === 0) {
-            // Add sample items
-            for (const item of samplePACItems) {
-                addPACItem(item);
-            }
-            localStorage.setItem('yula-pac-initialized', 'true');
+    const mapReminderToPACItem = useCallback((reminder: PACReminderApi): PACItem => {
+        const mappedType: PACItemType = reminder.type === 'EXPLICIT' ? 'reminder' : 'suggestion';
+        const mappedStatus =
+            reminder.status === 'SNOOZED'
+                ? 'snoozed'
+                : reminder.status === 'DISMISSED'
+                  ? 'dismissed'
+                  : reminder.status === 'ACKNOWLEDGED' || reminder.status === 'COMPLETED'
+                    ? 'approved'
+                    : 'pending';
+
+        return {
+            id: reminder.id,
+            type: mappedType,
+            title: reminder.content,
+            description:
+                reminder.type === 'EXPLICIT' ? 'Scheduled reminder' : 'Proactive suggestion',
+            scheduledFor: reminder.triggerAt ? new Date(reminder.triggerAt) : undefined,
+            createdAt: new Date(reminder.createdAt),
+            status: mappedStatus,
+        };
+    }, []);
+
+    const refreshReminders = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_BASE}/api/pac/reminders?limit=50`, {
+                credentials: 'include',
+            });
+            if (!response.ok) return;
+
+            const data = (await response.json()) as { reminders?: PACReminderApi[] };
+            const nextItems = (data.reminders || []).map(mapReminderToPACItem);
+            setItems(nextItems);
+        } catch (error) {
+            console.error('[PAC] Failed to fetch reminders:', error);
         }
-    }, [addPACItem, pac.items.length]); // Only run once when empty
+    }, [mapReminderToPACItem]);
+
+    useEffect(() => {
+        refreshReminders();
+        const interval = setInterval(refreshReminders, 30000);
+        return () => clearInterval(interval);
+    }, [refreshReminders]);
 
     // Helper to safely get time from Date or string
     const getTime = useCallback((date: Date | string | undefined): number => {
@@ -94,7 +96,7 @@ export function usePAC() {
 
     // Get pending items (not dismissed or approved)
     const pendingItems = useMemo(() => {
-        return pac.items
+        return items
             .filter((item) => item.status === 'pending' || item.status === 'snoozed')
             .sort((a, b) => {
                 // Sort by scheduled time, soonest first
@@ -102,22 +104,22 @@ export function usePAC() {
                 const timeB = getTime(b.scheduledFor);
                 return timeA - timeB;
             });
-    }, [pac.items, getTime]);
+    }, [items, getTime]);
 
     // Get completed items (approved)
     const completedItems = useMemo(() => {
-        return pac.items.filter((item) => item.status === 'approved');
-    }, [pac.items]);
+        return items.filter((item) => item.status === 'approved');
+    }, [items]);
 
     // Get dismissed items
     const dismissedItems = useMemo(() => {
-        return pac.items.filter((item) => item.status === 'dismissed');
-    }, [pac.items]);
+        return items.filter((item) => item.status === 'dismissed');
+    }, [items]);
 
     // Get snoozed items
     const snoozedItems = useMemo(() => {
-        return pac.items.filter((item) => item.status === 'snoozed');
-    }, [pac.items]);
+        return items.filter((item) => item.status === 'snoozed');
+    }, [items]);
 
     // Get urgent items (within 1 hour)
     const urgentItems = useMemo(() => {
@@ -129,11 +131,22 @@ export function usePAC() {
 
     // Snooze for specific durations
     const snoozeFor = useCallback(
-        (id: string, minutes: number) => {
-            const until = new Date(Date.now() + minutes * 60 * 1000);
-            snoozePACItem(id, until);
+        async (id: string, minutes: number) => {
+            try {
+                const response = await fetch(`${API_BASE}/api/pac/reminders/${id}/snooze`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ minutes }),
+                });
+                if (response.ok) {
+                    await refreshReminders();
+                }
+            } catch (error) {
+                console.error('[PAC] Failed to snooze reminder:', error);
+            }
         },
-        [snoozePACItem]
+        [refreshReminders]
     );
 
     // Quick snooze options
@@ -166,39 +179,101 @@ export function usePAC() {
 
     // Add a new proactive item
     const addProactiveItem = useCallback(
-        (type: PACItemType, title: string, description: string, scheduledFor?: Date) => {
-            addPACItem({
-                type,
-                title,
-                description,
-                scheduledFor,
-            });
+        async (type: PACItemType, title: string, _description: string, scheduledFor?: Date) => {
+            const triggerAt =
+                scheduledFor?.toISOString() || new Date(Date.now() + 60 * 60 * 1000).toISOString();
+            try {
+                const response = await fetch(`${API_BASE}/api/pac/reminders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        content: title,
+                        type: type === 'reminder' ? 'EXPLICIT' : 'IMPLICIT',
+                        triggerAt,
+                    }),
+                });
+                if (response.ok) {
+                    await refreshReminders();
+                }
+            } catch (error) {
+                console.error('[PAC] Failed to create reminder:', error);
+            }
         },
-        [addPACItem]
+        [refreshReminders]
+    );
+
+    const approve = useCallback(
+        async (id: string) => {
+            try {
+                const response = await fetch(`${API_BASE}/api/pac/reminders/${id}/complete`, {
+                    method: 'PATCH',
+                    credentials: 'include',
+                });
+                if (response.ok) {
+                    setItems((prev) => prev.filter((item) => item.id !== id));
+                }
+            } catch (error) {
+                console.error('[PAC] Failed to complete reminder:', error);
+            }
+        },
+        [setItems]
+    );
+
+    const dismiss = useCallback(
+        async (id: string) => {
+            try {
+                const response = await fetch(`${API_BASE}/api/pac/reminders/${id}/dismiss`, {
+                    method: 'PATCH',
+                    credentials: 'include',
+                });
+                if (response.ok) {
+                    setItems((prev) => prev.filter((item) => item.id !== id));
+                }
+            } catch (error) {
+                console.error('[PAC] Failed to dismiss reminder:', error);
+            }
+        },
+        [setItems]
+    );
+
+    const remove = useCallback((id: string) => {
+        setItems((prev) => prev.filter((item) => item.id !== id));
+    }, []);
+
+    const toggleExpanded = useCallback(() => {
+        setIsExpanded((prev) => !prev);
+    }, []);
+
+    const addItem = useCallback(
+        (type: PACItemType, title: string, description: string, scheduledFor?: Date) => {
+            void addProactiveItem(type, title, description, scheduledFor);
+        },
+        [addProactiveItem]
     );
 
     return {
         // State
-        items: pac.items,
+        items,
         pendingItems,
         completedItems,
         dismissedItems,
         snoozedItems,
         urgentItems,
-        isExpanded: pac.isExpanded,
+        isExpanded,
         hasUrgentItems: urgentItems.length > 0,
         pendingCount: pendingItems.length,
 
         // Actions
-        addItem: addProactiveItem,
-        approve: approvePACItem,
-        dismiss: dismissPACItem,
+        addItem,
+        approve,
+        dismiss,
         snoozeFor,
         snooze15Min,
         snooze1Hour,
         snoozeTomorrow,
-        remove: removePACItem,
-        toggleExpanded: togglePACExpanded,
+        remove,
+        toggleExpanded,
 
         // Helpers
         getRelativeTime,
