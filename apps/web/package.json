@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "next dev",
         "dev:clean": "/bin/rm -rf .next && next dev",
-        "dev:webpack": "next dev --webpack",
+        "dev:turbo": "next dev --turbo",
         "build": "next build",
         "build:clean": "/bin/rm -rf .next && next build",
         "start": "next start",
