@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs';
 import { validateEnv } from '@/lib/env';
 
 export async function register() {
@@ -11,3 +12,5 @@ export async function register() {
         // Edge runtime Sentry config can be added here if needed
     }
 }
+
+export const onRequestError = Sentry.captureRequestError;

@@ -99,6 +99,11 @@ const sentryWebpackPluginOptions = {
     dryRun: process.env.NODE_ENV !== 'production',
     hideSourceMaps: true,
     disableLogger: true,
+    webpack: {
+        treeshake: {
+            removeDebugLogging: true,
+        },
+    },
 };
 
 export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);
