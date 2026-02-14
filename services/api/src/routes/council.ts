@@ -153,7 +153,7 @@ app.get('/sessions/:id/stream', validateParams(sessionIdParamSchema), async (c) 
 
         // Create streaming generators for each persona
         const streams = personas.map((persona) =>
-            councilService.streamPersonaResponse(sessionId, persona, session.query)
+            councilService.streamPersonaResponse(sessionId, persona, session.query, userId)
         );
 
         // Track completion and per-persona token usage for accurate billing

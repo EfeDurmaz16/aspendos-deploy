@@ -537,10 +537,33 @@ app.post(
 
         const { content, models } = validatedBody;
 
+        // Shared memory context for all model responses in this comparison
+        const memoryAgent = getMemoryAgent();
+        const decision = await memoryAgent.decideMemoryUsage(userId, content);
+        let memoriesUsed: { content: string; sector: string; confidence: number }[] = [];
+
+        if (decision.useMemory) {
+            try {
+                const memories = await openMemory.searchMemories(content, userId, { limit: 5 });
+                memoriesUsed = memories.map((m) => ({
+                    content: m.content,
+                    sector: m.sector || 'semantic',
+                    confidence: m.salience || 0.8,
+                }));
+            } catch (error) {
+                console.error('[Memory] OpenMemory search failed in /multi:', error);
+                // Continue without memory context
+            }
+        }
+
+        const systemPrompt = buildSystemPrompt(decision, memoriesUsed, false);
+
+
         // Check token budget (estimate: models.length * 1000 tokens each)
         if (!(await billingService.hasTokens(userId, models.length * 1000))) {
             return c.json({ error: 'Insufficient token budget for multi-model comparison' }, 403);
         }
+
 
         // Save user message
         await chatService.createMessage({
@@ -563,6 +586,7 @@ app.post(
                 try {
                     const result = await generateText({
                         model: getModel(modelId),
+                        system: systemPrompt,
                         messages: history,
                         temperature: 0.7,
                     });

@@ -7,6 +7,7 @@
 import { streamText } from 'ai';
 import { getModelWithFallback } from '../lib/ai-providers';
 import { prisma } from '../lib/prisma';
+import * as openMemory from './openmemory.service';
 
 // Persona types
 export type PersonaType = 'SCHOLAR' | 'CREATIVE' | 'PRACTICAL' | 'DEVILS_ADVOCATE';
@@ -196,7 +197,8 @@ export async function listCouncilSessions(userId: string, limit = 20) {
 export async function* streamPersonaResponse(
     sessionId: string,
     persona: PersonaType,
-    query: string
+    query: string,
+    userId: string
 ): AsyncGenerator<{
     type: 'text' | 'done' | 'error';
     content?: string;
@@ -216,9 +218,25 @@ export async function* streamPersonaResponse(
         // Use centralized provider with circuit breaker fallback
         const { model: resolvedModel } = getModelWithFallback(personaDef.modelId);
 
+        let systemPrompt = personaDef.systemPrompt;
+        try {
+            const memories = await openMemory.searchMemories(query, userId, { limit: 3 });
+            if (memories.length > 0) {
+                const memoryContext = memories
+                    .map((m, i) => `${i + 1}. [${m.sector || 'semantic'}] ${m.content}`)
+                    .join('\n');
+                systemPrompt += `\n\nUser memory context:\n${memoryContext}\n\nUse this context when relevant, but do not mention memory retrieval explicitly.`;
+            }
+        } catch (error) {
+            console.warn(
+                `[Council] Memory retrieval failed for ${persona}:`,
+                error instanceof Error ? error.message : 'Unknown'
+            );
+        }
+
         const result = streamText({
             model: resolvedModel,
-            system: personaDef.systemPrompt,
+            system: systemPrompt,
             prompt: query,
         });
 
