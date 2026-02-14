@@ -28,15 +28,23 @@ import {
 function detectImportFormat(
     content: unknown
 ): 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY' | null {
-    // ChatGPT format: Array of conversations with mapping objects
+    // Array-based formats: ChatGPT, Claude, Gemini
     if (Array.isArray(content)) {
         const first = content[0];
         if (first && typeof first === 'object') {
+            // ChatGPT format: Array with mapping objects
             if ('mapping' in first) {
                 return 'CHATGPT';
             }
             if ('title' in first && 'create_time' in first) {
                 return 'CHATGPT';
+            }
+            // Claude format: Array with chat_messages arrays
+            if ('chat_messages' in first && Array.isArray((first as Record<string, unknown>).chat_messages)) {
+                return 'CLAUDE';
+            }
+            if ('uuid' in first && 'name' in first) {
+                return 'CLAUDE';
             }
             // Gemini format: Array with entries
             if ('entries' in first && Array.isArray((first as Record<string, unknown>).entries)) {
@@ -152,11 +160,11 @@ app.post('/jobs', enforceTierLimit('monthlyImageGenerations'), validateBody(crea
         );
     }
 
-    // Limit import size to prevent OOM (50MB JSON max)
-    const MAX_IMPORT_SIZE = 50 * 1024 * 1024;
+    // Limit import size to prevent OOM (100MB JSON max - ChatGPT exports can be 60MB+)
+    const MAX_IMPORT_SIZE = 100 * 1024 * 1024;
     const contentSize = JSON.stringify(content).length;
     if (contentSize > MAX_IMPORT_SIZE) {
-        return c.json({ error: 'Import file too large. Maximum 50MB.' }, 413);
+        return c.json({ error: 'Import file too large. Maximum 100MB.' }, 413);
     }
 
     try {
