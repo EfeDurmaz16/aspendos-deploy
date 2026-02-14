@@ -158,57 +158,68 @@ app.get('/sessions/:id/stream', validateParams(sessionIdParamSchema), async (c) 
 
         // Track completion and per-persona token usage for accurate billing
         const completed = new Set<PersonaType>();
-        const activeStreams = new Map<PersonaType, AsyncGenerator<PersonaStreamChunk>>();
+        const generators = new Map<PersonaType, AsyncGenerator<PersonaStreamChunk>>();
+        const inFlight = new Map<
+            PersonaType,
+            Promise<{ persona: PersonaType; result: IteratorResult<PersonaStreamChunk> }>
+        >();
         const perPersonaUsage = new Map<
             PersonaType,
             { promptTokens: number; completionTokens: number }
         >();
 
         personas.forEach((persona, i) => {
-            activeStreams.set(persona, streams[i]);
+            generators.set(persona, streams[i]);
         });
 
-        // Stream all responses in parallel
-        while (activeStreams.size > 0) {
-            const results = await Promise.all(
-                Array.from(activeStreams.entries()).map(async ([persona, gen]) => {
-                    const result = await gen.next();
-                    return { persona, result };
-                })
+        const queueNext = (persona: PersonaType) => {
+            const generator = generators.get(persona);
+            if (!generator) return;
+            inFlight.set(
+                persona,
+                generator.next().then((result) => ({
+                    persona,
+                    result,
+                }))
             );
+        };
 
-            for (const { persona, result } of results) {
-                if (result.done) {
-                    activeStreams.delete(persona);
-                    completed.add(persona);
-                    continue;
+        personas.forEach((persona) => queueNext(persona));
+
+        // Stream all persona chunks as soon as each one is ready (no head-of-line blocking).
+        while (inFlight.size > 0) {
+            const { persona, result } = await Promise.race(inFlight.values());
+            inFlight.delete(persona);
+
+            if (result.done) {
+                generators.delete(persona);
+                completed.add(persona);
+                continue;
+            }
+
+            const { type, content, latencyMs, usage } = result.value;
+
+            if (type === 'text') {
+                await stream.write(
+                    `data: ${JSON.stringify({ persona, type: 'persona_chunk', content })}\n\n`
+                );
+                queueNext(persona);
+            } else if (type === 'done') {
+                // Track per-persona token usage for accurate billing
+                if (usage) {
+                    perPersonaUsage.set(persona, {
+                        promptTokens: usage.promptTokens,
+                        completionTokens: usage.completionTokens,
+                    });
                 }
-
-                const { type, content, latencyMs, usage } = result.value;
-
-                if (type === 'text') {
-                    await stream.write(
-                        `data: ${JSON.stringify({ persona, type: 'persona_chunk', content })}\n\n`
-                    );
-                } else if (type === 'done') {
-                    // Track per-persona token usage for accurate billing
-                    if (usage) {
-                        perPersonaUsage.set(persona, {
-                            promptTokens: usage.promptTokens,
-                            completionTokens: usage.completionTokens,
-                        });
-                    }
-                    await stream.write(
-                        `data: ${JSON.stringify({ persona, type: 'persona_complete', latencyMs })}\n\n`
-                    );
-                    activeStreams.delete(persona);
-                    completed.add(persona);
-                } else if (type === 'error') {
-                    await stream.write(
-                        `data: ${JSON.stringify({ persona, type: 'error', content })}\n\n`
-                    );
-                    activeStreams.delete(persona);
-                }
+                await stream.write(
+                    `data: ${JSON.stringify({ persona, type: 'persona_complete', latencyMs })}\n\n`
+                );
+                generators.delete(persona);
+                completed.add(persona);
+            } else if (type === 'error') {
+                await stream.write(`data: ${JSON.stringify({ persona, type: 'error', content })}\n\n`);
+                generators.delete(persona);
             }
         }
 
