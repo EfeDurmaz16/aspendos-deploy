@@ -38,8 +38,8 @@ export function ReferralCard({
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Join me on YULA!',
-                    text: "I've been using YULA for AI conversations. Join with my link and we both get free Pro days!",
+                    title: 'Join me on Yula!',
+                    text: "I've been using Yula for AI conversations. Join with my link and we both get free Pro days!",
                     url: fullUrl,
                 });
             } catch (err) {

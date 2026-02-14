@@ -89,7 +89,7 @@ export function PACSettingsPanel({
                             Proactive AI Callbacks
                         </h2>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                            Let YULA remind you about your commitments
+                            Let Yula remind you about your commitments
                         </p>
                     </div>
                 </div>
@@ -136,7 +136,7 @@ export function PACSettingsPanel({
                                 </p>
                                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
                                     {settings.enabled
-                                        ? 'YULA will proactively remind you about commitments'
+                                        ? 'Yula will proactively remind you about commitments'
                                         : 'PAC is currently disabled'}
                                 </p>
                             </div>
@@ -157,7 +157,7 @@ export function PACSettingsPanel({
                         <Sparkles className="w-4 h-4 text-feature-pac" />
                         Detection Settings
                     </CardTitle>
-                    <CardDescription>Configure how YULA detects your commitments</CardDescription>
+                    <CardDescription>Configure how Yula detects your commitments</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <SettingRow

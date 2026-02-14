@@ -13,12 +13,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
-    'Features | YULA AI Platform',
-    'Explore YULA features: Semantic Memory, Council Mode, PAC (Proactive AI), and History Import. The most advanced unified AI platform.',
+    'Features | Yula AI Platform',
+    'Explore Yula features: Semantic Memory, Council Mode, PAC (Proactive AI), and History Import. The most advanced unified AI platform.',
     '/features',
     {
         keywords: [
-            'YULA features',
+            'Yula features',
             'AI features',
             'semantic memory',
             'council mode',
@@ -51,7 +51,7 @@ const features = [
         name: 'PAC - Proactive AI',
         slug: 'pac',
         description:
-            'The first AI that messages YOU first. Schedule reminders, follow-ups, and let YULA reach out when it matters.',
+            'The first AI that messages YOU first. Schedule reminders, follow-ups, and let Yula reach out when it matters.',
         icon: BellRinging,
         color: 'text-green-500',
         bgColor: 'bg-green-500/10',
@@ -78,7 +78,7 @@ export default function FeaturesPage() {
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="font-semibold tracking-tight text-foreground">YULA</span>
+                        <span className="font-semibold tracking-tight text-foreground">Yula</span>
                     </Link>
                     <nav className="flex gap-4 items-center">
                         <Link
@@ -103,9 +103,9 @@ export default function FeaturesPage() {
             <main className="container max-w-5xl mx-auto py-12 px-6">
                 {/* Hero */}
                 <header className="text-center mb-16 space-y-4">
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight">YULA Features</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Yula Features</h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                        Discover the features that make YULA the most advanced unified AI platform.
+                        Discover the features that make Yula the most advanced unified AI platform.
                         Memory, multi-model access, proactive AI, and more.
                     </p>
                 </header>
@@ -161,10 +161,10 @@ export default function FeaturesPage() {
 
                 {/* Summary Section */}
                 <section className="mt-16 text-center py-12 px-6 rounded-2xl bg-primary/5 border border-primary/20">
-                    <h2 className="text-2xl font-semibold mb-4">Ready to Experience YULA?</h2>
+                    <h2 className="text-2xl font-semibold mb-4">Ready to Experience Yula?</h2>
                     <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
                         Join thousands of users who have upgraded from ChatGPT, Claude, and other AI
-                        assistants to YULA's unified platform with persistent memory.
+                        assistants to Yula's unified platform with persistent memory.
                     </p>
                     <div className="flex flex-wrap justify-center gap-4">
                         <Button size="lg" asChild>
@@ -183,7 +183,7 @@ export default function FeaturesPage() {
             {/* Footer */}
             <footer className="border-t border-border mt-12">
                 <div className="container max-w-5xl mx-auto py-8 px-6 text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} YULA. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} Yula. All rights reserved.</p>
                 </div>
             </footer>
         </div>

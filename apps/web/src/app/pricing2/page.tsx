@@ -302,7 +302,7 @@ export default function Pricing2Page() {
         },
         {
             question: 'How does the memory system work across models?',
-            answer: 'YULA maintains a unified memory layer that works across all AI models. When you have a conversation with GPT-4 and then switch to Claude, your context, preferences, and conversation history seamlessly transfer. The memory uses semantic search to surface relevant context automatically.',
+            answer: 'Yula maintains a unified memory layer that works across all AI models. When you have a conversation with GPT-4 and then switch to Claude, your context, preferences, and conversation history seamlessly transfer. The memory uses semantic search to surface relevant context automatically.',
         },
         {
             question: 'Is my data secure?',
@@ -310,7 +310,7 @@ export default function Pricing2Page() {
         },
         {
             question: 'Can I use my own API keys?',
-            answer: 'Pro and Ultra plans support bringing your own API keys for direct provider access. This gives you more control over rate limits and can reduce costs if you have existing provider relationships. You can mix YULA credits with your own keys as needed.',
+            answer: 'Pro and Ultra plans support bringing your own API keys for direct provider access. This gives you more control over rate limits and can reduce costs if you have existing provider relationships. You can mix Yula credits with your own keys as needed.',
         },
         {
             question: 'Do you offer team or enterprise plans?',
@@ -336,7 +336,7 @@ export default function Pricing2Page() {
             <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-6 bg-black/50 backdrop-blur-sm">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link href="/v2" className="font-serif text-2xl tracking-tight">
-                        YULA
+                        Yula
                     </Link>
                     <div className="flex items-center gap-8">
                         <Link
@@ -420,7 +420,7 @@ export default function Pricing2Page() {
             <CinematicSection className="py-24 px-6">
                 <div className="max-w-5xl mx-auto text-center">
                     <h2 className="text-3xl md:text-4xl font-serif text-white mb-12">
-                        Why YULA is worth it
+                        Why Yula is worth it
                     </h2>
                     <div className="grid md:grid-cols-3 gap-8">
                         <motion.div
@@ -561,7 +561,7 @@ export default function Pricing2Page() {
             {/* Minimal Footer */}
             <footer className="py-12 px-6 border-t border-zinc-900">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="font-serif text-xl text-zinc-600">YULA</div>
+                    <div className="font-serif text-xl text-zinc-600">Yula</div>
                     <div className="flex items-center gap-8 text-sm text-zinc-600">
                         <Link href="/privacy" className="hover:text-zinc-400 transition-colors">
                             Privacy
@@ -582,7 +582,7 @@ export default function Pricing2Page() {
                             X
                         </a>
                     </div>
-                    <div className="text-sm text-zinc-700 font-mono">2026 YULA</div>
+                    <div className="text-sm text-zinc-700 font-mono">2026 Yula</div>
                 </div>
             </footer>
         </div>

@@ -7,7 +7,7 @@ describe('OpenAPI Specification', () => {
 
         expect(spec.openapi).toBe('3.0.3');
         expect(spec.info).toBeDefined();
-        expect(spec.info.title).toBe('YULA OS API');
+        expect(spec.info.title).toBe('Yula API');
         expect(spec.info.version).toBe('1.0.0');
         expect(spec.paths).toBeDefined();
     });

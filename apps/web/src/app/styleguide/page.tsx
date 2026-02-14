@@ -10,8 +10,8 @@ import {
 } from '@/styles/design-tokens';
 
 export const metadata = {
-    title: 'Aspendos Design System | Styleguide',
-    description: 'Visual reference for the Aspendos design system tokens.',
+    title: 'Yula Design System | Styleguide',
+    description: 'Visual reference for the Yula design system tokens.',
 };
 
 // Helper component for color swatches
@@ -69,7 +69,7 @@ export default function StyleguidePage() {
             <header className="bg-zinc-900 dark:bg-zinc-950 text-white py-16 px-6">
                 <div className="max-w-6xl mx-auto">
                     <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">
-                        Aspendos Design System
+                        Yula Design System
                     </h1>
                     <p className="text-zinc-400 text-lg max-w-2xl">
                         Visual reference for all design tokens. No gradients, no pure black/white,
@@ -484,7 +484,7 @@ export default function StyleguidePage() {
                 {/* Footer */}
                 <footer className="py-12 text-center">
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        Aspendos Design System v1.0 • Built with Instrument Serif, Inter, and
+                        Yula Design System v1.0 • Built with Instrument Serif, Inter, and
                         Berkeley Mono
                     </p>
                 </footer>

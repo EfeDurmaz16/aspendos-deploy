@@ -16,7 +16,7 @@ export function AuthPage() {
                 <div className="from-background absolute inset-0 z-10 bg-gradient-to-t to-transparent" />
                 <div className="z-10 flex items-center gap-2">
                     <Grid2x2PlusIcon className="size-6" />
-                    <p className="text-xl font-semibold">Aspendos</p>
+                    <p className="text-xl font-semibold">Yula</p>
                 </div>
                 <div className="z-10 mt-auto">
                     <blockquote className="space-y-2">
@@ -51,7 +51,7 @@ export function AuthPage() {
                 <div className="w-full max-w-md space-y-4">
                     <div className="flex items-center gap-2 lg:hidden mb-4">
                         <Grid2x2PlusIcon className="size-6" />
-                        <p className="text-xl font-semibold">Aspendos</p>
+                        <p className="text-xl font-semibold">Yula</p>
                     </div>
 
                     {isLogin ? <SignIn /> : <SignUp />}

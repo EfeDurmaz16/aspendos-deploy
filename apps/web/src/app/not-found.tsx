@@ -12,13 +12,13 @@ export default function NotFound() {
             <MaiaBackground />
 
             <div className="relative z-10 max-w-2xl w-full text-center space-y-8">
-                {/* YULA Branding */}
+                {/* Yula Branding */}
                 <div className="space-y-2">
                     <h1 className="text-6xl sm:text-7xl md:text-8xl font-bold font-playfair tracking-tight text-foreground">
-                        YULA
+                        Yula
                     </h1>
                     <div className="text-sm text-muted-foreground uppercase tracking-[0.2em]">
-                        Your Universal Learning Assistant
+                        Your intelligent light in every conversation
                     </div>
                 </div>
 
@@ -53,7 +53,7 @@ export default function NotFound() {
                             href="/chat"
                             className="text-primary hover:underline underline-offset-4 transition-colors"
                         >
-                            Ask YULA AI
+                            Ask Yula AI
                         </Link>
                     </p>
                 </div>

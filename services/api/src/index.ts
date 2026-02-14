@@ -716,7 +716,7 @@ app.get('/api/docs/ui', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YULA OS API Documentation</title>
+    <title>Yula API Documentation</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@latest/swagger-ui.css" />
     <style>
         body { margin: 0; padding: 0; }
@@ -766,7 +766,7 @@ app.get('/api/docs/ui', (c) => {
 // API Documentation Endpoint
 app.get('/api/docs', (c) => {
     return c.json({
-        name: 'YULA OS API',
+        name: 'Yula API',
         version: '1.0.0',
         endpoints: [
             { method: 'GET', path: '/api/chat', description: 'List chats', auth: true },
@@ -1359,7 +1359,7 @@ app.get('/api/export', async (c) => {
             notifications,
             retentionPolicy: {
                 description:
-                    'YULA retains your data as long as your account is active. Memories older than 365 days without reinforcement may be flagged for cleanup. You can export or delete your data at any time.',
+                    'Yula retains your data as long as your account is active. Memories older than 365 days without reinforcement may be flagged for cleanup. You can export or delete your data at any time.',
                 memoryRetentionDays: 365,
                 chatRetentionDays: null, // Retained indefinitely while account is active
                 exportAvailable: true,
@@ -2045,7 +2045,7 @@ app.post('/api/admin/dlq/:id/replay', (c) => {
 const port = parseInt(process.env.PORT || '8080', 10);
 
 async function startServer() {
-    console.log('🚀 Aspendos API Server starting...');
+    console.log('🚀 Yula API Server starting...');
 
     // Initialize MCP clients (optional, non-blocking)
     try {
@@ -2061,7 +2061,7 @@ async function startServer() {
         port,
     });
 
-    console.log(`✅ Aspendos API Server running on port ${port}`);
+    console.log(`✅ Yula API Server running on port ${port}`);
 
     // Graceful shutdown
     const shutdown = async () => {

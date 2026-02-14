@@ -237,8 +237,8 @@ export async function POST(req: NextRequest) {
                     if (decision.type === 'direct_reply' || decision.type === 'rag_search') {
                         // Build messages with context
                         const systemPrompt = memoryContext
-                            ? `You are Aspendos, a helpful AI assistant with persistent memory. You have context from previous conversations:\n\n${memoryContext}\n\nUse this context naturally when relevant.`
-                            : 'You are Aspendos, a helpful AI assistant with persistent memory across conversations.';
+                            ? `You are Yula, a helpful AI assistant with persistent memory. You have context from previous conversations:\n\n${memoryContext}\n\nUse this context naturally when relevant.`
+                            : 'You are Yula, a helpful AI assistant with persistent memory across conversations.';
 
                         let selectedModel = (decision as { model: string }).model || 'gpt-4o-mini';
 

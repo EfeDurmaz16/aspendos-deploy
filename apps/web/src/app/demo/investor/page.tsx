@@ -145,7 +145,7 @@ Would you like me to configure CI/CD pipelines for this server?`;
                             <Lightning weight="fill" className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="font-bold text-lg">YULA OS</h1>
+                            <h1 className="font-bold text-lg">Yula</h1>
                             <p className="text-xs text-zinc-500">Investor Demo</p>
                         </div>
                     </div>

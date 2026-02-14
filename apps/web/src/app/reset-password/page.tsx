@@ -2,7 +2,7 @@
 
 import { CheckCircle, Lock, Warning } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeftIcon, Grid2x2PlusIcon, KeyRound, Loader2, X } from 'lucide-react';
+import { Check, ChevronLeftIcon, KeyRound, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
@@ -317,8 +317,10 @@ export default function ResetPasswordPage() {
                 className="w-full max-w-md space-y-6"
             >
                 <div className="flex items-center justify-center gap-2 mb-8">
-                    <Grid2x2PlusIcon className="size-6 text-zinc-900 dark:text-zinc-100" />
-                    <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">YULA</p>
+                    <div className="size-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
+                        <span className="text-sm font-bold text-white dark:text-zinc-900">Y</span>
+                    </div>
+                    <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Yula</p>
                 </div>
 
                 <Suspense fallback={<div className="text-center">Loading...</div>}>

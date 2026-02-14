@@ -91,7 +91,7 @@ export const TIER_CONFIG = {
         // Description
         tagline: 'Try the AI OS, risk-free',
         description:
-            'Get a powerful multi-model AI workspace for your personal workflows and experiments. Ideal for light daily use, quick research, and trying Aspendos without committing to heavy limits.',
+            'Get a powerful multi-model AI workspace for your personal workflows and experiments. Ideal for light daily use, quick research, and trying Yula without committing to heavy limits.',
     },
 
     PRO: {
@@ -183,7 +183,7 @@ export const TIER_CONFIG = {
         // Description
         tagline: 'For power users and teams',
         description:
-            'Designed for heavy usage, production workloads, and small teams that live inside Aspendos. Unlock the highest limits, full multi-model streaming, advanced memory tools, and priority performance across the stack.',
+            'Designed for heavy usage, production workloads, and small teams that live inside Yula. Unlock the highest limits, full multi-model streaming, advanced memory tools, and priority performance across the stack.',
     },
 } as const;
 

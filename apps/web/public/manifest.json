@@ -1,6 +1,6 @@
 {
-    "name": "YULA - Unified AI Platform",
-    "short_name": "YULA",
+    "name": "Yula - Unified AI Platform",
+    "short_name": "Yula",
     "description": "Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import ChatGPT history, get proactive reminders, compare models with Council Mode.",
     "start_url": "/",
     "display": "standalone",
@@ -66,14 +66,14 @@
             "sizes": "1280x720",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "YULA Chat Interface - Desktop"
+            "label": "Yula Chat Interface - Desktop"
         },
         {
             "src": "/screenshots/chat-mobile.png",
             "sizes": "750x1334",
             "type": "image/png",
             "form_factor": "narrow",
-            "label": "YULA Chat Interface - Mobile"
+            "label": "Yula Chat Interface - Mobile"
         }
     ],
     "categories": ["productivity", "utilities", "business"],

@@ -83,7 +83,7 @@ export function ChatSidebar({
                     <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
                         <span className="text-background font-bold text-sm">Y</span>
                     </div>
-                    <span className="font-semibold text-foreground tracking-tight">YULA</span>
+                    <span className="font-semibold text-foreground tracking-tight">Yula</span>
                 </div>
             </div>
 

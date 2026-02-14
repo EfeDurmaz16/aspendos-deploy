@@ -3,14 +3,14 @@ import { ComparisonPage, type CompetitorData } from '@/components/seo/Comparison
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
-    'Gemini Alternative with Memory | YULA',
-    'Looking for a Google Gemini alternative? YULA offers persistent memory, access to Gemini plus 12+ other AI models including GPT-5 and Claude.',
+    'Gemini Alternative with Memory | Yula',
+    'Looking for a Google Gemini alternative? Yula offers persistent memory, access to Gemini plus 12+ other AI models including GPT-5 and Claude.',
     '/compare/gemini',
     {
         keywords: [
             'Gemini alternative',
             'Google Gemini alternative',
-            'Gemini vs YULA',
+            'Gemini vs Yula',
             'better than Gemini',
             'Gemini Pro alternative',
             'Google AI alternative',
@@ -22,7 +22,7 @@ const geminiData: CompetitorData = {
     name: 'Gemini',
     slug: 'gemini',
     tagline:
-        'YULA gives you Gemini plus 12+ other AI models, persistent memory across all of them, and proactive AI that messages you first.',
+        'Yula gives you Gemini plus 12+ other AI models, persistent memory across all of them, and proactive AI that messages you first.',
     description:
         'Google Gemini is an AI assistant integrated into Google Workspace, offering multimodal capabilities and Google Search integration.',
     logoColor: 'bg-blue-500',
@@ -60,23 +60,23 @@ const geminiData: CompetitorData = {
     ],
     faqs: [
         {
-            question: 'Does YULA have access to Gemini models?',
-            answer: 'Yes! YULA provides access to Gemini 3 Pro from Google, plus 12+ other models from OpenAI, Anthropic, Meta, and more. You can use whichever model is best for your task.',
+            question: 'Does Yula have access to Gemini models?',
+            answer: 'Yes! Yula provides access to Gemini 3 Pro from Google, plus 12+ other models from OpenAI, Anthropic, Meta, and more. You can use whichever model is best for your task.',
         },
         {
-            question: 'Can I use YULA with Google Workspace?',
-            answer: 'YULA supports MCP (Model Context Protocol) integrations that can connect to Google services. While not as deeply integrated as native Gemini, you get the flexibility of multi-model access.',
+            question: 'Can I use Yula with Google Workspace?',
+            answer: 'Yula supports MCP (Model Context Protocol) integrations that can connect to Google services. While not as deeply integrated as native Gemini, you get the flexibility of multi-model access.',
         },
         {
-            question: 'Why choose YULA over Google Gemini?',
-            answer: 'Gemini locks you into the Google ecosystem. YULA gives you Gemini plus GPT-5, Claude, and more. With persistent memory and proactive callbacks, YULA offers capabilities Gemini does not have.',
+            question: 'Why choose Yula over Google Gemini?',
+            answer: 'Gemini locks you into the Google ecosystem. Yula gives you Gemini plus GPT-5, Claude, and more. With persistent memory and proactive callbacks, Yula offers capabilities Gemini does not have.',
         },
         {
-            question: 'Does Gemini have persistent memory like YULA?',
-            answer: 'Gemini memory is tied to your Google account and only works within the Gemini app. YULA memory works across all 12+ AI models, letting you switch between models while keeping full context.',
+            question: 'Does Gemini have persistent memory like Yula?',
+            answer: 'Gemini memory is tied to your Google account and only works within the Gemini app. Yula memory works across all 12+ AI models, letting you switch between models while keeping full context.',
         },
     ],
-    ctaText: 'Try YULA with Gemini + More',
+    ctaText: 'Try Yula with Gemini + More',
 };
 
 export default function GeminiComparePage() {

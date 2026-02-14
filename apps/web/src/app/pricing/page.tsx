@@ -36,7 +36,7 @@ const PRICING_DATA = {
 const PRICING_TIERS = [
     {
         name: 'Free',
-        description: 'Try YULA for free',
+        description: 'Try Yula for free',
         features: [
             '100 messages/month',
             'Basic models (GPT-4o-mini, Gemini Flash)',
@@ -56,7 +56,7 @@ const PRICING_TIERS = [
     },
     {
         name: 'Starter',
-        description: 'For trying Aspendos and exploring AI',
+        description: 'For trying Yula and exploring AI',
         features: [
             '300 chats/month (~10/day)',
             'GPT-4o-mini, Claude Haiku, Gemini Flash',
@@ -187,7 +187,7 @@ function PricingContent() {
                     >
                         <ArrowLeft className="w-4 h-4" />
                         <span className="font-semibold tracking-tight text-foreground">
-                            ASPENDOS
+                            Yula
                         </span>
                     </Link>
                     <nav className="flex gap-4 items-center">
@@ -486,7 +486,7 @@ function PricingContent() {
                         <AccordionItem value="item-4">
                             <AccordionTrigger>Do you offer a free trial?</AccordionTrigger>
                             <AccordionContent>
-                                Yes! Start with the Starter plan to explore Aspendos free for your
+                                Yes! Start with the Starter plan to explore Yula free for your
                                 first 100 chats. No credit card required.
                             </AccordionContent>
                         </AccordionItem>

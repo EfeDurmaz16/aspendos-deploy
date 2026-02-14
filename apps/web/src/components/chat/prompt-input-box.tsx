@@ -95,7 +95,7 @@ export function PromptInputBox({ onSubmit, isGenerating, className }: PromptInpu
 
             <div className="text-center mt-3">
                 <p className="text-xs text-muted-foreground">
-                    YULA can make mistakes. Consider checking important information.
+                    Yula can make mistakes. Consider checking important information.
                 </p>
             </div>
         </div>

@@ -251,7 +251,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                         Import Chat History
                     </DialogTitle>
                     <DialogDescription>
-                        Bring your conversations from ChatGPT or Claude into YULA
+                        Bring your conversations from ChatGPT or Claude into Yula
                     </DialogDescription>
                 </DialogHeader>
 
@@ -427,7 +427,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 text-center">
                                     Successfully imported {progress.total} conversations.
                                     <br />
-                                    They're now searchable in your YULA memory.
+                                    They're now searchable in your Yula memory.
                                 </p>
 
                                 <div className="flex items-center gap-3">

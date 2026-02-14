@@ -82,19 +82,19 @@ export function FeatureTour({ currentStep, onNext, onSkip, totalSteps }: Feature
             </motion.div>
 
             {/* Title */}
-            <h3 className="mb-2 text-xl font-semibold text-white">{feature.title}</h3>
+            <h3 className="mb-2 text-xl font-semibold text-foreground">{feature.title}</h3>
 
             {/* Shortcut badge */}
             {feature.shortcut && (
-                <div className="mb-3 flex items-center gap-1 rounded-full bg-white/5 px-3 py-1">
-                    <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs text-zinc-300">
+                <div className="mb-3 flex items-center gap-1 rounded-full bg-muted px-3 py-1">
+                    <kbd className="rounded bg-muted-foreground/10 px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
                         {feature.shortcut}
                     </kbd>
                 </div>
             )}
 
             {/* Description */}
-            <p className="mb-8 max-w-sm text-sm leading-relaxed text-zinc-400">
+            <p className="mb-8 max-w-sm text-sm leading-relaxed text-muted-foreground">
                 {feature.description}
             </p>
 
@@ -106,10 +106,10 @@ export function FeatureTour({ currentStep, onNext, onSkip, totalSteps }: Feature
                         className={cn(
                             'h-1.5 rounded-full transition-all duration-300',
                             i === currentStep
-                                ? 'w-6 bg-white'
+                                ? 'w-6 bg-foreground'
                                 : i < currentStep
-                                  ? 'w-1.5 bg-white/50'
-                                  : 'w-1.5 bg-white/20'
+                                  ? 'w-1.5 bg-foreground/50'
+                                  : 'w-1.5 bg-border'
                         )}
                     />
                 ))}
@@ -119,7 +119,7 @@ export function FeatureTour({ currentStep, onNext, onSkip, totalSteps }: Feature
             <div className="flex items-center gap-3">
                 <button
                     onClick={onSkip}
-                    className="px-4 py-2 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                    className="px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                     Skip tour
                 </button>
@@ -127,8 +127,8 @@ export function FeatureTour({ currentStep, onNext, onSkip, totalSteps }: Feature
                     onClick={onNext}
                     className={cn(
                         'flex items-center gap-2 rounded-lg px-5 py-2.5',
-                        'bg-white text-zinc-900 font-medium text-sm',
-                        'transition-all hover:bg-zinc-200'
+                        'bg-foreground text-background font-medium text-sm',
+                        'transition-all hover:opacity-90'
                     )}
                 >
                     {isLastStep ? (
@@ -158,8 +158,8 @@ export function FeatureCard({ feature, index }: { feature: Feature; index: numbe
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             className={cn(
-                'rounded-xl border border-white/5 bg-white/[0.02] p-4',
-                'transition-all duration-200 hover:border-white/10 hover:bg-white/[0.04]'
+                'rounded-xl border border-border bg-muted/30 p-4',
+                'transition-all duration-200 hover:border-border/80 hover:bg-muted/50'
             )}
         >
             <div
@@ -168,8 +168,8 @@ export function FeatureCard({ feature, index }: { feature: Feature; index: numbe
             >
                 <Icon className="h-5 w-5" color={feature.color} weight="fill" />
             </div>
-            <h4 className="mb-1 font-medium text-white">{feature.title}</h4>
-            <p className="text-xs leading-relaxed text-zinc-500">{feature.description}</p>
+            <h4 className="mb-1 font-medium text-foreground">{feature.title}</h4>
+            <p className="text-xs leading-relaxed text-muted-foreground">{feature.description}</p>
         </motion.div>
     );
 }

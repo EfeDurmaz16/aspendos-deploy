@@ -4,8 +4,8 @@ import { type FeatureData, FeaturePage } from '@/components/seo/FeaturePage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
-    'PAC - Proactive AI Callbacks | YULA Features',
-    'PAC (Proactive Agentic Callback) is AI that messages YOU first. Schedule reminders, follow-ups, and let YULA reach out when it matters.',
+    'PAC - Proactive AI Callbacks | Yula Features',
+    'PAC (Proactive Agentic Callback) is AI that messages YOU first. Schedule reminders, follow-ups, and let Yula reach out when it matters.',
     '/features/pac',
     {
         keywords: [
@@ -23,14 +23,14 @@ const pacData: FeatureData = {
     name: 'PAC - Proactive Agentic Callback',
     slug: 'pac',
     tagline:
-        'The first AI that messages YOU first. Schedule reminders, get follow-ups, and let YULA reach out when it matters most.',
-    description: `PAC (Proactive Agentic Callback) is YULA's revolutionary feature that flips the AI interaction model. Instead of always waiting for you to ask, YULA can proactively reach out. Tell YULA to remind you about something in a week, follow up on a goal, or check in about a decision - and it will. No other AI platform offers this capability.`,
+        'The first AI that messages YOU first. Schedule reminders, get follow-ups, and let Yula reach out when it matters most.',
+    description: `PAC (Proactive Agentic Callback) is Yula's revolutionary feature that flips the AI interaction model. Instead of always waiting for you to ask, Yula can proactively reach out. Tell Yula to remind you about something in a week, follow up on a goal, or check in about a decision - and it will. No other AI platform offers this capability.`,
     heroIcon: <BellRinging className="w-16 h-16 text-primary" weight="duotone" />,
     benefits: [
         {
             title: 'AI That Initiates',
             description:
-                'YULA can message you first - a capability no other AI assistant offers. Set reminders naturally in conversation.',
+                'Yula can message you first - a capability no other AI assistant offers. Set reminders naturally in conversation.',
         },
         {
             title: 'Contextual Follow-ups',
@@ -53,32 +53,32 @@ const pacData: FeatureData = {
             step: 1,
             title: 'Request a callback naturally',
             description:
-                'During any conversation, ask YULA to remind you, follow up, or check in at a future time.',
+                'During any conversation, ask Yula to remind you, follow up, or check in at a future time.',
         },
         {
             step: 2,
-            title: 'YULA schedules the callback',
+            title: 'Yula schedules the callback',
             description:
-                'YULA extracts the timing and context, scheduling a proactive callback for the right moment.',
+                'Yula extracts the timing and context, scheduling a proactive callback for the right moment.',
         },
         {
             step: 3,
             title: 'Context is preserved',
             description:
-                'When the time comes, YULA has full context of the original conversation and why you wanted the reminder.',
+                'When the time comes, Yula has full context of the original conversation and why you wanted the reminder.',
         },
         {
             step: 4,
-            title: 'YULA reaches out',
+            title: 'Yula reaches out',
             description:
-                "You receive a notification with YULA's contextual message, ready to continue the conversation.",
+                "You receive a notification with Yula's contextual message, ready to continue the conversation.",
         },
     ],
     useCases: [
         {
             title: 'Goal Tracking',
             description:
-                '"Check in with me about my fitness goals every Sunday" - YULA becomes your accountability partner.',
+                '"Check in with me about my fitness goals every Sunday" - Yula becomes your accountability partner.',
         },
         {
             title: 'Decision Follow-ups',
@@ -97,8 +97,8 @@ const pacData: FeatureData = {
     ],
     faqs: [
         {
-            question: 'Is PAC really unique to YULA?',
-            answer: 'Yes! ChatGPT, Claude, Gemini, and other AI assistants cannot proactively message you. They only respond when you initiate. YULA is the first to offer AI-initiated callbacks.',
+            question: 'Is PAC really unique to Yula?',
+            answer: 'Yes! ChatGPT, Claude, Gemini, and other AI assistants cannot proactively message you. They only respond when you initiate. Yula is the first to offer AI-initiated callbacks.',
         },
         {
             question: 'How do I receive PAC notifications?',
@@ -109,8 +109,8 @@ const pacData: FeatureData = {
             answer: 'Yes! View all scheduled PAC callbacks in your dashboard and cancel, reschedule, or modify any of them.',
         },
         {
-            question: 'How does YULA know when to reach out?',
-            answer: 'PAC uses natural language understanding to extract timing from your requests. "Next week", "in 3 days", "every Monday" - YULA understands it all.',
+            question: 'How does Yula know when to reach out?',
+            answer: 'PAC uses natural language understanding to extract timing from your requests. "Next week", "in 3 days", "every Monday" - Yula understands it all.',
         },
     ],
     ctaText: 'Try Proactive AI',

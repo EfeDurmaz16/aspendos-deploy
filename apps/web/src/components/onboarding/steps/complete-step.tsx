@@ -95,7 +95,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
             >
-                Welcome to the YULA family
+                Welcome to the Yula family
             </motion.p>
 
             {/* Achievement unlocked */}
@@ -127,7 +127,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
             >
                 <QuickTip
                     icon={<MessageSquare className="h-4 w-4" />}
-                    text="Start a chat to experience YULA's memory"
+                    text="Start a chat to experience Yula's memory"
                     color="#2563EB"
                 />
                 <QuickTip

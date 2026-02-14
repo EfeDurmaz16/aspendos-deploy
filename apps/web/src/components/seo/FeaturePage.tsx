@@ -58,7 +58,7 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="font-semibold tracking-tight text-foreground">YULA</span>
+                        <span className="font-semibold tracking-tight text-foreground">Yula</span>
                     </Link>
                     <nav className="flex gap-4 items-center">
                         <Link
@@ -242,7 +242,7 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                 <section className="text-center py-12 px-6 rounded-2xl bg-primary/5 border border-primary/20">
                     <h2 className="text-2xl font-semibold mb-4">Ready to try {feature.name}?</h2>
                     <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-                        Start using YULA today and experience AI with {feature.name.toLowerCase()}.
+                        Start using Yula today and experience AI with {feature.name.toLowerCase()}.
                     </p>
                     <Button size="lg" asChild>
                         <Link href="/signup" className="gap-2">
@@ -256,7 +256,7 @@ export function FeaturePage({ feature }: FeaturePageProps) {
             {/* Footer */}
             <footer className="border-t border-border mt-12">
                 <div className="container max-w-5xl mx-auto py-8 px-6 text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} YULA. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} Yula. All rights reserved.</p>
                 </div>
             </footer>
         </div>

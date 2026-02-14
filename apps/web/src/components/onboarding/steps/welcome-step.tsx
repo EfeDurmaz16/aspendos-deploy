@@ -44,7 +44,7 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
             >
-                Welcome to YULA
+                Welcome to Yula
             </motion.h1>
 
             {/* Subtitle */}
@@ -66,7 +66,7 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
             >
                 <p className="text-sm leading-relaxed text-zinc-300">
                     <span className="font-semibold text-white">
-                        YULA isn't just another chatbot.
+                        Yula isn't just another chatbot.
                     </span>{' '}
                     It's an AI operating system that remembers, anticipates, and grows with you.
                 </p>

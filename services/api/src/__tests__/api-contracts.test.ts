@@ -277,7 +277,7 @@ describe('API Contract Tests - Documentation', () => {
         expect(body).toHaveProperty('version');
         expect(body).toHaveProperty('endpoints');
         expect(Array.isArray(body.endpoints)).toBe(true);
-        expect(body.name).toBe('YULA OS API');
+        expect(body.name).toBe('Yula API');
 
         if (body.endpoints.length > 0) {
             const endpoint = body.endpoints[0];

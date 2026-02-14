@@ -3,15 +3,15 @@ import { ComparisonPage, type CompetitorData } from '@/components/seo/Comparison
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
-    'Claude Alternative with Memory | YULA',
-    'Looking for a Claude alternative? YULA offers persistent memory, access to Claude plus 12+ other AI models, and the ability to import your Claude history.',
+    'Claude Alternative with Memory | Yula',
+    'Looking for a Claude alternative? Yula offers persistent memory, access to Claude plus 12+ other AI models, and the ability to import your Claude history.',
     '/compare/claude',
     {
         keywords: [
             'Claude alternative',
             'Claude AI alternative',
             'import Claude history',
-            'Claude vs YULA',
+            'Claude vs Yula',
             'better than Claude',
             'Anthropic alternative',
         ],
@@ -22,7 +22,7 @@ const claudeData: CompetitorData = {
     name: 'Claude',
     slug: 'claude',
     tagline:
-        'YULA gives you Claude plus 12+ other AI models, persistent memory across all of them, and the ability to import your Claude history.',
+        'Yula gives you Claude plus 12+ other AI models, persistent memory across all of them, and the ability to import your Claude history.',
     description:
         'Claude by Anthropic is known for its safety-focused approach, long context windows, and excellent writing capabilities.',
     logoColor: 'bg-orange-500',
@@ -64,20 +64,20 @@ const claudeData: CompetitorData = {
     ],
     faqs: [
         {
-            question: 'Can I import my Claude conversations to YULA?',
-            answer: 'Yes! YULA supports one-click import of your Claude conversation history. Export your data from Claude settings and upload it to YULA. All conversations become part of your searchable semantic memory.',
+            question: 'Can I import my Claude conversations to Yula?',
+            answer: 'Yes! Yula supports one-click import of your Claude conversation history. Export your data from Claude settings and upload it to Yula. All conversations become part of your searchable semantic memory.',
         },
         {
-            question: 'Does YULA have the same Claude models?',
-            answer: 'YULA provides access to Claude 4.5 Opus and Claude 4.5 Sonnet from Anthropic, plus 12+ other models. You get the full Claude experience along with GPT-5, Gemini, and more.',
+            question: 'Does Yula have the same Claude models?',
+            answer: 'Yula provides access to Claude 4.5 Opus and Claude 4.5 Sonnet from Anthropic, plus 12+ other models. You get the full Claude experience along with GPT-5, Gemini, and more.',
         },
         {
-            question: 'Why choose YULA over Claude directly?',
-            answer: 'YULA gives you Claude PLUS multi-model access, persistent memory that works across all models, and proactive AI callbacks. If Claude is great for one task but GPT-5 is better for another, YULA lets you use both.',
+            question: 'Why choose Yula over Claude directly?',
+            answer: 'Yula gives you Claude PLUS multi-model access, persistent memory that works across all models, and proactive AI callbacks. If Claude is great for one task but GPT-5 is better for another, Yula lets you use both.',
         },
         {
-            question: 'Is YULA more expensive than Claude Pro?',
-            answer: 'YULA Pro at $50/month gives you all models including Claude, while Claude Max at $100/month only gives you Anthropic models. YULA Ultra at $100/month includes 4x parallel queries across all models.',
+            question: 'Is Yula more expensive than Claude Pro?',
+            answer: 'Yula Pro at $50/month gives you all models including Claude, while Claude Max at $100/month only gives you Anthropic models. Yula Ultra at $100/month includes 4x parallel queries across all models.',
         },
     ],
     ctaText: 'Import your Claude history free',

@@ -4,7 +4,7 @@ import { type FeatureData, FeaturePage } from '@/components/seo/FeaturePage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
-    'Council Mode | Multi-Model AI Comparison | YULA',
+    'Council Mode | Multi-Model AI Comparison | Yula',
     'Query up to 4 AI models simultaneously with Council Mode. Compare GPT-5, Claude, Gemini, and Llama responses side-by-side.',
     '/features/council',
     {
@@ -24,7 +24,7 @@ const councilData: FeatureData = {
     slug: 'council',
     tagline:
         'Query multiple AI models simultaneously. Compare GPT-5, Claude, Gemini, and Llama responses side-by-side to get the best answer.',
-    description: `Council Mode is YULA's unique multi-model querying feature. Send a single question to up to 4 AI models at once and compare their responses in real-time. Perfect for important decisions, complex questions, or when you want multiple perspectives. Pro users can compare 2 models; Ultra users get 4x parallel queries.`,
+    description: `Council Mode is Yula's unique multi-model querying feature. Send a single question to up to 4 AI models at once and compare their responses in real-time. Perfect for important decisions, complex questions, or when you want multiple perspectives. Pro users can compare 2 models; Ultra users get 4x parallel queries.`,
     heroIcon: <UsersThree className="w-16 h-16 text-primary" weight="duotone" />,
     benefits: [
         {
@@ -59,7 +59,7 @@ const councilData: FeatureData = {
             step: 2,
             title: 'Ask your question',
             description:
-                'Type your question once. YULA sends it to all selected models simultaneously.',
+                'Type your question once. Yula sends it to all selected models simultaneously.',
         },
         {
             step: 3,
@@ -71,7 +71,7 @@ const councilData: FeatureData = {
             step: 4,
             title: 'Choose or combine',
             description:
-                'Pick the best response, or ask YULA to synthesize insights from multiple answers.',
+                'Pick the best response, or ask Yula to synthesize insights from multiple answers.',
         },
     ],
     useCases: [

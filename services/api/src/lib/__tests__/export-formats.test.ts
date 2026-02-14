@@ -293,7 +293,7 @@ describe('exportToHTML', () => {
         const chats: Chat[] = [];
         const result = exportToHTML(chats, 'user123');
 
-        expect(result.content).toContain('YULA Chat Export');
+        expect(result.content).toContain('Yula Chat Export');
         expect(result.content).toContain('User ID: user123');
         expect(result.content).toContain('Total Chats: 0');
         expect(result.content).toContain('Exported:');

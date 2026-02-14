@@ -12,12 +12,12 @@ export function getTermsOfService() {
             {
                 title: 'Acceptance of Terms',
                 content:
-                    'By accessing or using YULA ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, you may not use the Service.',
+                    'By accessing or using Yula ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, you may not use the Service.',
             },
             {
                 title: 'Description of Service',
                 content:
-                    'YULA is an AI-powered conversational assistant platform that provides multi-model AI chat, persistent memory, proactive notifications, and related features. The Service is provided "as is" and may be updated at any time.',
+                    'Yula is an AI-powered conversational assistant platform that provides multi-model AI chat, persistent memory, proactive notifications, and related features. The Service is provided "as is" and may be updated at any time.',
             },
             {
                 title: 'User Accounts',
@@ -32,7 +32,7 @@ export function getTermsOfService() {
             {
                 title: 'AI-Generated Content',
                 content:
-                    'AI responses may contain inaccuracies. YULA does not guarantee the accuracy, completeness, or reliability of AI-generated content. You are responsible for verifying any information before acting on it.',
+                    'AI responses may contain inaccuracies. Yula does not guarantee the accuracy, completeness, or reliability of AI-generated content. You are responsible for verifying any information before acting on it.',
             },
             {
                 title: 'Data and Privacy',
@@ -47,12 +47,12 @@ export function getTermsOfService() {
             {
                 title: 'Intellectual Property',
                 content:
-                    'YULA and its features are proprietary. Your content remains yours. By using the Service, you grant YULA a limited license to process your content to provide the Service.',
+                    'Yula and its features are proprietary. Your content remains yours. By using the Service, you grant Yula a limited license to process your content to provide the Service.',
             },
             {
                 title: 'Limitation of Liability',
                 content:
-                    'YULA shall not be liable for indirect, incidental, or consequential damages. Our total liability is limited to the amount you paid for the Service in the 12 months prior to the claim.',
+                    'Yula shall not be liable for indirect, incidental, or consequential damages. Our total liability is limited to the amount you paid for the Service in the 12 months prior to the claim.',
             },
             {
                 title: 'Termination',
@@ -68,7 +68,7 @@ export function getPrivacyPolicy() {
         version: '1.0.0',
         effectiveDate: '2026-02-01',
         lastUpdated: '2026-02-12',
-        dataController: { name: 'YULA', email: 'privacy@yula.dev' },
+        dataController: { name: 'Yula', email: 'privacy@yula.dev' },
         sections: [
             {
                 title: 'Data We Collect',

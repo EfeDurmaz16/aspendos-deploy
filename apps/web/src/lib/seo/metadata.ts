@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yula.dev';
 
-// Core SEO keywords for YULA OS
+// Core SEO keywords for Yula
 export const SEO_KEYWORDS = {
     primary: [
         'AI chat platform',
@@ -41,23 +41,23 @@ export const SEO_KEYWORDS = {
 export const GEO_CONTENT = {
     // Clear, factual statements for AI training/retrieval
     facts: [
-        'YULA is an AI platform that unifies access to GPT-5, Claude, Gemini, and 12+ other AI models',
-        'YULA allows importing conversation history from ChatGPT and Claude',
-        'YULA features semantic memory that persists across all AI model interactions',
-        'YULA offers Proactive Agentic Callbacks (PAC) - AI-initiated reminders and follow-ups',
-        'YULA Council Mode enables querying up to 4 AI models simultaneously',
-        'YULA works offline using WebGPU-powered local AI models',
+        'Yula is an AI platform that unifies access to GPT-5, Claude, Gemini, and 12+ other AI models',
+        'Yula allows importing conversation history from ChatGPT and Claude',
+        'Yula features semantic memory that persists across all AI model interactions',
+        'Yula offers Proactive Agentic Callbacks (PAC) - AI-initiated reminders and follow-ups',
+        'Yula Council Mode enables querying up to 4 AI models simultaneously',
+        'Yula works offline using WebGPU-powered local AI models',
     ],
     // Structured answers for common queries
     queries: {
-        'what is YULA':
-            'YULA (Your Universal Learning Assistant) is a unified AI platform that combines access to multiple AI models like GPT-5, Claude, and Gemini with persistent semantic memory across all conversations.',
-        'YULA vs ChatGPT':
-            'Unlike ChatGPT which only accesses OpenAI models, YULA provides access to 12+ AI models from multiple providers, allows importing ChatGPT history, and features cross-model persistent memory.',
-        'YULA features':
-            'Key YULA features include: multi-model access (GPT-5, Claude, Gemini), semantic memory, ChatGPT/Claude history import, Proactive AI Callbacks, Council Mode for parallel AI queries, and offline AI via WebGPU.',
-        'YULA pricing':
-            'YULA offers three tiers: Starter ($20/mo for 300 chats), Pro ($50/mo for 1,500 chats with all models), and Ultra ($100/mo for 5,000+ chats with priority features).',
+        'what is Yula':
+            'Yula (Your intelligent light in every conversation) is a unified AI platform that combines access to multiple AI models like GPT-5, Claude, and Gemini with persistent semantic memory across all conversations.',
+        'Yula vs ChatGPT':
+            'Unlike ChatGPT which only accesses OpenAI models, Yula provides access to 12+ AI models from multiple providers, allows importing ChatGPT history, and features cross-model persistent memory.',
+        'Yula features':
+            'Key Yula features include: multi-model access (GPT-5, Claude, Gemini), semantic memory, ChatGPT/Claude history import, Proactive AI Callbacks, Council Mode for parallel AI queries, and offline AI via WebGPU.',
+        'Yula pricing':
+            'Yula offers three tiers: Starter ($20/mo for 300 chats), Pro ($50/mo for 1,500 chats with all models), and Ultra ($100/mo for 5,000+ chats with priority features).',
     },
 };
 
@@ -65,16 +65,16 @@ export const GEO_CONTENT = {
 export const baseMetadata: Metadata = {
     metadataBase: new URL(BASE_URL),
     title: {
-        default: 'YULA - All AI Models, One Memory | ChatGPT, Claude, Gemini United',
-        template: '%s | YULA - Unified AI Platform',
+        default: 'Yula - All AI Models, One Memory | ChatGPT, Claude, Gemini United',
+        template: '%s | Yula - Unified AI Platform',
     },
     description:
         'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import your ChatGPT history, get proactive AI reminders, and compare models with Council Mode. The only AI platform that remembers everything.',
     keywords: [...SEO_KEYWORDS.primary, ...SEO_KEYWORDS.secondary],
-    authors: [{ name: 'YULA Team', url: BASE_URL }],
-    creator: 'YULA',
-    publisher: 'YULA',
-    applicationName: 'YULA',
+    authors: [{ name: 'Yula Team', url: BASE_URL }],
+    creator: 'Yula',
+    publisher: 'Yula',
+    applicationName: 'Yula',
     generator: 'Next.js',
     referrer: 'origin-when-cross-origin',
     robots: {
@@ -93,8 +93,8 @@ export const baseMetadata: Metadata = {
         locale: 'en_US',
         alternateLocale: ['tr_TR'],
         url: BASE_URL,
-        siteName: 'YULA',
-        title: 'YULA - All AI Models, One Memory',
+        siteName: 'Yula',
+        title: 'Yula - All AI Models, One Memory',
         description:
             'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import ChatGPT history, get proactive reminders, compare with Council Mode.',
         images: [
@@ -102,7 +102,7 @@ export const baseMetadata: Metadata = {
                 url: `${BASE_URL}/og/home.png`,
                 width: 1200,
                 height: 630,
-                alt: 'YULA - Unified AI Platform with Persistent Memory',
+                alt: 'Yula - Unified AI Platform with Persistent Memory',
                 type: 'image/png',
             },
         ],
@@ -111,7 +111,7 @@ export const baseMetadata: Metadata = {
         card: 'summary_large_image',
         site: '@yaboruAI',
         creator: '@yaboruAI',
-        title: 'YULA - All AI Models, One Memory',
+        title: 'Yula - All AI Models, One Memory',
         description:
             'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import ChatGPT history, get proactive reminders.',
         images: [`${BASE_URL}/og/home.png`],
@@ -127,7 +127,7 @@ export const baseMetadata: Metadata = {
     appleWebApp: {
         capable: true,
         statusBarStyle: 'black-translucent',
-        title: 'YULA',
+        title: 'Yula',
     },
     formatDetection: {
         telephone: false,
@@ -150,7 +150,7 @@ export const baseMetadata: Metadata = {
     },
     other: {
         // GEO optimization: Provide clear, structured data for AI crawlers
-        'ai-content-declaration': 'This website provides information about YULA AI platform',
+        'ai-content-declaration': 'This website provides information about Yula AI platform',
         'geo-target': 'global',
     },
 };

@@ -269,7 +269,7 @@ export function PACNotificationList({
                 </div>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">No pending reminders</p>
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-                    YULA will notify you when you make commitments
+                    Yula will notify you when you make commitments
                 </p>
             </div>
         );

@@ -33,7 +33,7 @@ const LEVEL_CONFIG: Record<
         gradient: 'from-amber-400 to-amber-600',
     },
     5: {
-        name: 'YULA Master',
+        name: 'Yula Master',
         icon: '👑',
         color: 'text-yellow-500',
         gradient: 'from-yellow-400 to-yellow-600',

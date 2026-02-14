@@ -2,7 +2,7 @@
 
 import { CheckCircle, Lock, Warning } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { AtSignIcon, ChevronLeftIcon, Grid2x2PlusIcon, Loader2, UserIcon, X } from 'lucide-react';
+import { AtSignIcon, ChevronLeftIcon, Loader2, UserIcon, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -56,7 +56,7 @@ export default function SignupPage() {
                 password,
                 name: `${firstName} ${lastName}`.trim(),
                 image: image ? await convertImageToBase64(image) : '',
-                callbackURL: '/chat',
+                callbackURL: '/onboarding',
                 fetchOptions: {
                     onResponse: () => setIsLoading(false),
                     onRequest: () => setIsLoading(true),
@@ -66,7 +66,7 @@ export default function SignupPage() {
                     },
                     onSuccess: () => {
                         setSuccess(true);
-                        router.push('/chat');
+                        router.push('/onboarding');
                     },
                 },
             });
@@ -83,7 +83,7 @@ export default function SignupPage() {
         try {
             await signIn.social({
                 provider,
-                callbackURL: '/chat',
+                callbackURL: '/onboarding',
                 fetchOptions: {
                     onRequest: () => setIsLoading(true),
                     onResponse: () => setIsLoading(false),
@@ -101,9 +101,11 @@ export default function SignupPage() {
             <div className="bg-muted/60 relative hidden h-full flex-col border-r p-10 lg:flex">
                 <div className="from-background absolute inset-0 z-10 bg-gradient-to-t to-transparent" />
                 <div className="z-10 flex items-center gap-2">
-                    <Grid2x2PlusIcon className="size-6 text-zinc-900 dark:text-zinc-100" />
+                    <div className="size-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
+                        <span className="text-sm font-bold text-white dark:text-zinc-900">Y</span>
+                    </div>
                     <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                        Aspendos
+                        Yula
                     </p>
                 </div>
                 <div className="z-10 mt-auto">
@@ -143,9 +145,11 @@ export default function SignupPage() {
                 </Button>
                 <div className="mx-auto space-y-4 sm:w-sm w-full max-w-md">
                     <div className="flex items-center gap-2 lg:hidden mb-8">
-                        <Grid2x2PlusIcon className="size-6 text-zinc-900 dark:text-zinc-100" />
+                        <div className="size-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
+                            <span className="text-sm font-bold text-white dark:text-zinc-900">Y</span>
+                        </div>
                         <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                            Aspendos
+                            Yula
                         </p>
                     </div>
                     <div className="flex flex-col space-y-1">
@@ -153,7 +157,7 @@ export default function SignupPage() {
                             Create your account
                         </h1>
                         <p className="text-zinc-500 dark:text-zinc-400 text-base">
-                            Start your journey with Aspendos.
+                            Start your journey with Yula.
                         </p>
                     </div>
 

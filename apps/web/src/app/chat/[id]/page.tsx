@@ -313,7 +313,7 @@ export default function ChatPage() {
                                         />
                                     }
                                     title="Start a conversation"
-                                    description="Ask anything, analyze data, or generate ideas. YULA is here to help."
+                                    description="Ask anything, analyze data, or generate ideas. Yula is here to help."
                                 />
                             ) : (
                                 allMessages.map((msg, index) => (
@@ -412,7 +412,7 @@ export default function ChatPage() {
                         </PromptInputFooter>
                     </PromptInput>
                     <div className="text-center mt-2 text-xs text-muted-foreground">
-                        YULA can make mistakes. Check important info.
+                        Yula can make mistakes. Check important info.
                     </div>
                 </div>
             </div>

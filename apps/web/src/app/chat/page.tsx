@@ -358,7 +358,7 @@ export default function ChatIndexPage() {
                         </PromptInputFooter>
                     </PromptInput>
                     <div className="text-center mt-2 text-xs text-muted-foreground">
-                        YULA can make mistakes. Check important info.
+                        Yula can make mistakes. Check important info.
                     </div>
                 </div>
             </div>

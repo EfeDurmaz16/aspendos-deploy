@@ -16,7 +16,7 @@ export const LEVELS = [
     { level: 2, name: 'Explorer', minXp: 100, icon: '🔍' },
     { level: 3, name: 'Conversationalist', minXp: 300, icon: '💬' },
     { level: 4, name: 'Power User', minXp: 700, icon: '⚡' },
-    { level: 5, name: 'YULA Master', minXp: 1500, icon: '🎓' },
+    { level: 5, name: 'Yula Master', minXp: 1500, icon: '🎓' },
     { level: 6, name: 'AI Whisperer', minXp: 3000, icon: '🧙' },
 ] as const;
 
@@ -167,7 +167,7 @@ export const ACHIEVEMENTS = {
         xpReward: 300,
     },
     streak_365: {
-        name: 'Year of YULA',
+        name: 'Year of Yula',
         description: '365-day streak',
         icon: '🎉',
         category: 'streaks',

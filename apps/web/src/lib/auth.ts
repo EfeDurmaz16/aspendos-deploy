@@ -22,7 +22,7 @@ async function sendPasswordResetEmail(args: { to: string; resetUrl: string }) {
         body: JSON.stringify({
             from,
             to: args.to,
-            subject: 'Reset your YULA password',
+            subject: 'Reset your Yula password',
             html: `<p>Reset your password by clicking the link below:</p><p><a href="${args.resetUrl}">Reset password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
         }),
     });

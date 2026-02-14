@@ -410,7 +410,7 @@ export default function MemoryDashboardPage() {
                             Memory Bank
                         </h1>
                         <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-                            Organize and refine your memories with Aspendos
+                            Organize and refine your memories with Yula
                         </p>
                     </div>
                     <Button

@@ -16,7 +16,7 @@ export default function PrivacyPage() {
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="font-semibold tracking-tight text-foreground">YULA</span>
+                        <span className="font-semibold tracking-tight text-foreground">Yula</span>
                     </Link>
                     <nav className="flex gap-4 items-center">
                         <ModeToggle />
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mb-4">Introduction</h2>
                         <p className="text-muted-foreground">
-                            YULA ("we", "our", or "us") is committed to protecting your privacy.
+                            Yula ("we", "our", or "us") is committed to protecting your privacy.
                             This Privacy Policy explains how we collect, use, disclose, and
                             safeguard your information when you use our AI chat platform.
                         </p>
@@ -153,7 +153,7 @@ export default function PrivacyPage() {
                             We Do NOT Train on Your Data
                         </h2>
                         <p className="text-muted-foreground">
-                            <strong>Important:</strong> YULA does not use your conversations,
+                            <strong>Important:</strong> Yula does not use your conversations,
                             imported history, or memory data to train AI models. While we send your
                             messages to third-party AI providers (OpenAI, Anthropic, Google, Groq)
                             to generate responses, we have contractual agreements with these
@@ -264,7 +264,7 @@ export default function PrivacyPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mb-4">Children's Privacy</h2>
                         <p className="text-muted-foreground">
-                            YULA is not intended for users under 16 years of age. We do not
+                            Yula is not intended for users under 16 years of age. We do not
                             knowingly collect personal information from children. If you believe we
                             have inadvertently collected data from a child, please contact us
                             immediately.
@@ -276,7 +276,7 @@ export default function PrivacyPage() {
                         <p className="text-muted-foreground">
                             We may update this Privacy Policy from time to time. We will notify you
                             of significant changes via email or in-app notification. Continued use
-                            of YULA after changes constitutes acceptance of the updated policy.
+                            of Yula after changes constitutes acceptance of the updated policy.
                         </p>
                     </section>
 
@@ -294,7 +294,7 @@ export default function PrivacyPage() {
                                 <strong>Data Protection Officer:</strong> dpo@yula.dev
                             </li>
                             <li>
-                                <strong>Mailing Address:</strong> YULA OS, Inc., [Address to be
+                                <strong>Mailing Address:</strong> Yula OS, Inc., [Address to be
                                 provided]
                             </li>
                         </ul>

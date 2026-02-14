@@ -28,8 +28,8 @@ export interface OnboardingStepConfig {
 export const ONBOARDING_STEPS: Record<OnboardingStep, OnboardingStepConfig> = {
     welcome: {
         id: 'welcome',
-        title: 'Welcome to YULA',
-        description: 'Your Universal Learning Assistant',
+        title: 'Welcome to Yula',
+        description: 'Your intelligent light in the dark',
         feature: 'welcome',
         accentColor: '#10B981', // Emerald for welcome
         next: 'import-demo',
@@ -65,7 +65,7 @@ export const ONBOARDING_STEPS: Record<OnboardingStep, OnboardingStepConfig> = {
     complete: {
         id: 'complete',
         title: "You're Ready!",
-        description: 'Start your YULA journey',
+        description: 'Start your Yula journey',
         feature: 'complete',
         accentColor: '#10B981', // Emerald for completion
         next: null,

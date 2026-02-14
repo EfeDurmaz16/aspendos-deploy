@@ -342,7 +342,7 @@ export default function SettingsPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Appearance</CardTitle>
-                                    <CardDescription>Customize how YULA looks</CardDescription>
+                                    <CardDescription>Customize how Yula looks</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div>
@@ -459,7 +459,7 @@ export default function SettingsPage() {
                                 <CardContent className="space-y-6">
                                     <SettingRow
                                         label="Share Analytics"
-                                        description="Help improve YULA by sharing anonymous usage data"
+                                        description="Help improve Yula by sharing anonymous usage data"
                                         checked={settings.privacy.shareAnalytics}
                                         onChange={(v) =>
                                             updateSettings('privacy', 'shareAnalytics', v)

@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
-    'Compare AI Platforms | YULA vs ChatGPT, Claude, Gemini',
-    'Compare YULA with ChatGPT, Claude, Gemini, Perplexity, and Poe. See why YULA is the best unified AI platform with persistent memory and multi-model access.',
+    'Compare AI Platforms | Yula vs ChatGPT, Claude, Gemini',
+    'Compare Yula with ChatGPT, Claude, Gemini, Perplexity, and Poe. See why Yula is the best unified AI platform with persistent memory and multi-model access.',
     '/compare',
     {
         keywords: [
@@ -25,35 +25,35 @@ const competitors = [
     {
         name: 'ChatGPT',
         slug: 'chatgpt',
-        description: 'Compare YULA with OpenAI ChatGPT - import history, multi-model access',
+        description: 'Compare Yula with OpenAI ChatGPT - import history, multi-model access',
         color: 'bg-emerald-500',
         searches: '74K monthly searches',
     },
     {
         name: 'Claude',
         slug: 'claude',
-        description: 'Compare YULA with Anthropic Claude - persistent memory across models',
+        description: 'Compare Yula with Anthropic Claude - persistent memory across models',
         color: 'bg-orange-500',
         searches: '22K monthly searches',
     },
     {
         name: 'Gemini',
         slug: 'gemini',
-        description: 'Compare YULA with Google Gemini - not locked into one ecosystem',
+        description: 'Compare Yula with Google Gemini - not locked into one ecosystem',
         color: 'bg-blue-500',
         searches: '18K monthly searches',
     },
     {
         name: 'Perplexity',
         slug: 'perplexity',
-        description: 'Compare YULA with Perplexity - deep conversations vs quick search',
+        description: 'Compare Yula with Perplexity - deep conversations vs quick search',
         color: 'bg-teal-500',
         searches: '12K monthly searches',
     },
     {
         name: 'Poe',
         slug: 'poe',
-        description: 'Compare YULA with Quora Poe - memory and proactive features',
+        description: 'Compare Yula with Quora Poe - memory and proactive features',
         color: 'bg-purple-500',
         searches: '8K monthly searches',
     },
@@ -70,7 +70,7 @@ export default function ComparePage() {
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="font-semibold tracking-tight text-foreground">YULA</span>
+                        <span className="font-semibold tracking-tight text-foreground">Yula</span>
                     </Link>
                     <nav className="flex gap-4 items-center">
                         <Link
@@ -90,11 +90,11 @@ export default function ComparePage() {
                 {/* Hero */}
                 <header className="text-center mb-16 space-y-4">
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                        Compare YULA with AI Alternatives
+                        Compare Yula with AI Alternatives
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                        See how YULA stacks up against ChatGPT, Claude, Gemini, and more. Discover
-                        why YULA is the best unified AI platform with persistent memory.
+                        See how Yula stacks up against ChatGPT, Claude, Gemini, and more. Discover
+                        why Yula is the best unified AI platform with persistent memory.
                     </p>
                 </header>
 
@@ -115,7 +115,7 @@ export default function ComparePage() {
                                             className={`w-3 h-3 rounded-full ${competitor.color}`}
                                         />
                                         <CardTitle className="text-xl">
-                                            YULA vs {competitor.name}
+                                            Yula vs {competitor.name}
                                         </CardTitle>
                                     </div>
                                     <CardDescription>{competitor.description}</CardDescription>
@@ -148,9 +148,9 @@ export default function ComparePage() {
 
                 {/* Summary Section */}
                 <section className="mt-16 text-center py-12 px-6 rounded-2xl bg-primary/5 border border-primary/20">
-                    <h2 className="text-2xl font-semibold mb-4">Why YULA is Different</h2>
+                    <h2 className="text-2xl font-semibold mb-4">Why Yula is Different</h2>
                     <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                        YULA is the only AI platform that combines multi-model access with
+                        Yula is the only AI platform that combines multi-model access with
                         persistent semantic memory, history import from ChatGPT/Claude, and
                         proactive AI callbacks.
                     </p>
@@ -166,7 +166,7 @@ export default function ComparePage() {
             {/* Footer */}
             <footer className="border-t border-border mt-12">
                 <div className="container max-w-5xl mx-auto py-8 px-6 text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} YULA. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} Yula. All rights reserved.</p>
                 </div>
             </footer>
         </div>

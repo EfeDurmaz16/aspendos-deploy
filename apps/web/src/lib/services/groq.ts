@@ -36,7 +36,7 @@ export type RouteDecision =
 // ROUTER SYSTEM PROMPT
 // ============================================
 
-const ROUTER_SYSTEM_PROMPT = `You are Aspendos Router, a fast decision-making AI that routes user queries to the appropriate handler.
+const ROUTER_SYSTEM_PROMPT = `You are Yula Router, a fast decision-making AI that routes user queries to the appropriate handler.
 
 Analyze the user's message and decide the best approach:
 

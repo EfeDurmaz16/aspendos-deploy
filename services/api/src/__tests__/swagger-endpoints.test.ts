@@ -18,7 +18,7 @@ describe('Swagger UI Endpoints', () => {
 
         const spec = await res.json();
         expect(spec.openapi).toBe('3.0.3');
-        expect(spec.info.title).toBe('YULA OS API');
+        expect(spec.info.title).toBe('Yula API');
         expect(spec.paths).toBeDefined();
     });
 
@@ -30,7 +30,7 @@ describe('Swagger UI Endpoints', () => {
 
         const html = await res.text();
         expect(html).toContain('<!DOCTYPE html>');
-        expect(html).toContain('YULA OS API Documentation');
+        expect(html).toContain('Yula API Documentation');
         expect(html).toContain('swagger-ui-bundle.js');
         expect(html).toContain('/api/docs/openapi.json');
     });

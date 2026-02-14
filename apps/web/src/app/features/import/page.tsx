@@ -4,8 +4,8 @@ import { type FeatureData, FeaturePage } from '@/components/seo/FeaturePage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
-    'Import ChatGPT & Claude History | YULA Features',
-    'Import your ChatGPT and Claude conversation history into YULA. Bring your AI memory with you and never start from scratch again.',
+    'Import ChatGPT & Claude History | Yula Features',
+    'Import your ChatGPT and Claude conversation history into Yula. Bring your AI memory with you and never start from scratch again.',
     '/features/import',
     {
         keywords: [
@@ -23,19 +23,19 @@ const importData: FeatureData = {
     name: 'Import Your AI History',
     slug: 'import',
     tagline:
-        'Bring your ChatGPT and Claude conversations to YULA. Your AI history becomes searchable semantic memory - never start from scratch again.',
-    description: `YULA's Import feature lets you bring your entire conversation history from ChatGPT and Claude. Simply export your data from OpenAI or Anthropic, upload to YULA, and all your past conversations become part of your semantic memory. Ask any AI model about discussions you had months ago on another platform - YULA remembers.`,
+        'Bring your ChatGPT and Claude conversations to Yula. Your AI history becomes searchable semantic memory - never start from scratch again.',
+    description: `Yula's Import feature lets you bring your entire conversation history from ChatGPT and Claude. Simply export your data from OpenAI or Anthropic, upload to Yula, and all your past conversations become part of your semantic memory. Ask any AI model about discussions you had months ago on another platform - Yula remembers.`,
     heroIcon: <UploadSimple className="w-16 h-16 text-primary" weight="duotone" />,
     benefits: [
         {
             title: 'Never Start Fresh',
             description:
-                'Switching to YULA does not mean losing your AI history. Import everything and continue where you left off.',
+                'Switching to Yula does not mean losing your AI history. Import everything and continue where you left off.',
         },
         {
             title: 'Unified Memory',
             description:
-                'Conversations from ChatGPT, Claude, and YULA all become part of one searchable semantic memory.',
+                'Conversations from ChatGPT, Claude, and Yula all become part of one searchable semantic memory.',
         },
         {
             title: 'Cross-Model Access',
@@ -57,15 +57,15 @@ const importData: FeatureData = {
         },
         {
             step: 2,
-            title: 'Upload to YULA',
+            title: 'Upload to Yula',
             description:
-                "In YULA's Import section, upload your export file. YULA processes and converts it automatically.",
+                "In Yula's Import section, upload your export file. Yula processes and converts it automatically.",
         },
         {
             step: 3,
             title: 'Embedding and indexing',
             description:
-                'YULA converts your conversations into vector embeddings and indexes them in your semantic memory.',
+                'Yula converts your conversations into vector embeddings and indexes them in your semantic memory.',
         },
         {
             step: 4,
@@ -98,7 +98,7 @@ const importData: FeatureData = {
     faqs: [
         {
             question: 'What formats can I import?',
-            answer: 'YULA supports ChatGPT exports (JSON) and Claude exports (JSON). We are working on adding support for more platforms.',
+            answer: 'Yula supports ChatGPT exports (JSON) and Claude exports (JSON). We are working on adding support for more platforms.',
         },
         {
             question: 'How long does import take?',
@@ -106,7 +106,7 @@ const importData: FeatureData = {
         },
         {
             question: 'Is there a limit to how much I can import?',
-            answer: 'There is no hard limit. Import your entire history - YULA can handle it.',
+            answer: 'There is no hard limit. Import your entire history - Yula can handle it.',
         },
         {
             question: 'Can I delete imported conversations?',

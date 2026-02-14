@@ -383,7 +383,7 @@ export default function LandingPageV2() {
     const faqs = [
         {
             question: 'How does shared memory work across models?',
-            answer: 'YULA maintains a unified memory layer that persists across all AI interactions. When you switch from GPT-4 to Claude, your context, preferences, and conversation history seamlessly transfer.',
+            answer: 'Yula maintains a unified memory layer that persists across all AI interactions. When you switch from GPT-4 to Claude, your context, preferences, and conversation history seamlessly transfer.',
         },
         {
             question: 'Is my data secure?',
@@ -413,7 +413,7 @@ export default function LandingPageV2() {
             <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-6 bg-black/50 backdrop-blur-sm">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link href="/" className="font-serif text-2xl tracking-tight">
-                        YULA
+                        Yula
                     </Link>
                     <div className="hidden md:flex items-center gap-8">
                         <Link
@@ -575,7 +575,7 @@ export default function LandingPageV2() {
                                 Unified intelligence, persistent memory.
                             </h2>
                             <p className="text-zinc-400 leading-relaxed mb-6">
-                                YULA connects every AI model through a shared memory layer. Start a
+                                Yula connects every AI model through a shared memory layer. Start a
                                 conversation with GPT-4, continue with Claude. Your context follows
                                 you everywhere.
                             </p>
@@ -713,12 +713,12 @@ export default function LandingPageV2() {
                 </div>
             </section>
 
-            {/* What YULA Offers */}
+            {/* What Yula Offers */}
             <section className="py-32 px-6 bg-zinc-950/50">
                 <div className="max-w-6xl mx-auto">
                     <CinematicSection className="mb-12 text-center">
                         <span className="font-mono text-xs text-cyan-400 tracking-widest uppercase mb-4 block">
-                            Why YULA
+                            Why Yula
                         </span>
                         <h2 className="text-4xl md:text-5xl font-serif text-white">
                             Built for early adopters.
@@ -874,7 +874,7 @@ export default function LandingPageV2() {
             {/* Minimal Footer */}
             <footer className="py-12 px-6 border-t border-zinc-900">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="font-serif text-xl text-zinc-600">YULA</div>
+                    <div className="font-serif text-xl text-zinc-600">Yula</div>
                     <div className="flex items-center gap-8 text-sm text-zinc-600">
                         <Link href="/privacy" className="hover:text-zinc-400 transition-colors">
                             Privacy
@@ -895,7 +895,7 @@ export default function LandingPageV2() {
                             X
                         </a>
                     </div>
-                    <div className="text-sm text-zinc-700 font-mono">© 2026 YULA</div>
+                    <div className="text-sm text-zinc-700 font-mono">© 2026 Yula</div>
                 </div>
             </footer>
         </div>

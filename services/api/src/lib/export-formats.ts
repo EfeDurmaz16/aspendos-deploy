@@ -123,7 +123,7 @@ export function exportToCSV(
  */
 export function exportToMarkdown(chats: Chat[], userId: string): ExportResult {
     if (!chats || chats.length === 0) {
-        const content = '# YULA Chat Export\n\nNo chats found.';
+        const content = '# Yula Chat Export\n\nNo chats found.';
         const timestamp = new Date().toISOString().split('T')[0];
         return {
             content,
@@ -133,7 +133,7 @@ export function exportToMarkdown(chats: Chat[], userId: string): ExportResult {
     }
 
     const lines: string[] = [];
-    lines.push('# YULA Chat Export');
+    lines.push('# Yula Chat Export');
     lines.push('');
     lines.push(`Exported: ${new Date().toISOString()}`);
     lines.push(`User ID: ${userId}`);
@@ -278,14 +278,14 @@ export function exportToHTML(chats: Chat[], userId: string): ExportResult {
     lines.push('<head>');
     lines.push('  <meta charset="UTF-8">');
     lines.push('  <meta name="viewport" content="width=device-width, initial-scale=1.0">');
-    lines.push('  <title>YULA Chat Export</title>');
+    lines.push('  <title>Yula Chat Export</title>');
     lines.push('  <style>');
     lines.push(styles);
     lines.push('  </style>');
     lines.push('</head>');
     lines.push('<body>');
     lines.push('  <div class="header">');
-    lines.push('    <h1>YULA Chat Export</h1>');
+    lines.push('    <h1>Yula Chat Export</h1>');
     lines.push('    <div class="metadata">');
     lines.push(`      Exported: ${new Date().toISOString()}<br>`);
     lines.push(`      User ID: ${escapedUserId}<br>`);

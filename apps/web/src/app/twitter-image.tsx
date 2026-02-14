@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = 'YULA - All AI Models, One Memory';
+export const alt = 'Yula - All AI Models, One Memory';
 export const size = {
     width: 1200,
     height: 630,
@@ -58,7 +58,7 @@ export default async function Image() {
                     letterSpacing: '-0.02em',
                 }}
             >
-                YULA
+                Yula
             </div>
 
             {/* Tagline */}

@@ -4,12 +4,12 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
     return {
         openapi: '3.0.3',
         info: {
-            title: 'YULA OS API',
+            title: 'Yula API',
             version: '1.0.0',
             description:
-                'Your Universal Learning Assistant - AI Chat Platform with intelligent memory, agentic RAG, and proactive scheduling',
+                'Your intelligent light in every conversation - AI Chat Platform with intelligent memory, agentic RAG, and proactive scheduling',
             contact: {
-                name: 'YULA Support',
+                name: 'Yula Support',
                 url: 'https://yula.dev',
             },
             license: {

@@ -3,14 +3,14 @@ import { ComparisonPage, type CompetitorData } from '@/components/seo/Comparison
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
-    'Perplexity Alternative with Memory | YULA',
-    'Looking for a Perplexity alternative? YULA offers persistent memory, access to 12+ AI models, and deep conversational AI beyond quick search answers.',
+    'Perplexity Alternative with Memory | Yula',
+    'Looking for a Perplexity alternative? Yula offers persistent memory, access to 12+ AI models, and deep conversational AI beyond quick search answers.',
     '/compare/perplexity',
     {
         keywords: [
             'Perplexity alternative',
             'Perplexity AI alternative',
-            'Perplexity vs YULA',
+            'Perplexity vs Yula',
             'better than Perplexity',
             'AI search alternative',
             'Perplexity replacement',
@@ -22,7 +22,7 @@ const perplexityData: CompetitorData = {
     name: 'Perplexity',
     slug: 'perplexity',
     tagline:
-        'YULA offers deep conversational AI with persistent memory, while Perplexity focuses on quick search answers. Get the best of both worlds.',
+        'Yula offers deep conversational AI with persistent memory, while Perplexity focuses on quick search answers. Get the best of both worlds.',
     description:
         'Perplexity is an AI-powered search engine that provides concise answers with citations from web sources.',
     logoColor: 'bg-teal-500',
@@ -60,23 +60,23 @@ const perplexityData: CompetitorData = {
     ],
     faqs: [
         {
-            question: 'Is YULA like Perplexity?',
-            answer: 'They serve different purposes. Perplexity is optimized for quick search with citations. YULA is a conversational AI platform with persistent memory, multi-model access, and proactive AI callbacks. YULA is better for complex tasks and ongoing projects.',
+            question: 'Is Yula like Perplexity?',
+            answer: 'They serve different purposes. Perplexity is optimized for quick search with citations. Yula is a conversational AI platform with persistent memory, multi-model access, and proactive AI callbacks. Yula is better for complex tasks and ongoing projects.',
         },
         {
-            question: 'Can YULA search the web like Perplexity?',
-            answer: 'YULA supports MCP (Model Context Protocol) integrations that can add web search capabilities. While not the primary focus, you can get similar functionality while also having persistent memory and multi-model access.',
+            question: 'Can Yula search the web like Perplexity?',
+            answer: 'Yula supports MCP (Model Context Protocol) integrations that can add web search capabilities. While not the primary focus, you can get similar functionality while also having persistent memory and multi-model access.',
         },
         {
-            question: 'Why choose YULA over Perplexity?',
-            answer: 'Choose Perplexity for quick research. Choose YULA for deep conversations, complex tasks, coding, and projects where you need AI to remember context. YULA also offers proactive AI that can message you first.',
+            question: 'Why choose Yula over Perplexity?',
+            answer: 'Choose Perplexity for quick research. Choose Yula for deep conversations, complex tasks, coding, and projects where you need AI to remember context. Yula also offers proactive AI that can message you first.',
         },
         {
-            question: 'Does YULA have the Pro Search feature?',
-            answer: 'YULA focuses on deep conversational AI rather than search. However, with MCP integrations, you can add search capabilities while also having access to 12+ AI models with persistent memory.',
+            question: 'Does Yula have the Pro Search feature?',
+            answer: 'Yula focuses on deep conversational AI rather than search. However, with MCP integrations, you can add search capabilities while also having access to 12+ AI models with persistent memory.',
         },
     ],
-    ctaText: 'Try YULA for Deep AI Conversations',
+    ctaText: 'Try Yula for Deep AI Conversations',
 };
 
 export default function PerplexityComparePage() {

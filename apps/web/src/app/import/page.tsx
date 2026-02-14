@@ -336,7 +336,7 @@ export default function ImportPage() {
                                         Keep Your History
                                     </h3>
                                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                                        Bring all your past conversations with you to YULA
+                                        Bring all your past conversations with you to Yula
                                     </p>
                                 </CardContent>
                             </Card>
@@ -364,7 +364,7 @@ export default function ImportPage() {
                                         Smarter AI
                                     </h3>
                                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                                        YULA learns from your history to provide better responses
+                                        Yula learns from your history to provide better responses
                                     </p>
                                 </CardContent>
                             </Card>
@@ -555,7 +555,7 @@ export default function ImportPage() {
                                     </h2>
                                     <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 text-center max-w-md">
                                         Successfully imported {progress.total} conversations.
-                                        They're now searchable in your YULA memory and will help
+                                        They're now searchable in your Yula memory and will help
                                         provide more personalized responses.
                                     </p>
 

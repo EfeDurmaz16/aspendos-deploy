@@ -260,7 +260,7 @@ export function formatMessagesForLocalModel(
  * Get default system prompt for offline mode
  */
 export function getOfflineSystemPrompt(): string {
-    return `You are Aspendos AI, a helpful assistant running locally on the user's device.
+    return `You are Yula, a helpful assistant running locally on the user's device.
 You are currently in offline mode, which means:
 - You cannot access the internet or external APIs
 - You cannot access the user's full memory database

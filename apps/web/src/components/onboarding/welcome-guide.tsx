@@ -59,14 +59,14 @@ export function WelcomeGuide({ forceShow = false, onClose }: WelcomeGuideProps) 
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                     className={cn(
                         'relative w-full max-w-lg overflow-hidden rounded-2xl',
-                        'border border-white/10 bg-zinc-900/95 backdrop-blur-xl',
-                        'shadow-2xl shadow-black/50'
+                        'border border-border bg-background backdrop-blur-xl',
+                        'shadow-2xl shadow-black/20 dark:shadow-black/50'
                     )}
                 >
                     {/* Close button */}
                     <button
                         onClick={handleClose}
-                        className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-white/5 hover:text-white"
+                        className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                         <X className="h-4 w-4" />
                     </button>
@@ -96,19 +96,19 @@ export function WelcomeGuide({ forceShow = false, onClose }: WelcomeGuideProps) 
                                     </motion.div>
 
                                     {/* Title */}
-                                    <h2 className="mb-2 text-2xl font-bold text-white">
+                                    <h2 className="mb-2 text-2xl font-bold text-foreground">
                                         Welcome to Yula
                                     </h2>
 
                                     {/* Subtitle */}
-                                    <p className="mb-6 text-sm text-zinc-400">
+                                    <p className="mb-6 text-sm text-muted-foreground">
                                         Your Proactive AI Operating System
                                     </p>
 
                                     {/* Important distinction */}
-                                    <div className="mb-8 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-                                        <p className="text-sm leading-relaxed text-zinc-300">
-                                            <span className="font-semibold text-white">
+                                    <div className="mb-8 rounded-xl border border-border bg-muted/50 p-4">
+                                        <p className="text-sm leading-relaxed text-muted-foreground">
+                                            <span className="font-semibold text-foreground">
                                                 Yula isn't a chatbot.
                                             </span>{' '}
                                             It's an intelligent layer that learns, anticipates, and
@@ -134,8 +134,8 @@ export function WelcomeGuide({ forceShow = false, onClose }: WelcomeGuideProps) 
                                             onClick={handleStartTour}
                                             className={cn(
                                                 'flex w-full items-center justify-center gap-2 rounded-lg py-3',
-                                                'bg-white text-zinc-900 font-semibold',
-                                                'transition-all hover:bg-zinc-200'
+                                                'bg-foreground text-background font-semibold',
+                                                'transition-all hover:opacity-90'
                                             )}
                                         >
                                             <Sparkle className="h-4 w-4" weight="fill" />
@@ -143,7 +143,7 @@ export function WelcomeGuide({ forceShow = false, onClose }: WelcomeGuideProps) 
                                         </button>
                                         <button
                                             onClick={handleClose}
-                                            className="py-2 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                                            className="py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                                         >
                                             Skip and explore on my own
                                         </button>
@@ -176,8 +176,8 @@ export function WelcomeGuideTrigger({ className }: { className?: string }) {
                 onClick={() => setShowGuide(true)}
                 className={cn(
                     'flex items-center gap-2 rounded-lg px-3 py-2',
-                    'border border-white/10 bg-white/5 text-sm text-zinc-400',
-                    'transition-colors hover:bg-white/10 hover:text-white',
+                    'border border-border bg-muted/50 text-sm text-muted-foreground',
+                    'transition-colors hover:bg-muted hover:text-foreground',
                     className
                 )}
             >

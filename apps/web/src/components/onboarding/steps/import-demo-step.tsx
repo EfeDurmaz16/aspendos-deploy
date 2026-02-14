@@ -32,7 +32,7 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
 
             <h2 className="mb-2 text-2xl font-bold text-white">Import Your History</h2>
             <p className="mb-6 text-center text-sm text-zinc-400 max-w-sm">
-                Bring your ChatGPT and Claude conversations to YULA. Your AI history, all in one
+                Bring your ChatGPT and Claude conversations to Yula. Your AI history, all in one
                 place.
             </p>
 
@@ -43,7 +43,7 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
                     <div className="mb-4 flex items-center justify-center gap-4">
                         <SourceBadge name="ChatGPT" icon="🤖" />
                         <ArrowRight className="h-4 w-4 text-zinc-600" />
-                        <SourceBadge name="YULA" icon="✨" highlighted />
+                        <SourceBadge name="Yula" icon="✨" highlighted />
                         <ArrowRight className="h-4 w-4 text-zinc-600" />
                         <SourceBadge name="Claude" icon="🎭" />
                     </div>

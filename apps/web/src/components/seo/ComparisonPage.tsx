@@ -63,7 +63,7 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="font-semibold tracking-tight text-foreground">YULA</span>
+                        <span className="font-semibold tracking-tight text-foreground">Yula</span>
                     </Link>
                     <nav className="flex gap-4 items-center">
                         <Link
@@ -144,7 +144,7 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <span className="w-3 h-3 rounded-full bg-primary" />
-                                    YULA
+                                    Yula
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -177,10 +177,10 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                     </Card>
                 </section>
 
-                {/* Where YULA Stands Out */}
+                {/* Where Yula Stands Out */}
                 <section className="mb-16" aria-labelledby="yula-advantages">
                     <h2 id="yula-advantages" className="text-2xl font-semibold mb-6">
-                        Where YULA Stands Out
+                        Where Yula Stands Out
                     </h2>
                     <Card className="border-primary/50 bg-primary/5">
                         <CardContent className="pt-6">
@@ -213,7 +213,7 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                                         {competitor.name}
                                     </th>
                                     <th className="px-6 py-4 text-center font-semibold text-primary">
-                                        YULA
+                                        Yula
                                     </th>
                                 </tr>
                             </thead>
@@ -252,7 +252,7 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                                         {competitor.name}
                                     </th>
                                     <th className="px-6 py-4 text-center font-semibold text-primary">
-                                        YULA
+                                        Yula
                                     </th>
                                 </tr>
                             </thead>
@@ -290,7 +290,7 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
 
                 {/* CTA */}
                 <section className="text-center py-12 px-6 rounded-2xl bg-primary/5 border border-primary/20">
-                    <h2 className="text-2xl font-semibold mb-4">Ready to try YULA?</h2>
+                    <h2 className="text-2xl font-semibold mb-4">Ready to try Yula?</h2>
                     <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
                         Import your {competitor.name} history and experience AI with persistent
                         memory.
@@ -307,7 +307,7 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
             {/* Footer */}
             <footer className="border-t border-border mt-12">
                 <div className="container max-w-5xl mx-auto py-8 px-6 text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} YULA. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} Yula. All rights reserved.</p>
                 </div>
             </footer>
         </div>

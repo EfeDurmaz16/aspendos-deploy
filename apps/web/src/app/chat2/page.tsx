@@ -163,7 +163,7 @@ function ChatSidebar({
                 {/* Sidebar Header */}
                 <div className="mb-6">
                     <Link href="/v2" className="font-serif text-2xl text-white tracking-tight">
-                        YULA
+                        Yula
                     </Link>
                 </div>
 
@@ -368,7 +368,7 @@ Consider: budget, travel time, interests (nature, culture, food)
 What's your ideal vibe? Adventure, relaxation, or cultural immersion?`,
             default: `I understand you're asking about: "${userMessage}"
 
-This is a demo interface showcasing the cinematic dark theme with Vercel AI Elements. In a production environment, this would connect to the YULA API and stream real AI responses.
+This is a demo interface showcasing the cinematic dark theme with Vercel AI Elements. In a production environment, this would connect to the Yula API and stream real AI responses.
 
 **Features demonstrated:**
 - Cinematic dark aesthetic with cyan accents

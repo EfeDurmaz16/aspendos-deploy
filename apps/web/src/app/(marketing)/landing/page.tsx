@@ -88,7 +88,7 @@ function Navigation() {
                         <span className="text-background text-xs font-bold tracking-tight">Y</span>
                     </div>
                     <span className="text-sm font-semibold text-foreground tracking-tight">
-                        YULA
+                        Yula
                     </span>
                 </Link>
 
@@ -266,7 +266,7 @@ interface DemoMessage {
 
 const DEMO_RESPONSES: Record<string, { text: string; memoryCount: number }> = {
     default: {
-        text: "I'd be happy to help! YULA remembers your preferences across conversations. Unlike other AI tools, I can pull context from your entire chat history - including imports from ChatGPT and Claude. What would you like to explore?",
+        text: "I'd be happy to help! Yula remembers your preferences across conversations. Unlike other AI tools, I can pull context from your entire chat history - including imports from ChatGPT and Claude. What would you like to explore?",
         memoryCount: 3,
     },
     launch: {
@@ -278,7 +278,7 @@ const DEMO_RESPONSES: Record<string, { text: string; memoryCount: number }> = {
         memoryCount: 5,
     },
     write: {
-        text: "Here's a draft based on your writing style:\n\n> We built YULA because we were tired of starting over. Every time you switch AI tools, you lose context. Your preferences, your projects, your history - gone.\n>\n> YULA fixes that. Import everything. Remember everything. One AI that actually knows you.\n\nI matched the concise, direct tone you've used before. Want me to adjust?",
+        text: "Here's a draft based on your writing style:\n\n> We built Yula because we were tired of starting over. Every time you switch AI tools, you lose context. Your preferences, your projects, your history - gone.\n>\n> Yula fixes that. Import everything. Remember everything. One AI that actually knows you.\n\nI matched the concise, direct tone you've used before. Want me to adjust?",
         memoryCount: 8,
     },
 };
@@ -459,7 +459,7 @@ function HeroPreview() {
                                 <span className="text-lg font-bold text-foreground/70">Y</span>
                             </div>
                             <p className="text-sm font-medium text-foreground mb-1">
-                                Try YULA right now
+                                Try Yula right now
                             </p>
                             <p className="text-xs text-muted-foreground mb-6">
                                 Type anything or pick a suggestion below
@@ -607,7 +607,7 @@ function FeaturesSection() {
             icon: Lightning,
             title: 'Proactive Reminders',
             description:
-                'YULA reads between the lines. It detects commitments, deadlines, and follow-ups from your conversations and reminds you before you forget.',
+                'Yula reads between the lines. It detects commitments, deadlines, and follow-ups from your conversations and reminds you before you forget.',
             details: ['Smart commitment detection', 'Configurable schedules', 'Context-aware nudges', 'Never miss a follow-up'],
         },
         {
@@ -704,12 +704,12 @@ function HowItWorksSection() {
         {
             number: '01',
             title: 'Import',
-            description: 'Upload your ChatGPT or Claude export. YULA processes and indexes your entire conversation history.',
+            description: 'Upload your ChatGPT or Claude export. Yula processes and indexes your entire conversation history.',
         },
         {
             number: '02',
             title: 'Chat',
-            description: 'Talk naturally. YULA uses your history as context, so every response is personalized.',
+            description: 'Talk naturally. Yula uses your history as context, so every response is personalized.',
         },
         {
             number: '03',
@@ -779,7 +779,7 @@ function PricingSection() {
             name: 'Free',
             price: '$0',
             period: '/month',
-            description: 'For trying out YULA',
+            description: 'For trying out Yula',
             features: [
                 '50 messages per day',
                 'Import up to 100 conversations',
@@ -921,11 +921,11 @@ function FAQSection() {
     const faqs = [
         {
             q: 'Can I import my ChatGPT conversations?',
-            a: 'Yes. Export your data from ChatGPT settings, then upload the JSON file to YULA. We process and index your entire history, preserving all context and metadata.',
+            a: 'Yes. Export your data from ChatGPT settings, then upload the JSON file to Yula. We process and index your entire history, preserving all context and metadata.',
         },
         {
-            q: 'Which AI models does YULA support?',
-            a: 'YULA supports GPT-4o, Claude 3.5 Sonnet, Gemini Pro, and Llama 3. You can switch between models anytime, or use Council to query all of them simultaneously.',
+            q: 'Which AI models does Yula support?',
+            a: 'Yula supports GPT-4o, Claude 3.5 Sonnet, Gemini Pro, and Llama 3. You can switch between models anytime, or use Council to query all of them simultaneously.',
         },
         {
             q: 'What is the Council feature?',
@@ -940,8 +940,8 @@ function FAQSection() {
             a: 'Absolutely. Your data is encrypted at rest and in transit. We never use your conversations for training. You can export or delete your data at any time.',
         },
         {
-            q: 'Does YULA work offline?',
-            a: 'YULA is a PWA and works offline for browsing your conversation history. Active AI conversations require an internet connection.',
+            q: 'Does Yula work offline?',
+            a: 'Yula is a PWA and works offline for browsing your conversation history. Active AI conversations require an internet connection.',
         },
     ];
 
@@ -1048,7 +1048,7 @@ function Footer() {
                         <span className="text-[10px] font-bold text-foreground/60">Y</span>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                        &copy; {new Date().getFullYear()} YULA AI. All rights reserved.
+                        &copy; {new Date().getFullYear()} Yula AI. All rights reserved.
                     </span>
                 </div>
                 <div className="flex items-center gap-6 text-xs text-muted-foreground">

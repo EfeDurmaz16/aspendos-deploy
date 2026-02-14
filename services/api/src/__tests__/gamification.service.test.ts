@@ -48,10 +48,10 @@ describe('Level System', () => {
             expect(level.name).toBe('Power User');
         });
 
-        it('should return YULA Master (level 5) for 1500 XP', () => {
+        it('should return Yula Master (level 5) for 1500 XP', () => {
             const level = getLevelForXp(1500);
             expect(level.level).toBe(5);
-            expect(level.name).toBe('YULA Master');
+            expect(level.name).toBe('Yula Master');
         });
 
         it('should return AI Whisperer (level 6) for 3000+ XP', () => {

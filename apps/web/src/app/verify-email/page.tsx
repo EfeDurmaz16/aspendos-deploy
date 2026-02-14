@@ -2,7 +2,7 @@
 
 import { CheckCircle, Warning } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Grid2x2PlusIcon, Loader2, Mail, RefreshCw } from 'lucide-react';
+import { Loader2, Mail, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -75,7 +75,7 @@ function VerifyEmailContent() {
                         Email verified!
                     </h2>
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm">
-                        Your email has been verified successfully. You can now enjoy all YULA
+                        Your email has been verified successfully. You can now enjoy all Yula
                         features.
                     </p>
                 </div>
@@ -86,7 +86,7 @@ function VerifyEmailContent() {
                 </div>
 
                 <Button onClick={() => router.push('/chat')} className="w-full">
-                    Continue to YULA
+                    Continue to Yula
                 </Button>
             </motion.div>
         );
@@ -201,8 +201,10 @@ export default function VerifyEmailPage() {
                 className="w-full max-w-md space-y-6"
             >
                 <div className="flex items-center justify-center gap-2 mb-8">
-                    <Grid2x2PlusIcon className="size-6 text-zinc-900 dark:text-zinc-100" />
-                    <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">YULA</p>
+                    <div className="size-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
+                        <span className="text-sm font-bold text-white dark:text-zinc-900">Y</span>
+                    </div>
+                    <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Yula</p>
                 </div>
 
                 <Suspense fallback={<div className="text-center">Loading...</div>}>

@@ -3,15 +3,15 @@ import { ComparisonPage, type CompetitorData } from '@/components/seo/Comparison
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(
-    'ChatGPT Alternative with Memory | YULA',
-    'Looking for a ChatGPT alternative? YULA offers persistent memory, access to 12+ AI models including GPT-5, and the ability to import your ChatGPT history.',
+    'ChatGPT Alternative with Memory | Yula',
+    'Looking for a ChatGPT alternative? Yula offers persistent memory, access to 12+ AI models including GPT-5, and the ability to import your ChatGPT history.',
     '/compare/chatgpt',
     {
         keywords: [
             'ChatGPT alternative',
             'ChatGPT with memory',
             'import ChatGPT history',
-            'ChatGPT vs YULA',
+            'ChatGPT vs Yula',
             'better than ChatGPT',
             'ChatGPT replacement',
         ],
@@ -22,7 +22,7 @@ const chatgptData: CompetitorData = {
     name: 'ChatGPT',
     slug: 'chatgpt',
     tagline:
-        'YULA gives you everything ChatGPT offers, plus persistent memory, multi-model access, and the ability to import your ChatGPT history.',
+        'Yula gives you everything ChatGPT offers, plus persistent memory, multi-model access, and the ability to import your ChatGPT history.',
     description:
         'ChatGPT by OpenAI is the most popular AI assistant, offering GPT-4 and GPT-4o models with a clean interface and plugin ecosystem.',
     logoColor: 'bg-emerald-500',
@@ -64,20 +64,20 @@ const chatgptData: CompetitorData = {
     ],
     faqs: [
         {
-            question: 'Can I import my ChatGPT conversations to YULA?',
-            answer: 'Yes! YULA supports one-click import of your ChatGPT conversation history. Just export your data from ChatGPT settings and upload it to YULA. All your conversations become searchable in your semantic memory.',
+            question: 'Can I import my ChatGPT conversations to Yula?',
+            answer: 'Yes! Yula supports one-click import of your ChatGPT conversation history. Just export your data from ChatGPT settings and upload it to Yula. All your conversations become searchable in your semantic memory.',
         },
         {
-            question: 'Does YULA use the same GPT models as ChatGPT?',
-            answer: 'YULA provides access to OpenAI models including GPT-5.2, GPT-5 Nano, and GPT-4o, plus 12+ other models from Anthropic, Google, Meta, and more. You get more model choices than ChatGPT alone.',
+            question: 'Does Yula use the same GPT models as ChatGPT?',
+            answer: 'Yula provides access to OpenAI models including GPT-5.2, GPT-5 Nano, and GPT-4o, plus 12+ other models from Anthropic, Google, Meta, and more. You get more model choices than ChatGPT alone.',
         },
         {
-            question: 'Is YULA better than ChatGPT?',
-            answer: 'YULA offers capabilities ChatGPT does not: multi-model access, persistent memory across all conversations, history import, and proactive AI that can message you first. For users who want more than a single provider, YULA is the better choice.',
+            question: 'Is Yula better than ChatGPT?',
+            answer: 'Yula offers capabilities ChatGPT does not: multi-model access, persistent memory across all conversations, history import, and proactive AI that can message you first. For users who want more than a single provider, Yula is the better choice.',
         },
         {
-            question: 'How is YULA pricing compared to ChatGPT?',
-            answer: 'YULA Pro at $50/month gives you access to all models with 1,500 chats, while ChatGPT Pro at $200/month only gives you OpenAI models. For most users, YULA offers significantly better value.',
+            question: 'How is Yula pricing compared to ChatGPT?',
+            answer: 'Yula Pro at $50/month gives you access to all models with 1,500 chats, while ChatGPT Pro at $200/month only gives you OpenAI models. For most users, Yula offers significantly better value.',
         },
     ],
     ctaText: 'Import your ChatGPT history free',

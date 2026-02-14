@@ -22,7 +22,7 @@ export const metadata: Metadata = generatePageMetadata(
             'AI platform cost',
             'multi-model AI subscription',
             'AI chat pricing',
-            'YULA pricing',
+            'Yula pricing',
             'unified AI cost',
             'best AI subscription value',
         ],

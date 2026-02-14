@@ -262,9 +262,9 @@ const calculatorTool: MCPTool = {
 // ============================================
 
 const builtInServer: MCPServer = {
-    name: 'aspendos',
+    name: 'yula',
     version: '1.0.0',
-    description: 'Built-in Aspendos tools',
+    description: 'Built-in Yula tools',
     tools: [webSearchTool, dateTimeTool, calculatorTool],
 };
 

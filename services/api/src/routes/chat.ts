@@ -639,7 +639,7 @@ function buildSystemPrompt(
     memories: { content: string; sector: string; confidence: number }[],
     enableThinking?: boolean
 ): string {
-    let prompt = `You are Aspendos, a thoughtful AI assistant with cognitive memory capabilities.
+    let prompt = `You are Yula, a thoughtful AI assistant with cognitive memory capabilities.
 
 Your approach:
 - Be concise but thorough
@@ -864,7 +864,7 @@ app.get('/:id/export', validateParams(chatIdParamSchema), async (c) => {
     ];
 
     for (const msg of chat.messages || []) {
-        const role = msg.role === 'user' ? 'You' : 'YULA';
+        const role = msg.role === 'user' ? 'You' : 'Yula';
         lines.push(`### ${role}`);
         lines.push('');
         lines.push(msg.content || '');

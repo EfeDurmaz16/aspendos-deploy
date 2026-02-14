@@ -76,12 +76,12 @@ interface BreadcrumbList extends SchemaBase {
 export const organizationSchema: Organization = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'YULA',
-    alternateName: 'YULA OS',
+    name: 'Yula',
+    alternateName: 'Yula',
     url: BASE_URL,
     logo: `${BASE_URL}/logo.png`,
     description:
-        'YULA is a unified AI platform providing access to multiple AI models with persistent semantic memory.',
+        'Yula is a unified AI platform providing access to multiple AI models with persistent semantic memory.',
     foundingDate: '2024',
     sameAs: ['https://twitter.com/yaboruAI', 'https://github.com/yula-ai'],
     contactPoint: {
@@ -95,13 +95,13 @@ export const organizationSchema: Organization = {
 export const websiteSchema: WebSite = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'YULA',
-    alternateName: 'YULA - Unified AI Platform',
+    name: 'Yula',
+    alternateName: 'Yula - Unified AI Platform',
     url: BASE_URL,
     description: 'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory',
     publisher: {
         '@type': 'Organization',
-        name: 'YULA',
+        name: 'Yula',
     },
     potentialAction: {
         '@type': 'SearchAction',
@@ -117,7 +117,7 @@ export const websiteSchema: WebSite = {
 export const softwareAppSchema: SoftwareApplication = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'YULA',
+    name: 'Yula',
     applicationCategory: 'ProductivityApplication',
     operatingSystem: 'Web, iOS, Android',
     offers: {
@@ -153,23 +153,23 @@ export const faqSchema: FAQPage = {
     mainEntity: [
         {
             '@type': 'Question',
-            name: 'What is YULA?',
+            name: 'What is Yula?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'YULA (Your Universal Learning Assistant) is a unified AI platform that provides access to multiple AI models like GPT-5, Claude, and Gemini with persistent semantic memory across all conversations. Unlike single-provider AI apps, YULA lets you use the best AI for each task while maintaining context.',
+                text: 'Yula (Your intelligent light in every conversation) is a unified AI platform that provides access to multiple AI models like GPT-5, Claude, and Gemini with persistent semantic memory across all conversations. Unlike single-provider AI apps, Yula lets you use the best AI for each task while maintaining context.',
             },
         },
         {
             '@type': 'Question',
-            name: 'Can I import my ChatGPT conversations to YULA?',
+            name: 'Can I import my ChatGPT conversations to Yula?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: "Yes! YULA supports importing conversation history from ChatGPT and Claude. Your imported conversations become part of YULA's semantic memory, allowing all AI models to reference your past discussions.",
+                text: "Yes! Yula supports importing conversation history from ChatGPT and Claude. Your imported conversations become part of Yula's semantic memory, allowing all AI models to reference your past discussions.",
             },
         },
         {
             '@type': 'Question',
-            name: 'What is Council Mode in YULA?',
+            name: 'What is Council Mode in Yula?',
             acceptedAnswer: {
                 '@type': 'Answer',
                 text: 'Council Mode allows you to send the same question to multiple AI models simultaneously (up to 4 with Ultra plan). You can compare responses from GPT-5, Claude, Gemini, and other models side-by-side to get the best answer.',
@@ -180,31 +180,31 @@ export const faqSchema: FAQPage = {
             name: 'What is Proactive AI Callback (PAC)?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: "Proactive Agentic Callback (PAC) is YULA's unique feature where the AI can initiate contact with you. If you ask YULA to remind you about something in a week, it will proactively send you a notification - no other AI platform offers this.",
+                text: "Proactive Agentic Callback (PAC) is Yula's unique feature where the AI can initiate contact with you. If you ask Yula to remind you about something in a week, it will proactively send you a notification - no other AI platform offers this.",
             },
         },
         {
             '@type': 'Question',
-            name: 'Does YULA work offline?',
+            name: 'Does Yula work offline?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'Yes! YULA supports offline AI through WebGPU-powered local models. You can download models like Llama 3.2 to your browser and chat without internet connection.',
+                text: 'Yes! Yula supports offline AI through WebGPU-powered local models. You can download models like Llama 3.2 to your browser and chat without internet connection.',
             },
         },
         {
             '@type': 'Question',
-            name: 'How much does YULA cost?',
+            name: 'How much does Yula cost?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'YULA offers three tiers: Starter at $20/month (300 chats, basic features), Pro at $50/month (1,500 chats, all models, multi-model comparison), and Ultra at $100/month (5,000+ chats, parallel queries, priority support).',
+                text: 'Yula offers three tiers: Starter at $20/month (300 chats, basic features), Pro at $50/month (1,500 chats, all models, multi-model comparison), and Ultra at $100/month (5,000+ chats, parallel queries, priority support).',
             },
         },
         {
             '@type': 'Question',
-            name: 'Which AI models does YULA support?',
+            name: 'Which AI models does Yula support?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'YULA supports 12+ AI models including: GPT-5.2, GPT-5 Nano, GPT-4o from OpenAI; Claude 4.5 Opus, Claude 4.5 Sonnet from Anthropic; Gemini 3 Pro from Google; Llama 4, Grok 4.1, DeepSeek V3.2, Mistral, Qwen 3, and more.',
+                text: 'Yula supports 12+ AI models including: GPT-5.2, GPT-5 Nano, GPT-4o from OpenAI; Claude 4.5 Opus, Claude 4.5 Sonnet from Anthropic; Gemini 3 Pro from Google; Llama 4, Grok 4.1, DeepSeek V3.2, Mistral, Qwen 3, and more.',
             },
         },
     ],
@@ -215,9 +215,9 @@ export const productSchemas: Product[] = [
     {
         '@context': 'https://schema.org',
         '@type': 'Product',
-        name: 'YULA Starter',
+        name: 'Yula Starter',
         description: 'Entry-level AI access with basic memory and 300 chats per month',
-        brand: { '@type': 'Brand', name: 'YULA' },
+        brand: { '@type': 'Brand', name: 'Yula' },
         offers: {
             '@type': 'Offer',
             price: '20',
@@ -229,9 +229,9 @@ export const productSchemas: Product[] = [
     {
         '@context': 'https://schema.org',
         '@type': 'Product',
-        name: 'YULA Pro',
+        name: 'Yula Pro',
         description: 'Full AI access with all models, advanced memory, and 1,500 chats per month',
-        brand: { '@type': 'Brand', name: 'YULA' },
+        brand: { '@type': 'Brand', name: 'Yula' },
         offers: {
             '@type': 'Offer',
             price: '50',
@@ -243,9 +243,9 @@ export const productSchemas: Product[] = [
     {
         '@context': 'https://schema.org',
         '@type': 'Product',
-        name: 'YULA Ultra',
+        name: 'Yula Ultra',
         description: 'Power user tier with 5,000+ chats, parallel queries, and priority support',
-        brand: { '@type': 'Brand', name: 'YULA' },
+        brand: { '@type': 'Brand', name: 'Yula' },
         offers: {
             '@type': 'Offer',
             price: '100',

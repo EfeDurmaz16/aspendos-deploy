@@ -129,7 +129,7 @@ export function MemoryImporter() {
                     <DialogTitle>Memory Import/Export</DialogTitle>
                     <DialogDescription>
                         Import your conversation history from ChatGPT or Claude, or export your
-                        Aspendos memories.
+                        Yula memories.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -161,7 +161,7 @@ export function MemoryImporter() {
                                         Drag and drop your export file here
                                     </p>
                                     <p className="text-xs text-zinc-500 mb-4">
-                                        Supports ChatGPT, Claude, and Aspendos exports
+                                        Supports ChatGPT, Claude, and Yula exports
                                     </p>
                                     <label className="cursor-pointer">
                                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-zinc-800 text-sm hover:bg-zinc-700 transition-colors">
@@ -234,7 +234,7 @@ export function MemoryImporter() {
                     <div>
                         <h4 className="text-sm font-medium mb-2">Export Memories</h4>
                         <p className="text-xs text-zinc-500 mb-3">
-                            Download all your Aspendos memories as a JSON file.
+                            Download all your Yula memories as a JSON file.
                         </p>
                         <Button
                             variant="outline"

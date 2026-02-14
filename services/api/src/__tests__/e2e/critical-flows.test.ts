@@ -283,7 +283,7 @@ describe('E2E - API Documentation Tests', () => {
             expect(res.status).toBe(200);
 
             const data = await res.json();
-            expect(data).toHaveProperty('name', 'YULA OS API');
+            expect(data).toHaveProperty('name', 'Yula API');
             expect(data).toHaveProperty('version');
             expect(data).toHaveProperty('endpoints');
         });

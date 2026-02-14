@@ -75,7 +75,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
 
             <h2 className="mb-2 text-2xl font-bold text-white">Proactive AI Callbacks</h2>
             <p className="mb-6 text-center text-sm text-zinc-400 max-w-sm">
-                YULA doesn't wait for you to ask. It remembers your commitments and reaches out when
+                Yula doesn't wait for you to ask. It remembers your commitments and reaches out when
                 it matters.
             </p>
 
@@ -87,7 +87,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                         className="flex items-center justify-between px-4 py-2"
                         style={{ backgroundColor: `${ACCENT_COLOR}10` }}
                     >
-                        <span className="text-xs text-zinc-400">YULA Notification</span>
+                        <span className="text-xs text-zinc-400">Yula Notification</span>
                         <div className="flex gap-1">
                             {DEMO_NOTIFICATIONS.map((_, i) => (
                                 <div
@@ -134,7 +134,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 <div className="flex items-start gap-3">
                     <StepIndicator number={2} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-white">YULA remembers</div>
+                        <div className="text-sm font-medium text-white">Yula remembers</div>
                         <div className="text-xs text-zinc-500">
                             Stores the intent and schedules follow-up
                         </div>
@@ -146,7 +146,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                     <div>
                         <div className="text-sm font-medium text-white">You get a nudge</div>
                         <div className="text-xs text-zinc-500">
-                            At the right time, YULA checks in
+                            At the right time, Yula checks in
                         </div>
                     </div>
                 </div>

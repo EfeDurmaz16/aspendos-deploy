@@ -43,11 +43,11 @@ export default function RootLayout({
         <html lang="en" suppressHydrationWarning>
             <head>
                 {/* PWA Meta Tags */}
-                <meta name="application-name" content="YULA" />
+                <meta name="application-name" content="Yula" />
                 <meta name="mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-                <meta name="apple-mobile-web-app-title" content="YULA" />
+                <meta name="apple-mobile-web-app-title" content="Yula" />
                 <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
 
                 {/* DNS prefetch for API and external services */}

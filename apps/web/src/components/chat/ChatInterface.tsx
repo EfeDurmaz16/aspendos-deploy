@@ -86,7 +86,7 @@ function MessageBubble({ message }: { message: Message }) {
                         {message.metadata.routing && (
                             <span className="flex items-center gap-1">
                                 <Lightning className="h-3 w-3" />
-                                YULA
+                                Yula
                             </span>
                         )}
                         {message.metadata.memoryCount && message.metadata.memoryCount > 0 && (
@@ -190,7 +190,7 @@ function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Message Aspendos..."
+                        placeholder="Message Yula..."
                         disabled={disabled || isLoading}
                         className={cn(
                             'w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800/50',
@@ -363,7 +363,7 @@ export function ChatInterface({ chatId, className }: ChatInterfaceProps) {
                 {messages.length === 0 && !isLoading && (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                         <Robot className="h-16 w-16 text-zinc-700 mb-4" weight="duotone" />
-                        <h2 className="text-xl font-medium text-white mb-2">Welcome to Aspendos</h2>
+                        <h2 className="text-xl font-medium text-white mb-2">Welcome to Yula</h2>
                         <p className="text-zinc-500 max-w-md">
                             Your unified AI workspace with persistent memory. Ask anything, and I'll
                             remember our conversations across sessions.

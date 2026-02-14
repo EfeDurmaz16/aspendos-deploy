@@ -33,7 +33,7 @@ const CHANGELOG: ChangelogEntry[] = [
         version: '1.5.0',
         date: '2026-02-12',
         title: 'Moat & Switching Cost Features',
-        description: 'New features that make YULA irreplaceable in your workflow.',
+        description: 'New features that make Yula irreplaceable in your workflow.',
         type: 'feature',
         highlights: [
             'Conversation forking - branch from any message point',

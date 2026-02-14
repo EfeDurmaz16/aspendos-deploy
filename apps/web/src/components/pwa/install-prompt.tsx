@@ -59,7 +59,7 @@ export function InstallPrompt() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm text-foreground">Install Aspendos</h3>
+                        <h3 className="font-semibold text-sm text-foreground">Install Yula</h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
                             Get quick access and offline support
                         </p>

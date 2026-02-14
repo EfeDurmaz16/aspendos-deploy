@@ -16,7 +16,7 @@ export default function TermsPage() {
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="font-semibold tracking-tight text-foreground">YULA</span>
+                        <span className="font-semibold tracking-tight text-foreground">Yula</span>
                     </Link>
                     <nav className="flex gap-4 items-center">
                         <ModeToggle />
@@ -35,7 +35,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
                         <p className="text-muted-foreground">
-                            By accessing or using YULA ("Service"), you agree to be bound by these
+                            By accessing or using Yula ("Service"), you agree to be bound by these
                             Terms of Service ("Terms"). If you do not agree to these Terms, you may
                             not use the Service. We reserve the right to modify these Terms at any
                             time, and your continued use constitutes acceptance of any changes.
@@ -45,7 +45,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mb-4">2. Service Description</h2>
                         <p className="text-muted-foreground mb-3">
-                            YULA is an AI chat platform that provides:
+                            Yula is an AI chat platform that provides:
                         </p>
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>
@@ -66,7 +66,7 @@ export default function TermsPage() {
 
                     <section>
                         <h2 className="text-2xl font-semibold mb-4">3. Account Registration</h2>
-                        <p className="text-muted-foreground mb-3">To use YULA, you must:</p>
+                        <p className="text-muted-foreground mb-3">To use Yula, you must:</p>
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>Be at least 16 years old</li>
                             <li>Provide accurate and complete registration information</li>
@@ -110,7 +110,7 @@ export default function TermsPage() {
                         <h2 className="text-2xl font-semibold mb-4">5. Subscription & Billing</h2>
                         <h3 className="text-xl font-medium mb-3">Pricing Tiers</h3>
                         <p className="text-muted-foreground mb-3">
-                            YULA offers Starter, Pro, and Ultra subscription plans with different
+                            Yula offers Starter, Pro, and Ultra subscription plans with different
                             usage limits. Current pricing is available at{' '}
                             <Link href="/pricing" className="text-primary hover:underline">
                                 yula.dev/pricing
@@ -167,7 +167,7 @@ export default function TermsPage() {
                         <h3 className="text-xl font-medium mb-3">Your Content</h3>
                         <p className="text-muted-foreground mb-3">
                             You retain all rights to your chat messages, imported history, and other
-                            content you submit. By using YULA, you grant us a limited license to:
+                            content you submit. By using Yula, you grant us a limited license to:
                         </p>
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>
@@ -187,14 +187,14 @@ export default function TermsPage() {
 
                         <h3 className="text-xl font-medium mb-3 mt-4">Our Content</h3>
                         <p className="text-muted-foreground">
-                            YULA's interface, branding, code, and design are protected by copyright
+                            Yula's interface, branding, code, and design are protected by copyright
                             and trademark laws. You may not copy, modify, or distribute our content
                             without written permission.
                         </p>
 
                         <h3 className="text-xl font-medium mb-3 mt-4">AI-Generated Content</h3>
                         <p className="text-muted-foreground">
-                            AI responses generated through YULA are provided as-is. We make no
+                            AI responses generated through Yula are provided as-is. We make no
                             claims of ownership over AI-generated content, but you are responsible
                             for verifying accuracy before using AI outputs.
                         </p>
@@ -205,7 +205,7 @@ export default function TermsPage() {
                             7. Data Processing & Privacy
                         </h2>
                         <p className="text-muted-foreground mb-3">
-                            Your use of YULA involves data processing by third-party AI providers:
+                            Your use of Yula involves data processing by third-party AI providers:
                         </p>
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>
@@ -231,7 +231,7 @@ export default function TermsPage() {
                             <strong>TO THE MAXIMUM EXTENT PERMITTED BY LAW:</strong>
                         </p>
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                            <li>YULA is provided "AS IS" without warranties of any kind</li>
+                            <li>Yula is provided "AS IS" without warranties of any kind</li>
                             <li>
                                 We are not liable for AI-generated content accuracy, completeness,
                                 or suitability
@@ -259,7 +259,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mb-4">9. Indemnification</h2>
                         <p className="text-muted-foreground">
-                            You agree to indemnify and hold harmless YULA, its affiliates, and
+                            You agree to indemnify and hold harmless Yula, its affiliates, and
                             service providers from any claims, damages, or expenses arising from:
                             (a) your use of the Service, (b) your violation of these Terms, or (c)
                             your violation of any third-party rights.
@@ -299,7 +299,7 @@ export default function TermsPage() {
                         </ul>
                         <p className="text-muted-foreground mt-3">
                             You waive the right to participate in class action lawsuits against
-                            YULA.
+                            Yula.
                         </p>
                     </section>
 
@@ -319,7 +319,7 @@ export default function TermsPage() {
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>
                                 <strong>Entire Agreement:</strong> These Terms constitute the entire
-                                agreement between you and YULA
+                                agreement between you and Yula
                             </li>
                             <li>
                                 <strong>Severability:</strong> If any provision is invalid, the
@@ -363,8 +363,8 @@ export default function TermsPage() {
 
                     <section className="mt-8 p-4 bg-muted/50 rounded-lg border border-border">
                         <p className="text-sm text-muted-foreground">
-                            <strong>Important Notice:</strong> By using YULA, you acknowledge that
-                            AI-generated content may be inaccurate, biased, or incomplete. YULA is a
+                            <strong>Important Notice:</strong> By using Yula, you acknowledge that
+                            AI-generated content may be inaccurate, biased, or incomplete. Yula is a
                             tool to assist you, not a substitute for professional advice. Always
                             verify critical information and use your own judgment.
                         </p>

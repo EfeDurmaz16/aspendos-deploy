@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         if (format === 'unknown') {
             return NextResponse.json(
                 {
-                    error: 'Unknown export format. Please upload a ChatGPT, Claude, or Aspendos export file.',
+                    error: 'Unknown export format. Please upload a ChatGPT, Claude, or Yula export file.',
                 },
                 { status: 400 }
             );
