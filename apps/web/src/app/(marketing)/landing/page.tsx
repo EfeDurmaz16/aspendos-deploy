@@ -254,14 +254,185 @@ function HeroSection() {
 }
 
 // =============================================================================
-// HERO PREVIEW - Interactive product mockup
+// LIVE DEMO - Interactive working chat (Linear-style)
 // =============================================================================
 
+interface DemoMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    memoryCount?: number;
+}
+
+const DEMO_RESPONSES: Record<string, { text: string; memoryCount: number }> = {
+    default: {
+        text: "I'd be happy to help! YULA remembers your preferences across conversations. Unlike other AI tools, I can pull context from your entire chat history - including imports from ChatGPT and Claude. What would you like to explore?",
+        memoryCount: 3,
+    },
+    launch: {
+        text: "Here's a tailored launch strategy:\n\n**Phase 1 - Pre-launch (2 weeks)**\n- Build waitlist with content marketing\n- Reach out to 50 beta users personally\n\n**Phase 2 - Launch day**\n- Product Hunt submission\n- Social media blitz across X and LinkedIn\n\n**Phase 3 - Post-launch (4 weeks)**\n- Outbound to waitlist signups\n- Gather testimonials from beta users\n\nI noticed from your previous conversations that you're building a SaaS product. Want me to tailor this further?",
+        memoryCount: 12,
+    },
+    code: {
+        text: "Here's a clean React component:\n\n```tsx\nfunction Button({ children, variant = 'primary' }) {\n  return (\n    <button className={styles[variant]}>\n      {children}\n    </button>\n  );\n}\n```\n\nI used the patterns from your earlier conversation about design systems. Should I add more variants?",
+        memoryCount: 5,
+    },
+    write: {
+        text: "Here's a draft based on your writing style:\n\n> We built YULA because we were tired of starting over. Every time you switch AI tools, you lose context. Your preferences, your projects, your history - gone.\n>\n> YULA fixes that. Import everything. Remember everything. One AI that actually knows you.\n\nI matched the concise, direct tone you've used before. Want me to adjust?",
+        memoryCount: 8,
+    },
+};
+
+function matchDemoResponse(input: string): { text: string; memoryCount: number } {
+    const lower = input.toLowerCase();
+    if (lower.includes('launch') || lower.includes('strategy') || lower.includes('plan')) {
+        return DEMO_RESPONSES.launch;
+    }
+    if (lower.includes('code') || lower.includes('component') || lower.includes('react') || lower.includes('debug')) {
+        return DEMO_RESPONSES.code;
+    }
+    if (lower.includes('write') || lower.includes('email') || lower.includes('draft') || lower.includes('essay')) {
+        return DEMO_RESPONSES.write;
+    }
+    return DEMO_RESPONSES.default;
+}
+
 function HeroPreview() {
-    const [activeTab, setActiveTab] = useState<'chat' | 'council' | 'pac'>('chat');
+    const [messages, setMessages] = useState<DemoMessage[]>([]);
+    const [inputValue, setInputValue] = useState('');
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [streamedText, setStreamedText] = useState('');
+    const [showSignup, setShowSignup] = useState(false);
+    const [selectedMode, setSelectedMode] = useState('Auto');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messageCountRef = useRef(0);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, streamedText]);
+
+    const simulateStream = async (text: string, memoryCount: number) => {
+        setIsStreaming(true);
+        setStreamedText('');
+
+        // Simulate "thinking" delay
+        await new Promise((r) => setTimeout(r, 400 + Math.random() * 300));
+
+        // Stream character by character
+        for (let i = 0; i <= text.length; i++) {
+            setStreamedText(text.slice(0, i));
+            // Variable speed: faster for spaces, slower for punctuation
+            const char = text[i];
+            const delay = char === ' ' ? 8 : char === '\n' ? 30 : char === '.' || char === ',' ? 40 : 15;
+            await new Promise((r) => setTimeout(r, delay));
+        }
+
+        // Finalize
+        setMessages((prev) => [
+            ...prev,
+            { id: `a-${Date.now()}`, role: 'assistant', content: text, memoryCount },
+        ]);
+        setStreamedText('');
+        setIsStreaming(false);
+    };
+
+    const handleSend = async () => {
+        const text = inputValue.trim();
+        if (!text || isStreaming) return;
+
+        messageCountRef.current++;
+
+        // After 3 exchanges, show signup prompt
+        if (messageCountRef.current > 3) {
+            setShowSignup(true);
+            return;
+        }
+
+        setInputValue('');
+        if (textareaRef.current) textareaRef.current.style.height = 'auto';
+
+        // Add user message
+        setMessages((prev) => [
+            ...prev,
+            { id: `u-${Date.now()}`, role: 'user', content: text },
+        ]);
+
+        // Get matching response and stream it
+        const response = matchDemoResponse(text);
+        await simulateStream(response.text, response.memoryCount);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
+    const handleSuggestion = async (text: string) => {
+        if (isStreaming) return;
+        messageCountRef.current++;
+        setMessages((prev) => [
+            ...prev,
+            { id: `u-${Date.now()}`, role: 'user', content: text },
+        ]);
+        const response = matchDemoResponse(text);
+        await simulateStream(response.text, response.memoryCount);
+    };
 
     return (
-        <div className="rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm overflow-hidden shadow-xl">
+        <div className="rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm overflow-hidden shadow-2xl relative">
+            {/* Signup overlay */}
+            <AnimatePresence>
+                {showSignup && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="absolute inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.1 }}
+                            className="text-center px-8"
+                        >
+                            <div className="w-12 h-12 rounded-xl bg-foreground flex items-center justify-center mx-auto mb-4">
+                                <span className="text-background text-lg font-bold">Y</span>
+                            </div>
+                            <h3 className="text-xl font-semibold text-foreground mb-2">
+                                Like what you see?
+                            </h3>
+                            <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+                                Sign up free to unlock unlimited conversations, memory, and all AI models.
+                            </p>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                <Link
+                                    href="/signup"
+                                    className="h-10 px-6 rounded-lg bg-foreground text-background text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
+                                >
+                                    Start free
+                                    <ArrowRight size={14} weight="bold" />
+                                </Link>
+                                <button
+                                    onClick={() => {
+                                        setShowSignup(false);
+                                        messageCountRef.current = 0;
+                                    }}
+                                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    Continue demo
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Window chrome */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-card/80">
                 <div className="flex items-center gap-2">
@@ -271,190 +442,149 @@ function HeroPreview() {
                         <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/30" />
                     </div>
                 </div>
-                <div className="flex items-center gap-1 bg-muted/50 rounded-md px-3 py-1">
-                    {(['chat', 'council', 'pac'] as const).map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={cn(
-                                'px-3 py-1 rounded text-xs font-medium transition-all',
-                                activeTab === tab
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            )}
-                        >
-                            {tab === 'chat' ? 'Chat' : tab === 'council' ? 'Council' : 'PAC'}
-                        </button>
-                    ))}
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>Live Demo</span>
                 </div>
                 <div className="w-16" />
             </div>
 
-            {/* Content */}
-            <div className="p-6 min-h-[320px] bg-background/50">
-                <AnimatePresence mode="wait">
-                    {activeTab === 'chat' && <ChatPreview key="chat" />}
-                    {activeTab === 'council' && <CouncilPreview key="council" />}
-                    {activeTab === 'pac' && <PACPreview key="pac" />}
-                </AnimatePresence>
+            {/* Chat content */}
+            <div className="flex flex-col h-[420px]">
+                {/* Messages area */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                    {messages.length === 0 && !isStreaming && (
+                        <div className="flex flex-col items-center justify-center h-full text-center">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-foreground/5 to-foreground/10 border border-border/50 flex items-center justify-center mb-4">
+                                <span className="text-lg font-bold text-foreground/70">Y</span>
+                            </div>
+                            <p className="text-sm font-medium text-foreground mb-1">
+                                Try YULA right now
+                            </p>
+                            <p className="text-xs text-muted-foreground mb-6">
+                                Type anything or pick a suggestion below
+                            </p>
+                            <div className="flex flex-wrap gap-2 justify-center max-w-md">
+                                {[
+                                    'Help me plan a product launch',
+                                    'Write a short intro email',
+                                    'Debug a React component',
+                                ].map((suggestion) => (
+                                    <button
+                                        key={suggestion}
+                                        onClick={() => handleSuggestion(suggestion)}
+                                        className="text-xs px-3 py-1.5 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/50 transition-all"
+                                    >
+                                        {suggestion}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {messages.map((msg) => (
+                        <div key={msg.id}>
+                            {msg.role === 'user' ? (
+                                <div className="flex justify-end">
+                                    <div className="bg-muted rounded-2xl rounded-br-md px-4 py-3 max-w-[75%]">
+                                        <p className="text-sm text-foreground whitespace-pre-wrap">{msg.content}</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex gap-3">
+                                    <div className="w-7 h-7 rounded-lg bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <Sparkle size={14} weight="fill" className="text-foreground/60" />
+                                    </div>
+                                    <div className="flex-1 max-w-[85%] space-y-2">
+                                        <div className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                                            {msg.content}
+                                        </div>
+                                        {msg.memoryCount && (
+                                            <div className="flex items-center gap-2 pt-2 border-t border-border/30">
+                                                <Brain size={13} className="text-memory" />
+                                                <span className="text-xs text-muted-foreground">
+                                                    Using context from {msg.memoryCount} memories
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+
+                    {/* Streaming message */}
+                    {isStreaming && (
+                        <div className="flex gap-3">
+                            <div className="w-7 h-7 rounded-lg bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <Sparkle size={14} weight="fill" className="text-foreground/60" />
+                            </div>
+                            <div className="flex-1 max-w-[85%]">
+                                {streamedText ? (
+                                    <div className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                                        {streamedText}
+                                        <span className="inline-block w-0.5 h-4 bg-foreground/60 ml-0.5 animate-pulse" />
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 py-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input area */}
+                <div className="border-t border-border/40 p-3 bg-card/30">
+                    <div className="flex items-end gap-2 bg-background rounded-xl border border-border/60 focus-within:border-border focus-within:ring-1 focus-within:ring-ring/30 transition-all px-3 py-2">
+                        <textarea
+                            ref={textareaRef}
+                            value={inputValue}
+                            onChange={(e) => {
+                                setInputValue(e.target.value);
+                                e.target.style.height = 'auto';
+                                e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+                            }}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Ask anything..."
+                            className="flex-1 min-h-[36px] max-h-[100px] bg-transparent resize-none outline-none text-sm text-foreground placeholder:text-muted-foreground py-1.5"
+                            rows={1}
+                            disabled={isStreaming}
+                        />
+                        <div className="flex items-center gap-1.5 pb-1">
+                            <button
+                                onClick={() => {
+                                    const modes = ['Auto', 'Smart', 'Fast', 'Creative'];
+                                    const idx = modes.indexOf(selectedMode);
+                                    setSelectedMode(modes[(idx + 1) % modes.length]);
+                                }}
+                                className="text-xs px-2 py-1 rounded-md bg-muted/80 text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                            >
+                                <Sparkle size={10} weight="fill" />
+                                {selectedMode}
+                            </button>
+                            <button
+                                onClick={handleSend}
+                                disabled={!inputValue.trim() || isStreaming}
+                                className={cn(
+                                    'w-7 h-7 rounded-lg flex items-center justify-center transition-all',
+                                    inputValue.trim() && !isStreaming
+                                        ? 'bg-foreground text-background hover:opacity-90'
+                                        : 'bg-muted text-muted-foreground'
+                                )}
+                            >
+                                <ArrowRight size={14} weight="bold" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    );
-}
-
-function ChatPreview() {
-    return (
-        <motion.div
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-        >
-            {/* User message */}
-            <div className="flex justify-end">
-                <div className="bg-muted rounded-2xl rounded-br-md px-4 py-3 max-w-[70%]">
-                    <p className="text-sm text-foreground">
-                        Help me plan my product launch strategy for next quarter
-                    </p>
-                </div>
-            </div>
-            {/* AI response */}
-            <div className="flex gap-3">
-                <div className="w-7 h-7 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Sparkle size={14} weight="fill" className="text-foreground/60" />
-                </div>
-                <div className="space-y-2 flex-1 max-w-[80%]">
-                    <p className="text-sm text-foreground/90 leading-relaxed">
-                        Based on your previous conversations about the SaaS product, here's a tailored launch plan:
-                    </p>
-                    <div className="space-y-1.5">
-                        {['Pre-launch: Build waitlist with content marketing', 'Week 1: Product Hunt + social blitz', 'Week 2-4: Outbound to early signups'].map((item, i) => (
-                            <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                <span className="text-import font-mono text-xs mt-0.5">{i + 1}.</span>
-                                {item}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/30">
-                        <Brain size={13} className="text-memory" />
-                        <span className="text-xs text-muted-foreground">
-                            Using context from 12 previous conversations
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </motion.div>
-    );
-}
-
-function CouncilPreview() {
-    const models = [
-        { name: 'GPT-4o', color: 'var(--model-gpt4o)', opinion: 'Focus on content-led growth. Build authority first.' },
-        { name: 'Claude', color: 'var(--model-claude)', opinion: 'Prioritize direct outreach to 50 ideal customers.' },
-        { name: 'Gemini', color: 'var(--model-gemini)', opinion: 'A/B test both approaches with a small budget first.' },
-    ];
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-        >
-            <div className="flex items-center gap-2 mb-2">
-                <Users size={16} className="text-council" />
-                <span className="text-sm font-medium text-foreground">Council Response</span>
-                <span className="text-xs text-muted-foreground ml-auto">3 models</span>
-            </div>
-            <div className="grid gap-3">
-                {models.map((model, i) => (
-                    <motion.div
-                        key={model.name}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 + 0.1 }}
-                        className="rounded-lg border border-border/40 bg-card/30 p-4"
-                        style={{ borderLeftWidth: 2, borderLeftColor: model.color }}
-                    >
-                        <div className="flex items-center gap-2 mb-2">
-                            <div
-                                className="w-2 h-2 rounded-full"
-                                style={{ backgroundColor: model.color }}
-                            />
-                            <span className="text-xs font-medium text-foreground">{model.name}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{model.opinion}</p>
-                    </motion.div>
-                ))}
-            </div>
-        </motion.div>
-    );
-}
-
-function PACPreview() {
-    return (
-        <motion.div
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-        >
-            <div className="flex items-center gap-2 mb-2">
-                <Clock size={16} className="text-pac" />
-                <span className="text-sm font-medium text-foreground">Proactive Reminders</span>
-            </div>
-            {[
-                {
-                    title: 'Follow up on investor deck',
-                    time: 'Tomorrow, 9:00 AM',
-                    context: 'You mentioned sending the deck to Sarah by end of week',
-                    urgent: true,
-                },
-                {
-                    title: 'Review launch checklist',
-                    time: 'Friday, 2:00 PM',
-                    context: 'Based on your Q2 planning conversation',
-                    urgent: false,
-                },
-                {
-                    title: 'Check competitor pricing update',
-                    time: 'Next Monday',
-                    context: 'You asked to be reminded after their announcement',
-                    urgent: false,
-                },
-            ].map((item, i) => (
-                <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 + 0.1 }}
-                    className={cn(
-                        'rounded-lg border p-4',
-                        item.urgent
-                            ? 'border-pac/30 bg-pac/5'
-                            : 'border-border/40 bg-card/30'
-                    )}
-                >
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1">
-                            <p className="text-sm font-medium text-foreground">{item.title}</p>
-                            <p className="text-xs text-muted-foreground">{item.context}</p>
-                        </div>
-                        <span className={cn(
-                            'text-xs whitespace-nowrap px-2 py-0.5 rounded-md',
-                            item.urgent
-                                ? 'bg-pac/10 text-pac'
-                                : 'text-muted-foreground'
-                        )}>
-                            {item.time}
-                        </span>
-                    </div>
-                </motion.div>
-            ))}
-        </motion.div>
     );
 }
 
