@@ -388,19 +388,16 @@ app.post(
         try {
             const result = await importService.executeImport(jobId, userId, selectedIds);
 
-            // MOAT: Import→Memory bridge
-            // Imported conversations become searchable memories, making YULA
-            // more valuable the more data users import. Competitors just store chats.
+            // MOAT: Import→Memory bridge (instant, no AI calls)
+            // Memories are stored directly in PostgreSQL with decayScore=0.
+            // Background worker will create embeddings lazily.
             try {
-                const openMemory = await import('../services/openmemory.service');
-                // Extract key memories from imported content
                 const importedEntities = await prisma.importEntity.findMany({
                     where: { jobId: job.id, imported: true },
                     take: 50,
                     select: { content: true, title: true },
                 });
                 for (const entity of importedEntities) {
-                    // content is Prisma Json type - extract text from structure
                     const content = entity.content as Record<string, unknown> | null;
                     if (!content) continue;
                     const messages = content.messages as
@@ -415,9 +412,18 @@ app.post(
                             .filter(Boolean)
                             .join(' - ');
                         if (summary.length > 20) {
-                            await openMemory.addMemory(summary.slice(0, 2000), userId, {
-                                sector: 'episodic',
-                                metadata: { source: 'import', jobId: job.id },
+                            await prisma.memory.create({
+                                data: {
+                                    userId,
+                                    content: summary.slice(0, 2000),
+                                    type: 'context',
+                                    sector: 'episodic',
+                                    source: 'import_pending',
+                                    importance: 50,
+                                    confidence: 0.8,
+                                    decayScore: 0,
+                                    tags: ['imported', job.id],
+                                },
                             });
                         }
                     }

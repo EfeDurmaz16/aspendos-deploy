@@ -7,9 +7,9 @@
 
 import { randomUUID } from 'node:crypto';
 import { type Prisma } from '@aspendos/db';
+import { jobQueue } from '../lib/job-queue';
 import { prisma } from '../lib/prisma';
 import * as importParsers from './import-parsers';
-import * as openMemory from './openmemory.service';
 
 // Types for parsed conversations
 export interface ParsedMessage {
@@ -475,20 +475,25 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
 
             await prisma.message.createMany({ data: messageData });
 
-            // Index in memory for search
+            // Store memory in PostgreSQL immediately (no embedding call)
+            // Embeddings will be created lazily in the background
             const memoryContent = content.messages
                 .map((m) => `${m.role}: ${m.content}`)
                 .join('\n\n')
                 .slice(0, 10000); // Limit size
 
-            await openMemory.addMemory(memoryContent, userId, {
-                sector: 'episodic',
-                metadata: {
-                    type: 'imported_conversation',
-                    source: content.source,
-                    title: entity.title,
+            await prisma.memory.create({
+                data: {
+                    userId,
                     chatId: chat.id,
-                    importJobId: jobId,
+                    content: memoryContent,
+                    type: 'context',
+                    sector: 'episodic',
+                    source: 'import_pending',
+                    importance: 50,
+                    confidence: 0.8,
+                    decayScore: 0, // Flag: not yet synced to Qdrant
+                    tags: ['imported', content.source.toLowerCase(), jobId],
                 },
             });
 
@@ -518,12 +523,14 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
         importedCount === 0 ? 'No entities were imported' : undefined
     );
 
-    // MOAT: Extract memories from imported conversations (fire-and-forget)
-    // This creates massive value: we don't just import history, we learn from it
+    // Extract memories from imported conversations (instant, no AI calls)
     if (importedCount > 0) {
         extractMemoriesFromImport(userId, jobId).catch((error) => {
             console.error('Memory extraction from import failed (non-blocking):', error);
         });
+
+        // Queue background embedding job for all pending memories
+        queueEmbeddingJobs(userId, jobId);
     }
 
     return {
@@ -599,15 +606,18 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
             const firstUserMsg = content.messages.find((m) => m.role === 'user')?.content || '';
             const summary = `${entity.title || 'Imported conversation'}: ${firstUserMsg.slice(0, 200)}`;
 
-            // Store as episodic memory
-            await openMemory.addMemory(summary, userId, {
-                sector: 'episodic',
-                metadata: {
-                    source: 'import_extraction',
-                    importJobId: jobId,
-                    originalSource: content.source,
-                    chatId: entity.chatId,
-                    messageCount: content.messages.length,
+            // Store directly in PostgreSQL (no embedding call)
+            await prisma.memory.create({
+                data: {
+                    userId,
+                    content: summary,
+                    type: 'context',
+                    sector: 'episodic',
+                    source: 'import_extraction_pending',
+                    importance: 50,
+                    confidence: 0.8,
+                    decayScore: 0, // Flag: not yet synced to Qdrant
+                    tags: ['imported', 'extraction', content.source.toLowerCase(), jobId],
                 },
             });
 
@@ -627,18 +637,19 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
                     const matches = allText.match(pattern);
                     if (matches && matches.length >= 3) {
                         const topic = matches[0];
-                        await openMemory.addMemory(
-                            `User discussed ${topic} in imported conversation from ${content.source}`,
-                            userId,
-                            {
+                        await prisma.memory.create({
+                            data: {
+                                userId,
+                                content: `User discussed ${topic} in imported conversation from ${content.source}`,
+                                type: 'context',
                                 sector: 'semantic',
-                                metadata: {
-                                    source: 'import_extraction',
-                                    importJobId: jobId,
-                                    topic,
-                                },
-                            }
-                        );
+                                source: 'import_extraction_pending',
+                                importance: 40,
+                                confidence: 0.7,
+                                decayScore: 0,
+                                tags: ['imported', 'extraction', 'topic', topic, jobId],
+                            },
+                        });
                         memoriesCreated++;
                         break; // Only one semantic memory per conversation
                     }
@@ -651,4 +662,12 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
     }
 
     return memoriesCreated;
+}
+
+/**
+ * Queue background embedding jobs for pending import memories.
+ * Enqueues a single job per import - the worker processes memories in batches.
+ */
+export function queueEmbeddingJobs(userId: string, jobId: string): void {
+    jobQueue.add('import-embedding', { userId, jobId });
 }

@@ -381,6 +381,23 @@ jobQueue.register(
     }
 );
 
+jobQueue.register(
+    'import-embedding',
+    async (data: { userId: string; jobId: string }) => {
+        const { processImportEmbeddings } = await import(
+            '../services/import-embedding.worker'
+        );
+        return processImportEmbeddings(data.userId, data.jobId);
+    },
+    {
+        concurrency: 1, // Avoid API rate limits
+        maxRetries: 3,
+        backoffMs: 5000,
+        backoffMultiplier: 2,
+        maxBackoffMs: 60000,
+    }
+);
+
 // Periodic cleanup every 30 minutes
 setInterval(
     () => {
