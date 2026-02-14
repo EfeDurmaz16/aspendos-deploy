@@ -11,6 +11,14 @@ export const detectCommitmentsSchema = z.object({
     conversationId: z.string().optional(),
 });
 
+export const createReminderSchema = z.object({
+    content: z.string().min(1, 'content is required').max(1000, 'Content too long'),
+    type: z.enum(['EXPLICIT', 'IMPLICIT']).default('EXPLICIT'),
+    triggerAt: z.string().min(1, 'triggerAt is required'),
+    conversationId: z.string().optional(),
+});
+
+
 export const snoozeReminderSchema = z.object({
     minutes: z
         .number()

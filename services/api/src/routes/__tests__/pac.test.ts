@@ -281,6 +281,66 @@ describe('PAC Routes', () => {
         });
     });
 
+    describe('POST /pac/reminders - Create reminder directly', () => {
+        it('should return 400 when triggerAt is invalid', async () => {
+            const app = await createTestApp();
+
+            const res = await app.request('/pac/reminders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: 'Call mom',
+                    type: 'EXPLICIT',
+                    triggerAt: 'not-a-date',
+                }),
+            });
+
+            expect(res.status).toBe(400);
+            const body = await res.json();
+            expect(body.error).toContain('Invalid triggerAt format');
+        });
+
+        it('should create reminder and return 201', async () => {
+            const triggerAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+            mockService.createReminder.mockResolvedValue({
+                id: 'rem-created-1',
+                content: 'Call mom',
+                type: 'EXPLICIT',
+                status: 'PENDING',
+                priority: 50,
+                triggerAt: new Date(triggerAt),
+                chatId: 'chat-1',
+                createdAt: new Date(),
+            });
+            const app = await createTestApp();
+
+            const res = await app.request('/pac/reminders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: 'Call mom',
+                    type: 'EXPLICIT',
+                    triggerAt,
+                    conversationId: 'chat-1',
+                }),
+            });
+
+            expect(res.status).toBe(201);
+            const body = await res.json();
+            expect(body.reminder.id).toBe('rem-created-1');
+            expect(mockService.createReminder).toHaveBeenCalledTimes(1);
+            expect(mockService.createReminder).toHaveBeenCalledWith(
+                TEST_USER_ID,
+                expect.objectContaining({
+                    content: 'Call mom',
+                    type: 'EXPLICIT',
+                }),
+                'chat-1'
+            );
+        });
+    });
+
+
     describe('PATCH /pac/reminders/:id/complete - Complete reminder', () => {
         it('should complete reminder successfully', async () => {
             mockService.completeReminder.mockResolvedValue({ count: 1 });

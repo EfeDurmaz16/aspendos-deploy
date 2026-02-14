@@ -334,6 +334,7 @@ export async function POST(req: NextRequest) {
                                     content: scheduleDecision.schedule.action,
                                     triggerAt: scheduleDecision.schedule.time,
                                     type: 'EXPLICIT',
+                                    conversationId: chatId,
                                 }),
                             });
 

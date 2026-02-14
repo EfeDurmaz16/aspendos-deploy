@@ -10,11 +10,13 @@ import { enforceTierLimit } from '../middleware/tier-enforcement';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as pacService from '../services/pac.service';
 import {
+    createReminderSchema,
     detectCommitmentsSchema,
     reminderIdParamSchema,
     snoozeReminderSchema,
     updatePACSettingsSchema,
 } from '../validation/pac.schema';
+import { parseTimeExpression } from '../services/scheduler.service';
 
 type Variables = {
     validatedBody?: unknown;
@@ -96,6 +98,60 @@ app.get('/reminders', async (c) => {
             createdAt: r.createdAt,
         })),
     });
+});
+
+/**
+ * POST /api/pac/reminders - Create a reminder directly
+ */
+app.post('/reminders', validateBody(createReminderSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { content, type, triggerAt, conversationId } = c.get('validatedBody') as {
+        content: string;
+        type: 'EXPLICIT' | 'IMPLICIT';
+        triggerAt: string;
+        conversationId?: string;
+    };
+
+    const parsedDate =
+        triggerAt.includes('T') || /^\d{4}-\d{2}-\d{2}/.test(triggerAt)
+            ? new Date(triggerAt)
+            : parseTimeExpression(triggerAt);
+
+    if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+        return c.json({ error: 'Invalid triggerAt format' }, 400);
+    }
+
+    if (parsedDate <= new Date()) {
+        return c.json({ error: 'triggerAt must be in the future' }, 400);
+    }
+
+    const reminder = await pacService.createReminder(
+        userId,
+        {
+            content,
+            type,
+            priority: type === 'EXPLICIT' ? 'MEDIUM' : 'LOW',
+            triggerAt: parsedDate,
+            confidence: type === 'EXPLICIT' ? 0.95 : 0.7,
+        },
+        conversationId
+    );
+
+    return c.json(
+        {
+            reminder: {
+                id: reminder.id,
+                content: reminder.content,
+                type: reminder.type,
+                status: reminder.status,
+                priority: reminder.priority,
+                triggerAt: reminder.triggerAt,
+                conversationId: reminder.chatId,
+                createdAt: reminder.createdAt,
+            },
+        },
+        201
+    );
 });
 
 /**
