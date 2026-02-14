@@ -1,78 +1,130 @@
 'use client';
 
-import { Check, Play, Plus } from '@phosphor-icons/react';
+import {
+    ArrowRight,
+    Brain,
+    CaretDown,
+    ChatCircleDots,
+    Check,
+    Clock,
+    CloudArrowUp,
+    Lightning,
+    Sparkle,
+    Users,
+} from '@phosphor-icons/react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import Link from 'next/link';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 // =============================================================================
-// DESIGN SYSTEM: YULA v3 (from Pencil MCP - QtTSw frame)
-// Navy (#0A0E27), Terracotta (#D4714A), Cream (#F8F6F0)
-// Playfair Display (serif headlines) + DM Sans (body)
+// CONSTANTS
 // =============================================================================
 
-const COLORS = {
-    navy: '#0A0E27',
-    navyLight: '#1A1E37',
-    terracotta: '#D4714A',
-    terracottaLight: '#E07B54',
-    terracottaDark: '#C4623B',
-    cream: '#F8F6F0',
-    creamDark: '#E8E2D9',
-    white: '#FFFFFF',
-    textOnDark: '#E8DED0',
-    textOnLight: '#0A0E27',
-    textMuted: '#94A3B8',
-};
+const FEATURE_COLORS = {
+    import: { accent: 'var(--feature-import)', label: 'Import' },
+    pac: { accent: 'var(--feature-pac)', label: 'PAC' },
+    council: { accent: 'var(--feature-council)', label: 'Council' },
+} as const;
+
+// =============================================================================
+// ANIMATED SECTION WRAPPER
+// =============================================================================
+
+function AnimatedSection({
+    children,
+    className,
+    id,
+    delay = 0,
+}: {
+    children: React.ReactNode;
+    className?: string;
+    id?: string;
+    delay?: number;
+}) {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-80px' });
+
+    return (
+        <motion.section
+            id={id}
+            ref={ref}
+            initial={{ opacity: 0, y: 32 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
+            transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] }}
+            className={className}
+        >
+            {children}
+        </motion.section>
+    );
+}
 
 // =============================================================================
 // NAVIGATION
 // =============================================================================
 
 function Navigation() {
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
         <nav
-            className="fixed top-0 left-0 right-0 z-50 px-8 py-4"
-            style={{ backgroundColor: COLORS.navy }}
+            className={cn(
+                'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
+                scrolled
+                    ? 'bg-background/80 backdrop-blur-xl border-b border-border/50'
+                    : 'bg-transparent'
+            )}
         >
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2">
-                    <div
-                        className="w-8 h-8 rounded flex items-center justify-center font-bold text-sm"
-                        style={{ backgroundColor: COLORS.terracotta, color: COLORS.navy }}
-                    >
-                        Y
+                <Link href="/" className="flex items-center gap-2.5 group">
+                    <div className="w-7 h-7 rounded-md bg-foreground flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+                        <span className="text-background text-xs font-bold tracking-tight">Y</span>
                     </div>
+                    <span className="text-sm font-semibold text-foreground tracking-tight">
+                        YULA
+                    </span>
                 </Link>
 
                 {/* Nav Links */}
                 <div className="hidden md:flex items-center gap-8">
-                    {['Features', 'Pricing', 'Reviews', 'FAQ'].map((item) => (
-                        <Link
-                            key={item}
-                            href={`#${item.toLowerCase()}`}
-                            className="text-sm transition-colors hover:opacity-80"
-                            style={{ color: COLORS.textMuted, fontFamily: "'DM Sans', sans-serif" }}
+                    {[
+                        { label: 'Features', href: '#features' },
+                        { label: 'Pricing', href: '#pricing' },
+                        { label: 'FAQ', href: '#faq' },
+                    ].map((item) => (
+                        <a
+                            key={item.label}
+                            href={item.href}
+                            className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
                         >
-                            {item}
-                        </Link>
+                            {item.label}
+                        </a>
                     ))}
                 </div>
 
-                {/* CTA Button */}
-                <Link
-                    href="/chat"
-                    className="px-4 py-2 text-sm font-medium rounded transition-all hover:opacity-90"
-                    style={{
-                        backgroundColor: COLORS.terracotta,
-                        color: COLORS.navy,
-                        fontFamily: "'DM Sans', sans-serif",
-                    }}
-                >
-                    START FREE TRIAL
-                </Link>
+                {/* CTA */}
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/login"
+                        className="text-[13px] text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
+                    >
+                        Sign in
+                    </Link>
+                    <Link
+                        href="/signup"
+                        className="h-9 px-4 rounded-lg bg-foreground text-background text-[13px] font-medium flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+                    >
+                        Get started
+                        <ArrowRight size={14} weight="bold" />
+                    </Link>
+                </div>
             </div>
         </nav>
     );
@@ -84,55 +136,52 @@ function Navigation() {
 
 function HeroSection() {
     return (
-        <section className="min-h-screen pt-24 pb-16 px-8" style={{ backgroundColor: COLORS.navy }}>
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
-                {/* Left Content */}
-                <div className="space-y-8">
+        <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
+            {/* Subtle gradient background */}
+            <div className="absolute inset-0 bg-background" />
+            <div
+                className="absolute inset-0 opacity-[0.03]"
+                style={{
+                    backgroundImage: `radial-gradient(circle at 30% 40%, var(--feature-import) 0%, transparent 50%),
+                                      radial-gradient(circle at 70% 60%, var(--feature-council) 0%, transparent 50%)`,
+                }}
+            />
+            {/* Grid pattern */}
+            <div
+                className="absolute inset-0 opacity-[0.02]"
+                style={{
+                    backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)`,
+                    backgroundSize: '64px 64px',
+                }}
+            />
+
+            <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-32">
+                <div className="max-w-3xl mx-auto text-center space-y-8">
                     {/* Badge */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="flex items-center gap-3"
+                        transition={{ duration: 0.5 }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/60 bg-card/50"
                     >
-                        <span style={{ color: COLORS.terracotta }}>✦</span>
-                        <span
-                            className="text-sm tracking-wide"
-                            style={{ color: COLORS.textMuted, fontFamily: "'DM Sans', sans-serif" }}
-                        >
-                            AI Operating System
+                        <Sparkle size={14} weight="fill" className="text-pac" />
+                        <span className="text-xs text-muted-foreground">
+                            Your AI, reimagined
                         </span>
-                        <div className="flex gap-1">
-                            <div
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ backgroundColor: COLORS.terracotta }}
-                            />
-                            <div
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ backgroundColor: COLORS.textMuted }}
-                            />
-                            <div
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ backgroundColor: COLORS.textMuted }}
-                            />
-                        </div>
                     </motion.div>
 
                     {/* Headline */}
                     <motion.h1
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.1 }}
-                        className="text-5xl md:text-6xl lg:text-7xl leading-[1.1]"
-                        style={{
-                            color: COLORS.cream,
-                            fontFamily: "'Playfair Display', serif",
-                            fontWeight: 400,
-                        }}
+                        transition={{ duration: 0.7, delay: 0.1 }}
+                        className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.08] tracking-tight text-foreground"
                     >
-                        Your AI,
+                        One AI.{' '}
+                        <span className="text-muted-foreground">Every model.</span>
                         <br />
-                        Evolved.
+                        <span className="text-muted-foreground">All your</span>{' '}
+                        history.
                     </motion.h1>
 
                     {/* Subtitle */}
@@ -140,121 +189,64 @@ function HeroSection() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
-                        className="text-lg max-w-md"
-                        style={{
-                            color: COLORS.textMuted,
-                            fontFamily: "'DM Sans', sans-serif",
-                            lineHeight: 1.7,
-                        }}
+                        className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed"
                     >
-                        YULA OS brings together the world's best AI models in one intelligent
-                        platform. Import your history, get proactive reminders, and let multiple AIs
-                        debate your toughest decisions.
+                        Import your ChatGPT & Claude history. Get proactive reminders.
+                        Let multiple AIs debate your toughest decisions. All in one place.
                     </motion.p>
 
-                    {/* CTA Buttons */}
+                    {/* CTAs */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.3 }}
-                        className="flex flex-wrap gap-4"
+                        className="flex flex-wrap items-center justify-center gap-3"
                     >
                         <Link
-                            href="/chat"
-                            className="px-6 py-3 text-sm font-medium rounded transition-all hover:opacity-90 flex items-center gap-2"
-                            style={{
-                                backgroundColor: COLORS.terracotta,
-                                color: COLORS.navy,
-                                fontFamily: "'DM Sans', sans-serif",
-                            }}
+                            href="/signup"
+                            className="h-11 px-6 rounded-lg bg-foreground text-background text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
                         >
-                            START FREE TRIAL
+                            Start free
+                            <ArrowRight size={16} weight="bold" />
                         </Link>
-                        <button
-                            className="px-6 py-3 text-sm font-medium rounded border transition-all hover:opacity-80 flex items-center gap-2"
-                            style={{
-                                borderColor: COLORS.textMuted,
-                                color: COLORS.textOnDark,
-                                fontFamily: "'DM Sans', sans-serif",
-                            }}
+                        <Link
+                            href="#features"
+                            className="h-11 px-6 rounded-lg border border-border text-foreground text-sm font-medium flex items-center gap-2 hover:bg-card transition-colors"
                         >
-                            WATCH DEMO
-                            <Play size={16} weight="fill" />
-                        </button>
+                            See features
+                        </Link>
+                    </motion.div>
+
+                    {/* Social proof */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.6, delay: 0.5 }}
+                        className="flex items-center justify-center gap-6 pt-4 text-xs text-muted-foreground"
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <Check size={14} weight="bold" className="text-personas" />
+                            Free tier available
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <Check size={14} weight="bold" className="text-personas" />
+                            No credit card required
+                        </span>
+                        <span className="hidden sm:flex items-center gap-1.5">
+                            <Check size={14} weight="bold" className="text-personas" />
+                            Cancel anytime
+                        </span>
                     </motion.div>
                 </div>
 
-                {/* Right Content - Feature Mockups */}
+                {/* Hero Product Preview */}
                 <motion.div
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.8, delay: 0.4 }}
-                    className="relative"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                    className="mt-16 md:mt-20 max-w-4xl mx-auto"
                 >
-                    <div
-                        className="rounded-2xl p-8 space-y-6"
-                        style={{ backgroundColor: COLORS.navyLight }}
-                    >
-                        {/* Import Card */}
-                        <div className="flex items-center gap-4">
-                            <div className="text-xs" style={{ color: COLORS.textMuted }}>
-                                ✦ IMPORT
-                            </div>
-                            <div
-                                className="flex-1 h-px"
-                                style={{ backgroundColor: COLORS.textMuted, opacity: 0.3 }}
-                            />
-                        </div>
-                        <div
-                            className="rounded-lg p-4 border"
-                            style={{ borderColor: `${COLORS.textMuted}30` }}
-                        >
-                            <div
-                                className="w-24 h-3 rounded"
-                                style={{ backgroundColor: `${COLORS.textMuted}30` }}
-                            />
-                        </div>
-
-                        {/* PAC Card */}
-                        <div className="flex items-center gap-4">
-                            <div className="text-xs" style={{ color: COLORS.textMuted }}>
-                                ✦ PAC
-                            </div>
-                            <div
-                                className="flex-1 h-px"
-                                style={{ backgroundColor: COLORS.textMuted, opacity: 0.3 }}
-                            />
-                        </div>
-                        <div
-                            className="rounded-lg p-4 border"
-                            style={{ borderColor: `${COLORS.textMuted}30` }}
-                        >
-                            <div
-                                className="w-32 h-3 rounded"
-                                style={{ backgroundColor: `${COLORS.textMuted}30` }}
-                            />
-                        </div>
-
-                        {/* Council Card */}
-                        <div className="flex items-center gap-4">
-                            <div className="text-xs" style={{ color: COLORS.textMuted }}>
-                                ✦ COUNCIL
-                            </div>
-                            <div
-                                className="flex-1 h-px"
-                                style={{ backgroundColor: COLORS.textMuted, opacity: 0.3 }}
-                            />
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
-                            {[1, 2, 3].map((i) => (
-                                <div
-                                    key={i}
-                                    className="aspect-square rounded-lg border"
-                                    style={{ borderColor: `${COLORS.textMuted}30` }}
-                                />
-                            ))}
-                        </div>
-                    </div>
+                    <HeroPreview />
                 </motion.div>
             </div>
         </section>
@@ -262,118 +254,207 @@ function HeroSection() {
 }
 
 // =============================================================================
-// ANIMATED SECTION WRAPPER
+// HERO PREVIEW - Interactive product mockup
 // =============================================================================
 
-function AnimatedSection({
-    children,
-    className = '',
-    style = {},
-    id,
-}: {
-    children: React.ReactNode;
-    className?: string;
-    style?: React.CSSProperties;
-    id?: string;
-}) {
-    const ref = useRef(null);
-    const isInView = useInView(ref, { once: true, margin: '-100px' });
+function HeroPreview() {
+    const [activeTab, setActiveTab] = useState<'chat' | 'council' | 'pac'>('chat');
 
     return (
-        <motion.section
-            id={id}
-            ref={ref}
-            initial={{ opacity: 0, y: 40 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-            transition={{ duration: 0.8 }}
-            className={className}
-            style={style}
-        >
-            {children}
-        </motion.section>
+        <div className="rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm overflow-hidden shadow-xl">
+            {/* Window chrome */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-card/80">
+                <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/30" />
+                        <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/30" />
+                        <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/30" />
+                    </div>
+                </div>
+                <div className="flex items-center gap-1 bg-muted/50 rounded-md px-3 py-1">
+                    {(['chat', 'council', 'pac'] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={cn(
+                                'px-3 py-1 rounded text-xs font-medium transition-all',
+                                activeTab === tab
+                                    ? 'bg-background text-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'
+                            )}
+                        >
+                            {tab === 'chat' ? 'Chat' : tab === 'council' ? 'Council' : 'PAC'}
+                        </button>
+                    ))}
+                </div>
+                <div className="w-16" />
+            </div>
+
+            {/* Content */}
+            <div className="p-6 min-h-[320px] bg-background/50">
+                <AnimatePresence mode="wait">
+                    {activeTab === 'chat' && <ChatPreview key="chat" />}
+                    {activeTab === 'council' && <CouncilPreview key="council" />}
+                    {activeTab === 'pac' && <PACPreview key="pac" />}
+                </AnimatePresence>
+            </div>
+        </div>
     );
 }
 
-// =============================================================================
-// THE PROBLEM SECTION
-// =============================================================================
+function ChatPreview() {
+    return (
+        <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+        >
+            {/* User message */}
+            <div className="flex justify-end">
+                <div className="bg-muted rounded-2xl rounded-br-md px-4 py-3 max-w-[70%]">
+                    <p className="text-sm text-foreground">
+                        Help me plan my product launch strategy for next quarter
+                    </p>
+                </div>
+            </div>
+            {/* AI response */}
+            <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Sparkle size={14} weight="fill" className="text-foreground/60" />
+                </div>
+                <div className="space-y-2 flex-1 max-w-[80%]">
+                    <p className="text-sm text-foreground/90 leading-relaxed">
+                        Based on your previous conversations about the SaaS product, here's a tailored launch plan:
+                    </p>
+                    <div className="space-y-1.5">
+                        {['Pre-launch: Build waitlist with content marketing', 'Week 1: Product Hunt + social blitz', 'Week 2-4: Outbound to early signups'].map((item, i) => (
+                            <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                <span className="text-import font-mono text-xs mt-0.5">{i + 1}.</span>
+                                {item}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/30">
+                        <Brain size={13} className="text-memory" />
+                        <span className="text-xs text-muted-foreground">
+                            Using context from 12 previous conversations
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
 
-function ProblemSection() {
-    const problems = [
-        {
-            title: 'Scattered Conversations',
-            description: 'Your insights are trapped across ChatGPT, Claude, and Gemini.',
-            accent: true,
-        },
-        {
-            title: 'No Follow-Through',
-            description: 'AI never checks back on what you discussed.',
-            accent: false,
-        },
-        {
-            title: 'One Perspective',
-            description: 'Single models have blind spots you never see.',
-            accent: false,
-        },
+function CouncilPreview() {
+    const models = [
+        { name: 'GPT-4o', color: 'var(--model-gpt4o)', opinion: 'Focus on content-led growth. Build authority first.' },
+        { name: 'Claude', color: 'var(--model-claude)', opinion: 'Prioritize direct outreach to 50 ideal customers.' },
+        { name: 'Gemini', color: 'var(--model-gemini)', opinion: 'A/B test both approaches with a small budget first.' },
     ];
 
     return (
-        <AnimatedSection className="py-24 px-8" style={{ backgroundColor: COLORS.navy }}>
-            <div className="max-w-7xl mx-auto">
-                {/* Badge */}
-                <div className="flex items-center gap-3 mb-6">
-                    <span style={{ color: COLORS.terracotta }}>✦</span>
-                    <span
-                        className="text-sm tracking-wide"
-                        style={{ color: COLORS.textMuted, fontFamily: "'DM Sans', sans-serif" }}
-                    >
-                        The Problem
-                    </span>
-                </div>
-
-                {/* Headline */}
-                <h2
-                    className="text-4xl md:text-5xl mb-12 max-w-2xl"
-                    style={{
-                        color: COLORS.cream,
-                        fontFamily: "'Playfair Display', serif",
-                        fontWeight: 400,
-                        lineHeight: 1.2,
-                    }}
-                >
-                    Tired of AI That
-                    <br />
-                    Forgets Everything?
-                </h2>
-
-                {/* Problem Cards */}
-                <div className="grid md:grid-cols-3 gap-4">
-                    {problems.map((problem, idx) => (
-                        <div
-                            key={idx}
-                            className="p-6 rounded-lg"
-                            style={{
-                                backgroundColor: problem.accent ? COLORS.terracotta : COLORS.cream,
-                                color: problem.accent ? COLORS.cream : COLORS.navy,
-                            }}
-                        >
-                            <h3
-                                className="text-lg font-medium mb-2"
-                                style={{ fontFamily: "'DM Sans', sans-serif" }}
-                            >
-                                {problem.title}
-                            </h3>
-                            <p
-                                className="text-sm opacity-80"
-                                style={{ fontFamily: "'DM Sans', sans-serif" }}
-                            >
-                                {problem.description}
-                            </p>
-                        </div>
-                    ))}
-                </div>
+        <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+        >
+            <div className="flex items-center gap-2 mb-2">
+                <Users size={16} className="text-council" />
+                <span className="text-sm font-medium text-foreground">Council Response</span>
+                <span className="text-xs text-muted-foreground ml-auto">3 models</span>
             </div>
-        </AnimatedSection>
+            <div className="grid gap-3">
+                {models.map((model, i) => (
+                    <motion.div
+                        key={model.name}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 + 0.1 }}
+                        className="rounded-lg border border-border/40 bg-card/30 p-4"
+                        style={{ borderLeftWidth: 2, borderLeftColor: model.color }}
+                    >
+                        <div className="flex items-center gap-2 mb-2">
+                            <div
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: model.color }}
+                            />
+                            <span className="text-xs font-medium text-foreground">{model.name}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{model.opinion}</p>
+                    </motion.div>
+                ))}
+            </div>
+        </motion.div>
+    );
+}
+
+function PACPreview() {
+    return (
+        <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+        >
+            <div className="flex items-center gap-2 mb-2">
+                <Clock size={16} className="text-pac" />
+                <span className="text-sm font-medium text-foreground">Proactive Reminders</span>
+            </div>
+            {[
+                {
+                    title: 'Follow up on investor deck',
+                    time: 'Tomorrow, 9:00 AM',
+                    context: 'You mentioned sending the deck to Sarah by end of week',
+                    urgent: true,
+                },
+                {
+                    title: 'Review launch checklist',
+                    time: 'Friday, 2:00 PM',
+                    context: 'Based on your Q2 planning conversation',
+                    urgent: false,
+                },
+                {
+                    title: 'Check competitor pricing update',
+                    time: 'Next Monday',
+                    context: 'You asked to be reminded after their announcement',
+                    urgent: false,
+                },
+            ].map((item, i) => (
+                <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 + 0.1 }}
+                    className={cn(
+                        'rounded-lg border p-4',
+                        item.urgent
+                            ? 'border-pac/30 bg-pac/5'
+                            : 'border-border/40 bg-card/30'
+                    )}
+                >
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                            <p className="text-sm font-medium text-foreground">{item.title}</p>
+                            <p className="text-xs text-muted-foreground">{item.context}</p>
+                        </div>
+                        <span className={cn(
+                            'text-xs whitespace-nowrap px-2 py-0.5 rounded-md',
+                            item.urgent
+                                ? 'bg-pac/10 text-pac'
+                                : 'text-muted-foreground'
+                        )}>
+                            {item.time}
+                        </span>
+                    </div>
+                </motion.div>
+            ))}
+        </motion.div>
     );
 }
 
@@ -384,95 +465,100 @@ function ProblemSection() {
 function FeaturesSection() {
     const features = [
         {
-            number: '001',
-            title: 'Import',
-            subtitle: 'Bring Your AI History Home',
-            description: 'Import your conversations from ChatGPT and Claude in seconds.',
-            accent: false,
+            key: 'import' as const,
+            icon: CloudArrowUp,
+            title: 'Import Your History',
+            description:
+                'Bring your conversations from ChatGPT and Claude. Your context, your memories, all in one place. Never start from zero again.',
+            details: ['ChatGPT export support', 'Claude export support', 'Preserves full context', 'Automatic categorization'],
         },
         {
-            number: '002',
-            title: 'PAC',
-            subtitle: 'AI That Actually Follows Up',
-            description: 'Proactive reminders for commitments, deadlines, and follow-ups.',
-            accent: true,
+            key: 'pac' as const,
+            icon: Lightning,
+            title: 'Proactive Reminders',
+            description:
+                'YULA reads between the lines. It detects commitments, deadlines, and follow-ups from your conversations and reminds you before you forget.',
+            details: ['Smart commitment detection', 'Configurable schedules', 'Context-aware nudges', 'Never miss a follow-up'],
         },
         {
-            number: '003',
-            title: 'Council',
-            subtitle: 'Let Four AIs Debate Your Decision',
-            description: 'Multiple perspectives from GPT-4, Claude, Gemini & Llama.',
-            accent: false,
+            key: 'council' as const,
+            icon: ChatCircleDots,
+            title: 'AI Council',
+            description:
+                'Ask GPT-4, Claude, Gemini, and Llama the same question simultaneously. Compare perspectives. Make better decisions with multiple viewpoints.',
+            details: ['4 models in parallel', 'Side-by-side comparison', 'Consensus synthesis', 'Best answer selection'],
         },
     ];
 
     return (
-        <AnimatedSection
-            id="features"
-            className="py-20 px-8"
-            style={{ backgroundColor: COLORS.cream }}
-        >
-            <div className="max-w-7xl mx-auto">
-                {/* Badge */}
-                <div className="flex items-center gap-3 mb-8">
-                    <span style={{ color: COLORS.terracotta }}>✦</span>
-                    <span
-                        className="text-sm tracking-wide"
-                        style={{ color: COLORS.textMuted, fontFamily: "'DM Sans', sans-serif" }}
-                    >
+        <AnimatedSection id="features" className="py-24 md:py-32 px-6">
+            <div className="max-w-6xl mx-auto">
+                {/* Section header */}
+                <div className="max-w-2xl mb-16">
+                    <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         Features
                     </span>
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3">
+                        Three features that change{' '}
+                        <span className="text-muted-foreground">how you use AI</span>
+                    </h2>
                 </div>
 
-                {/* Feature Columns */}
-                <div
-                    className="grid md:grid-cols-3 gap-0 border-t"
-                    style={{ borderColor: COLORS.creamDark }}
-                >
-                    {features.map((feature, idx) => (
-                        <div
-                            key={idx}
-                            className="p-8 border-b md:border-b-0 md:border-r last:border-r-0"
-                            style={{
-                                borderColor: COLORS.creamDark,
-                                backgroundColor: feature.accent ? COLORS.terracotta : 'transparent',
-                                color: feature.accent ? COLORS.cream : COLORS.navy,
-                            }}
-                        >
-                            <div className="flex justify-between items-start mb-6">
-                                <h3
-                                    className="text-2xl"
+                {/* Feature cards */}
+                <div className="grid md:grid-cols-3 gap-6">
+                    {features.map((feature, i) => {
+                        const color = FEATURE_COLORS[feature.key];
+                        return (
+                            <motion.div
+                                key={feature.key}
+                                initial={{ opacity: 0, y: 24 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1, duration: 0.6 }}
+                                className="group rounded-xl border border-border/50 bg-card/30 p-6 hover:border-border hover:bg-card/60 transition-all duration-300"
+                            >
+                                {/* Icon */}
+                                <div
+                                    className="w-10 h-10 rounded-lg flex items-center justify-center mb-5"
                                     style={{
-                                        fontFamily: "'Playfair Display', serif",
-                                        fontWeight: 400,
+                                        backgroundColor: `color-mix(in srgb, ${color.accent} 12%, transparent)`,
                                     }}
                                 >
+                                    <feature.icon
+                                        size={20}
+                                        weight="duotone"
+                                        style={{ color: color.accent }}
+                                    />
+                                </div>
+
+                                {/* Content */}
+                                <h3 className="text-lg font-semibold text-foreground mb-2">
                                     {feature.title}
                                 </h3>
-                                <span
-                                    className="text-xs"
-                                    style={{
-                                        color: feature.accent ? COLORS.cream : COLORS.textMuted,
-                                        fontFamily: "'DM Sans', sans-serif",
-                                    }}
-                                >
-                                    {feature.number}
-                                </span>
-                            </div>
-                            <p
-                                className="text-sm font-medium mb-2"
-                                style={{ fontFamily: "'DM Sans', sans-serif" }}
-                            >
-                                {feature.subtitle}
-                            </p>
-                            <p
-                                className="text-sm opacity-70"
-                                style={{ fontFamily: "'DM Sans', sans-serif" }}
-                            >
-                                {feature.description}
-                            </p>
-                        </div>
-                    ))}
+                                <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+                                    {feature.description}
+                                </p>
+
+                                {/* Details */}
+                                <ul className="space-y-2">
+                                    {feature.details.map((detail) => (
+                                        <li
+                                            key={detail}
+                                            className="flex items-center gap-2 text-xs text-muted-foreground"
+                                        >
+                                            <Check
+                                                size={14}
+                                                weight="bold"
+                                                style={{ color: color.accent }}
+                                                className="flex-shrink-0"
+                                            />
+                                            {detail}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </motion.div>
+                        );
+                    })}
                 </div>
             </div>
         </AnimatedSection>
@@ -480,7 +566,7 @@ function FeaturesSection() {
 }
 
 // =============================================================================
-// HOW IT WORKS SECTION
+// HOW IT WORKS
 // =============================================================================
 
 function HowItWorksSection() {
@@ -488,87 +574,64 @@ function HowItWorksSection() {
         {
             number: '01',
             title: 'Import',
-            description: 'Import your conversations from ChatGPT and Claude.',
+            description: 'Upload your ChatGPT or Claude export. YULA processes and indexes your entire conversation history.',
         },
         {
             number: '02',
             title: 'Chat',
-            description: 'Chat naturally - YULA learns your preferences.',
+            description: 'Talk naturally. YULA uses your history as context, so every response is personalized.',
         },
         {
             number: '03',
-            title: 'Remind',
-            description: 'Get proactive reminders for commitments and goals.',
+            title: 'Get reminded',
+            description: 'PAC detects your commitments and sends proactive reminders before you forget.',
         },
         {
             number: '04',
-            title: 'Council',
-            description: 'Use Council for decisions that require multiple perspectives.',
+            title: 'Consult the Council',
+            description: 'For big decisions, ask multiple AI models at once and compare their perspectives.',
         },
     ];
 
     return (
-        <AnimatedSection className="py-24 px-8" style={{ backgroundColor: COLORS.navy }}>
-            <div className="max-w-7xl mx-auto">
-                {/* Badge */}
-                <div className="flex items-center gap-3 mb-6">
-                    <span style={{ color: COLORS.terracotta }}>✦</span>
-                    <span
-                        className="text-sm tracking-wide"
-                        style={{ color: COLORS.textMuted, fontFamily: "'DM Sans', sans-serif" }}
-                    >
-                        How It Works
+        <AnimatedSection className="py-24 md:py-32 px-6 border-t border-border/30">
+            <div className="max-w-6xl mx-auto">
+                {/* Section header */}
+                <div className="max-w-2xl mb-16">
+                    <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
+                        How it works
                     </span>
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3">
+                        Four steps.{' '}
+                        <span className="text-muted-foreground">That&apos;s it.</span>
+                    </h2>
                 </div>
 
-                {/* Headline */}
-                <h2
-                    className="text-4xl md:text-5xl mb-16"
-                    style={{
-                        color: COLORS.cream,
-                        fontFamily: "'Playfair Display', serif",
-                        fontWeight: 400,
-                        lineHeight: 1.2,
-                    }}
-                >
-                    Four steps.
-                    <br />
-                    That's it.
-                </h2>
-
                 {/* Steps */}
-                <div className="grid md:grid-cols-4 gap-8">
-                    {steps.map((step, idx) => (
-                        <div key={idx}>
-                            <div
-                                className="text-3xl mb-4"
-                                style={{
-                                    color: idx === 0 ? COLORS.terracotta : COLORS.textMuted,
-                                    fontFamily: "'Playfair Display', serif",
-                                }}
-                            >
+                <div className="grid md:grid-cols-4 gap-8 md:gap-6">
+                    {steps.map((step, i) => (
+                        <motion.div
+                            key={step.number}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.1, duration: 0.5 }}
+                            className="relative"
+                        >
+                            {/* Connector line */}
+                            {i < steps.length - 1 && (
+                                <div className="hidden md:block absolute top-5 left-[calc(100%+4px)] w-[calc(100%-32px)] h-px bg-border/40" />
+                            )}
+                            <div className="text-2xl font-bold text-foreground/10 mb-3 font-mono">
                                 {step.number}
                             </div>
-                            <h3
-                                className="text-lg mb-2"
-                                style={{
-                                    color: COLORS.cream,
-                                    fontFamily: "'DM Sans', sans-serif",
-                                    fontWeight: 500,
-                                }}
-                            >
+                            <h3 className="text-base font-semibold text-foreground mb-2">
                                 {step.title}
                             </h3>
-                            <p
-                                className="text-sm"
-                                style={{
-                                    color: COLORS.textMuted,
-                                    fontFamily: "'DM Sans', sans-serif",
-                                }}
-                            >
+                            <p className="text-sm text-muted-foreground leading-relaxed">
                                 {step.description}
                             </p>
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
             </div>
@@ -586,162 +649,131 @@ function PricingSection() {
             name: 'Free',
             price: '$0',
             period: '/month',
-            features: ['50 messages/day', 'Import up to 100 conversations', 'Basic PAC reminders'],
-            cta: 'Get Started',
+            description: 'For trying out YULA',
+            features: [
+                '50 messages per day',
+                'Import up to 100 conversations',
+                'Basic PAC reminders',
+                'GPT-4o mini access',
+            ],
+            cta: 'Get started',
+            href: '/signup',
             popular: false,
         },
         {
             name: 'Pro',
             price: '$20',
             period: '/month',
+            description: 'For power users',
             features: [
                 'Unlimited messages',
                 'Unlimited imports',
                 'Full PAC with smart detection',
-                '50 Council consultations/mo',
+                '50 Council sessions/month',
+                'All AI models',
                 'Priority support',
             ],
-            cta: 'Start Free Trial',
+            cta: 'Start free trial',
+            href: '/signup?plan=pro',
             popular: true,
         },
         {
             name: 'Ultra',
             price: '$50',
             period: '/month',
+            description: 'For teams & pros',
             features: [
                 'Everything in Pro',
                 'Unlimited Council sessions',
-                'API Access',
-                'Team collaboration (coming soon)',
+                'API access',
                 'Custom AI personas',
+                'Advanced analytics',
+                'Early access to new features',
             ],
-            cta: 'Start Free Trial',
+            cta: 'Start free trial',
+            href: '/signup?plan=ultra',
             popular: false,
         },
     ];
 
     return (
-        <AnimatedSection
-            id="pricing"
-            className="py-24 px-8"
-            style={{ backgroundColor: COLORS.navy }}
-        >
-            <div className="max-w-7xl mx-auto">
-                {/* Badge */}
-                <div className="flex items-center gap-3 mb-6">
-                    <span style={{ color: COLORS.terracotta }}>✦</span>
-                    <span
-                        className="text-sm tracking-wide"
-                        style={{ color: COLORS.textMuted, fontFamily: "'DM Sans', sans-serif" }}
-                    >
+        <AnimatedSection id="pricing" className="py-24 md:py-32 px-6 border-t border-border/30">
+            <div className="max-w-6xl mx-auto">
+                {/* Section header */}
+                <div className="text-center mb-16">
+                    <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         Pricing
                     </span>
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3">
+                        Simple, transparent pricing
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-3">
+                        14-day free trial on all paid plans. No credit card required.
+                    </p>
                 </div>
 
-                {/* Headline */}
-                <h2
-                    className="text-4xl md:text-5xl mb-4"
-                    style={{
-                        color: COLORS.cream,
-                        fontFamily: "'Playfair Display', serif",
-                        fontWeight: 400,
-                    }}
-                >
-                    Simple, Transparent
-                    <br />
-                    Pricing.
-                </h2>
-
-                <p
-                    className="text-sm mb-12"
-                    style={{
-                        color: COLORS.textMuted,
-                        fontFamily: "'DM Sans', sans-serif",
-                    }}
-                >
-                    All plans include a 14-day free trial. No credit card required.
-                </p>
-
-                {/* Pricing Cards */}
-                <div className="grid md:grid-cols-3 gap-6">
-                    {plans.map((plan, idx) => (
-                        <div
-                            key={idx}
-                            className="rounded-lg p-6 relative"
-                            style={{
-                                backgroundColor: plan.popular
-                                    ? COLORS.terracotta
-                                    : COLORS.navyLight,
-                                color: plan.popular ? COLORS.navy : COLORS.cream,
-                                border: plan.popular ? 'none' : `1px solid ${COLORS.textMuted}30`,
-                            }}
+                {/* Pricing cards */}
+                <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                    {plans.map((plan, i) => (
+                        <motion.div
+                            key={plan.name}
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.1, duration: 0.6 }}
+                            className={cn(
+                                'rounded-xl border p-6 relative flex flex-col',
+                                plan.popular
+                                    ? 'border-foreground/20 bg-card/60 shadow-lg'
+                                    : 'border-border/50 bg-card/20'
+                            )}
                         >
                             {plan.popular && (
-                                <div
-                                    className="absolute -top-3 left-6 px-3 py-1 text-xs font-medium rounded"
-                                    style={{
-                                        backgroundColor: COLORS.navy,
-                                        color: COLORS.terracotta,
-                                        fontFamily: "'DM Sans', sans-serif",
-                                    }}
-                                >
-                                    MOST POPULAR
+                                <div className="absolute -top-3 left-6 px-3 py-1 text-[11px] font-medium rounded-full bg-foreground text-background">
+                                    Most popular
                                 </div>
                             )}
 
-                            <h3
-                                className="text-lg mb-4"
-                                style={{ fontFamily: "'DM Sans', sans-serif" }}
-                            >
-                                {plan.name}
-                            </h3>
-
-                            <div className="flex items-baseline gap-1 mb-6">
-                                <span
-                                    className="text-4xl"
-                                    style={{ fontFamily: "'Playfair Display', serif" }}
-                                >
-                                    {plan.price}
-                                </span>
-                                <span
-                                    className="text-sm opacity-70"
-                                    style={{ fontFamily: "'DM Sans', sans-serif" }}
-                                >
-                                    {plan.period}
-                                </span>
+                            <div className="mb-6">
+                                <h3 className="text-base font-semibold text-foreground">{plan.name}</h3>
+                                <p className="text-xs text-muted-foreground mt-1">{plan.description}</p>
                             </div>
 
-                            <ul className="space-y-3 mb-8">
-                                {plan.features.map((feature, fidx) => (
+                            <div className="flex items-baseline gap-1 mb-6">
+                                <span className="text-4xl font-bold text-foreground tracking-tight">
+                                    {plan.price}
+                                </span>
+                                <span className="text-sm text-muted-foreground">{plan.period}</span>
+                            </div>
+
+                            <ul className="space-y-3 mb-8 flex-1">
+                                {plan.features.map((feature) => (
                                     <li
-                                        key={fidx}
-                                        className="flex items-start gap-2 text-sm"
-                                        style={{ fontFamily: "'DM Sans', sans-serif" }}
+                                        key={feature}
+                                        className="flex items-start gap-2.5 text-sm text-foreground/80"
                                     >
                                         <Check
                                             size={16}
                                             weight="bold"
-                                            className="mt-0.5 flex-shrink-0"
+                                            className="text-personas flex-shrink-0 mt-0.5"
                                         />
                                         {feature}
                                     </li>
                                 ))}
                             </ul>
 
-                            <button
-                                className="w-full py-3 rounded text-sm font-medium transition-all hover:opacity-90"
-                                style={{
-                                    backgroundColor: plan.popular ? COLORS.navy : 'transparent',
-                                    color: plan.popular ? COLORS.cream : COLORS.cream,
-                                    border: plan.popular
-                                        ? 'none'
-                                        : `1px solid ${COLORS.textMuted}50`,
-                                    fontFamily: "'DM Sans', sans-serif",
-                                }}
+                            <Link
+                                href={plan.href}
+                                className={cn(
+                                    'h-10 rounded-lg text-sm font-medium flex items-center justify-center transition-all',
+                                    plan.popular
+                                        ? 'bg-foreground text-background hover:opacity-90'
+                                        : 'border border-border text-foreground hover:bg-card'
+                                )}
                             >
                                 {plan.cta}
-                            </button>
-                        </div>
+                            </Link>
+                        </motion.div>
                     ))}
                 </div>
             </div>
@@ -758,103 +790,76 @@ function FAQSection() {
 
     const faqs = [
         {
-            q: 'Can I easily import my ChatGPT history?',
-            a: 'Yes! YULA supports direct import from ChatGPT and Claude. Just export your data and upload it to YULA.',
+            q: 'Can I import my ChatGPT conversations?',
+            a: 'Yes. Export your data from ChatGPT settings, then upload the JSON file to YULA. We process and index your entire history, preserving all context and metadata.',
         },
         {
-            q: 'Which AI models does YULA use?',
-            a: 'YULA uses GPT-4, Claude 3, Gemini Pro, and Llama 3. You can switch between them anytime.',
+            q: 'Which AI models does YULA support?',
+            a: 'YULA supports GPT-4o, Claude 3.5 Sonnet, Gemini Pro, and Llama 3. You can switch between models anytime, or use Council to query all of them simultaneously.',
         },
         {
-            q: "What's the Council feature?",
-            a: 'Council lets you ask a question to multiple AI models simultaneously and see their different perspectives side by side.',
+            q: 'What is the Council feature?',
+            a: 'Council lets you ask a question to multiple AI models at the same time. You see each model\'s response side-by-side, helping you get diverse perspectives on complex decisions.',
         },
         {
-            q: 'How does PAC work?',
-            a: 'PAC (Proactive AI Callbacks) analyzes your conversations and proactively reminds you about commitments, deadlines, and follow-ups.',
+            q: 'How does PAC (Proactive AI Callbacks) work?',
+            a: 'PAC analyzes your conversations for commitments, deadlines, and follow-ups. It automatically creates reminders and proactively reaches out to you before important dates.',
         },
         {
-            q: 'Is my data secure?',
-            a: 'Yes. Your data is encrypted at rest and in transit. We never train on your data or share it with third parties.',
+            q: 'Is my data private and secure?',
+            a: 'Absolutely. Your data is encrypted at rest and in transit. We never use your conversations for training. You can export or delete your data at any time.',
         },
         {
-            q: 'Can I use YULA offline?',
-            a: 'YULA is a PWA and works offline for viewing your history. Active AI conversations require an internet connection.',
+            q: 'Does YULA work offline?',
+            a: 'YULA is a PWA and works offline for browsing your conversation history. Active AI conversations require an internet connection.',
         },
     ];
 
     return (
-        <AnimatedSection id="faq" className="py-24 px-8" style={{ backgroundColor: COLORS.cream }}>
-            <div className="max-w-3xl mx-auto">
-                {/* Badge */}
-                <div className="flex items-center gap-3 mb-6">
-                    <span style={{ color: COLORS.terracotta }}>✦</span>
-                    <span
-                        className="text-sm tracking-wide"
-                        style={{ color: COLORS.textMuted, fontFamily: "'DM Sans', sans-serif" }}
-                    >
+        <AnimatedSection id="faq" className="py-24 md:py-32 px-6 border-t border-border/30">
+            <div className="max-w-2xl mx-auto">
+                {/* Section header */}
+                <div className="mb-12">
+                    <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         FAQ
                     </span>
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3">
+                        Common questions
+                    </h2>
                 </div>
 
-                {/* Headline */}
-                <h2
-                    className="text-4xl md:text-5xl mb-12"
-                    style={{
-                        color: COLORS.navy,
-                        fontFamily: "'Playfair Display', serif",
-                        fontWeight: 400,
-                    }}
-                >
-                    Questions we
-                    <br />
-                    get asked.
-                </h2>
-
-                {/* FAQ Items */}
+                {/* FAQ items */}
                 <div className="space-y-0">
                     {faqs.map((faq, idx) => (
                         <div
                             key={idx}
-                            className="border-b py-4 cursor-pointer"
-                            style={{ borderColor: COLORS.creamDark }}
-                            onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+                            className="border-b border-border/40"
                         >
-                            <div className="flex justify-between items-center">
-                                <span
-                                    className="text-sm"
-                                    style={{
-                                        color: COLORS.navy,
-                                        fontFamily: "'DM Sans', sans-serif",
-                                    }}
-                                >
+                            <button
+                                onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+                                className="w-full flex items-center justify-between py-5 text-left group"
+                            >
+                                <span className="text-sm font-medium text-foreground pr-4 group-hover:text-foreground/80 transition-colors">
                                     {faq.q}
                                 </span>
-                                <Plus
-                                    size={20}
-                                    style={{ color: COLORS.textMuted }}
+                                <CaretDown
+                                    size={16}
                                     className={cn(
-                                        'transition-transform flex-shrink-0',
-                                        openIndex === idx && 'rotate-45'
+                                        'text-muted-foreground flex-shrink-0 transition-transform duration-200',
+                                        openIndex === idx && 'rotate-180'
                                     )}
                                 />
-                            </div>
+                            </button>
                             <AnimatePresence>
                                 {openIndex === idx && (
                                     <motion.div
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
+                                        transition={{ duration: 0.25 }}
                                         className="overflow-hidden"
                                     >
-                                        <p
-                                            className="text-sm pt-4"
-                                            style={{
-                                                color: COLORS.textMuted,
-                                                fontFamily: "'DM Sans', sans-serif",
-                                            }}
-                                        >
+                                        <p className="text-sm text-muted-foreground leading-relaxed pb-5">
                                             {faq.a}
                                         </p>
                                     </motion.div>
@@ -874,140 +879,28 @@ function FAQSection() {
 
 function CTASection() {
     return (
-        <AnimatedSection
-            className="py-24 px-8 text-center"
-            style={{ backgroundColor: COLORS.navy }}
-        >
-            <div className="max-w-2xl mx-auto">
-                <h2
-                    className="text-4xl md:text-5xl mb-6"
-                    style={{
-                        color: COLORS.cream,
-                        fontFamily: "'Playfair Display', serif",
-                        fontWeight: 400,
-                    }}
-                >
-                    Your AI Journey
-                    <br />
-                    Starts Here.
+        <AnimatedSection className="py-24 md:py-32 px-6 border-t border-border/30">
+            <div className="max-w-2xl mx-auto text-center">
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+                    Ready to try a smarter AI?
                 </h2>
-
-                <p
-                    className="text-sm mb-8 max-w-md mx-auto"
-                    style={{
-                        color: COLORS.textMuted,
-                        fontFamily: "'DM Sans', sans-serif",
-                    }}
-                >
-                    Join early adopters building a smarter AI workflow. Import your history, get
-                    proactive reminders, and make better decisions with Council.
+                <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
+                    Import your history. Get proactive reminders. Make better decisions with Council.
+                    Start free today.
                 </p>
-
-                <Link
-                    href="/chat"
-                    className="inline-block px-8 py-4 text-sm font-medium rounded border transition-all hover:bg-white/5"
-                    style={{
-                        borderColor: COLORS.textMuted,
-                        color: COLORS.cream,
-                        fontFamily: "'DM Sans', sans-serif",
-                    }}
-                >
-                    START YOUR FREE TRIAL
-                </Link>
-
-                <p
-                    className="text-xs mt-6"
-                    style={{
-                        color: COLORS.textMuted,
-                        fontFamily: "'DM Sans', sans-serif",
-                    }}
-                >
-                    14-day free trial · No credit card required · Cancel anytime
+                <div className="flex items-center justify-center gap-3 mt-8">
+                    <Link
+                        href="/signup"
+                        className="h-11 px-6 rounded-lg bg-foreground text-background text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
+                    >
+                        Start free
+                        <ArrowRight size={16} weight="bold" />
+                    </Link>
+                </div>
+                <p className="text-xs text-muted-foreground mt-4">
+                    14-day free trial &middot; No credit card &middot; Cancel anytime
                 </p>
             </div>
-        </AnimatedSection>
-    );
-}
-
-// =============================================================================
-// STATS SECTION
-// =============================================================================
-
-function StatsSection() {
-    return (
-        <AnimatedSection
-            className="py-16 px-8 relative overflow-hidden"
-            style={{ backgroundColor: COLORS.terracotta }}
-        >
-            <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 items-center">
-                {/* Stats */}
-                <div>
-                    <div
-                        className="text-sm mb-2"
-                        style={{
-                            color: COLORS.navy,
-                            fontFamily: "'DM Sans', sans-serif",
-                            opacity: 0.7,
-                        }}
-                    >
-                        Active
-                    </div>
-                    <div
-                        className="text-4xl"
-                        style={{
-                            color: COLORS.navy,
-                            fontFamily: "'Playfair Display', serif",
-                        }}
-                    >
-                        Early Access
-                    </div>
-                    <div
-                        className="text-xs mt-1"
-                        style={{
-                            color: COLORS.navy,
-                            fontFamily: "'DM Sans', sans-serif",
-                            opacity: 0.7,
-                        }}
-                    >
-                        join the beta
-                    </div>
-                </div>
-
-                {/* Giant YULA text */}
-                <div className="text-center">
-                    <span
-                        className="text-7xl md:text-9xl font-bold tracking-tight"
-                        style={{
-                            color: COLORS.terracottaDark,
-                            fontFamily: "'Playfair Display', serif",
-                        }}
-                    >
-                        YULA
-                    </span>
-                </div>
-
-                {/* Description */}
-                <div className="p-6 rounded-lg" style={{ backgroundColor: COLORS.navy }}>
-                    <p
-                        className="text-sm"
-                        style={{
-                            color: COLORS.textOnDark,
-                            fontFamily: "'DM Sans', sans-serif",
-                            lineHeight: 1.7,
-                        }}
-                    >
-                        YULA OS is the AI operating system that remembers, reminds, and reasons.
-                        Import your history, get proactive reminders, and make better decisions with
-                        Council.
-                    </p>
-                </div>
-            </div>
-
-            {/* Diamond decoration */}
-            <div
-                className="absolute bottom-8 left-8 w-4 h-4 rotate-45 border"
-                style={{ borderColor: COLORS.navy }}
-            />
         </AnimatedSection>
     );
 }
@@ -1018,19 +911,22 @@ function StatsSection() {
 
 function Footer() {
     return (
-        <footer className="py-4 px-8" style={{ backgroundColor: COLORS.navy }}>
-            <div
-                className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 text-xs"
-                style={{ color: COLORS.textMuted, fontFamily: "'DM Sans', sans-serif" }}
-            >
-                <span>© YULA AI, 2024</span>
-                <span>All rights reserved</span>
-                <div className="flex gap-6">
-                    <Link href="/terms" className="hover:opacity-80 transition-opacity">
-                        Terms of Use
+        <footer className="border-t border-border/30 py-8 px-6">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded bg-foreground/10 flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-foreground/60">Y</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                        &copy; {new Date().getFullYear()} YULA AI. All rights reserved.
+                    </span>
+                </div>
+                <div className="flex items-center gap-6 text-xs text-muted-foreground">
+                    <Link href="/terms" className="hover:text-foreground transition-colors">
+                        Terms
                     </Link>
-                    <Link href="/privacy" className="hover:opacity-80 transition-opacity">
-                        Privacy Policy
+                    <Link href="/privacy" className="hover:text-foreground transition-colors">
+                        Privacy
                     </Link>
                 </div>
             </div>
@@ -1044,16 +940,14 @@ function Footer() {
 
 export default function LandingPage() {
     return (
-        <div className="min-h-screen" style={{ backgroundColor: COLORS.navy }}>
+        <div className="min-h-screen bg-background text-foreground">
             <Navigation />
             <HeroSection />
-            <ProblemSection />
             <FeaturesSection />
             <HowItWorksSection />
             <PricingSection />
             <FAQSection />
             <CTASection />
-            <StatsSection />
             <Footer />
         </div>
     );
