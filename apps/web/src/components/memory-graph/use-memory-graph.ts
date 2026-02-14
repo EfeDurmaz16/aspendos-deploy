@@ -8,102 +8,62 @@ import {
     useYulaStore,
 } from '@/stores/yula-store';
 
-// Sample data generator for demo purposes
-function generateSampleData(): { nodes: MemoryNode[]; edges: MemoryEdge[] } {
-    const nodes: MemoryNode[] = [
-        // Core preferences
-        {
-            id: 'pref-1',
-            label: 'Dark Mode',
-            category: 'preference',
-            content: 'User prefers dark interfaces',
-        },
-        {
-            id: 'pref-2',
-            label: 'Morning Person',
-            category: 'preference',
-            content: 'Most productive before noon',
-        },
-        {
-            id: 'pref-3',
-            label: 'Minimalist',
-            category: 'preference',
-            content: 'Prefers clean, simple designs',
-        },
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-        // People
-        {
-            id: 'person-1',
-            label: 'Alice',
-            category: 'person',
-            content: 'Colleague from engineering team',
-        },
-        { id: 'person-2', label: 'Bob', category: 'person', content: 'Project manager' },
-        { id: 'person-3', label: 'Carol', category: 'person', content: 'Design lead' },
+type MemoryApiItem = {
+    id: string;
+    content: string;
+    sector?: string;
+};
 
-        // Projects
-        { id: 'project-1', label: 'Yula OS', category: 'project', content: 'AI companion project' },
-        {
-            id: 'project-2',
-            label: 'Website Redesign',
-            category: 'project',
-            content: 'Q1 initiative',
-        },
-        {
-            id: 'project-3',
-            label: 'Mobile App',
-            category: 'project',
-            content: 'Cross-platform app development',
-        },
+type MemoryApiResponse = {
+    memories?: MemoryApiItem[];
+};
 
-        // Important dates
-        {
-            id: 'date-1',
-            label: 'Q1 Deadline',
-            category: 'date',
-            content: 'March 31st - Major milestone',
-        },
-        {
-            id: 'date-2',
-            label: 'Team Offsite',
-            category: 'date',
-            content: 'February 15th - Planning session',
-        },
+function mapSectorToCategory(sector: string): MemoryNodeCategory {
+    if (sector === 'episodic') return 'date';
+    if (sector === 'semantic') return 'project';
+    if (sector === 'procedural') return 'preference';
+    if (sector === 'emotional') return 'person';
+    return 'memory';
+}
 
-        // Memories
-        {
-            id: 'memory-1',
-            label: 'Coffee Chat Ideas',
+function buildGraph(memories: MemoryApiItem[]): { nodes: MemoryNode[]; edges: MemoryEdge[] } {
+    const nodes: MemoryNode[] = [];
+    const edges: MemoryEdge[] = [];
+    const sectorNodes = new Set<string>();
+
+    for (const memory of memories) {
+        const sector = memory.sector || 'memory';
+        const sectorNodeId = `sector-${sector}`;
+
+        if (!sectorNodes.has(sectorNodeId)) {
+            sectorNodes.add(sectorNodeId);
+            nodes.push({
+                id: sectorNodeId,
+                label: sector,
+                category: mapSectorToCategory(sector),
+                content: `Memory sector: ${sector}`,
+            });
+        }
+
+        const label =
+            memory.content.length > 48 ? `${memory.content.slice(0, 48).trim()}...` : memory.content;
+        nodes.push({
+            id: memory.id,
+            label: label || 'Memory',
             category: 'memory',
-            content: 'Discussed new features with Alice',
-        },
-        {
-            id: 'memory-2',
-            label: 'Design Review',
-            category: 'memory',
-            content: 'Feedback from Carol on UI',
-        },
-    ];
+            content: memory.content,
+            metadata: { sector },
+        });
 
-    const edges: MemoryEdge[] = [
-        // Project connections
-        { id: 'edge-1', source: 'person-1', target: 'project-1', relationship: 'works on' },
-        { id: 'edge-2', source: 'person-2', target: 'project-1', relationship: 'manages' },
-        { id: 'edge-3', source: 'person-3', target: 'project-2', relationship: 'leads' },
-
-        // Memory connections
-        { id: 'edge-4', source: 'memory-1', target: 'person-1', relationship: 'with' },
-        { id: 'edge-5', source: 'memory-1', target: 'project-1', relationship: 'about' },
-        { id: 'edge-6', source: 'memory-2', target: 'person-3', relationship: 'from' },
-        { id: 'edge-7', source: 'memory-2', target: 'project-2', relationship: 'about' },
-
-        // Date connections
-        { id: 'edge-8', source: 'date-1', target: 'project-1', relationship: 'deadline for' },
-        { id: 'edge-9', source: 'date-2', target: 'project-2', relationship: 'planning for' },
-
-        // Preference connections
-        { id: 'edge-10', source: 'pref-3', target: 'project-2', relationship: 'influences' },
-    ];
+        edges.push({
+            id: `edge-${memory.id}-${sectorNodeId}`,
+            source: memory.id,
+            target: sectorNodeId,
+            relationship: 'in',
+        });
+    }
 
     return { nodes, edges };
 }
@@ -132,22 +92,46 @@ export function useMemoryGraph() {
         setMemoryGraphLoading,
     } = useYulaStore();
 
-    // Initialize with sample data if empty
+    // Initialize graph from real backend memories
     useEffect(() => {
-        if (memoryGraph.nodes.length === 0 && !memoryGraph.isLoading) {
+        let cancelled = false;
+        const loadMemoryGraph = async () => {
             setMemoryGraphLoading(true);
-            // Simulate loading delay
-            const timer = setTimeout(() => {
-                const { nodes, edges } = generateSampleData();
-                setMemoryNodes(nodes);
-                setMemoryEdges(edges);
-                setMemoryGraphLoading(false);
-            }, 500);
-            return () => clearTimeout(timer);
-        }
+            try {
+                const response = await fetch(`${API_BASE}/api/memory/dashboard/list?limit=100`, {
+                    credentials: 'include',
+                });
+                if (!response.ok) {
+                    if (!cancelled) {
+                        setMemoryNodes([]);
+                        setMemoryEdges([]);
+                    }
+                    return;
+                }
+
+                const data = (await response.json()) as MemoryApiResponse;
+                const graph = buildGraph(data.memories || []);
+                if (!cancelled) {
+                    setMemoryNodes(graph.nodes);
+                    setMemoryEdges(graph.edges);
+                }
+            } catch {
+                if (!cancelled) {
+                    setMemoryNodes([]);
+                    setMemoryEdges([]);
+                }
+            } finally {
+                if (!cancelled) {
+                    setMemoryGraphLoading(false);
+                }
+            }
+        };
+
+        void loadMemoryGraph();
+        return () => {
+            cancelled = true;
+        };
     }, [
-        memoryGraph.nodes.length,
-        memoryGraph.isLoading,
         setMemoryNodes,
         setMemoryEdges,
         setMemoryGraphLoading,
