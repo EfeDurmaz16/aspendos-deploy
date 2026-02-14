@@ -3,6 +3,7 @@
  */
 import { Hono } from 'hono';
 import { breakers } from '../lib/circuit-breaker';
+import { checkCriticalReadiness } from '../lib/critical-readiness';
 import { jobQueue } from '../lib/job-queue';
 
 const systemRoutes = new Hono();
@@ -77,6 +78,14 @@ systemRoutes.post('/jobs/cleanup', (c) => {
 });
 
 // ─── System Diagnostics ───────────────────────────────────────────────────────
+
+// GET /system/critical-readiness - Production readiness for critical capabilities
+systemRoutes.get('/critical-readiness', async (c) => {
+    const report = await checkCriticalReadiness();
+    const statusCode: 200 | 503 = report.status === 'blocked' ? 503 : 200;
+    return c.json(report, statusCode);
+});
+
 
 // GET /system/info - Runtime info
 systemRoutes.get('/info', (c) => {
