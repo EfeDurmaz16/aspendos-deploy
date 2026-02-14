@@ -41,92 +41,39 @@ interface ImportProgress {
     currentTitle?: string;
 }
 
-// Helper function to parse conversations from different formats
-function parseConversations(
-    data: unknown,
-    source: 'CHATGPT' | 'CLAUDE' | 'UNKNOWN',
-    fileId: string
-): ParsedConversation[] {
-    const conversations: ParsedConversation[] = [];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-    try {
-        if (source === 'CHATGPT' && Array.isArray(data)) {
-            for (const conv of data) {
-                if (conv.mapping && conv.title) {
-                    const messages = Object.values(conv.mapping as Record<string, unknown>);
-                    const messageCount = messages.filter(
-                        (m: unknown) =>
-                            m &&
-                            typeof m === 'object' &&
-                            'message' in m &&
-                            (m as { message: unknown }).message
-                    ).length;
+type ImportSource = 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
+type UploadSource = 'CHATGPT' | 'CLAUDE' | 'UNKNOWN';
 
-                    conversations.push({
-                        id: `${fileId}-${conv.id || crypto.randomUUID()}`,
-                        externalId: conv.id || '',
-                        title: conv.title,
-                        messageCount,
-                        createdAt: new Date(conv.create_time * 1000),
-                        updatedAt: new Date(conv.update_time * 1000),
-                        source: 'CHATGPT',
-                        preview: getFirstUserMessage(conv.mapping),
-                        selected: true,
-                    });
-                }
-            }
-        } else if (source === 'CLAUDE' && Array.isArray(data)) {
-            for (const conv of data) {
-                conversations.push({
-                    id: `${fileId}-${conv.uuid || crypto.randomUUID()}`,
-                    externalId: conv.uuid || '',
-                    title: conv.name || 'Untitled',
-                    messageCount: conv.chat_messages?.length || 0,
-                    createdAt: new Date(conv.created_at),
-                    updatedAt: new Date(conv.updated_at),
-                    source: 'CLAUDE',
-                    preview: conv.chat_messages?.[0]?.text?.slice(0, 200),
-                    selected: true,
-                });
-            }
-        }
-    } catch {
-        // Parsing failed
-    }
+type ImportPreviewEntity = {
+    id: string;
+    externalId: string;
+    title: string;
+    messageCount: number;
+    source: string;
+    createdAt?: string;
+    updatedAt?: string;
+    selected: boolean;
+};
 
-    return conversations;
+function normalizeSource(source: UploadSource): ImportSource {
+    if (source === 'CHATGPT' || source === 'CLAUDE') return source;
+    return 'CHATGPT';
 }
 
-function getFirstUserMessage(mapping: Record<string, unknown>): string | undefined {
-    try {
-        for (const node of Object.values(mapping)) {
-            if (
-                node &&
-                typeof node === 'object' &&
-                'message' in node &&
-                node.message &&
-                typeof node.message === 'object' &&
-                'author' in node.message &&
-                (node.message as { author: { role: string } }).author?.role === 'user' &&
-                'content' in node.message &&
-                (node.message as { content: { parts?: string[] } }).content?.parts?.[0]
-            ) {
-                return (node.message as { content: { parts: string[] } }).content.parts[0].slice(
-                    0,
-                    200
-                );
-            }
-        }
-    } catch {
-        return undefined;
+function normalizePreviewSource(source: string): ParsedConversation['source'] {
+    if (source === 'CHATGPT' || source === 'CLAUDE' || source === 'GEMINI' || source === 'PERPLEXITY') {
+        return source;
     }
-    return undefined;
+    return 'CHATGPT';
 }
 
 export default function ImportPage() {
     const [step, setStep] = React.useState<ImportStep>('upload');
     const [files, setFiles] = React.useState<UploadedFile[]>([]);
     const [conversations, setConversations] = React.useState<ParsedConversation[]>([]);
+    const [entityToJob, setEntityToJob] = React.useState<Record<string, string>>({});
     const [progress, setProgress] = React.useState<ImportProgress>({ current: 0, total: 0 });
     const [error, setError] = React.useState<string | null>(null);
     const [isProcessing, setIsProcessing] = React.useState(false);
@@ -148,12 +95,47 @@ export default function ImportPage() {
             setFiles((prev) => prev.map((f) => ({ ...f, status: 'validating' as const })));
 
             const parsedConversations: ParsedConversation[] = [];
+            const entityJobMap: Record<string, string> = {};
 
             for (const uploadedFile of files) {
                 try {
-                    const content = await uploadedFile.file.text();
-                    const json = JSON.parse(content);
-                    const convs = parseConversations(json, uploadedFile.source, uploadedFile.id);
+                    const contentText = await uploadedFile.file.text();
+                    const content = JSON.parse(contentText);
+                    const response = await fetch(`${API_BASE}/api/import/jobs`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            source: normalizeSource(uploadedFile.source),
+                            fileName: uploadedFile.file.name,
+                            fileSize: uploadedFile.file.size,
+                            content,
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to parse import file');
+                    }
+
+                    const data = (await response.json()) as {
+                        job: { id: string };
+                        preview: ImportPreviewEntity[];
+                    };
+
+                    const convs: ParsedConversation[] = (data.preview || []).map((entity) => {
+                        entityJobMap[entity.id] = data.job.id;
+                        return {
+                            id: entity.id,
+                            externalId: entity.externalId || '',
+                            title: entity.title || 'Untitled Conversation',
+                            messageCount: entity.messageCount || 0,
+                            createdAt: entity.createdAt ? new Date(entity.createdAt) : new Date(),
+                            updatedAt: entity.updatedAt ? new Date(entity.updatedAt) : new Date(),
+                            source: normalizePreviewSource(entity.source),
+                            selected: entity.selected !== false,
+                        };
+                    });
+
                     parsedConversations.push(...convs);
 
                     setFiles((prev) =>
@@ -184,6 +166,7 @@ export default function ImportPage() {
 
             if (parsedConversations.length > 0) {
                 setConversations(parsedConversations);
+                setEntityToJob(entityJobMap);
                 setStep('preview');
             } else {
                 setError('No conversations found in the uploaded files');
@@ -213,37 +196,57 @@ export default function ImportPage() {
         setProgress({ current: 0, total: selectedConvs.length });
 
         try {
-            for (let i = 0; i < selectedConvs.length; i++) {
+            const selectedIdsByJob = selectedConvs.reduce<Record<string, string[]>>((acc, conv) => {
+                const jobId = entityToJob[conv.id];
+                if (!jobId) return acc;
+                if (!acc[jobId]) acc[jobId] = [];
+                acc[jobId].push(conv.id);
+                return acc;
+            }, {});
+
+            let importedSoFar = 0;
+            for (const [jobId, selectedIds] of Object.entries(selectedIdsByJob)) {
+                const currentTitle = selectedConvs[importedSoFar]?.title;
                 setProgress({
-                    current: i + 1,
+                    current: importedSoFar,
                     total: selectedConvs.length,
-                    currentTitle: selectedConvs[i].title,
+                    currentTitle,
                 });
 
-                // Send each conversation to the import API
-                const res = await fetch('/api/chats', {
+                const res = await fetch(`${API_BASE}/api/import/jobs/${jobId}/execute`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
-                        title: selectedConvs[i].title,
-                        source: selectedConvs[i].source,
-                        externalId: selectedConvs[i].externalId,
+                        selectedIds,
                     }),
                 });
-                if (!res.ok) console.error(`Failed to import: ${selectedConvs[i].title}`);
+
+                if (!res.ok) {
+                    throw new Error(`Failed to import selected conversations for job ${jobId}`);
+                }
+
+                const data = (await res.json()) as { result?: { imported?: number } };
+                importedSoFar += data.result?.imported || 0;
             }
 
+            if (importedSoFar === 0 && selectedConvs.length > 0) {
+                throw new Error('No conversations were imported');
+            }
+
+            setProgress({ current: selectedConvs.length, total: selectedConvs.length });
             setStep('complete');
         } catch {
             setError('Import failed. Please try again.');
             setStep('preview');
         }
-    }, [conversations]);
+    }, [conversations, entityToJob]);
 
     const handleBack = React.useCallback(() => {
         if (step === 'preview') {
             setStep('upload');
             setConversations([]);
+            setEntityToJob({});
         }
     }, [step]);
 
