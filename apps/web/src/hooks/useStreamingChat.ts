@@ -78,7 +78,7 @@ export function useStreamingChat(chatId: string) {
     // Track memory decision and memories (fetched separately or from stream)
     const [currentDecision, setCurrentDecision] = useState<MemoryDecision | null>(null);
     const [currentMemories, setCurrentMemories] = useState<MemoryUsed[]>([]);
-    const [_selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
+    const [_selectedModel, setSelectedModel] = useState<string | undefined>(undefined);
 
     // Track the actual chat ID (might be different from param if param is "new")
     const [actualChatId, setActualChatId] = useState<string>(chatId);
@@ -141,13 +141,13 @@ export function useStreamingChat(chatId: string) {
     // Send message function (backwards compatible)
     const sendMessage = useCallback(
         async (content: string, options: StreamingOptions = {}): Promise<ChatMessage | null> => {
-            const { model = 'openai/gpt-4o-mini', onError } = options;
+            const { model, onError } = options;
 
             try {
                 // Reset decision state for new message
                 setCurrentDecision(null);
                 setCurrentMemories([]);
-                setSelectedModel(model);
+                setSelectedModel(model || undefined);
 
                 // If chatId is "new", create the chat first
                 if (chatId === 'new' && actualChatId === 'new') {

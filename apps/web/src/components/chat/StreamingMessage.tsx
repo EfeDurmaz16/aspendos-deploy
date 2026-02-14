@@ -355,11 +355,9 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
                 {/* Metadata */}
                 {message.metadata && !message.streaming && (
                     <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border text-xs text-muted-foreground flex-wrap">
-                        {message.metadata.model && (
-                            <span className="font-mono bg-muted px-2 py-1 rounded text-foreground">
-                                {message.metadata.model}
-                            </span>
-                        )}
+                        <span className="font-mono bg-muted px-2 py-1 rounded text-foreground">
+                            YULA
+                        </span>
                         {message.metadata.tokensIn !== undefined &&
                             message.metadata.tokensOut !== undefined && (
                                 <span className="flex items-center gap-1">

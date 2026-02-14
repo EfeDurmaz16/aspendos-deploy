@@ -83,10 +83,10 @@ function MessageBubble({ message }: { message: Message }) {
                             isUser && 'justify-end'
                         )}
                     >
-                        {message.metadata.model && (
+                        {message.metadata.routing && (
                             <span className="flex items-center gap-1">
                                 <Lightning className="h-3 w-3" />
-                                {message.metadata.model}
+                                YULA
                             </span>
                         )}
                         {message.metadata.memoryCount && message.metadata.memoryCount > 0 && (
@@ -308,14 +308,12 @@ export function ChatInterface({ chatId, className }: ChatInterfaceProps) {
                                 setStreamingContent(assistantContent);
                             } else if (chunk.type === 'routing') {
                                 metadata.routing = chunk.content;
-                                metadata.model = chunk.metadata?.model as string;
                                 setStreamingMetadata({ ...metadata });
                             } else if (chunk.type === 'memory_context') {
                                 metadata.memoryCount = chunk.metadata?.memoryCount as number;
                                 setStreamingMetadata({ ...metadata });
                             } else if (chunk.type === 'fallback') {
                                 metadata.fallback = true;
-                                metadata.model = chunk.metadata?.newModel as string;
                                 setStreamingMetadata({ ...metadata });
                             } else if (chunk.type === 'error') {
                                 console.error('[Chat] Stream error:', chunk.content);

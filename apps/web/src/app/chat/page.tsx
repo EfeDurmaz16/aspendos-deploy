@@ -134,7 +134,7 @@ export default function ChatIndexPage() {
                 {/* Main Action */}
                 <div className="max-w-xl mx-auto w-full animate-fade-up opacity-0 animation-delay-200">
                     <PromptInputBox
-                        onSubmit={(text) => {
+                        onSubmit={(text, _mode) => {
                             void text;
                             handleNewChat();
                         }}

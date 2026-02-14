@@ -204,18 +204,13 @@ export async function POST(req: NextRequest) {
 
                     const { decision, memoryContext, memories } = routeResult;
 
-                    // Send routing decision to client
+                    // Send routing decision to client (never expose real model names)
                     controller.enqueue(
                         sse.encode({
                             type: 'routing',
                             content: `Route: ${decision.type}`,
                             metadata: {
                                 decision: decision.type,
-                                model:
-                                    decision.type === 'direct_reply' ||
-                                    decision.type === 'rag_search'
-                                        ? (decision as { model: string }).model
-                                        : undefined,
                                 reason: decision.reason,
                             },
                         })

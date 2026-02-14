@@ -42,6 +42,7 @@ import { AddModelsModal } from '@/components/chat/add-models-modal';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { ContextMenuMessage } from '@/components/chat/context-menu-message';
 import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
+import { type YulaMode, resolveMode } from '@/components/chat/model-picker';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { type ChatMessage, type MemoryDecision, useStreamingChat } from '@/hooks/useStreamingChat';
@@ -92,14 +93,8 @@ export default function ChatPage() {
     const [error, setError] = useState<string | null>(null);
 
     const [isAddModelsOpen, setIsAddModelsOpen] = useState(false);
-    const [enabledModels, setEnabledModels] = useState<string[]>([
-        'openai/gpt-4o-mini',
-        'anthropic/claude-3-5-haiku-20241022',
-        'google/gemini-2.0-flash',
-        'openai/gpt-4o',
-        'anthropic/claude-sonnet-4-5-20250929',
-    ]);
-    const [model, setModel] = useState('openai/gpt-4o-mini');
+    const [enabledModels, setEnabledModels] = useState<string[]>([]);
+    const [mode, setMode] = useState<YulaMode>('auto');
     const [webSearch, setWebSearch] = useState(false);
 
     const handleToggleModel = (modelId: string) => {
@@ -110,11 +105,10 @@ export default function ChatPage() {
 
     const { messages, isStreaming, sendMessage, error: streamError } = useStreamingChat(chatId);
 
-    // Sync model preference
+    // Sync mode from chat preference (map stored model to mode)
     useEffect(() => {
-        if (chat?.modelPreference) {
-            setModel(chat.modelPreference);
-        }
+        // Chat stores internal model IDs - no need to sync to mode
+        // Mode is user-facing only and defaults to 'auto'
     }, [chat?.modelPreference]);
 
     // Load chat and messages
@@ -202,24 +196,11 @@ export default function ChatPage() {
         }
     }, [router]);
 
-    const handleModelChange = useCallback(
-        async (modelId: string) => {
-            try {
-                await fetch(`${API_BASE}/api/chat/${chatId}`, {
-                    method: 'PATCH',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model_id: modelId }),
-                });
-                setChat((prev: Chat | null) =>
-                    prev ? { ...prev, modelPreference: modelId } : prev
-                );
-                setModel(modelId);
-            } catch {
-                /* Handle error silently */
-            }
+    const handleModeChange = useCallback(
+        (newMode: YulaMode) => {
+            setMode(newMode);
         },
-        [chatId]
+        []
     );
 
     // Keyboard shortcuts
@@ -245,9 +226,10 @@ export default function ChatPage() {
     const handleSubmit = useCallback(
         async (message: PromptInputMessage) => {
             const text = webSearch ? `[Search] ${message.text}` : message.text;
-            await sendMessage(text, { model });
+            const resolvedModel = resolveMode(mode);
+            await sendMessage(text, resolvedModel ? { model: resolvedModel } : {});
         },
-        [model, sendMessage, webSearch]
+        [mode, sendMessage, webSearch]
     );
 
     if (!isLoaded) {
@@ -413,17 +395,16 @@ export default function ChatPage() {
                                     <GlobeIcon size={16} />
                                     <span className="text-xs">Search</span>
                                 </PromptInputButton>
-                                {/* Model Selector in input footer */}
-                                <PromptInputSelect value={model} onValueChange={handleModelChange}>
+                                {/* Mode Selector */}
+                                <PromptInputSelect value={mode} onValueChange={(v) => handleModeChange(v as YulaMode)}>
                                     <PromptInputSelectTrigger>
-                                        <PromptInputSelectValue placeholder="Select model" />
+                                        <PromptInputSelectValue placeholder="Auto" />
                                     </PromptInputSelectTrigger>
                                     <PromptInputSelectContent>
-                                        {enabledModels.map((m) => (
-                                            <PromptInputSelectItem key={m} value={m}>
-                                                {m.split('/').pop()}
-                                            </PromptInputSelectItem>
-                                        ))}
+                                        <PromptInputSelectItem value="auto">Auto</PromptInputSelectItem>
+                                        <PromptInputSelectItem value="smart">Smart</PromptInputSelectItem>
+                                        <PromptInputSelectItem value="fast">Fast</PromptInputSelectItem>
+                                        <PromptInputSelectItem value="creative">Creative</PromptInputSelectItem>
                                     </PromptInputSelectContent>
                                 </PromptInputSelect>
                             </PromptInputTools>
