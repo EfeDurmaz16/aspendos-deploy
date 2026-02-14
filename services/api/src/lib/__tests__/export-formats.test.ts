@@ -160,7 +160,7 @@ describe('exportToMarkdown', () => {
 
         expect(result.mimeType).toBe('text/markdown');
         expect(result.filename).toMatch(/yula-chats-user123-\d{4}-\d{2}-\d{2}\.md/);
-        expect(result.content).toContain('# YULA Chat Export');
+        expect(result.content).toContain('# Yula Chat Export');
         expect(result.content).toContain('## Test Chat');
         expect(result.content).toContain('**User:** Hello');
         expect(result.content).toContain('**AI (gpt-4):** Hi there!');
@@ -214,7 +214,7 @@ describe('exportToMarkdown', () => {
         const chats: Chat[] = [];
         const result = exportToMarkdown(chats, 'user123');
 
-        expect(result.content).toContain('# YULA Chat Export');
+        expect(result.content).toContain('# Yula Chat Export');
         expect(result.content).toContain('No chats found');
     });
 
