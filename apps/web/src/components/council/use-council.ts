@@ -157,8 +157,9 @@ export function useCouncil() {
                 const { sessionId: newSessionId, streamUrl } = await createResponse.json();
                 setSessionId(newSessionId);
 
-                // Setup SSE stream
-                abortControllerRef.current = new AbortController();
+                // Setup SSE stream using fetch (supports cookies/credentials unlike native EventSource)
+                const controller = new AbortController();
+                abortControllerRef.current = controller;
                 const thoughts: Record<CouncilPersona, string> = {
                     logic: '',
                     creative: '',
@@ -166,13 +167,24 @@ export function useCouncil() {
                     'devils-advocate': '',
                 };
 
-                const eventSource = new EventSource(`${API_BASE}${streamUrl}`, {
-                    withCredentials: true,
-                } as EventSourceInit);
+                const sseResponse = await fetch(`${API_BASE}${streamUrl}`, {
+                    credentials: 'include',
+                    signal: controller.signal,
+                    headers: { Accept: 'text/event-stream' },
+                });
 
-                eventSource.onmessage = (event) => {
+                if (!sseResponse.ok || !sseResponse.body) {
+                    throw new Error('Failed to connect to council stream');
+                }
+
+                const reader = sseResponse.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                const processLine = (line: string) => {
+                    if (!line.startsWith('data: ')) return;
                     try {
-                        const data = JSON.parse(event.data);
+                        const data = JSON.parse(line.slice(6));
 
                         if (data.type === 'persona_chunk') {
                             const frontendPersona = backendToFrontendPersona[data.persona];
@@ -196,25 +208,41 @@ export function useCouncil() {
                         }
 
                         if (data.type === 'complete') {
-                            eventSource.close();
-                            // Request synthesis
+                            controller.abort();
                             synthesizeVerdict(newSessionId, question, thoughts);
                         }
 
                         if (data.type === 'error') {
                             setError(data.message);
-                            eventSource.close();
+                            controller.abort();
                         }
                     } catch (e) {
                         console.error('Error parsing SSE data:', e);
                     }
                 };
 
-                eventSource.onerror = () => {
-                    console.error('Council SSE connection failed');
-                    eventSource.close();
-                    setError('Council is temporarily unavailable. Please try again.');
+                // Read the stream
+                const readStream = async () => {
+                    try {
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() || '';
+                            for (const line of lines) {
+                                processLine(line.trim());
+                            }
+                        }
+                    } catch (err) {
+                        if ((err as Error).name !== 'AbortError') {
+                            console.error('Council SSE stream error:', err);
+                            setError('Council is temporarily unavailable. Please try again.');
+                        }
+                    }
                 };
+
+                readStream();
             } catch (err) {
                 console.error('Council API error:', err);
                 setError('Council is temporarily unavailable. Please try again.');

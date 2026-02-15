@@ -36,8 +36,9 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
             voiceStartTimeRef.current = null;
 
             // Decrement voice minutes (fire-and-forget)
-            void fetch('/api/billing/voice', {
+            void fetch(`${API_BASE}/api/voice/usage`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ minutesUsed: durationMinutes }),
             }).catch(console.error);
@@ -151,7 +152,7 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
                 ws.send(
                     JSON.stringify({
                         setup: {
-                            model: 'models/gemini-pro-vision', // or gemini-1.5-pro
+                            model: 'models/gemini-2.0-flash-live',
                             generation_config: { response_modalities: ['AUDIO'] },
                         },
                     })

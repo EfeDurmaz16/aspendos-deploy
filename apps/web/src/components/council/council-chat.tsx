@@ -69,27 +69,27 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
         <div
             className={cn(
                 'flex h-full flex-col overflow-hidden rounded-2xl',
-                'border border-white/10 bg-zinc-900/95 backdrop-blur-xl',
-                'shadow-2xl shadow-black/30',
+                'border border-border bg-background/95 backdrop-blur-xl',
+                'shadow-2xl shadow-black/10 dark:shadow-black/30',
                 className
             )}
         >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
                 <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
-                        <Users className="h-5 w-5 text-violet-400" weight="fill" />
+                        <Users className="h-5 w-5 text-violet-500" weight="fill" />
                     </div>
                     <div>
-                        <h2 className="font-semibold text-white">The Council</h2>
-                        <p className="text-xs text-zinc-500">Multi-perspective decision making</p>
+                        <h2 className="font-semibold text-foreground">The Council</h2>
+                        <p className="text-xs text-muted-foreground">Multi-perspective decision making</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     {isActive && (
                         <button
                             onClick={handleReset}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             title="Reset"
                         >
                             <ArrowCounterClockwise className="h-4 w-4" />
@@ -98,7 +98,7 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                     {onClose && (
                         <button
                             onClick={onClose}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                             <X className="h-4 w-4" />
                         </button>
@@ -137,10 +137,10 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                                     </motion.div>
                                 ))}
                             </div>
-                            <h3 className="mb-2 text-xl font-semibold text-white">
+                            <h3 className="mb-2 text-xl font-semibold text-foreground">
                                 Summon The Council
                             </h3>
-                            <p className="max-w-md text-sm text-zinc-400">
+                            <p className="max-w-md text-sm text-muted-foreground">
                                 Present a question or decision, and four distinct perspectives will
                                 deliberate before reaching a consensus.
                             </p>
@@ -155,11 +155,11 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                             className="space-y-6"
                         >
                             {/* Original question */}
-                            <div className="rounded-lg border border-white/5 bg-white/[0.02] p-4">
-                                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                            <div className="rounded-lg border border-border bg-muted/50 p-4">
+                                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                     Your Question
                                 </p>
-                                <p className="mt-1 text-sm text-zinc-300">{submittedQuestion}</p>
+                                <p className="mt-1 text-sm text-foreground/80">{submittedQuestion}</p>
                             </div>
 
                             {/* Verdict */}
@@ -179,11 +179,11 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                             className="space-y-6"
                         >
                             {/* Original question */}
-                            <div className="rounded-lg border border-white/5 bg-white/[0.02] p-4">
-                                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                            <div className="rounded-lg border border-border bg-muted/50 p-4">
+                                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                     Deliberating On
                                 </p>
-                                <p className="mt-1 text-sm text-zinc-300">{submittedQuestion}</p>
+                                <p className="mt-1 text-sm text-foreground/80">{submittedQuestion}</p>
                             </div>
 
                             {/* Deliberation progress */}
@@ -219,7 +219,7 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
 
             {/* Input Area */}
             {!isActive && (
-                <div className="border-t border-white/5 p-4">
+                <div className="border-t border-border p-4">
                     <div className="relative">
                         <textarea
                             ref={inputRef}
@@ -229,8 +229,8 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                             placeholder="Ask the Council for guidance on a decision..."
                             rows={2}
                             className={cn(
-                                'w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12',
-                                'text-sm text-white placeholder:text-zinc-500',
+                                'w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 pr-12',
+                                'text-sm text-foreground placeholder:text-muted-foreground',
                                 'focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/20'
                             )}
                         />
@@ -241,14 +241,14 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                                 'absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-lg',
                                 'transition-all duration-200',
                                 question.trim()
-                                    ? 'bg-violet-500 text-white hover:bg-violet-600'
-                                    : 'bg-white/5 text-zinc-500'
+                                    ? 'bg-violet-500 text-foreground hover:bg-violet-600'
+                                    : 'bg-muted text-muted-foreground'
                             )}
                         >
                             <PaperPlaneRight className="h-4 w-4" weight="fill" />
                         </button>
                     </div>
-                    <p className="mt-2 text-center text-xs text-zinc-600">
+                    <p className="mt-2 text-center text-xs text-muted-foreground/60">
                         Press Enter to summon the Council
                     </p>
                 </div>

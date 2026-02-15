@@ -186,7 +186,26 @@ app.post('/synthesize/stream', async (c) => {
     }
 });
 
-// ... existing code ...
+// POST /api/voice/usage - Record voice minutes used (for Gemini Live sessions)
+app.post('/usage', async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        const { minutesUsed } = await c.req.json();
+        if (typeof minutesUsed !== 'number' || minutesUsed <= 0) {
+            return c.json({ error: 'Invalid minutesUsed value' }, 400);
+        }
+
+        await recordVoiceUsage(userId, minutesUsed);
+        return c.json({ success: true, minutesUsed });
+    } catch (error) {
+        console.error(
+            '[Voice] Usage recording error:',
+            error instanceof Error ? error.message : 'Unknown'
+        );
+        return c.json({ error: 'Failed to record voice usage' }, 500);
+    }
+});
 
 // POST /api/voice/token - Generate ephemeral token for Gemini Live
 app.post('/token', async (c) => {

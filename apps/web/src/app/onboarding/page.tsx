@@ -3,8 +3,9 @@
 import { ArrowRight, ChatCircle, Export, Lightning, UsersThree } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useOnboardingStore } from '@/lib/stores/onboarding-store';
 import { cn } from '@/lib/utils';
 
 const STEPS = [
@@ -53,12 +54,19 @@ const STEPS = [
 export default function OnboardingPage() {
     const [step, setStep] = useState(0);
     const router = useRouter();
+    const { completeOnboarding, skipTour, startOnboarding } = useOnboardingStore();
+
+    // Start onboarding flow on mount
+    useEffect(() => {
+        startOnboarding();
+    }, [startOnboarding]);
 
     const currentStep = STEPS[step];
     const isLastStep = step === STEPS.length - 1;
 
     const handleNext = () => {
         if (isLastStep) {
+            completeOnboarding();
             router.push('/chat');
         } else {
             setStep(step + 1);
@@ -66,6 +74,7 @@ export default function OnboardingPage() {
     };
 
     const handleSkip = () => {
+        skipTour();
         router.push('/chat');
     };
 

@@ -91,6 +91,7 @@ export function ChatSidebar({
             <div className="p-4 pb-2">
                 <Button
                     onClick={onNewChat}
+                    data-spotlight="pac-button"
                     className="w-full justify-start gap-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm h-11 rounded-xl text-sm"
                 >
                     <Plus weight="bold" className="size-5" />
@@ -102,6 +103,7 @@ export function ChatSidebar({
             <nav className="px-4 pb-2 space-y-1">
                 <Link
                     href="/council"
+                    data-spotlight="council-toggle"
                     className={cn(
                         'flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
                         pathname?.startsWith('/council')
@@ -114,6 +116,7 @@ export function ChatSidebar({
                 </Link>
                 <Link
                     href="/memory"
+                    data-spotlight="import-button"
                     className={cn(
                         'flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
                         pathname?.startsWith('/memory')

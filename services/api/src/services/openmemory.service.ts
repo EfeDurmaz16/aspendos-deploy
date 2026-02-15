@@ -6,6 +6,7 @@
  */
 
 import { Memory } from 'openmemory-js';
+import { prisma } from '@aspendos/db';
 import { breakers } from '../lib/circuit-breaker';
 import { queueFallbackWrite, searchFallback } from '../lib/memory-fallback';
 
@@ -168,6 +169,52 @@ export async function searchMemories(
             isPinned: !!(r.metadata as Record<string, unknown>)?.isPinned,
             trace: r.trace,
         }));
+
+        // Hybrid search: also query PostgreSQL for unembedded imported memories (decayScore: 0)
+        // These are recently imported memories that haven't been embedded in Qdrant yet
+        try {
+            const queryWords = query
+                .toLowerCase()
+                .split(/\s+/)
+                .filter((w) => w.length > 2);
+
+            if (queryWords.length > 0) {
+                const pgImports = await prisma.memory.findMany({
+                    where: {
+                        userId,
+                        isActive: true,
+                        decayScore: 0,
+                        source: { in: ['import_pending', 'qdrant_fallback'] },
+                        OR: queryWords.map((word) => ({
+                            content: { contains: word, mode: 'insensitive' as const },
+                        })),
+                    },
+                    orderBy: { createdAt: 'desc' },
+                    take: options?.limit || 5,
+                });
+
+                // Merge with Qdrant results, deduplicating by content similarity
+                const existingContents = new Set(mapped.map((m: { content: string }) => m.content.slice(0, 100)));
+                for (const pg of pgImports) {
+                    if (!existingContents.has(pg.content.slice(0, 100))) {
+                        mapped.push({
+                            id: pg.id,
+                            content: pg.content,
+                            sector: pg.sector || 'semantic',
+                            salience: pg.confidence || 0.5,
+                            score: pg.confidence || 0.5,
+                            createdAt: pg.createdAt.toISOString(),
+                            metadata: { source: pg.source },
+                            isPinned: false,
+                            trace: undefined,
+                        });
+                        existingContents.add(pg.content.slice(0, 100));
+                    }
+                }
+            }
+        } catch (pgError) {
+            console.warn('[HybridSearch] PostgreSQL import search failed:', pgError);
+        }
 
         // Apply recency boost to surface recent context
         const boosted = applyRecencyBoost(mapped);

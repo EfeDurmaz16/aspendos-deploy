@@ -33,7 +33,7 @@ export function LiveButton({ className }: LiveButtonProps) {
     return (
         <div className={cn('relative', className)}>
             <Button
-                variant={isActive ? 'primary' : 'ghost'}
+                variant={isActive ? 'destructive' : 'ghost'}
                 size="icon"
                 onClick={toggleLive}
                 disabled={isConnecting}

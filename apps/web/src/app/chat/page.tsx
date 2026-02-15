@@ -33,12 +33,18 @@ import {
     PromptInputSubmit,
     PromptInputTextarea,
     PromptInputTools,
+    usePromptInputController,
 } from '@/components/ai-elements/prompt-input';
 import { Reasoning } from '@/components/ai-elements/reasoning';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { ContextMenuMessage } from '@/components/chat/context-menu-message';
 import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
+import { LiveButton } from '@/components/chat/live-button';
 import { type YulaMode, resolveMode } from '@/components/chat/model-picker';
+import { VoiceButton } from '@/components/chat/voice-button';
+import { SpotlightOverlay } from '@/components/onboarding/spotlight-overlay';
+import { PACToastWrapper } from '@/components/pac/pac-toast-wrapper';
+import { useOnboardingStore } from '@/lib/stores/onboarding-store';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { type ChatMessage, useStreamingChat } from '@/hooks/useStreamingChat';
@@ -60,6 +66,16 @@ interface Chat {
     updatedAt: string;
 }
 
+/** Voice button wired to PromptInput context */
+function PromptVoiceButton() {
+    const controller = usePromptInputController();
+    return (
+        <VoiceButton
+            onTranscription={(text) => controller.textInput.setInput(text)}
+        />
+    );
+}
+
 const SUGGESTIONS = [
     { text: 'Analyze a complex document', sub: 'Upload and get insights' },
     { text: 'Help me write something', sub: 'Essays, emails, or code' },
@@ -76,6 +92,14 @@ export default function ChatIndexPage() {
     const [webSearch, setWebSearch] = useState(false);
 
     const { messages, isStreaming, sendMessage, error: streamError } = useStreamingChat('new');
+    const { hasCompleted, hasSkipped, isActive: onboardingActive, startOnboarding: startTour } = useOnboardingStore();
+
+    // First-visit detection: show spotlight overlay if user hasn't completed or skipped onboarding
+    useEffect(() => {
+        if (isLoaded && isSignedIn && !hasCompleted && !hasSkipped && !onboardingActive) {
+            startTour();
+        }
+    }, [isLoaded, isSignedIn, hasCompleted, hasSkipped, onboardingActive, startTour]);
 
     // Open sidebar by default on desktop
     useEffect(() => {
@@ -216,14 +240,17 @@ export default function ChatIndexPage() {
                     >
                         <SidebarSimple className="w-4 h-4" />
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleNewChat}
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    >
-                        <PlusCircle className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <LiveButton />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleNewChat}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        >
+                            <PlusCircle className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Conversation Area */}
@@ -353,6 +380,7 @@ export default function ChatIndexPage() {
                                         <PromptInputSelectItem value="creative">Creative</PromptInputSelectItem>
                                     </PromptInputSelectContent>
                                 </PromptInputSelect>
+                                <PromptVoiceButton />
                             </PromptInputTools>
                             <PromptInputSubmit status={isStreaming ? 'streaming' : undefined} />
                         </PromptInputFooter>
@@ -365,6 +393,12 @@ export default function ChatIndexPage() {
 
             {/* Keyboard Shortcuts Panel */}
             <KeyboardShortcuts />
+
+            {/* PAC Notification Toasts */}
+            <PACToastWrapper />
+
+            {/* Onboarding Spotlight Overlay */}
+            <SpotlightOverlay />
         </div>
     );
 }
