@@ -102,7 +102,7 @@ function Navigation() {
                         <a
                             key={item.label}
                             href={item.href}
-                            className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+                            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                         >
                             {item.label}
                         </a>
@@ -113,13 +113,13 @@ function Navigation() {
                 <div className="flex items-center gap-3">
                     <Link
                         href="/login"
-                        className="text-[13px] text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
                     >
                         Sign in
                     </Link>
                     <Link
                         href="/signup"
-                        className="h-9 px-4 rounded-lg bg-foreground text-background text-[13px] font-medium flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+                        className="h-9 px-4 rounded-lg bg-foreground text-background text-sm font-medium flex items-center gap-1.5 hover:opacity-90 transition-opacity"
                     >
                         Get started
                         <ArrowRight size={14} weight="bold" />
@@ -175,7 +175,8 @@ function HeroSection() {
                         initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.7, delay: 0.1 }}
-                        className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.08] tracking-tight text-foreground"
+                        className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight text-foreground"
+                        style={{ textWrap: 'balance' as any }}
                     >
                         One AI.{' '}
                         <span className="text-muted-foreground">Every model.</span>
@@ -628,7 +629,7 @@ function FeaturesSection() {
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         Features
                     </span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3">
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3" style={{ textWrap: 'balance' as any }}>
                         Three features that change{' '}
                         <span className="text-muted-foreground">how you use AI</span>
                     </h2>
@@ -731,7 +732,7 @@ function HowItWorksSection() {
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         How it works
                     </span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3">
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3" style={{ textWrap: 'balance' as any }}>
                         Four steps.{' '}
                         <span className="text-muted-foreground">That&apos;s it.</span>
                     </h2>
@@ -834,7 +835,7 @@ function PricingSection() {
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         Pricing
                     </span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3">
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3" style={{ textWrap: 'balance' as any }}>
                         Simple, transparent pricing
                     </h2>
                     <p className="text-sm text-muted-foreground mt-3">
@@ -859,7 +860,7 @@ function PricingSection() {
                             )}
                         >
                             {plan.popular && (
-                                <div className="absolute -top-3 left-6 px-3 py-1 text-[11px] font-medium rounded-full bg-foreground text-background">
+                                <div className="absolute -top-3 left-6 px-3 py-1 text-xs font-medium rounded-full bg-foreground text-background">
                                     Most popular
                                 </div>
                             )}
@@ -953,7 +954,7 @@ function FAQSection() {
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         FAQ
                     </span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3">
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3" style={{ textWrap: 'balance' as any }}>
                         Common questions
                     </h2>
                 </div>
@@ -1011,7 +1012,7 @@ function CTASection() {
     return (
         <AnimatedSection className="py-24 md:py-32 px-6 border-t border-border/30">
             <div className="max-w-2xl mx-auto text-center">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground" style={{ textWrap: 'balance' as any }}>
                     Ready to try a smarter AI?
                 </h2>
                 <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
@@ -1045,7 +1046,7 @@ function Footer() {
             <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <div className="w-5 h-5 rounded bg-foreground/10 flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-foreground/60">Y</span>
+                        <span className="text-xs font-bold text-foreground/60">Y</span>
                     </div>
                     <span className="text-xs text-muted-foreground">
                         &copy; {new Date().getFullYear()} Yula AI. All rights reserved.

@@ -9,9 +9,9 @@ import type { ScheduledTask } from '@aspendos/db';
 import { gateway, generateText } from 'ai';
 import { type CommitmentDetectionResult, parseTimeExpression } from './scheduler.service';
 
-// Use a lightweight model for commitment detection to minimize costs
-const DETECTION_MODEL = process.env.COMMITMENT_DETECTION_MODEL || 'openai/gpt-4o-mini';
-const REENGAGEMENT_MODEL = process.env.REENGAGEMENT_MODEL || 'openai/gpt-4o-mini';
+// Use Groq for fast, cheap JSON classification tasks
+const DETECTION_MODEL = process.env.COMMITMENT_DETECTION_MODEL || 'groq/llama-3.1-8b-instant';
+const REENGAGEMENT_MODEL = process.env.REENGAGEMENT_MODEL || 'groq/llama-3.1-8b-instant';
 
 // ============================================
 // COMMITMENT DETECTION

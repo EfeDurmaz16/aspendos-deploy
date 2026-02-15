@@ -105,7 +105,7 @@ export function MessageRenderer({
     className = '',
 }: MessageRendererProps) {
     return (
-        <div className={`prose prose-zinc dark:prose-invert max-w-none ${className}`}>
+        <div className={`prose prose-zinc dark:prose-invert max-w-none leading-[1.6] ${className}`}>
             <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex, [rehypeHighlight, { detect: true }]]}
@@ -181,7 +181,7 @@ export function MessageRenderer({
                     // Custom blockquote styles
                     blockquote({ children }) {
                         return (
-                            <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-600 pl-4 italic text-zinc-600 dark:text-zinc-400">
+                            <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-600 pl-6 italic text-zinc-600 dark:text-zinc-400 text-[0.95em]">
                                 {children}
                             </blockquote>
                         );
@@ -190,20 +190,24 @@ export function MessageRenderer({
                     // Custom heading styles
                     h1({ children }) {
                         return (
-                            <h1 className="text-2xl font-serif font-semibold mt-6 mb-3">
+                            <h1 className="text-[1.5rem] font-semibold mt-8 mb-3 leading-tight tracking-tight" style={{ hyphens: 'none', textWrap: 'balance' }}>
                                 {children}
                             </h1>
                         );
                     },
                     h2({ children }) {
                         return (
-                            <h2 className="text-xl font-serif font-semibold mt-5 mb-2">
+                            <h2 className="text-[1.35rem] font-semibold mt-7 mb-2 leading-tight tracking-tight" style={{ hyphens: 'none', textWrap: 'balance' }}>
                                 {children}
                             </h2>
                         );
                     },
                     h3({ children }) {
-                        return <h3 className="text-lg font-semibold mt-4 mb-2">{children}</h3>;
+                        return (
+                            <h3 className="text-[1.15rem] font-semibold mt-6 mb-1.5 leading-snug" style={{ hyphens: 'none', textWrap: 'balance' }}>
+                                {children}
+                            </h3>
+                        );
                     },
 
                     // Custom list styles

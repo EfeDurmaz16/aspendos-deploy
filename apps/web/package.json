@@ -23,14 +23,9 @@
         "test:e2e:debug": "bunx playwright test --debug"
     },
     "dependencies": {
-        "@ai-sdk/anthropic": "^3.0.23",
-        "@ai-sdk/google": "^3.0.26",
-        "@ai-sdk/groq": "^3.0.15",
-        "@ai-sdk/openai": "^3.0.18",
         "@ai-sdk/react": "^3.0.41",
         "@aspendos/db": "workspace:*",
         "@auth/core": "^0.34.3",
-        "@anthropic-ai/sdk": "^0.57.0",
         "@better-auth/passkey": "^1.4.16",
         "@mlc-ai/web-llm": "^0.2.80",
         "@phosphor-icons/react": "^2.1.10",
@@ -67,7 +62,6 @@
         "embla-carousel-react": "^8.6.0",
         "framer-motion": "^12.29.2",
         "katex": "^0.16.28",
-        "groq-sdk": "^0.31.0",
         "lucide-react": "^0.562.0",
         "motion": "^12.27.2",
         "nanoid": "^5.1.6",
