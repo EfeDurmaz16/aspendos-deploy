@@ -6,11 +6,7 @@ const requiredEnvVars = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL'
 
 const optionalEnvVars = [
     'SENTRY_DSN',
-    'OPENAI_API_KEY',
-    'ANTHROPIC_API_KEY',
-    'GROQ_API_KEY',
-    'GOOGLE_GENERATIVE_AI_API_KEY',
-    'GOOGLE_AI_API_KEY',
+    'AI_GATEWAY_API_KEY',
     'QDRANT_URL',
     'QDRANT_API_KEY',
     'POLAR_ACCESS_TOKEN',
@@ -43,12 +39,6 @@ export function validateEnv() {
 
     const missingOptional: string[] = [];
     for (const envVar of optionalEnvVars) {
-        if (
-            (envVar === 'GOOGLE_AI_API_KEY' || envVar === 'GOOGLE_GENERATIVE_AI_API_KEY') &&
-            (process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY)
-        ) {
-            continue;
-        }
         if (!process.env[envVar]) {
             missingOptional.push(envVar);
         }

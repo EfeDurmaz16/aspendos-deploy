@@ -1,10 +1,10 @@
 /**
  * YULA AI Embeddings Module
  *
- * Text embeddings using Vercel AI SDK with OpenAI.
+ * Text embeddings using Vercel AI Gateway.
  */
 
-import { openai } from '@ai-sdk/openai';
+import { gateway } from 'ai';
 import { embed, embedMany } from 'ai';
 
 // ============================================
@@ -16,7 +16,7 @@ import { embed, embedMany } from 'ai';
  */
 export async function createEmbedding(text: string): Promise<number[]> {
     const { embedding } = await embed({
-        model: openai.embedding('text-embedding-3-small'),
+        model: gateway.textEmbeddingModel('openai/text-embedding-3-small'),
         value: text,
     });
 
@@ -28,7 +28,7 @@ export async function createEmbedding(text: string): Promise<number[]> {
  */
 export async function createEmbeddings(texts: string[]): Promise<number[][]> {
     const { embeddings } = await embedMany({
-        model: openai.embedding('text-embedding-3-small'),
+        model: gateway.textEmbeddingModel('openai/text-embedding-3-small'),
         values: texts,
     });
 

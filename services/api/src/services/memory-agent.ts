@@ -12,7 +12,7 @@
  * - Memory consolidation pipeline (dedup + decay)
  */
 
-import { createGroq } from '@ai-sdk/groq';
+import { gateway } from 'ai';
 import { generateText } from 'ai';
 import * as openMemory from './openmemory.service';
 
@@ -147,7 +147,7 @@ const CLASSIFICATION_PATTERNS: { pattern: RegExp; type: QueryType }[] = [
 // ============================================
 
 export class MemoryDecisionAgent {
-    private groq = createGroq({ apiKey: process.env.GROQ_API_KEY || '' });
+    private groqModel = gateway('groq/llama-3.1-8b-instant');
 
     /**
      * Classify query type using LLM when pattern matching fails.
@@ -161,7 +161,7 @@ export class MemoryDecisionAgent {
     }> {
         try {
             const { text } = await generateText({
-                model: this.groq('llama-3.1-8b-instant'),
+                model: this.groqModel,
                 maxOutputTokens: 100,
                 temperature: 0,
                 prompt: `Classify this user query into exactly one category and decide if the user's personal memory/history would help answer it better.
@@ -664,14 +664,14 @@ export async function extractMemoriesFromExchange(
     userMessage: string,
     assistantResponse: string
 ): Promise<{ extracted: string[]; sector: string }[]> {
-    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY || '' });
+    const groqModel = gateway('groq/llama-3.1-8b-instant');
 
     // Skip extraction for very short exchanges
     if (userMessage.length < 20 && assistantResponse.length < 50) return [];
 
     try {
         const { text } = await generateText({
-            model: groq('llama-3.1-8b-instant'),
+            model: groqModel,
             maxOutputTokens: 300,
             temperature: 0,
             prompt: `Extract personal facts, preferences, or skills from this conversation exchange. Only extract information about the USER, not general facts.

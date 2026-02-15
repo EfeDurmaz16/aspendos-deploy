@@ -58,7 +58,7 @@ function createTestApp() {
 describe('Voice Routes', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        process.env.OPENAI_API_KEY = 'test-key';
+        process.env.AI_GATEWAY_API_KEY = 'test-key';
         // Reset to default authenticated behavior
         mockAuth.api.getSession.mockResolvedValue({
             user: { id: 'test-user-1', email: 'test@yula.dev', name: 'Test User' },

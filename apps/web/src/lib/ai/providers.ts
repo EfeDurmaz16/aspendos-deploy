@@ -1,36 +1,11 @@
 /**
  * YULA AI Provider Registry
  *
- * Unified AI provider configuration using Vercel AI SDK.
- * ALL AI generation uses streamText/generateText from this module.
+ * Unified AI provider configuration using Vercel AI Gateway.
+ * ALL AI generation routes through the gateway — no individual API keys needed.
  */
 
-import { anthropic } from '@ai-sdk/anthropic';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createGroq } from '@ai-sdk/groq';
-import { openai } from '@ai-sdk/openai';
-
-// ============================================
-// PROVIDER INITIALIZATION
-// ============================================
-
-/**
- * Groq provider - Llama models (fast routing decisions)
- * Note: OpenAI and Anthropic use default exports from their packages
- */
-export const groq = createGroq({
-    apiKey: process.env.GROQ_API_KEY,
-});
-
-/**
- * Google Generative AI provider - Gemini models
- */
-export const google = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_AI_API_KEY,
-});
-
-// Re-export default providers
-export { openai, anthropic };
+import { gateway } from 'ai';
 
 // ============================================
 // MODEL REGISTRY
@@ -165,47 +140,36 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
 };
 
 // ============================================
-// MODEL RESOLUTION
+// MODEL RESOLUTION (via Vercel AI Gateway)
 // ============================================
 
 /**
- * Get the Vercel AI SDK model instance for a given model ID
+ * Get the Vercel AI SDK model instance for a given model ID.
+ * All models are routed through the Vercel AI Gateway.
  */
 export function getModel(modelId: ModelId | string) {
     const config = MODEL_REGISTRY[modelId as ModelId];
 
     if (!config) {
-        // Default to GPT-4o-mini if unknown
-        console.warn(`[AI] Unknown model: ${modelId}, defaulting to gpt-4o-mini`);
-        return openai('gpt-4o-mini');
+        console.warn(`[AI] Unknown model: ${modelId}, defaulting to openai/gpt-4o-mini`);
+        return gateway('openai/gpt-4o-mini');
     }
 
-    switch (config.provider) {
-        case 'openai':
-            return openai(config.id);
-        case 'anthropic':
-            return anthropic(config.id);
-        case 'google':
-            return google(config.id);
-        case 'groq':
-            return groq(config.id);
-        default:
-            return openai('gpt-4o-mini');
-    }
+    return gateway(`${config.provider}/${config.id}`);
 }
 
 /**
  * Get the router model (fast Groq Llama for decision making)
  */
 export function getRouterModel() {
-    return groq('llama-3.1-8b-instant');
+    return gateway('groq/llama-3.1-8b-instant');
 }
 
 /**
  * Get the fallback router model
  */
 export function getFallbackRouterModel() {
-    return groq('llama3-8b-8192');
+    return gateway('groq/llama3-8b-8192');
 }
 
 // ============================================

@@ -1,19 +1,11 @@
-import Groq from 'groq-sdk';
+/**
+ * Groq Router Service
+ *
+ * Fast routing decisions via Vercel AI Gateway.
+ * All Groq model calls route through the gateway.
+ */
 
-// ============================================
-// GROQ CLIENT (For fast routing decisions)
-// ============================================
-
-let _groqClient: Groq | null = null;
-
-export function getGroqClient(): Groq {
-    if (!_groqClient) {
-        _groqClient = new Groq({
-            apiKey: process.env.GROQ_API_KEY,
-        });
-    }
-    return _groqClient;
-}
+import { gateway, generateText, streamText } from 'ai';
 
 // ============================================
 // ROUTING MODELS (Fast, low-cost)
@@ -82,49 +74,35 @@ export async function routeUserMessage(
         : '';
 
     try {
-        const completion = await getGroqClient().chat.completions.create({
-            model: ROUTER_MODEL,
-            messages: [
-                { role: 'system', content: ROUTER_SYSTEM_PROMPT },
-                {
-                    role: 'user',
-                    content: `User message: "${userMessage}"${contextStr}\n\nDecide the route:`,
-                },
-            ],
+        const { text } = await generateText({
+            model: gateway(`groq/${ROUTER_MODEL}`),
+            system: ROUTER_SYSTEM_PROMPT,
+            prompt: `User message: "${userMessage}"${contextStr}\n\nDecide the route:`,
             temperature: 0.1,
-            max_tokens: 500,
-            response_format: { type: 'json_object' },
+            maxOutputTokens: 500,
         });
 
-        const content = completion.choices[0]?.message?.content;
-        if (!content) {
+        if (!text) {
             throw new Error('Empty response from router');
         }
 
-        const decision = JSON.parse(content) as RouteDecision;
+        const decision = JSON.parse(text.trim()) as RouteDecision;
         return decision;
     } catch (error) {
         console.warn('[Router] Primary router failed, trying fallback:', error);
 
         // Fallback to simpler model
         try {
-            const fallback = await getGroqClient().chat.completions.create({
-                model: FALLBACK_ROUTER_MODEL,
-                messages: [
-                    { role: 'system', content: ROUTER_SYSTEM_PROMPT },
-                    {
-                        role: 'user',
-                        content: `User message: "${userMessage}"\n\nDecide the route:`,
-                    },
-                ],
+            const { text } = await generateText({
+                model: gateway(`groq/${FALLBACK_ROUTER_MODEL}`),
+                system: ROUTER_SYSTEM_PROMPT,
+                prompt: `User message: "${userMessage}"\n\nDecide the route:`,
                 temperature: 0.1,
-                max_tokens: 500,
+                maxOutputTokens: 500,
             });
 
-            const content = fallback.choices[0]?.message?.content;
-            if (content) {
-                // Try to extract JSON from response
-                const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (text) {
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                     return JSON.parse(jsonMatch[0]) as RouteDecision;
                 }
@@ -143,7 +121,7 @@ export async function routeUserMessage(
 }
 
 // ============================================
-// STREAMING COMPLETION VIA GROQ
+// STREAMING COMPLETION VIA GATEWAY
 // ============================================
 
 export async function* createGroqStreamingCompletion(
@@ -152,22 +130,18 @@ export async function* createGroqStreamingCompletion(
 ): AsyncGenerator<{ type: 'text' | 'done'; content: string }> {
     const { model = 'llama-3.1-70b-versatile', temperature = 0.7, maxTokens = 4000 } = options;
 
-    const stream = await getGroqClient().chat.completions.create({
-        model,
+    const result = streamText({
+        model: gateway(`groq/${model}`),
         messages,
         temperature,
-        max_tokens: maxTokens,
-        stream: true,
+        maxOutputTokens: maxTokens,
     });
 
-    for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content;
-        if (content) {
-            yield { type: 'text', content };
+    for await (const chunk of result.textStream) {
+        if (chunk) {
+            yield { type: 'text', content: chunk };
         }
     }
 
     yield { type: 'done', content: '' };
 }
-
-export default getGroqClient;

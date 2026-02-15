@@ -3,17 +3,15 @@
  *
  * Detects temporal commitments in AI responses and generates
  * re-engagement messages when scheduled tasks are executed.
+ * All AI calls route through Vercel AI Gateway.
  */
 import type { ScheduledTask } from '@aspendos/db';
+import { gateway, generateText } from 'ai';
 import { type CommitmentDetectionResult, parseTimeExpression } from './scheduler.service';
 
 // Use a lightweight model for commitment detection to minimize costs
-const DETECTION_MODEL = process.env.COMMITMENT_DETECTION_MODEL || 'gpt-4o-mini';
-const REENGAGEMENT_MODEL = process.env.REENGAGEMENT_MODEL || 'gpt-4o-mini';
-
-// API configuration
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const DETECTION_MODEL = process.env.COMMITMENT_DETECTION_MODEL || 'openai/gpt-4o-mini';
+const REENGAGEMENT_MODEL = process.env.REENGAGEMENT_MODEL || 'openai/gpt-4o-mini';
 
 // ============================================
 // COMMITMENT DETECTION
@@ -49,47 +47,18 @@ export async function detectCommitment(
     assistantMessage: string,
     conversationContext?: string
 ): Promise<CommitmentDetectionResult> {
-    if (!OPENAI_API_KEY) {
-        console.warn('OpenAI API key not configured, skipping commitment detection');
-        return { hasCommitment: false };
-    }
-
     try {
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: DETECTION_MODEL,
-                messages: [
-                    { role: 'system', content: COMMITMENT_DETECTION_PROMPT },
-                    {
-                        role: 'user',
-                        content: conversationContext
-                            ? `Context: ${conversationContext}\n\nAssistant's message to analyze:\n${assistantMessage}`
-                            : `Assistant's message to analyze:\n${assistantMessage}`,
-                    },
-                ],
-                temperature: 0.1, // Low temperature for consistent detection
-                max_tokens: 200,
-            }),
+        const { text } = await generateText({
+            model: gateway(DETECTION_MODEL),
+            temperature: 0.1,
+            maxOutputTokens: 200,
+            system: COMMITMENT_DETECTION_PROMPT,
+            prompt: conversationContext
+                ? `Context: ${conversationContext}\n\nAssistant's message to analyze:\n${assistantMessage}`
+                : `Assistant's message to analyze:\n${assistantMessage}`,
         });
 
-        if (!response.ok) {
-            console.error('Commitment detection API error:', response.status, response.statusText);
-            return { hasCommitment: false };
-        }
-
-        const data = (await response.json()) as {
-            choices: Array<{ message: { content: string } }>;
-        };
-
-        const content = data.choices[0]?.message?.content?.trim() || '';
-
-        // Parse the JSON response
-        const result = JSON.parse(content) as {
+        const result = JSON.parse(text.trim()) as {
             has_commitment: boolean;
             time_frame: string | null;
             intent: string | null;
@@ -101,7 +70,6 @@ export async function detectCommitment(
             return { hasCommitment: false };
         }
 
-        // Parse the time frame to get an absolute date
         const absoluteTime = result.time_frame ? parseTimeExpression(result.time_frame) : null;
 
         return {
@@ -151,11 +119,6 @@ Respond with ONLY the message text, nothing else.`;
  * Generate a re-engagement message for a scheduled task
  */
 export async function generateReengagementMessage(task: ScheduledTask): Promise<string> {
-    if (!OPENAI_API_KEY) {
-        // Fallback message if API not configured
-        return `Hey! I wanted to follow up on ${task.topic || 'our previous conversation'}. ${task.intent ? `I mentioned I'd ${task.intent.toLowerCase()}.` : ''} How are things going?`;
-    }
-
     try {
         const prompt = REENGAGEMENT_PROMPT_TEMPLATE.replace(
             '{{CURRENT_TIME}}',
@@ -173,37 +136,15 @@ export async function generateReengagementMessage(task: ScheduledTask): Promise<
             .replace('{{TONE}}', task.tone || 'friendly')
             .replace('{{CONTEXT}}', task.contextSummary || 'No additional context available');
 
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: REENGAGEMENT_MODEL,
-                messages: [
-                    { role: 'system', content: prompt },
-                    { role: 'user', content: 'Generate the re-engagement message now.' },
-                ],
-                temperature: 0.7, // Some creativity for natural messages
-                max_tokens: 150,
-            }),
+        const { text } = await generateText({
+            model: gateway(REENGAGEMENT_MODEL),
+            temperature: 0.7,
+            maxOutputTokens: 150,
+            system: prompt,
+            prompt: 'Generate the re-engagement message now.',
         });
 
-        if (!response.ok) {
-            console.error(
-                'Re-engagement generation API error:',
-                response.status,
-                response.statusText
-            );
-            throw new Error('Failed to generate re-engagement message');
-        }
-
-        const data = (await response.json()) as {
-            choices: Array<{ message: { content: string } }>;
-        };
-
-        return data.choices[0]?.message?.content?.trim() || generateFallbackMessage(task);
+        return text.trim() || generateFallbackMessage(task);
     } catch (error) {
         console.error('Re-engagement message generation failed:', error);
         return generateFallbackMessage(task);
@@ -215,9 +156,9 @@ export async function generateReengagementMessage(task: ScheduledTask): Promise<
  */
 function generateFallbackMessage(task: ScheduledTask): string {
     const toneMessages = {
-        friendly: `Hey! 👋 Just checking in ${task.topic ? `about ${task.topic}` : ''}. How's everything going?`,
+        friendly: `Hey! Just checking in ${task.topic ? `about ${task.topic}` : ''}. How's everything going?`,
         professional: `Hello! I wanted to follow up ${task.topic ? `regarding ${task.topic}` : 'on our previous discussion'}. Do you have any updates?`,
-        encouraging: `Hi there! 🌟 I'm excited to hear how things are progressing ${task.topic ? `with ${task.topic}` : ''}. What's new?`,
+        encouraging: `Hi there! I'm excited to hear how things are progressing ${task.topic ? `with ${task.topic}` : ''}. What's new?`,
     };
 
     return toneMessages[task.tone as keyof typeof toneMessages] || toneMessages.friendly;
@@ -227,49 +168,30 @@ function generateFallbackMessage(task: ScheduledTask): string {
 // CONTEXT SUMMARIZATION
 // ============================================
 
-const SUMMARIZATION_PROMPT = `Summarize the following conversation context in 2-3 sentences.
-Focus on the key topics discussed and any important details that would help resume the conversation later.
-Be concise but capture the essential context.
-
-Conversation:
-{{CONVERSATION}}
-
-Summary:`;
-
 /**
  * Generate a context summary for a scheduled task
  */
 export async function generateContextSummary(conversationHistory: string): Promise<string> {
-    if (!OPENAI_API_KEY || !conversationHistory) {
+    if (!conversationHistory) {
         return '';
     }
 
     try {
-        const prompt = SUMMARIZATION_PROMPT.replace('{{CONVERSATION}}', conversationHistory);
+        const { text } = await generateText({
+            model: gateway(DETECTION_MODEL),
+            temperature: 0.3,
+            maxOutputTokens: 200,
+            prompt: `Summarize the following conversation context in 2-3 sentences.
+Focus on the key topics discussed and any important details that would help resume the conversation later.
+Be concise but capture the essential context.
 
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: DETECTION_MODEL, // Use lightweight model
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.3,
-                max_tokens: 200,
-            }),
+Conversation:
+${conversationHistory}
+
+Summary:`,
         });
 
-        if (!response.ok) {
-            return '';
-        }
-
-        const data = (await response.json()) as {
-            choices: Array<{ message: { content: string } }>;
-        };
-
-        return data.choices[0]?.message?.content?.trim() || '';
+        return text.trim();
     } catch (error) {
         console.error('Context summarization failed:', error);
         return '';

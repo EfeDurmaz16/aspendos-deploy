@@ -1,18 +1,17 @@
-import OpenAI from 'openai';
+/**
+ * OpenAI Service (via Vercel AI Gateway)
+ *
+ * Legacy wrapper maintained for backward compatibility.
+ * All calls route through Vercel AI Gateway.
+ */
 
-// ============================================
-// OPENAI CLIENT
-// ============================================
-
-export const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+import { gateway, generateText, streamText, embed, embedMany } from 'ai';
 
 // ============================================
 // EMBEDDING MODEL
 // ============================================
 
-const EMBEDDING_MODEL = 'text-embedding-3-small';
+const EMBEDDING_MODEL = 'openai/text-embedding-3-small';
 
 // ============================================
 // EMBEDDING OPERATIONS
@@ -22,22 +21,22 @@ const EMBEDDING_MODEL = 'text-embedding-3-small';
  * Create embedding for a single text
  */
 export async function createEmbedding(text: string): Promise<number[]> {
-    const response = await openai.embeddings.create({
-        model: EMBEDDING_MODEL,
-        input: text,
+    const { embedding } = await embed({
+        model: gateway.textEmbeddingModel(EMBEDDING_MODEL),
+        value: text,
     });
-    return response.data[0].embedding;
+    return embedding;
 }
 
 /**
  * Create embeddings for multiple texts (batch)
  */
 export async function createEmbeddings(texts: string[]): Promise<number[][]> {
-    const response = await openai.embeddings.create({
-        model: EMBEDDING_MODEL,
-        input: texts,
+    const { embeddings } = await embedMany({
+        model: gateway.textEmbeddingModel(EMBEDDING_MODEL),
+        values: texts,
     });
-    return response.data.map((d) => d.embedding);
+    return embeddings;
 }
 
 // ============================================
@@ -62,17 +61,17 @@ interface ChatMessage {
 export async function createChatCompletion(messages: ChatMessage[], options: ChatOptions = {}) {
     const { model = 'gpt-4o-mini', temperature = 0.7, maxTokens = 4000 } = options;
 
-    const response = await openai.chat.completions.create({
-        model,
+    const { text, usage } = await generateText({
+        model: gateway(`openai/${model}`),
         messages,
         temperature,
-        max_tokens: maxTokens,
+        maxOutputTokens: maxTokens,
     });
 
     return {
-        content: response.choices[0].message.content || '',
-        usage: response.usage,
-        model: response.model,
+        content: text,
+        usage,
+        model,
     };
 }
 
@@ -85,18 +84,16 @@ export async function* createStreamingChatCompletion(
 ): AsyncGenerator<{ type: 'text' | 'done'; content: string }> {
     const { model = 'gpt-4o-mini', temperature = 0.7, maxTokens = 4000 } = options;
 
-    const stream = await openai.chat.completions.create({
-        model,
+    const result = streamText({
+        model: gateway(`openai/${model}`),
         messages,
         temperature,
-        max_tokens: maxTokens,
-        stream: true,
+        maxOutputTokens: maxTokens,
     });
 
-    for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content;
-        if (content) {
-            yield { type: 'text', content };
+    for await (const chunk of result.textStream) {
+        if (chunk) {
+            yield { type: 'text', content: chunk };
         }
     }
 
@@ -111,34 +108,23 @@ export async function* createStreamingChatCompletion(
  * Extract key insights from a conversation for memory storage
  */
 export async function extractMemoryInsights(conversationText: string): Promise<string[]> {
-    const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-            {
-                role: 'system',
-                content: `You are a memory extraction assistant. Extract 2-4 key facts or insights about the user from the conversation. Focus on:
+    try {
+        const { text } = await generateText({
+            model: gateway('openai/gpt-4o-mini'),
+            system: `You are a memory extraction assistant. Extract 2-4 key facts or insights about the user from the conversation. Focus on:
 - User preferences
 - Important information shared
 - Topics of interest
 - Decisions made
 
 Return ONLY a JSON array of strings, each string being one insight. No explanation.`,
-            },
-            {
-                role: 'user',
-                content: conversationText,
-            },
-        ],
-        temperature: 0.3,
-        max_tokens: 500,
-    });
+            prompt: conversationText,
+            temperature: 0.3,
+            maxOutputTokens: 500,
+        });
 
-    try {
-        const content = response.choices[0].message.content || '[]';
-        return JSON.parse(content);
+        return JSON.parse(text || '[]');
     } catch {
         return [];
     }
 }
-
-export default openai;

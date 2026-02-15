@@ -14,14 +14,18 @@ const app = new Hono();
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
 
-// Lazily initialize OpenAI client (don't crash on startup if key missing)
+// Lazily initialize OpenAI client pointing to Vercel AI Gateway
 let openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
     if (!openai) {
-        if (!process.env.OPENAI_API_KEY) {
-            throw new Error('OPENAI_API_KEY is not configured');
+        const apiKey = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN;
+        if (!apiKey) {
+            throw new Error('AI_GATEWAY_API_KEY is not configured');
         }
-        openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        openai = new OpenAI({
+            apiKey,
+            baseURL: 'https://ai-gateway.vercel.sh/v1',
+        });
     }
     return openai;
 }

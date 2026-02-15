@@ -1,12 +1,11 @@
-import Anthropic from '@anthropic-ai/sdk';
+/**
+ * Anthropic Service (via Vercel AI Gateway)
+ *
+ * Legacy wrapper maintained for backward compatibility.
+ * All calls route through Vercel AI Gateway.
+ */
 
-// ============================================
-// ANTHROPIC CLIENT
-// ============================================
-
-export const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { gateway, generateText, streamText } from 'ai';
 
 // ============================================
 // CHAT COMPLETION
@@ -38,20 +37,17 @@ export async function* createAnthropicStreamingCompletion(
         systemPrompt = 'You are a helpful AI assistant.',
     } = options;
 
-    const stream = anthropic.messages.stream({
-        model,
-        max_tokens: maxTokens,
-        temperature,
+    const result = streamText({
+        model: gateway(`anthropic/${model}`),
         system: systemPrompt,
-        messages: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-        })),
+        messages,
+        temperature,
+        maxOutputTokens: maxTokens,
     });
 
-    for await (const event of stream) {
-        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-            yield { type: 'text', content: event.delta.text };
+    for await (const chunk of result.textStream) {
+        if (chunk) {
+            yield { type: 'text', content: chunk };
         }
     }
 
@@ -72,26 +68,17 @@ export async function createAnthropicCompletion(
         systemPrompt = 'You are a helpful AI assistant.',
     } = options;
 
-    const response = await anthropic.messages.create({
-        model,
-        max_tokens: maxTokens,
-        temperature,
+    const { text, usage } = await generateText({
+        model: gateway(`anthropic/${model}`),
         system: systemPrompt,
-        messages: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-        })),
+        messages,
+        temperature,
+        maxOutputTokens: maxTokens,
     });
 
-    const textContent = response.content.find((c) => c.type === 'text');
     return {
-        content: textContent?.type === 'text' ? textContent.text : '',
-        usage: {
-            input_tokens: response.usage.input_tokens,
-            output_tokens: response.usage.output_tokens,
-        },
-        model: response.model,
+        content: text,
+        usage,
+        model,
     };
 }
-
-export default anthropic;
