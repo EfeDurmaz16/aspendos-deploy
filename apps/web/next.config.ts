@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
     // Experimental features
     experimental: {
         clientTraceMetadata: ['baggage', 'sentry-trace'],
+        // Tree-shake barrel imports - biggest dev compile speedup
+        optimizePackageImports: [
+            '@phosphor-icons/react',
+            'framer-motion',
+            '@radix-ui/react-icons',
+            'lucide-react',
+            '@hugeicons/react',
+            '@bettericons/react',
+        ],
     },
 
     async headers() {
@@ -73,7 +82,7 @@ const nextConfig: NextConfig = {
                                       "style-src 'self' 'unsafe-inline'",
                                       "img-src 'self' data: blob: https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
                                       "font-src 'self' data:",
-                                      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://api.aspendos.app'} https://yula.dev https://www.yula.dev https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
+                                      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://api.yula.dev'} https://yula.dev https://www.yula.dev https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
                                       "frame-src 'self'",
                                       "worker-src 'self' blob:",
                                       "object-src 'none'",
@@ -105,4 +114,7 @@ const sentryWebpackPluginOptions = {
     },
 };
 
-export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);
+// Skip Sentry webpack wrapping in dev - saves ~30s compile time
+export default process.env.NODE_ENV === 'production'
+    ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+    : nextConfig;

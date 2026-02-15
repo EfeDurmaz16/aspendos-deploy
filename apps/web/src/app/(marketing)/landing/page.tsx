@@ -306,16 +306,10 @@ function HeroPreview() {
     const [showSignup, setShowSignup] = useState(false);
     const [selectedMode, setSelectedMode] = useState('Auto');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+
     const messageCountRef = useRef(0);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, streamedText]);
+    // No auto-scroll - let user control their own scroll position
 
     const simulateStream = async (text: string, memoryCount: number) => {
         setIsStreaming(true);
@@ -537,7 +531,7 @@ function HeroPreview() {
                         </div>
                     )}
 
-                    <div ref={messagesEndRef} />
+                    <div />
                 </div>
 
                 {/* Input area */}
