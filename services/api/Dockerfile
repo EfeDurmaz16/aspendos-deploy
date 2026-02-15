@@ -1,4 +1,4 @@
-# Aspendos API Service Dockerfile
+# Yula OS API Service Dockerfile
 # Multi-stage build for optimized production image
 
 # ============================================
@@ -45,9 +45,9 @@ USER api
 # Expose port
 EXPOSE 8080
 
-# Health check
+# Health check (bun:1-slim has no curl, use bun's fetch)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD bun -e "fetch('http://localhost:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 
 # Start the application
 CMD ["bun", "run", "start"]

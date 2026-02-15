@@ -1,4 +1,4 @@
-# Aspendos Agent Service Dockerfile
+# Yula OS Agent Service Dockerfile
 # Python FastAPI service with LangGraph and MCP support
 
 # ============================================
@@ -52,9 +52,9 @@ USER agents
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Health check (use urllib to avoid httpx dependency)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()" || exit 1
+    CMD python -c "from urllib.request import urlopen; urlopen('http://localhost:8000/health')" || exit 1
 
 # Start the application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

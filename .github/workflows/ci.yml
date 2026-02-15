@@ -1,4 +1,5 @@
-# YULA OS CI/CD Pipeline
+# Yula OS CI/CD Pipeline
+# Deploys to Hetzner CX23 nodes via SSH
 name: CI/CD
 
 on:
@@ -14,8 +15,6 @@ concurrency:
 env:
   BUN_VERSION: '1.1.0'
   NODE_VERSION: '20'
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
   # ============================================
@@ -106,7 +105,7 @@ jobs:
           echo "No .env files found in repository."
 
   # ============================================
-  # TEST WITH COVERAGE
+  # TEST
   # ============================================
   test:
     name: Test
@@ -167,51 +166,7 @@ jobs:
       - name: Run AI SDK Router tests
         run: cd apps/web && bun run test:router
         env:
-          OPENAI_API_KEY: test-key
-          ANTHROPIC_API_KEY: test-key
-          GROQ_API_KEY: test-key
-
-  # ============================================
-  # BUILD
-  # ============================================
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            node_modules
-          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: cd packages/db && bunx prisma generate
-
-      - name: Build API
-        run: cd services/api && bun run build
-
-      - name: Build Web
-        run: cd apps/web && bun run build
-        env:
-          NEXT_PUBLIC_API_URL: https://api.yula.dev
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          AI_GATEWAY_API_KEY: test-key
 
   # ============================================
   # DATABASE MIGRATION CHECK
@@ -260,70 +215,181 @@ jobs:
         run: cd packages/db && bunx prisma generate
 
   # ============================================
-  # DEPLOY TO VERCEL (Preview)
+  # BUILD DOCKER IMAGES
   # ============================================
-  deploy-preview:
-    name: Deploy Preview to Vercel
+  build-images:
+    name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [build, test, security]
-    if: github.event_name == 'pull_request'
-    environment:
-      name: preview
-      url: ${{ steps.deploy.outputs.url }}
+    needs: [lint, test, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          tags: yula-web:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+          build-args: |
+            NEXT_PUBLIC_APP_URL=https://yula.dev
+            NEXT_PUBLIC_API_URL=https://api.yula.dev
+            NEXT_PUBLIC_AGENTS_URL=https://agents.yula.dev
 
-      - name: Build Project Artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/api
+          file: services/api/Dockerfile
+          push: false
+          tags: yula-api:latest
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
 
-      - name: Deploy Preview to Vercel
-        id: deploy
-        run: |
-          URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+      - name: Build agents image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/agents
+          file: services/agents/Dockerfile
+          push: false
+          tags: yula-agents:latest
+          cache-from: type=gha,scope=agents
+          cache-to: type=gha,mode=max,scope=agents
 
   # ============================================
-  # DEPLOY TO VERCEL (Production)
+  # DEPLOY FRONTEND (Hetzner CX23 #1)
   # ============================================
-  deploy-production:
-    name: Deploy Production to Vercel
+  deploy-frontend:
+    name: Deploy Frontend
     runs-on: ubuntu-latest
-    needs: [build, test, security]
+    needs: [build-images, migration-check]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
-      name: production
+      name: production-frontend
       url: https://yula.dev
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Deploy to frontend node
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.FRONTEND_HOST }}
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            DEPLOY_DIR="/opt/yula"
 
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
+            # Pull latest code
+            if [ ! -d "$DEPLOY_DIR" ]; then
+              git clone https://github.com/EfeDurmaz16/aspendos-deploy.git "$DEPLOY_DIR"
+            else
+              cd "$DEPLOY_DIR"
+              git fetch origin main
+              git reset --hard origin/main
+            fi
 
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+            cd "$DEPLOY_DIR/deploy"
 
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+            # Build and deploy frontend profile
+            docker compose --profile frontend build --no-cache
+            docker compose --profile frontend up -d --remove-orphans
 
-      - name: Deploy Production to Vercel
+            # Cleanup old images
+            docker image prune -f
+
+            # Show status
+            docker compose --profile frontend ps
+
+      - name: Health check frontend
         run: |
-          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-          echo "YULA OS deployed to production"
-
-      - name: Post-deploy health check
-        run: |
+          echo "Waiting for frontend to start..."
           sleep 30
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.yula.dev/health || echo "000")
-          if [ "$STATUS" = "200" ]; then
-            echo "Health check passed"
-          else
-            echo "::warning::Health check returned $STATUS"
-          fi
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://yula.dev || echo "000")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "308" ]; then
+              echo "Frontend health check passed (HTTP $STATUS)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS, retrying in 15s..."
+            sleep 15
+          done
+          echo "::warning::Frontend health check failed after 5 attempts"
+
+  # ============================================
+  # DEPLOY BACKEND (Hetzner CX23 #2)
+  # ============================================
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    needs: [build-images, migration-check]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production-backend
+      url: https://api.yula.dev
+    steps:
+      - name: Deploy to backend node
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.BACKEND_HOST }}
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            DEPLOY_DIR="/opt/yula"
+
+            # Pull latest code
+            if [ ! -d "$DEPLOY_DIR" ]; then
+              git clone https://github.com/EfeDurmaz16/aspendos-deploy.git "$DEPLOY_DIR"
+            else
+              cd "$DEPLOY_DIR"
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            cd "$DEPLOY_DIR/deploy"
+
+            # Build and deploy backend profile
+            docker compose --profile backend build --no-cache
+            docker compose --profile backend up -d --remove-orphans
+
+            # Cleanup old images
+            docker image prune -f
+
+            # Show status
+            docker compose --profile backend ps
+
+      - name: Health check API
+        run: |
+          echo "Waiting for API to start..."
+          sleep 30
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://api.yula.dev/health || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "API health check passed"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS, retrying in 15s..."
+            sleep 15
+          done
+          echo "::warning::API health check failed after 5 attempts"
+
+      - name: Health check Agents
+        run: |
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://agents.yula.dev/health || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "Agents health check passed"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS, retrying in 15s..."
+            sleep 15
+          done
+          echo "::warning::Agents health check failed after 5 attempts"
