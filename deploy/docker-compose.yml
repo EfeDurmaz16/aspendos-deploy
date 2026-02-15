@@ -1,0 +1,135 @@
+# Yula OS - Production Docker Compose
+# Deploy on Hetzner CX22 (2 vCPU, 4GB RAM, 40GB SSD)
+#
+# Node 1 (frontend): docker compose --profile frontend up -d
+# Node 2 (backend):  docker compose --profile backend up -d
+# Single node (all):  docker compose --profile frontend --profile backend up -d
+
+services:
+  # ============================================
+  # FRONTEND NODE
+  # ============================================
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["frontend"]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - yula
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    profiles: ["frontend"]
+    env_file: .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - yula
+
+  # ============================================
+  # BACKEND NODE
+  # ============================================
+
+  caddy-backend:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["backend"]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile.backend:/etc/caddy/Caddyfile:ro
+      - caddy_backend_data:/data
+      - caddy_backend_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - yula
+
+  api:
+    build:
+      context: ..
+      dockerfile: services/api/Dockerfile
+    restart: unless-stopped
+    profiles: ["backend"]
+    env_file: .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - yula
+
+  agents:
+    build:
+      context: ..
+      dockerfile: services/agents/Dockerfile
+    restart: unless-stopped
+    profiles: ["backend"]
+    env_file: .env.production
+    environment:
+      - PORT=8000
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - yula
+
+volumes:
+  caddy_data:
+  caddy_config:
+  caddy_backend_data:
+  caddy_backend_config:
+
+networks:
+  yula:
+    driver: bridge
