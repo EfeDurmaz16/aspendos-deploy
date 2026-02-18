@@ -26,6 +26,9 @@ export const TIER_CONFIG = {
         monthlyImageGenerations: 0,
         monthlyVideoMinutes: 0,
 
+        // Imports
+        monthlyImports: 3,
+
         // Memory
         memoryLevel: 'basic',
         memoryInspector: false,
@@ -70,6 +73,9 @@ export const TIER_CONFIG = {
         // Media
         monthlyImageGenerations: 50,
         monthlyVideoMinutes: 0,
+
+        // Imports
+        monthlyImports: 10,
 
         // Memory
         memoryLevel: 'basic', // basic auto-save
@@ -116,6 +122,9 @@ export const TIER_CONFIG = {
         monthlyImageGenerations: 200,
         monthlyVideoMinutes: 10,
 
+        // Imports
+        monthlyImports: 50,
+
         // Memory
         memoryLevel: 'advanced', // Advanced search & tagging
         memoryInspector: false,
@@ -161,6 +170,9 @@ export const TIER_CONFIG = {
         monthlyImageGenerations: 1000,
         monthlyVideoMinutes: 60,
         priorityMediaQueue: true,
+
+        // Imports
+        monthlyImports: 200,
 
         // Memory
         memoryLevel: 'full', // Full Memory Inspector

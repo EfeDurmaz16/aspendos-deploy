@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUN_VERSION: '1.1.0'
+  BUN_VERSION: '1.1.30'
   NODE_VERSION: '20'
 
 jobs:
@@ -49,7 +49,7 @@ jobs:
 
       - name: Type check API
         run: cd services/api && bunx tsc --noEmit
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Type check Web
         run: cd apps/web && bun run typecheck
@@ -57,7 +57,7 @@ jobs:
 
       - name: Biome check
         run: bun biome check apps/web services/api packages/db
-        continue-on-error: true
+        continue-on-error: false
 
   # ============================================
   # SECURITY SCAN
@@ -242,6 +242,9 @@ jobs:
             NEXT_PUBLIC_APP_URL=https://yula.dev
             NEXT_PUBLIC_API_URL=https://api.yula.dev
             NEXT_PUBLIC_AGENTS_URL=https://agents.yula.dev
+            NEXT_PUBLIC_POLAR_STARTER_PRODUCT_ID=${{ secrets.NEXT_PUBLIC_POLAR_STARTER_PRODUCT_ID }}
+            NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID=${{ secrets.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID }}
+            NEXT_PUBLIC_POLAR_ULTRA_PRODUCT_ID=${{ secrets.NEXT_PUBLIC_POLAR_ULTRA_PRODUCT_ID }}
 
       - name: Build API image
         uses: docker/build-push-action@v6

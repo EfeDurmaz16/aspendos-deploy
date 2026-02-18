@@ -255,7 +255,9 @@ function BillingContent() {
                             Change Plan
                         </a>
                         <a
-                            href="/portal"
+                            href="https://polar.sh/purchases/subscriptions"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
                         >
                             Manage Subscription

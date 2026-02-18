@@ -128,7 +128,7 @@ app.use('*', requireAuth);
  * - fileSize: number
  * - content: parsed JSON from the export file
  */
-app.post('/jobs', enforceTierLimit('monthlyImageGenerations'), validateBody(createImportJobSchema), async (c) => {
+app.post('/jobs', enforceTierLimit('monthlyImports'), validateBody(createImportJobSchema), async (c) => {
     const userId = c.get('userId')!;
     const validatedBody = c.get('validatedBody') as {
         source?: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';

@@ -26,7 +26,6 @@ function getAllowedOrigins(): Set<string> {
 
     return new Set([
         'http://localhost:3000',
-        'https://aspendos.net',
         'https://yula.dev',
         'https://www.yula.dev',
         ...extraOrigins,

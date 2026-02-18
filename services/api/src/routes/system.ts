@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import { breakers } from '../lib/circuit-breaker';
 import { checkCriticalReadiness } from '../lib/critical-readiness';
 import { jobQueue } from '../lib/job-queue';
+import { requireAdmin } from '../middleware/auth';
 
 const systemRoutes = new Hono();
 
@@ -35,8 +36,8 @@ systemRoutes.get('/circuit-breakers', (c) => {
     });
 });
 
-// POST /system/circuit-breakers/:name/reset - Manual reset
-systemRoutes.post('/circuit-breakers/:name/reset', (c) => {
+// POST /system/circuit-breakers/:name/reset - Manual reset (admin only)
+systemRoutes.post('/circuit-breakers/:name/reset', requireAdmin, (c) => {
     const name = c.req.param('name') as keyof typeof breakers;
     const breaker = breakers[name];
     if (!breaker) {
@@ -87,8 +88,8 @@ systemRoutes.get('/critical-readiness', async (c) => {
 });
 
 
-// GET /system/info - Runtime info
-systemRoutes.get('/info', (c) => {
+// GET /system/info - Runtime info (admin only)
+systemRoutes.get('/info', requireAdmin, (c) => {
     return c.json({
         runtime: {
             platform: process.platform,

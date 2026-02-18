@@ -2,16 +2,35 @@
  * Environment variable validation - fails fast on missing required vars
  */
 
-const requiredEnvVars = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL'] as const;
+const requiredEnvVars = [
+    'DATABASE_URL',
+    'BETTER_AUTH_SECRET',
+    'BETTER_AUTH_URL',
+    'AI_GATEWAY_API_KEY',
+    'CRON_SECRET',
+    'POLAR_STARTER_PRODUCT_ID',
+    'POLAR_PRO_PRODUCT_ID',
+    'POLAR_ULTRA_PRODUCT_ID',
+] as const;
 
 const optionalEnvVars = [
     'SENTRY_DSN',
-    'AI_GATEWAY_API_KEY',
     'QDRANT_URL',
     'QDRANT_API_KEY',
     'POLAR_ACCESS_TOKEN',
     'POLAR_WEBHOOK_SECRET',
-    'CRON_SECRET',
+    'POLAR_STARTER_ANNUAL_PRODUCT_ID',
+    'POLAR_PRO_ANNUAL_PRODUCT_ID',
+    'POLAR_ULTRA_ANNUAL_PRODUCT_ID',
+    'UPSTASH_REDIS_REST_URL',
+    'UPSTASH_REDIS_REST_TOKEN',
+    'QSTASH_TOKEN',
+    'QSTASH_URL',
+    'WEBHOOK_BASE_URL',
+    'ONESIGNAL_APP_ID',
+    'ONESIGNAL_REST_API_KEY',
+    'ENCRYPTION_KEY',
+    'ADMIN_USER_IDS',
     'AGENTS_URL',
     'FRONTEND_URL',
     'CORS_ORIGINS',

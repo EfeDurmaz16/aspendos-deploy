@@ -50,7 +50,6 @@ export const auth = betterAuth({
     },
     trustedOrigins: [
         'http://localhost:3000',
-        'https://aspendos.net',
         'https://yula.dev',
         'https://www.yula.dev',
     ],
