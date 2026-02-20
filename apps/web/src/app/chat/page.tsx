@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleNotch, GlobeIcon, PlusCircle, SidebarSimple } from '@phosphor-icons/react';
+import { CircleNotch, GlobeIcon, PlusCircle, SidebarSimple, UsersThree } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
@@ -42,6 +42,7 @@ import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
 import { LiveButton } from '@/components/chat/live-button';
 import { type YulaMode, resolveMode } from '@/components/chat/model-picker';
 import { VoiceButton } from '@/components/chat/voice-button';
+import { CouncilChatSheet } from '@/components/council/council-chat-sheet';
 import { SpotlightOverlay } from '@/components/onboarding/spotlight-overlay';
 import { PACToastWrapper } from '@/components/pac/pac-toast-wrapper';
 import { useOnboardingStore } from '@/lib/stores/onboarding-store';
@@ -90,6 +91,7 @@ export default function ChatIndexPage() {
     const [chats, setChats] = useState<Chat[]>([]);
     const [mode, setMode] = useState<YulaMode>('auto');
     const [webSearch, setWebSearch] = useState(false);
+    const [councilOpen, setCouncilOpen] = useState(false);
 
     const { messages, isStreaming, sendMessage, error: streamError } = useStreamingChat('new');
     const { hasCompleted, hasSkipped, isActive: onboardingActive, startOnboarding: startTour } = useOnboardingStore();
@@ -176,6 +178,11 @@ export default function ChatIndexPage() {
             if (e.metaKey && e.key === 'b') {
                 e.preventDefault();
                 setSidebarOpen((prev) => !prev);
+                return;
+            }
+            if (e.metaKey && e.shiftKey && e.key === 'c') {
+                e.preventDefault();
+                setCouncilOpen((prev) => !prev);
                 return;
             }
         };
@@ -369,6 +376,15 @@ export default function ChatIndexPage() {
                                     <GlobeIcon size={16} />
                                     <span className="text-xs">Search</span>
                                 </PromptInputButton>
+                                <PromptInputButton
+                                    variant={councilOpen ? 'default' : 'ghost'}
+                                    onClick={() => setCouncilOpen(true)}
+                                    size="icon-sm"
+                                    className="gap-2 px-2 w-auto"
+                                >
+                                    <UsersThree size={16} />
+                                    <span className="text-xs">Council</span>
+                                </PromptInputButton>
                                 <PromptInputSelect value={mode} onValueChange={(v) => handleModeChange(v as YulaMode)}>
                                     <PromptInputSelectTrigger>
                                         <PromptInputSelectValue placeholder="Auto" />
@@ -390,6 +406,9 @@ export default function ChatIndexPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Council Panel */}
+            <CouncilChatSheet isOpen={councilOpen} onClose={() => setCouncilOpen(false)} />
 
             {/* Keyboard Shortcuts Panel */}
             <KeyboardShortcuts />
