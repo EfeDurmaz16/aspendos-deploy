@@ -94,19 +94,19 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
                 <Users className="h-8 w-8" style={{ color: ACCENT_COLOR }} />
             </div>
 
-            <h2 className="mb-2 text-2xl font-bold text-white">The AI Council</h2>
-            <p className="mb-6 text-center text-sm text-zinc-400 max-w-sm">
+            <h2 className="mb-2 text-2xl font-bold text-foreground">The AI Council</h2>
+            <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
                 Ask one question, get four perspectives. Different models with unique thinking
                 styles, all at once.
             </p>
 
             {/* Demo visualization */}
             <div className="mb-6 w-full max-w-md">
-                <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                <div className="rounded-xl border border-border bg-foreground/[0.02] p-4">
                     {/* Question */}
-                    <div className="mb-4 rounded-lg bg-white/5 px-4 py-3">
-                        <div className="text-xs text-zinc-500 mb-1">Your question</div>
-                        <div className="text-sm text-white">
+                    <div className="mb-4 rounded-lg bg-foreground/5 px-4 py-3">
+                        <div className="text-xs text-muted-foreground mb-1">Your question</div>
+                        <div className="text-sm text-foreground">
                             "Should I take this job offer or negotiate?"
                         </div>
                     </div>
@@ -127,7 +127,7 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
                     {/* Selected response preview */}
                     {selectedPersona && (
                         <motion.div
-                            className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3"
+                            className="mt-4 rounded-lg border border-border bg-foreground/5 p-3"
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             transition={{ duration: 0.2 }}
@@ -143,12 +143,12 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
                                 >
                                     {PERSONAS.find((p) => p.id === selectedPersona)?.icon}
                                 </div>
-                                <span className="text-xs font-medium text-white">
+                                <span className="text-xs font-medium text-foreground">
                                     {PERSONAS.find((p) => p.id === selectedPersona)?.name}'s
                                     Response
                                 </span>
                             </div>
-                            <p className="text-xs text-zinc-400">
+                            <p className="text-xs text-muted-foreground">
                                 {PERSONAS.find((p) => p.id === selectedPersona)?.response}
                             </p>
                         </motion.div>
@@ -159,18 +159,18 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
             {/* Benefits */}
             <div className="mb-6 w-full max-w-md flex items-center justify-center gap-6 text-center">
                 <div>
-                    <div className="text-2xl font-bold text-white">4x</div>
-                    <div className="text-xs text-zinc-500">Perspectives</div>
+                    <div className="text-2xl font-bold text-foreground">4x</div>
+                    <div className="text-xs text-muted-foreground">Perspectives</div>
                 </div>
-                <div className="h-8 w-px bg-white/10" />
+                <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold text-white">1</div>
-                    <div className="text-xs text-zinc-500">Question</div>
+                    <div className="text-2xl font-bold text-foreground">1</div>
+                    <div className="text-xs text-muted-foreground">Question</div>
                 </div>
-                <div className="h-8 w-px bg-white/10" />
+                <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold text-white">∞</div>
-                    <div className="text-xs text-zinc-500">Insights</div>
+                    <div className="text-2xl font-bold text-foreground">∞</div>
+                    <div className="text-xs text-muted-foreground">Insights</div>
                 </div>
             </div>
 
@@ -178,7 +178,7 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
             <div className="flex w-full max-w-md items-center justify-between">
                 <button
                     onClick={onSkip}
-                    className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                     Skip tour
                 </button>
@@ -187,8 +187,8 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
                         onClick={onPrev}
                         className={cn(
                             'rounded-lg px-4 py-2 text-sm font-medium',
-                            'border border-white/10 text-white',
-                            'transition-colors hover:bg-white/5'
+                            'border border-border text-foreground',
+                            'transition-colors hover:bg-accent'
                         )}
                     >
                         Back
@@ -226,8 +226,8 @@ function PersonaCard({
             className={cn(
                 'relative rounded-lg border p-3 text-left transition-all',
                 isSelected
-                    ? 'border-white/30 bg-white/10'
-                    : 'border-white/10 bg-white/[0.02] hover:bg-white/5'
+                    ? 'border-border bg-foreground/10'
+                    : 'border-border bg-foreground/[0.02] hover:bg-foreground/5'
             )}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
@@ -238,7 +238,7 @@ function PersonaCard({
             {/* Loading indicator before active */}
             {!isActive && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground/60" />
                 </div>
             )}
 
@@ -250,11 +250,11 @@ function PersonaCard({
                     >
                         {persona.icon}
                     </div>
-                    <span className="text-sm font-medium text-white">{persona.name}</span>
+                    <span className="text-sm font-medium text-foreground">{persona.name}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500">{persona.trait}</span>
-                    <span className="text-xs text-zinc-600">{persona.model}</span>
+                    <span className="text-xs text-muted-foreground">{persona.trait}</span>
+                    <span className="text-xs text-muted-foreground/70">{persona.model}</span>
                 </div>
             </div>
 
@@ -268,7 +268,7 @@ function PersonaCard({
                     {[0, 1, 2].map((i) => (
                         <motion.div
                             key={i}
-                            className="h-1 w-1 rounded-full bg-white/40"
+                            className="h-1 w-1 rounded-full bg-foreground/40"
                             animate={{ opacity: [0.3, 1, 0.3] }}
                             transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
                         />

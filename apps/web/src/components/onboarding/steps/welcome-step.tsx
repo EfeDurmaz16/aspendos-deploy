@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Rocket, Sparkles } from 'lucide-react';
+import { ArrowRight, Bell, Download, Rocket, Sparkles, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface WelcomeStepProps {
@@ -39,7 +39,7 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
 
             {/* Title */}
             <motion.h1
-                className="mb-2 text-3xl font-bold text-white"
+                className="mb-2 text-3xl font-bold text-foreground"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -49,7 +49,7 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
 
             {/* Subtitle */}
             <motion.p
-                className="mb-8 text-lg text-zinc-400"
+                className="mb-8 text-lg text-muted-foreground"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -59,13 +59,13 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
 
             {/* Key differentiator */}
             <motion.div
-                className="mb-8 max-w-md rounded-2xl border border-white/10 bg-white/[0.02] p-6"
+                className="mb-8 max-w-md rounded-2xl border border-border bg-foreground/[0.02] p-6"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
             >
-                <p className="text-sm leading-relaxed text-zinc-300">
-                    <span className="font-semibold text-white">
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                    <span className="font-semibold text-foreground">
                         Yula isn't just another chatbot.
                     </span>{' '}
                     It's an AI operating system that remembers, anticipates, and grows with you.
@@ -80,19 +80,19 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                 transition={{ delay: 0.5 }}
             >
                 <FeatureHighlight
-                    icon="📥"
+                    icon={<Download className="h-5 w-5" />}
                     label="Import"
                     description="Bring your history"
                     color="#2563EB"
                 />
                 <FeatureHighlight
-                    icon="🔔"
+                    icon={<Bell className="h-5 w-5" />}
                     label="PAC"
                     description="AI reaches out"
                     color="#D97706"
                 />
                 <FeatureHighlight
-                    icon="👥"
+                    icon={<Users className="h-5 w-5" />}
                     label="Council"
                     description="4 AIs at once"
                     color="#7C3AED"
@@ -121,7 +121,7 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                 </button>
                 <button
                     onClick={onSkip}
-                    className="py-2 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                    className="py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                     Skip and explore on my own
                 </button>
@@ -136,19 +136,19 @@ function FeatureHighlight({
     description,
     color,
 }: {
-    icon: string;
+    icon: React.ReactNode;
     label: string;
     description: string;
     color: string;
 }) {
     return (
         <div
-            className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center transition-colors hover:bg-white/[0.04]"
+            className="rounded-xl border border-border bg-foreground/[0.02] p-3 text-center transition-colors hover:bg-foreground/[0.04]"
             style={{ borderColor: `${color}20` }}
         >
-            <div className="mb-1 text-2xl">{icon}</div>
-            <div className="text-xs font-medium text-white">{label}</div>
-            <div className="text-xs text-zinc-500">{description}</div>
+            <div className="mb-1 flex justify-center" style={{ color }}>{icon}</div>
+            <div className="text-xs font-medium text-foreground">{label}</div>
+            <div className="text-xs text-muted-foreground">{description}</div>
         </div>
     );
 }

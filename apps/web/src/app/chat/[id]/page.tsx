@@ -36,7 +36,6 @@ import {
     PromptInputSubmit,
     PromptInputTextarea,
     PromptInputTools,
-    usePromptInputController,
 } from '@/components/ai-elements/prompt-input';
 import { Reasoning } from '@/components/ai-elements/reasoning';
 import { AddModelsModal } from '@/components/chat/add-models-modal';
@@ -79,16 +78,6 @@ interface Chat {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-
-/** Voice button wired to PromptInput context */
-function PromptVoiceButton() {
-    const controller = usePromptInputController();
-    return (
-        <VoiceButton
-            onTranscription={(text) => controller.textInput.setInput(text)}
-        />
-    );
-}
 
 export default function ChatPage() {
     const params = useParams();
@@ -450,7 +439,7 @@ export default function ChatPage() {
                                         <PromptInputSelectItem value="creative">Creative</PromptInputSelectItem>
                                     </PromptInputSelectContent>
                                 </PromptInputSelect>
-                                <PromptVoiceButton />
+                                <VoiceButton onTranscription={(text) => sendMessage(text, resolveMode(mode) ? { model: resolveMode(mode)! } : {})} />
                             </PromptInputTools>
                             <PromptInputSubmit status={isStreaming ? 'streaming' : undefined} />
                         </PromptInputFooter>

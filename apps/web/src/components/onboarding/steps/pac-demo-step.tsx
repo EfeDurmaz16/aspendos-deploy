@@ -73,21 +73,21 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 </motion.div>
             </div>
 
-            <h2 className="mb-2 text-2xl font-bold text-white">Proactive AI Callbacks</h2>
-            <p className="mb-6 text-center text-sm text-zinc-400 max-w-sm">
+            <h2 className="mb-2 text-2xl font-bold text-foreground">Proactive AI Callbacks</h2>
+            <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
                 Yula doesn't wait for you to ask. It remembers your commitments and reaches out when
                 it matters.
             </p>
 
             {/* Demo notification card */}
             <div className="mb-6 w-full max-w-md">
-                <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
+                <div className="rounded-xl border border-border bg-foreground/[0.02] overflow-hidden">
                     {/* Phone mockup header */}
                     <div
                         className="flex items-center justify-between px-4 py-2"
                         style={{ backgroundColor: `${ACCENT_COLOR}10` }}
                     >
-                        <span className="text-xs text-zinc-400">Yula Notification</span>
+                        <span className="text-xs text-muted-foreground">Yula Notification</span>
                         <div className="flex gap-1">
                             {DEMO_NOTIFICATIONS.map((_, i) => (
                                 <div
@@ -124,28 +124,28 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 <div className="flex items-start gap-3">
                     <StepIndicator number={1} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-white">
+                        <div className="text-sm font-medium text-foreground">
                             You mention a commitment
                         </div>
-                        <div className="text-xs text-zinc-500">"I need to call mom tomorrow"</div>
+                        <div className="text-xs text-muted-foreground">"I need to call mom tomorrow"</div>
                     </div>
                 </div>
-                <div className="ml-4 h-6 border-l border-dashed border-white/10" />
+                <div className="ml-4 h-6 border-l border-dashed border-border" />
                 <div className="flex items-start gap-3">
                     <StepIndicator number={2} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-white">Yula remembers</div>
-                        <div className="text-xs text-zinc-500">
+                        <div className="text-sm font-medium text-foreground">Yula remembers</div>
+                        <div className="text-xs text-muted-foreground">
                             Stores the intent and schedules follow-up
                         </div>
                     </div>
                 </div>
-                <div className="ml-4 h-6 border-l border-dashed border-white/10" />
+                <div className="ml-4 h-6 border-l border-dashed border-border" />
                 <div className="flex items-start gap-3">
                     <StepIndicator number={3} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-white">You get a nudge</div>
-                        <div className="text-xs text-zinc-500">
+                        <div className="text-sm font-medium text-foreground">You get a nudge</div>
+                        <div className="text-xs text-muted-foreground">
                             At the right time, Yula checks in
                         </div>
                     </div>
@@ -156,7 +156,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
             <div className="flex w-full max-w-md items-center justify-between">
                 <button
                     onClick={onSkip}
-                    className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                     Skip tour
                 </button>
@@ -165,8 +165,8 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                         onClick={onPrev}
                         className={cn(
                             'rounded-lg px-4 py-2 text-sm font-medium',
-                            'border border-white/10 text-white',
-                            'transition-colors hover:bg-white/5'
+                            'border border-border text-foreground',
+                            'transition-colors hover:bg-accent'
                         )}
                     >
                         Back
@@ -199,10 +199,10 @@ function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFIC
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                    <div className="text-sm font-medium text-white">{notification.title}</div>
-                    <div className="text-xs text-zinc-500 shrink-0">{notification.time}</div>
+                    <div className="text-sm font-medium text-foreground">{notification.title}</div>
+                    <div className="text-xs text-muted-foreground shrink-0">{notification.time}</div>
                 </div>
-                <div className="mt-1 text-xs text-zinc-400 line-clamp-2">
+                <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
                     {notification.message}
                 </div>
                 <div className="mt-2 flex gap-2">
@@ -212,7 +212,7 @@ function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFIC
                     >
                         Reply
                     </button>
-                    <button className="rounded-md px-3 py-1 text-xs text-zinc-400 bg-white/5">
+                    <button className="rounded-md px-3 py-1 text-xs text-muted-foreground bg-foreground/5">
                         Snooze
                     </button>
                 </div>

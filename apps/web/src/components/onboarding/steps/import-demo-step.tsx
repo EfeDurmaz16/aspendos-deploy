@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Check, Download, FileJson, MessageSquare } from 'lucide-react';
+import { ArrowRight, Bot, Check, Download, FileJson, MessageSquare, Sparkles, Theater } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Feature accent color: Electric Blue
@@ -30,22 +30,22 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
                 <Download className="h-8 w-8" style={{ color: ACCENT_COLOR }} />
             </div>
 
-            <h2 className="mb-2 text-2xl font-bold text-white">Import Your History</h2>
-            <p className="mb-6 text-center text-sm text-zinc-400 max-w-sm">
+            <h2 className="mb-2 text-2xl font-bold text-foreground">Import Your History</h2>
+            <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
                 Bring your ChatGPT and Claude conversations to Yula. Your AI history, all in one
                 place.
             </p>
 
             {/* Demo visualization */}
             <div className="mb-6 w-full max-w-md">
-                <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                <div className="rounded-xl border border-border bg-foreground/[0.02] p-4">
                     {/* Source icons */}
                     <div className="mb-4 flex items-center justify-center gap-4">
-                        <SourceBadge name="ChatGPT" icon="🤖" />
-                        <ArrowRight className="h-4 w-4 text-zinc-600" />
-                        <SourceBadge name="Yula" icon="✨" highlighted />
-                        <ArrowRight className="h-4 w-4 text-zinc-600" />
-                        <SourceBadge name="Claude" icon="🎭" />
+                        <SourceBadge name="ChatGPT" icon={<Bot className="h-5 w-5" />} />
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/70" />
+                        <SourceBadge name="Yula" icon={<Sparkles className="h-5 w-5" />} highlighted />
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/70" />
+                        <SourceBadge name="Claude" icon={<Theater className="h-5 w-5" />} />
                     </div>
 
                     {/* Animated import preview */}
@@ -84,7 +84,7 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
             <div className="flex w-full max-w-md items-center justify-between">
                 <button
                     onClick={onSkip}
-                    className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                     Skip tour
                 </button>
@@ -93,8 +93,8 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
                         onClick={onPrev}
                         className={cn(
                             'rounded-lg px-4 py-2 text-sm font-medium',
-                            'border border-white/10 text-white',
-                            'transition-colors hover:bg-white/5'
+                            'border border-border text-foreground',
+                            'transition-colors hover:bg-accent'
                         )}
                     >
                         Back
@@ -122,7 +122,7 @@ function SourceBadge({
     highlighted = false,
 }: {
     name: string;
-    icon: string;
+    icon: React.ReactNode;
     highlighted?: boolean;
 }) {
     return (
@@ -131,11 +131,11 @@ function SourceBadge({
                 'flex flex-col items-center gap-1 rounded-lg px-3 py-2',
                 highlighted
                     ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30'
-                    : 'bg-white/5'
+                    : 'bg-foreground/5'
             )}
         >
-            <span className="text-lg">{icon}</span>
-            <span className="text-xs text-zinc-400">{name}</span>
+            <span className="text-muted-foreground">{icon}</span>
+            <span className="text-xs text-muted-foreground">{name}</span>
         </div>
     );
 }
@@ -153,15 +153,15 @@ function ImportItem({
 }) {
     return (
         <motion.div
-            className="flex items-center gap-3 rounded-lg bg-white/5 px-3 py-2"
+            className="flex items-center gap-3 rounded-lg bg-foreground/5 px-3 py-2"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay, duration: 0.3 }}
         >
-            <div className="text-zinc-500">{icon}</div>
+            <div className="text-muted-foreground">{icon}</div>
             <div className="flex-1">
-                <div className="text-sm text-white">{title}</div>
-                <div className="text-xs text-zinc-500">{count} messages</div>
+                <div className="text-sm text-foreground">{title}</div>
+                <div className="text-xs text-muted-foreground">{count} messages</div>
             </div>
             <motion.div
                 initial={{ scale: 0 }}
@@ -176,7 +176,7 @@ function ImportItem({
 
 function Benefit({ icon, text }: { icon: React.ReactNode; text: string }) {
     return (
-        <div className="flex items-center gap-2 text-sm text-zinc-400">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <div style={{ color: ACCENT_COLOR }}>{icon}</div>
             <span>{text}</span>
         </div>

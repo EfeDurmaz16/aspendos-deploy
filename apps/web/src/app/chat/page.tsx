@@ -33,7 +33,6 @@ import {
     PromptInputSubmit,
     PromptInputTextarea,
     PromptInputTools,
-    usePromptInputController,
 } from '@/components/ai-elements/prompt-input';
 import { Reasoning } from '@/components/ai-elements/reasoning';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
@@ -67,15 +66,6 @@ interface Chat {
     updatedAt: string;
 }
 
-/** Voice button wired to PromptInput context */
-function PromptVoiceButton() {
-    const controller = usePromptInputController();
-    return (
-        <VoiceButton
-            onTranscription={(text) => controller.textInput.setInput(text)}
-        />
-    );
-}
 
 const SUGGESTIONS = [
     { text: 'Analyze a complex document', sub: 'Upload and get insights' },
@@ -396,7 +386,7 @@ export default function ChatIndexPage() {
                                         <PromptInputSelectItem value="creative">Creative</PromptInputSelectItem>
                                     </PromptInputSelectContent>
                                 </PromptInputSelect>
-                                <PromptVoiceButton />
+                                <VoiceButton onTranscription={(text) => sendMessage(text, resolveMode(mode) ? { model: resolveMode(mode)! } : {})} />
                             </PromptInputTools>
                             <PromptInputSubmit status={isStreaming ? 'streaming' : undefined} />
                         </PromptInputFooter>

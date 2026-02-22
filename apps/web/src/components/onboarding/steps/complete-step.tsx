@@ -56,7 +56,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', damping: 10, stiffness: 200, delay: 0.2 }}
             >
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500/20 via-violet-500/10 to-amber-500/20 border border-white/10">
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500/20 via-violet-500/10 to-amber-500/20 border border-border">
                     <PartyPopper className="h-12 w-12 text-emerald-400" />
                 </div>
                 {/* Sparkle effects */}
@@ -80,17 +80,17 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
 
             {/* Title */}
             <motion.h1
-                className="mb-2 text-3xl font-bold text-white"
+                className="mb-2 text-3xl font-bold text-foreground"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
             >
-                You're All Set! 🎉
+                You're All Set!
             </motion.h1>
 
             {/* Subtitle */}
             <motion.p
-                className="mb-8 text-lg text-zinc-400"
+                className="mb-8 text-lg text-muted-foreground"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
@@ -113,7 +113,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                         <div className="text-sm font-semibold text-emerald-400">
                             Achievement Unlocked!
                         </div>
-                        <div className="text-xs text-zinc-400">Tour Complete • +50 XP</div>
+                        <div className="text-xs text-muted-foreground">Tour Complete • +50 XP</div>
                     </div>
                 </div>
             </motion.div>
@@ -159,7 +159,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                 </button>
                 <button
                     onClick={onRestart}
-                    className="py-2 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                    className="py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                     Take the tour again
                 </button>
@@ -170,14 +170,14 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
 
 function QuickTip({ icon, text, color }: { icon: React.ReactNode; text: string; color: string }) {
     return (
-        <div className="flex items-center gap-3 rounded-lg bg-white/5 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-lg bg-foreground/5 px-4 py-3">
             <div
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
                 style={{ backgroundColor: `${color}20`, color }}
             >
                 {icon}
             </div>
-            <span className="text-sm text-zinc-300">{text}</span>
+            <span className="text-sm text-muted-foreground">{text}</span>
         </div>
     );
 }

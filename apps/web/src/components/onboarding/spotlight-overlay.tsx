@@ -239,8 +239,8 @@ const SpotlightTooltip = ({
             ref={tooltipRef}
             className={cn(
                 'fixed z-[60] w-80 rounded-xl',
-                'border border-white/10 bg-zinc-900/95 backdrop-blur-xl',
-                'shadow-2xl shadow-black/50'
+                'border border-border bg-popover/95 backdrop-blur-xl',
+                'shadow-2xl'
             )}
             style={{
                 left: position.x,
@@ -263,7 +263,7 @@ const SpotlightTooltip = ({
                                 key={i}
                                 className={cn(
                                     'h-1.5 w-6 rounded-full transition-colors',
-                                    i <= currentIndex ? 'bg-white' : 'bg-white/20'
+                                    i <= currentIndex ? 'bg-foreground' : 'bg-foreground/20'
                                 )}
                                 style={
                                     i === currentIndex
@@ -273,20 +273,20 @@ const SpotlightTooltip = ({
                             />
                         ))}
                     </div>
-                    <span className="text-xs text-zinc-500">
+                    <span className="text-xs text-muted-foreground">
                         {currentIndex + 1} / {totalSteps}
                     </span>
                 </div>
 
                 {/* Content */}
-                <h3 className="mb-1 text-lg font-semibold text-white">{config.title}</h3>
-                <p className="mb-5 text-sm text-zinc-400">{config.description}</p>
+                <h3 className="mb-1 text-lg font-semibold text-foreground">{config.title}</h3>
+                <p className="mb-5 text-sm text-muted-foreground">{config.description}</p>
 
                 {/* Actions */}
                 <div className="flex items-center justify-between">
                     <button
                         onClick={onSkip}
-                        className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                         Skip tour
                     </button>
@@ -296,8 +296,8 @@ const SpotlightTooltip = ({
                                 onClick={onPrev}
                                 className={cn(
                                     'rounded-lg px-3 py-1.5 text-sm font-medium',
-                                    'border border-white/10 text-white',
-                                    'transition-colors hover:bg-white/5'
+                                    'border border-border text-foreground',
+                                    'transition-colors hover:bg-accent'
                                 )}
                             >
                                 Back
@@ -447,7 +447,7 @@ export function SpotlightOverlay({ children, className }: SpotlightOverlayProps)
                 {/* Spotlight ring effect (optional visual enhancement) */}
                 {spotlight && (
                     <motion.div
-                        className="absolute pointer-events-none rounded-xl ring-2 ring-white/30"
+                        className="absolute pointer-events-none rounded-xl ring-2 ring-foreground/30"
                         style={{
                             left: spotlight.x,
                             top: spotlight.y,
