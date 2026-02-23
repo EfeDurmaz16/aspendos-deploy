@@ -48,7 +48,7 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 export function ModelSelector({
-    selectedModel = 'openai/gpt-4o-mini',
+    selectedModel = 'groq/llama-3.1-70b-versatile',
     onModelChange,
     disabled = false,
     className,

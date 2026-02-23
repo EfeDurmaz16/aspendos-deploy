@@ -151,8 +151,8 @@ export function getModel(modelId: ModelId | string) {
     const config = MODEL_REGISTRY[modelId as ModelId];
 
     if (!config) {
-        console.warn(`[AI] Unknown model: ${modelId}, defaulting to openai/gpt-4o-mini`);
-        return gateway('openai/gpt-4o-mini');
+        console.warn(`[AI] Unknown model: ${modelId}, defaulting to groq/llama-3.1-70b-versatile`);
+        return gateway('groq/llama-3.1-70b-versatile');
     }
 
     return gateway(`${config.provider}/${config.id}`);
@@ -180,33 +180,35 @@ export function getFallbackRouterModel() {
  * Fallback chain for each model - used when primary fails
  */
 export const FALLBACK_CHAIN: Record<string, ModelId[]> = {
-    'gpt-4o': ['claude-3-5-sonnet-20241022', 'gemini-2.5-pro-preview-05-06'],
-    'gpt-4o-mini': ['gemini-2.0-flash', 'claude-3-haiku-20240307'],
-    'gpt-4-turbo': ['claude-3-5-sonnet-20241022', 'gpt-4o'],
-    'gpt-3.5-turbo': ['gpt-4o-mini', 'gemini-2.0-flash'],
-    'claude-3-5-sonnet-20241022': ['gpt-4o', 'gemini-2.5-pro-preview-05-06'],
-    'claude-3-haiku-20240307': ['gpt-4o-mini', 'gemini-2.0-flash'],
-    'claude-3-opus-20240229': ['claude-3-5-sonnet-20241022', 'gpt-4o'],
-    'gemini-2.0-flash': ['gpt-4o-mini', 'claude-3-haiku-20240307'],
-    'gemini-2.5-pro-preview-05-06': ['gpt-4o', 'claude-3-5-sonnet-20241022'],
-    'llama-3.1-70b-versatile': ['gpt-4o', 'claude-3-5-sonnet-20241022'],
-    'llama-3.1-8b-instant': ['gpt-4o-mini', 'gemini-2.0-flash'],
-    'llama3-8b-8192': ['llama-3.1-8b-instant', 'gpt-4o-mini'],
-    'mixtral-8x7b-32768': ['llama-3.1-70b-versatile', 'gpt-4o'],
+    // Groq primary - fall back within Groq ecosystem
+    'llama-3.1-70b-versatile': ['mixtral-8x7b-32768', 'llama-3.1-8b-instant'],
+    'llama-3.1-8b-instant': ['llama3-8b-8192', 'llama-3.1-70b-versatile'],
+    'llama3-8b-8192': ['llama-3.1-8b-instant', 'llama-3.1-70b-versatile'],
+    'mixtral-8x7b-32768': ['llama-3.1-70b-versatile', 'llama-3.1-8b-instant'],
+    // Premium (ULTRA) - fall back to Groq
+    'gpt-4o': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
+    'gpt-4o-mini': ['llama-3.1-8b-instant', 'llama3-8b-8192'],
+    'gpt-4-turbo': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
+    'gpt-3.5-turbo': ['llama-3.1-8b-instant', 'llama3-8b-8192'],
+    'claude-3-5-sonnet-20241022': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
+    'claude-3-haiku-20240307': ['llama-3.1-8b-instant', 'llama3-8b-8192'],
+    'claude-3-opus-20240229': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
+    'gemini-2.0-flash': ['llama-3.1-8b-instant', 'llama3-8b-8192'],
+    'gemini-2.5-pro-preview-05-06': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
 };
 
 /**
  * Get fallback models for a given model
  */
 export function getFallbackModels(modelId: ModelId | string): ModelId[] {
-    return FALLBACK_CHAIN[modelId] || ['gpt-4o-mini'];
+    return FALLBACK_CHAIN[modelId] || ['llama-3.1-8b-instant'];
 }
 
 // ============================================
 // DEFAULT CONFIGURATIONS
 // ============================================
 
-export const DEFAULT_MODEL: ModelId = 'gpt-4o-mini';
+export const DEFAULT_MODEL: ModelId = 'llama-3.1-70b-versatile';
 export const DEFAULT_ROUTER_MODEL: ModelId = 'llama-3.1-8b-instant';
-export const DEFAULT_CODING_MODEL: ModelId = 'claude-3-5-sonnet-20241022';
-export const DEFAULT_FAST_MODEL: ModelId = 'gpt-4o-mini';
+export const DEFAULT_CODING_MODEL: ModelId = 'llama-3.1-70b-versatile';
+export const DEFAULT_FAST_MODEL: ModelId = 'llama-3.1-8b-instant';

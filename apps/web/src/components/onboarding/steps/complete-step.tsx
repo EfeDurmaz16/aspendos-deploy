@@ -2,7 +2,7 @@
 
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
-import { ArrowRight, MessageSquare, PartyPopper, Sparkles, Trophy } from 'lucide-react';
+import { ArrowRight, MessageSquare, PartyPopper, Sparkles } from 'lucide-react';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -98,7 +98,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                 Welcome to the Yula family
             </motion.p>
 
-            {/* Achievement unlocked */}
+            {/* Ready to go */}
             <motion.div
                 className="mb-8 w-full max-w-md rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4"
                 initial={{ opacity: 0, y: 10 }}
@@ -107,13 +107,13 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
             >
                 <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20">
-                        <Trophy className="h-6 w-6 text-emerald-400" />
+                        <Sparkles className="h-6 w-6 text-emerald-400" />
                     </div>
                     <div className="text-left">
                         <div className="text-sm font-semibold text-emerald-400">
-                            Achievement Unlocked!
+                            Tour Complete
                         </div>
-                        <div className="text-xs text-muted-foreground">Tour Complete • +50 XP</div>
+                        <div className="text-xs text-muted-foreground">You're ready to explore Yula</div>
                     </div>
                 </div>
             </motion.div>

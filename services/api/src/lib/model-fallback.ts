@@ -3,15 +3,20 @@
  * This prevents revenue loss when a single provider has an outage.
  */
 const FALLBACK_CHAINS: Record<string, string[]> = {
-    'openai/gpt-4o': ['anthropic/claude-3.5-sonnet', 'google/gemini-2.0-flash'],
-    'openai/gpt-4o-mini': ['groq/llama-3.3-70b', 'google/gemini-2.0-flash'],
-    'anthropic/claude-3.5-sonnet': ['openai/gpt-4o', 'google/gemini-2.0-flash'],
-    'anthropic/claude-3-haiku': ['groq/llama-3.1-8b', 'openai/gpt-4o-mini'],
-    'groq/llama-3.3-70b': ['openai/gpt-4o-mini', 'anthropic/claude-3-haiku'],
+    // Groq primary - fall back within Groq ecosystem
+    'groq/llama-3.1-70b-versatile': ['groq/mixtral-8x7b-32768', 'groq/llama-3.1-8b-instant'],
+    'groq/llama-3.1-8b-instant': ['groq/llama3-8b-8192', 'groq/llama-3.1-70b-versatile'],
+    'groq/mixtral-8x7b-32768': ['groq/llama-3.1-70b-versatile', 'groq/llama-3.1-8b-instant'],
+    'groq/llama3-8b-8192': ['groq/llama-3.1-8b-instant', 'groq/llama-3.1-70b-versatile'],
+    // ULTRA tier premium - fall back to Groq
+    'openai/gpt-4o': ['groq/llama-3.1-70b-versatile', 'groq/mixtral-8x7b-32768'],
+    'openai/o1': ['groq/llama-3.1-70b-versatile', 'groq/mixtral-8x7b-32768'],
+    'anthropic/claude-sonnet-4-20250514': ['groq/llama-3.1-70b-versatile', 'groq/mixtral-8x7b-32768'],
+    'anthropic/claude-opus-4-20250514': ['groq/llama-3.1-70b-versatile', 'groq/mixtral-8x7b-32768'],
 };
 
 export function getFallbackModels(modelId: string): string[] {
-    return FALLBACK_CHAINS[modelId] || ['openai/gpt-4o-mini'];
+    return FALLBACK_CHAINS[modelId] || ['groq/llama-3.1-8b-instant'];
 }
 
 export async function withFallback<T>(

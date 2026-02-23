@@ -15,8 +15,10 @@ import {
     Brain,
     Clock,
     Database,
+    Graph,
     Heart,
     Lightbulb,
+    ListBullets,
     MagnifyingGlass,
     PencilSimple,
     PushPin,
@@ -26,6 +28,7 @@ import {
     Trash,
 } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
+import { MemoryGraph } from '@/components/memory-graph';
 import { Button } from '@/components/ui/button';
 import {
     ContextMenu,
@@ -302,6 +305,7 @@ export default function MemoryDashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
+    const [viewMode, setViewMode] = useState<'list' | 'graph'>('list');
 
     const fetchStats = useCallback(async () => {
         try {
@@ -413,17 +417,45 @@ export default function MemoryDashboardPage() {
                             Organize and refine your memories with Yula
                         </p>
                     </div>
-                    <Button
-                        variant="secondary"
-                        onClick={() => {
-                            fetchStats();
-                            fetchMemories();
-                        }}
-                        className="animate-fade-up opacity-0 animation-delay-200"
-                    >
-                        <ArrowClockwise className="w-4 h-4 mr-2" weight="bold" />
-                        Refresh
-                    </Button>
+                    <div className="flex items-center gap-2 animate-fade-up opacity-0 animation-delay-200">
+                        {/* View Toggle */}
+                        <div className="flex items-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 p-0.5">
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={cn(
+                                    'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+                                    viewMode === 'list'
+                                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm'
+                                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                                )}
+                            >
+                                <ListBullets className="w-4 h-4" weight="bold" />
+                                List
+                            </button>
+                            <button
+                                onClick={() => setViewMode('graph')}
+                                className={cn(
+                                    'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+                                    viewMode === 'graph'
+                                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm'
+                                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                                )}
+                            >
+                                <Graph className="w-4 h-4" weight="bold" />
+                                Graph
+                            </button>
+                        </div>
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                fetchStats();
+                                fetchMemories();
+                            }}
+                        >
+                            <ArrowClockwise className="w-4 h-4 mr-2" weight="bold" />
+                            Refresh
+                        </Button>
+                    </div>
                 </div>
 
                 {stats && (
@@ -494,108 +526,120 @@ export default function MemoryDashboardPage() {
                     </div>
                 )}
 
-                <div className="flex flex-wrap items-center gap-3 animate-fade-up opacity-0 animation-delay-400">
-                    <div className="flex flex-wrap gap-2">
-                        {SECTORS.map((sector) => (
-                            <Button
-                                key={sector.key}
-                                variant={activeSector === sector.key ? 'primary' : 'secondary'}
-                                size="sm"
-                                onClick={() => handleSectorChange(sector.key)}
-                            >
-                                <sector.icon
-                                    className="w-4 h-4 mr-1.5"
-                                    weight={activeSector === sector.key ? 'fill' : 'regular'}
-                                />
-                                {sector.label}
-                            </Button>
-                        ))}
-                    </div>
-                    <div className="flex-1 min-w-[200px]">
-                        <div className="relative">
-                            <MagnifyingGlass
-                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 dark:text-zinc-400"
-                                weight="bold"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Search memories..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && fetchMemories()}
-                                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/50 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-500 transition-all"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {error && (
-                    <div className="bg-rose-500/10 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4 text-center text-rose-700 dark:text-rose-300 animate-fade-up opacity-0 animation-delay-300">
-                        <p className="font-medium">{error}</p>
-                    </div>
-                )}
-                {isLoading && (
-                    <div className="text-center py-16 animate-fade-up opacity-0 animation-delay-300">
-                        <ArrowClockwise className="w-8 h-8 mx-auto animate-spin text-zinc-400" />
-                        <p className="mt-3 text-zinc-600 dark:text-zinc-400 font-medium">
-                            Loading memories...
-                        </p>
-                    </div>
-                )}
-                {!isLoading && memories.length === 0 && (
-                    <div className="text-center py-16 bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl animate-fade-up opacity-0 animation-delay-300">
-                        <Brain className="w-12 h-12 mx-auto text-zinc-400" weight="thin" />
-                        <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                            No memories yet
-                        </h3>
-                        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-                            Start chatting to build your memory bank
-                        </p>
+                {/* Knowledge Graph View */}
+                {viewMode === 'graph' && (
+                    <div className="animate-fade-up opacity-0 animation-delay-300">
+                        <MemoryGraph height={600} className="w-full" />
                     </div>
                 )}
 
-                {!isLoading && memories.length > 0 && (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 animate-fade-up opacity-0 animation-delay-400">
-                        {memories.map((memory, idx) => (
-                            <div
-                                key={memory.id}
-                                className="opacity-0 animate-fade-up"
-                                style={{ animationDelay: `${150 + idx * 50}ms` }}
-                            >
-                                <MemoryCard
-                                    memory={memory}
-                                    onEdit={() => setEditingMemory(memory)}
-                                    onDelete={() => handleDelete(memory.id)}
-                                    onPin={() => handlePin(memory)}
-                                    onFeedback={(helpful) => handleFeedback(memory.id, helpful)}
-                                />
+                {/* List View */}
+                {viewMode === 'list' && (
+                    <>
+                        <div className="flex flex-wrap items-center gap-3 animate-fade-up opacity-0 animation-delay-400">
+                            <div className="flex flex-wrap gap-2">
+                                {SECTORS.map((sector) => (
+                                    <Button
+                                        key={sector.key}
+                                        variant={activeSector === sector.key ? 'primary' : 'secondary'}
+                                        size="sm"
+                                        onClick={() => handleSectorChange(sector.key)}
+                                    >
+                                        <sector.icon
+                                            className="w-4 h-4 mr-1.5"
+                                            weight={activeSector === sector.key ? 'fill' : 'regular'}
+                                        />
+                                        {sector.label}
+                                    </Button>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                )}
+                            <div className="flex-1 min-w-[200px]">
+                                <div className="relative">
+                                    <MagnifyingGlass
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 dark:text-zinc-400"
+                                        weight="bold"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Search memories..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && fetchMemories()}
+                                        className="w-full pl-10 pr-4 py-2.5 text-sm bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/50 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-500 transition-all"
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-                {pagination && pagination.totalPages > 1 && (
-                    <div className="flex justify-center gap-3 animate-fade-up opacity-0 animation-delay-500">
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            disabled={pagination.page <= 1}
-                            onClick={() => fetchMemories(pagination.page - 1)}
-                        >
-                            Previous
-                        </Button>
-                        <span className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-lg">
-                            Page {pagination.page} of {pagination.totalPages}
-                        </span>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            disabled={pagination.page >= pagination.totalPages}
-                            onClick={() => fetchMemories(pagination.page + 1)}
-                        >
-                            Next
-                        </Button>
-                    </div>
+                        {error && (
+                            <div className="bg-rose-500/10 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4 text-center text-rose-700 dark:text-rose-300 animate-fade-up opacity-0 animation-delay-300">
+                                <p className="font-medium">{error}</p>
+                            </div>
+                        )}
+                        {isLoading && (
+                            <div className="text-center py-16 animate-fade-up opacity-0 animation-delay-300">
+                                <ArrowClockwise className="w-8 h-8 mx-auto animate-spin text-zinc-400" />
+                                <p className="mt-3 text-zinc-600 dark:text-zinc-400 font-medium">
+                                    Loading memories...
+                                </p>
+                            </div>
+                        )}
+                        {!isLoading && memories.length === 0 && (
+                            <div className="text-center py-16 bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl animate-fade-up opacity-0 animation-delay-300">
+                                <Brain className="w-12 h-12 mx-auto text-zinc-400" weight="thin" />
+                                <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                                    No memories yet
+                                </h3>
+                                <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+                                    Start chatting to build your memory bank
+                                </p>
+                            </div>
+                        )}
+
+                        {!isLoading && memories.length > 0 && (
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 animate-fade-up opacity-0 animation-delay-400">
+                                {memories.map((memory, idx) => (
+                                    <div
+                                        key={memory.id}
+                                        className="opacity-0 animate-fade-up"
+                                        style={{ animationDelay: `${150 + idx * 50}ms` }}
+                                    >
+                                        <MemoryCard
+                                            memory={memory}
+                                            onEdit={() => setEditingMemory(memory)}
+                                            onDelete={() => handleDelete(memory.id)}
+                                            onPin={() => handlePin(memory)}
+                                            onFeedback={(helpful) => handleFeedback(memory.id, helpful)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {pagination && pagination.totalPages > 1 && (
+                            <div className="flex justify-center gap-3 animate-fade-up opacity-0 animation-delay-500">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={pagination.page <= 1}
+                                    onClick={() => fetchMemories(pagination.page - 1)}
+                                >
+                                    Previous
+                                </Button>
+                                <span className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                                    Page {pagination.page} of {pagination.totalPages}
+                                </span>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={pagination.page >= pagination.totalPages}
+                                    onClick={() => fetchMemories(pagination.page + 1)}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {editingMemory && (

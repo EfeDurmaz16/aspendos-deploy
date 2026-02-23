@@ -30,10 +30,10 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
                 <Download className="h-8 w-8" style={{ color: ACCENT_COLOR }} />
             </div>
 
-            <h2 className="mb-2 text-2xl font-bold text-foreground">Import Your History</h2>
+            <h2 className="mb-2 text-2xl font-bold text-foreground">Your History, Your Power</h2>
             <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
-                Bring your ChatGPT and Claude conversations to Yula. Your AI history, all in one
-                place.
+                Every conversation you've had makes Yula smarter. Import your history
+                and never start from zero again.
             </p>
 
             {/* Demo visualization */}
@@ -72,12 +72,18 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
                 </div>
             </div>
 
-            {/* Benefits */}
-            <div className="mb-6 grid w-full max-w-md grid-cols-2 gap-3">
-                <Benefit icon={<Check className="h-3 w-3" />} text="Preserve context" />
-                <Benefit icon={<Check className="h-3 w-3" />} text="Search everything" />
-                <Benefit icon={<Check className="h-3 w-3" />} text="No vendor lock-in" />
-                <Benefit icon={<Check className="h-3 w-3" />} text="Export anytime" />
+            {/* Investment Value */}
+            <div className="mb-6 w-full max-w-md rounded-lg border border-border bg-foreground/[0.02] p-3">
+                <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-3.5 w-3.5" style={{ color: ACCENT_COLOR }} />
+                    <span className="text-xs font-medium text-foreground">What you gain</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <Benefit icon={<Check className="h-3 w-3" />} text="AI knows your style" />
+                    <Benefit icon={<Check className="h-3 w-3" />} text="Search all history" />
+                    <Benefit icon={<Check className="h-3 w-3" />} text="Context from day one" />
+                    <Benefit icon={<Check className="h-3 w-3" />} text="Your data, always yours" />
+                </div>
             </div>
 
             {/* Actions */}

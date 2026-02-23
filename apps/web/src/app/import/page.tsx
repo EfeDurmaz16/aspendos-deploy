@@ -1,5 +1,6 @@
 'use client';
 
+import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import {
     AlertCircle,
@@ -43,9 +44,6 @@ interface ImportProgress {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-type ImportSource = 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
-type UploadSource = 'CHATGPT' | 'CLAUDE' | 'UNKNOWN';
-
 type ImportPreviewEntity = {
     id: string;
     externalId: string;
@@ -56,11 +54,6 @@ type ImportPreviewEntity = {
     updatedAt?: string;
     selected: boolean;
 };
-
-function normalizeSource(source: UploadSource): ImportSource {
-    if (source === 'CHATGPT' || source === 'CLAUDE') return source;
-    return 'CHATGPT';
-}
 
 function normalizePreviewSource(source: string): ParsedConversation['source'] {
     if (source === 'CHATGPT' || source === 'CLAUDE' || source === 'GEMINI' || source === 'PERPLEXITY') {
@@ -106,7 +99,7 @@ export default function ImportPage() {
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
                         body: JSON.stringify({
-                            source: normalizeSource(uploadedFile.source),
+                            ...(uploadedFile.source !== 'UNKNOWN' ? { source: uploadedFile.source } : {}),
                             fileName: uploadedFile.file.name,
                             fileSize: uploadedFile.file.size,
                             content,
@@ -114,7 +107,8 @@ export default function ImportPage() {
                     });
 
                     if (!response.ok) {
-                        throw new Error('Failed to parse import file');
+                        const errData = await response.json().catch(() => ({})) as { error?: string };
+                        throw new Error(errData.error || `Import failed (${response.status})`);
                     }
 
                     const data = (await response.json()) as {
@@ -149,14 +143,15 @@ export default function ImportPage() {
                                 : f
                         )
                     );
-                } catch {
+                } catch (err) {
+                    const message = err instanceof Error ? err.message : 'Failed to parse file';
                     setFiles((prev) =>
                         prev.map((f) =>
                             f.id === uploadedFile.id
                                 ? {
                                       ...f,
                                       status: 'invalid' as const,
-                                      error: 'Failed to parse file',
+                                      error: message,
                                   }
                                 : f
                         )
@@ -204,43 +199,83 @@ export default function ImportPage() {
                 return acc;
             }, {});
 
-            let importedSoFar = 0;
+            // Start import - polling effect will update progress in parallel
             for (const [jobId, selectedIds] of Object.entries(selectedIdsByJob)) {
-                const currentTitle = selectedConvs[importedSoFar]?.title;
-                setProgress({
-                    current: importedSoFar,
-                    total: selectedConvs.length,
-                    currentTitle,
-                });
-
                 const res = await fetch(`${API_BASE}/api/import/jobs/${jobId}/execute`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({
-                        selectedIds,
-                    }),
+                    body: JSON.stringify({ selectedIds }),
                 });
 
                 if (!res.ok) {
-                    throw new Error(`Failed to import selected conversations for job ${jobId}`);
+                    const errData = await res.json().catch(() => ({})) as { error?: string; upgradeRequired?: boolean };
+                    if (errData.upgradeRequired) {
+                        throw new Error('Import limit reached on your plan. Please upgrade.');
+                    }
+                    throw new Error(errData.error || `Failed to import (${res.status})`);
                 }
 
                 const data = (await res.json()) as { result?: { imported?: number } };
-                importedSoFar += data.result?.imported || 0;
-            }
+                const imported = data.result?.imported || 0;
 
-            if (importedSoFar === 0 && selectedConvs.length > 0) {
-                throw new Error('No conversations were imported');
+                if (imported === 0 && selectedConvs.length > 0) {
+                    throw new Error('No conversations were imported');
+                }
+
+                setProgress({ current: imported, total: selectedConvs.length });
             }
 
             setProgress({ current: selectedConvs.length, total: selectedConvs.length });
             setStep('complete');
-        } catch {
-            setError('Import failed. Please try again.');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Import failed. Please try again.');
             setStep('preview');
         }
     }, [conversations, entityToJob]);
+
+    // Poll import job progress while importing
+    React.useEffect(() => {
+        if (step !== 'importing') return;
+
+        const jobIds = [...new Set(Object.values(entityToJob))];
+        if (jobIds.length === 0) return;
+
+        const interval = setInterval(async () => {
+            try {
+                for (const jobId of jobIds) {
+                    const res = await fetch(`${API_BASE}/api/import/jobs/${jobId}`, {
+                        credentials: 'include',
+                    });
+                    if (!res.ok) continue;
+                    const data = (await res.json()) as {
+                        job: { importedItems: number; totalItems: number; status: string };
+                    };
+                    setProgress((prev) => ({
+                        ...prev,
+                        current: data.job.importedItems || prev.current,
+                        total: data.job.totalItems || prev.total,
+                    }));
+                }
+            } catch {
+                // Ignore polling errors
+            }
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [step, entityToJob]);
+
+    // Celebrate on import complete
+    React.useEffect(() => {
+        if (step !== 'complete') return;
+        const colors = ['#2563EB', '#10B981', '#7C3AED', '#F59E0B'];
+        const end = Date.now() + 1500;
+        (function frame() {
+            confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors });
+            confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+    }, [step]);
 
     const handleBack = React.useCallback(() => {
         if (step === 'preview') {
@@ -465,6 +500,44 @@ export default function ImportPage() {
                                         <li>Upload the file directly here</li>
                                     </ol>
                                 </div>
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-blue-600">
+                                                G
+                                            </span>
+                                        </div>
+                                        <h4 className="font-medium text-zinc-900 dark:text-zinc-100">
+                                            Google Gemini
+                                        </h4>
+                                    </div>
+                                    <ol className="list-decimal list-inside space-y-1 text-sm text-zinc-600 dark:text-zinc-400 ml-8">
+                                        <li>Go to Google Takeout (takeout.google.com)</li>
+                                        <li>Select only "Gemini Apps" data</li>
+                                        <li>Export and download the archive</li>
+                                        <li>Extract and upload the conversations JSON file</li>
+                                    </ol>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-purple-600">
+                                                P
+                                            </span>
+                                        </div>
+                                        <h4 className="font-medium text-zinc-900 dark:text-zinc-100">
+                                            Perplexity
+                                        </h4>
+                                    </div>
+                                    <ol className="list-decimal list-inside space-y-1 text-sm text-zinc-600 dark:text-zinc-400 ml-8">
+                                        <li>Go to Perplexity Settings &gt; Account</li>
+                                        <li>Click "Export Data" to request your data</li>
+                                        <li>Download the JSON export file</li>
+                                        <li>Upload the file directly here</li>
+                                    </ol>
+                                </div>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -513,7 +586,7 @@ export default function ImportPage() {
                                                 strokeWidth="4"
                                                 strokeLinecap="round"
                                                 className="text-feature-import"
-                                                strokeDasharray={`${(progress.current / progress.total) * 276} 276`}
+                                                strokeDasharray={`${progress.total > 0 ? (progress.current / progress.total) * 276 : 0} 276`}
                                             />
                                         </svg>
                                         <div className="absolute inset-0 flex items-center justify-center">

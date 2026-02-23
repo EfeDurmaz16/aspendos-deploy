@@ -12,8 +12,8 @@ import type { Context, Next } from 'hono';
 // Rate limit configuration per tier
 const TIER_LIMITS = {
     FREE: {
-        requestsPerMinute: 10,
-        requestsPerDay: 100,
+        requestsPerMinute: 60,
+        requestsPerDay: 1000,
         tokensPerDay: 10000,
     },
     STARTER: {

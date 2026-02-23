@@ -8,22 +8,20 @@ import { breakers } from './circuit-breaker';
 
 /**
  * Fallback chain for AI models when circuit breakers are open
+ *
+ * Strategy: Groq-first for speed & cost. Premium models (Claude, GPT) only for ULTRA tier.
  */
 const FALLBACK_CHAIN: Record<string, string[]> = {
-    'openai/gpt-4o-mini': [
-        'google/gemini-2.0-flash',
-        'anthropic/claude-3-5-haiku-20241022',
-        'groq/llama-3.1-8b-instant',
-    ],
-    'openai/gpt-4o': ['anthropic/claude-sonnet-4-5-20250929', 'google/gemini-2.0-flash'],
-    'anthropic/claude-sonnet-4-5-20250929': ['openai/gpt-4o', 'google/gemini-2.0-flash'],
-    'anthropic/claude-3-5-haiku-20241022': [
-        'openai/gpt-4o-mini',
-        'google/gemini-2.0-flash',
-        'groq/llama-3.1-8b-instant',
-    ],
-    'google/gemini-2.0-flash': ['openai/gpt-4o-mini', 'groq/llama-3.1-8b-instant'],
-    'groq/llama-3.1-8b-instant': ['openai/gpt-4o-mini', 'google/gemini-2.0-flash'],
+    // Groq primary models
+    'groq/llama-3.1-70b-versatile': ['groq/mixtral-8x7b-32768', 'groq/llama-3.1-8b-instant'],
+    'groq/llama-3.1-8b-instant': ['groq/llama3-8b-8192', 'groq/llama-3.1-70b-versatile'],
+    'groq/mixtral-8x7b-32768': ['groq/llama-3.1-70b-versatile', 'groq/llama-3.1-8b-instant'],
+    'groq/llama3-8b-8192': ['groq/llama-3.1-8b-instant', 'groq/llama-3.1-70b-versatile'],
+    // ULTRA tier premium models (fallback to Groq)
+    'anthropic/claude-sonnet-4-20250514': ['groq/llama-3.1-70b-versatile', 'openai/gpt-4o'],
+    'anthropic/claude-opus-4-20250514': ['anthropic/claude-sonnet-4-20250514', 'groq/llama-3.1-70b-versatile'],
+    'openai/gpt-4o': ['groq/llama-3.1-70b-versatile', 'anthropic/claude-sonnet-4-20250514'],
+    'openai/o1': ['openai/gpt-4o', 'groq/llama-3.1-70b-versatile'],
 };
 
 /**
@@ -86,46 +84,32 @@ export function getModelWithFallback(modelId: string): { model: any; actualModel
 
 /**
  * Supported models configuration
+ *
+ * Groq-first strategy:
+ * - FREE/STARTER/PRO: Groq models (fast, cheap, great UX)
+ * - ULTRA: Premium models (Claude, GPT-4o, O1) for deep thinking
  */
 export const SUPPORTED_MODELS = [
-    // OpenAI
-    { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openai', tier: 'PRO' },
-    { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', tier: 'STARTER' },
-    { id: 'openai/o1', name: 'O1', provider: 'openai', tier: 'ULTRA' },
-    { id: 'openai/o1-mini', name: 'O1 Mini', provider: 'openai', tier: 'PRO' },
+    // Groq - Default for all tiers
+    { id: 'groq/llama-3.1-70b-versatile', name: 'Yula Smart', provider: 'groq', tier: 'FREE' },
+    { id: 'groq/llama-3.1-8b-instant', name: 'Yula Fast', provider: 'groq', tier: 'FREE' },
+    { id: 'groq/mixtral-8x7b-32768', name: 'Yula Creative', provider: 'groq', tier: 'STARTER' },
+    { id: 'groq/llama3-8b-8192', name: 'Yula Lite', provider: 'groq', tier: 'FREE' },
 
-    // Anthropic
+    // Premium - ULTRA tier only (Deep Thinking)
+    { id: 'openai/gpt-4o', name: 'Deep Thinking (GPT)', provider: 'openai', tier: 'ULTRA' },
+    { id: 'openai/o1', name: 'Deep Reasoning (O1)', provider: 'openai', tier: 'ULTRA' },
     {
         id: 'anthropic/claude-sonnet-4-20250514',
-        name: 'Claude Sonnet 4',
-        provider: 'anthropic',
-        tier: 'PRO',
-    },
-    {
-        id: 'anthropic/claude-3-5-haiku-20241022',
-        name: 'Claude 3.5 Haiku',
-        provider: 'anthropic',
-        tier: 'STARTER',
-    },
-    {
-        id: 'anthropic/claude-opus-4-20250514',
-        name: 'Claude Opus 4',
+        name: 'Deep Thinking (Claude)',
         provider: 'anthropic',
         tier: 'ULTRA',
     },
-
-    // Google
     {
-        id: 'google/gemini-2.0-flash',
-        name: 'Gemini 2.0 Flash',
-        provider: 'google',
-        tier: 'STARTER',
-    },
-    {
-        id: 'google/gemini-2.5-pro-preview-05-06',
-        name: 'Gemini 2.5 Pro',
-        provider: 'google',
-        tier: 'PRO',
+        id: 'anthropic/claude-opus-4-20250514',
+        name: 'Deep Reasoning (Opus)',
+        provider: 'anthropic',
+        tier: 'ULTRA',
     },
 ] as const;
 
@@ -138,14 +122,8 @@ export function getModelsForTier(tier: 'FREE' | 'STARTER' | 'PRO' | 'ULTRA') {
     const tierOrder = { FREE: 0, STARTER: 1, PRO: 2, ULTRA: 3 };
     const userTierLevel = tierOrder[tier];
 
-    if (tier === 'FREE') {
-        return SUPPORTED_MODELS.filter((model) =>
-            ['openai/gpt-4o-mini', 'google/gemini-2.0-flash'].includes(model.id)
-        );
-    }
-
     return SUPPORTED_MODELS.filter((model) => {
-        const modelTierLevel = tierOrder[model.tier as keyof typeof tierOrder] ?? 1;
+        const modelTierLevel = tierOrder[model.tier as keyof typeof tierOrder] ?? 0;
         return modelTierLevel <= userTierLevel;
     });
 }
@@ -177,10 +155,12 @@ export function getSmartModelId(requestedModelId: string, userMessage: string): 
     }
 
     const downgrades: Record<string, string> = {
-        'openai/gpt-4o': 'openai/gpt-4o-mini',
-        'anthropic/claude-sonnet-4-20250514': 'anthropic/claude-3-5-haiku-20241022',
-        'anthropic/claude-opus-4-20250514': 'anthropic/claude-sonnet-4-20250514',
-        'google/gemini-2.5-pro-preview-05-06': 'google/gemini-2.0-flash',
+        'groq/llama-3.1-70b-versatile': 'groq/llama-3.1-8b-instant',
+        'groq/mixtral-8x7b-32768': 'groq/llama-3.1-8b-instant',
+        'openai/gpt-4o': 'groq/llama-3.1-8b-instant',
+        'anthropic/claude-sonnet-4-20250514': 'groq/llama-3.1-8b-instant',
+        'anthropic/claude-opus-4-20250514': 'groq/llama-3.1-70b-versatile',
+        'openai/o1': 'groq/llama-3.1-70b-versatile',
     };
 
     return downgrades[requestedModelId] || requestedModelId;

@@ -96,8 +96,8 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
 
             <h2 className="mb-2 text-2xl font-bold text-foreground">The AI Council</h2>
             <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
-                Ask one question, get four perspectives. Different models with unique thinking
-                styles, all at once.
+                Why trust one AI when you can hear from four? Every question sparks
+                a unique debate — you'll never get the same answer twice.
             </p>
 
             {/* Demo visualization */}
@@ -156,21 +156,21 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
                 </div>
             </div>
 
-            {/* Benefits */}
+            {/* Variable reward stats */}
             <div className="mb-6 w-full max-w-md flex items-center justify-center gap-6 text-center">
                 <div>
-                    <div className="text-2xl font-bold text-foreground">4x</div>
-                    <div className="text-xs text-muted-foreground">Perspectives</div>
+                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>4</div>
+                    <div className="text-xs text-muted-foreground">Minds</div>
                 </div>
                 <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold text-foreground">1</div>
+                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>1</div>
                     <div className="text-xs text-muted-foreground">Question</div>
                 </div>
                 <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold text-foreground">∞</div>
-                    <div className="text-xs text-muted-foreground">Insights</div>
+                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>&#x221e;</div>
+                    <div className="text-xs text-muted-foreground">Surprises</div>
                 </div>
             </div>
 

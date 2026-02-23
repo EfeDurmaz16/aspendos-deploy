@@ -44,6 +44,13 @@
   --color-personas: var(--feature-personas);
   --color-memory: var(--feature-memory);
 
+  /* Feature Accent Colors - Tailwind v4 mapping (bg-feature-import, text-feature-import, etc.) */
+  --color-feature-import: var(--feature-import);
+  --color-feature-pac: var(--feature-pac);
+  --color-feature-council: var(--feature-council);
+  --color-feature-personas: var(--feature-personas);
+  --color-feature-memory: var(--feature-memory);
+
   /* Model Colors */
   --color-model-gpt4o: var(--model-gpt4o);
   --color-model-claude: var(--model-claude);

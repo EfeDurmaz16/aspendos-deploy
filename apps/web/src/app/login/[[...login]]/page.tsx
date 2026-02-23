@@ -37,12 +37,17 @@ export default function LoginPage() {
                 },
             });
             if (result.error) {
-                setError(result.error.message || 'Invalid email or password');
+                const status = (result.error as { status?: number }).status ?? 0;
+                if (status >= 500) {
+                    setError('Service temporarily unavailable. Please try again in a moment.');
+                } else {
+                    setError(result.error.message || 'Invalid email or password');
+                }
                 return;
             }
             router.push('/chat');
         } catch {
-            setError('An unexpected error occurred. Please try again.');
+            setError('Unable to connect. Please check your internet and try again.');
         } finally {
             setIsLoading(false);
         }

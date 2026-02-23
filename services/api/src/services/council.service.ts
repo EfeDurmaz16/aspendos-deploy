@@ -28,7 +28,7 @@ export const COUNCIL_PERSONAS: Record<
         name: 'The Scholar',
         role: 'Academic & Research Perspective',
         color: '#3B82F6', // Blue
-        modelId: 'openai/gpt-4o',
+        modelId: 'groq/llama-3.1-70b-versatile',
         systemPrompt: `You are The Scholar, an academic advisor providing well-researched, evidence-based perspectives.
 Your approach:
 - Cite relevant research, theories, and academic frameworks
@@ -43,7 +43,7 @@ Respond thoughtfully but concisely (150-200 words). Focus on what the research a
         name: 'The Visionary',
         role: 'Creative & Innovative Perspective',
         color: '#F59E0B', // Amber
-        modelId: 'anthropic/claude-3-5-sonnet-20241022',
+        modelId: 'groq/mixtral-8x7b-32768',
         systemPrompt: `You are The Visionary, a creative thinker who explores unconventional possibilities.
 Your approach:
 - Challenge assumptions and conventional thinking
@@ -58,7 +58,7 @@ Respond with imagination and energy (150-200 words). Focus on creative possibili
         name: 'The Pragmatist',
         role: 'Practical & Actionable Perspective',
         color: '#10B981', // Emerald
-        modelId: 'google/gemini-2.0-flash',
+        modelId: 'groq/llama-3.1-8b-instant',
         systemPrompt: `You are The Pragmatist, focused on practical implementation and real-world results.
 Your approach:
 - Break down into concrete, actionable steps
@@ -73,7 +73,7 @@ Respond with clarity and practicality (150-200 words). Focus on what can be done
         name: "Devil's Advocate",
         role: 'Critical & Contrarian Perspective',
         color: '#EF4444', // Red
-        modelId: 'openai/gpt-4o-mini',
+        modelId: 'groq/llama-3.1-70b-versatile',
         systemPrompt: `You are the Devil's Advocate, challenging assumptions to strengthen thinking.
 Your approach:
 - Question underlying assumptions
@@ -391,7 +391,7 @@ export async function generateSynthesis(sessionId: string) {
         .join('\n\n');
 
     // Use centralized provider with circuit breaker fallback
-    const { model: synthesisModel } = getModelWithFallback('openai/gpt-4o');
+    const { model: synthesisModel } = getModelWithFallback('groq/llama-3.1-70b-versatile');
 
     const result = await streamText({
         model: synthesisModel,

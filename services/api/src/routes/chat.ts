@@ -99,7 +99,8 @@ app.get('/', async (c) => {
     // Ensure user exists in database
     await chatService.getOrCreateUser(userId, user.email, user.name);
 
-    const chats = await chatService.listChats({ userId });
+    const limit = Math.min(parseInt(c.req.query('limit') || '200', 10) || 200, 500);
+    const chats = await chatService.listChats({ userId, limit });
 
     return c.json({ chats });
 });
@@ -228,7 +229,7 @@ app.post(
         }
 
         // Determine model to use
-        const modelId = model_id || chat.modelPreference || 'openai/gpt-4o-mini';
+        const modelId = model_id || chat.modelPreference || 'groq/llama-3.1-70b-versatile';
 
         // Apply smart model routing (downgrade expensive models for simple queries)
         const smartModelId = getSmartModelId(modelId, content);

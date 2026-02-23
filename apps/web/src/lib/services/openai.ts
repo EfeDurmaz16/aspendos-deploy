@@ -110,7 +110,7 @@ export async function* createStreamingChatCompletion(
 export async function extractMemoryInsights(conversationText: string): Promise<string[]> {
     try {
         const { text } = await generateText({
-            model: gateway('openai/gpt-4o-mini'),
+            model: gateway('groq/llama-3.1-8b-instant'),
             system: `You are a memory extraction assistant. Extract 2-4 key facts or insights about the user from the conversation. Focus on:
 - User preferences
 - Important information shared

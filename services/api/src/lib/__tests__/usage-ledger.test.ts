@@ -7,19 +7,19 @@ describe('usage-ledger', () => {
     });
 
     describe('calculateCostFromTokens', () => {
-        it('should calculate cost for groq/llama-3.3-70b', () => {
-            const cost = calculateCostFromTokens('groq/llama-3.3-70b', 1_000_000, 1_000_000);
+        it('should calculate cost for groq/llama-3.1-70b-versatile', () => {
+            const cost = calculateCostFromTokens('groq/llama-3.1-70b-versatile', 1_000_000, 1_000_000);
             expect(cost).toBeCloseTo(0.59 + 0.79, 6);
         });
 
-        it('should calculate cost for anthropic/claude-sonnet', () => {
-            const cost = calculateCostFromTokens('anthropic/claude-sonnet', 500_000, 200_000);
+        it('should calculate cost for anthropic/claude-sonnet-4-20250514', () => {
+            const cost = calculateCostFromTokens('anthropic/claude-sonnet-4-20250514', 500_000, 200_000);
             expect(cost).toBeCloseTo((500_000 / 1_000_000) * 3.0 + (200_000 / 1_000_000) * 15.0, 6);
         });
 
-        it('should calculate cost for openai/gpt-4o-mini', () => {
-            const cost = calculateCostFromTokens('openai/gpt-4o-mini', 100_000, 50_000);
-            expect(cost).toBeCloseTo((100_000 / 1_000_000) * 0.15 + (50_000 / 1_000_000) * 0.6, 6);
+        it('should calculate cost for groq/llama-3.1-8b-instant', () => {
+            const cost = calculateCostFromTokens('groq/llama-3.1-8b-instant', 100_000, 50_000);
+            expect(cost).toBeCloseTo((100_000 / 1_000_000) * 0.05 + (50_000 / 1_000_000) * 0.08, 6);
         });
 
         it('should throw error for unknown model', () => {
@@ -29,7 +29,7 @@ describe('usage-ledger', () => {
         });
 
         it('should handle zero tokens', () => {
-            const cost = calculateCostFromTokens('groq/llama-3.1-8b', 0, 0);
+            const cost = calculateCostFromTokens('groq/llama-3.1-8b-instant', 0, 0);
             expect(cost).toBe(0);
         });
 
@@ -45,7 +45,7 @@ describe('usage-ledger', () => {
         it('should record a usage entry', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -59,7 +59,7 @@ describe('usage-ledger', () => {
         it('should record multiple entries', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -68,7 +68,7 @@ describe('usage-ledger', () => {
 
             usageLedger.recordUsage({
                 userId: 'user2',
-                model: 'anthropic/claude-sonnet',
+                model: 'anthropic/claude-sonnet-4-20250514',
                 provider: 'anthropic',
                 inputTokens: 2000,
                 outputTokens: 1000,
@@ -82,7 +82,7 @@ describe('usage-ledger', () => {
             const _before = new Date();
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -98,7 +98,7 @@ describe('usage-ledger', () => {
             const customDate = new Date('2026-01-01T00:00:00Z');
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -115,7 +115,7 @@ describe('usage-ledger', () => {
         beforeEach(() => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -124,7 +124,7 @@ describe('usage-ledger', () => {
 
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'anthropic/claude-sonnet',
+                model: 'anthropic/claude-sonnet-4-20250514',
                 provider: 'anthropic',
                 inputTokens: 2000,
                 outputTokens: 1000,
@@ -148,20 +148,20 @@ describe('usage-ledger', () => {
 
         it('should group costs by model', () => {
             const costs = usageLedger.getUserCosts('user1');
-            expect(costs.byModel['groq/llama-3.3-70b'].cost).toBeCloseTo(0.001, 6);
-            expect(costs.byModel['anthropic/claude-sonnet'].cost).toBeCloseTo(0.02, 6);
+            expect(costs.byModel['groq/llama-3.1-70b-versatile'].cost).toBeCloseTo(0.001, 6);
+            expect(costs.byModel['anthropic/claude-sonnet-4-20250514'].cost).toBeCloseTo(0.02, 6);
         });
 
         it('should track input and output tokens by model', () => {
             const costs = usageLedger.getUserCosts('user1');
-            expect(costs.byModel['groq/llama-3.3-70b'].inputTokens).toBe(1000);
-            expect(costs.byModel['groq/llama-3.3-70b'].outputTokens).toBe(500);
+            expect(costs.byModel['groq/llama-3.1-70b-versatile'].inputTokens).toBe(1000);
+            expect(costs.byModel['groq/llama-3.1-70b-versatile'].outputTokens).toBe(500);
         });
 
         it('should track request count by model', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 500,
                 outputTokens: 250,
@@ -169,7 +169,7 @@ describe('usage-ledger', () => {
             });
 
             const costs = usageLedger.getUserCosts('user1');
-            expect(costs.byModel['groq/llama-3.3-70b'].requestCount).toBe(2);
+            expect(costs.byModel['groq/llama-3.1-70b-versatile'].requestCount).toBe(2);
         });
 
         it('should group costs by day', () => {
@@ -190,7 +190,7 @@ describe('usage-ledger', () => {
 
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -217,7 +217,7 @@ describe('usage-ledger', () => {
         beforeEach(() => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -226,7 +226,7 @@ describe('usage-ledger', () => {
 
             usageLedger.recordUsage({
                 userId: 'user2',
-                model: 'groq/llama-3.1-8b',
+                model: 'groq/llama-3.1-8b-instant',
                 provider: 'groq',
                 inputTokens: 2000,
                 outputTokens: 1000,
@@ -235,7 +235,7 @@ describe('usage-ledger', () => {
 
             usageLedger.recordUsage({
                 userId: 'user3',
-                model: 'anthropic/claude-sonnet',
+                model: 'anthropic/claude-sonnet-4-20250514',
                 provider: 'anthropic',
                 inputTokens: 3000,
                 outputTokens: 1500,
@@ -276,7 +276,7 @@ describe('usage-ledger', () => {
         it('should return comprehensive breakdown', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -285,7 +285,7 @@ describe('usage-ledger', () => {
 
             const breakdown = usageLedger.getCostBreakdown('user1');
             expect(breakdown.totalCost).toBeCloseTo(0.001, 6);
-            expect(breakdown.byModel['groq/llama-3.3-70b']).toBeDefined();
+            expect(breakdown.byModel['groq/llama-3.1-70b-versatile']).toBeDefined();
             expect(Object.keys(breakdown.byDay).length).toBeGreaterThan(0);
         });
     });
@@ -299,7 +299,7 @@ describe('usage-ledger', () => {
         it('should estimate based on recent usage', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -321,7 +321,7 @@ describe('usage-ledger', () => {
                 date.setDate(date.getDate() - i);
                 usageLedger.recordUsage({
                     userId: 'user1',
-                    model: 'groq/llama-3.3-70b',
+                    model: 'groq/llama-3.1-70b-versatile',
                     provider: 'groq',
                     inputTokens: 1000,
                     outputTokens: 500,
@@ -341,7 +341,7 @@ describe('usage-ledger', () => {
                 date.setDate(date.getDate() - i);
                 usageLedger.recordUsage({
                     userId: 'user1',
-                    model: 'groq/llama-3.3-70b',
+                    model: 'groq/llama-3.1-70b-versatile',
                     provider: 'groq',
                     inputTokens: 1000,
                     outputTokens: 500,
@@ -359,7 +359,7 @@ describe('usage-ledger', () => {
         it('should return false when under 80% threshold', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -373,7 +373,7 @@ describe('usage-ledger', () => {
         it('should return true when at 80% threshold', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -387,7 +387,7 @@ describe('usage-ledger', () => {
         it('should return true when over budget', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -404,7 +404,7 @@ describe('usage-ledger', () => {
 
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -421,7 +421,7 @@ describe('usage-ledger', () => {
         beforeEach(() => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -430,7 +430,7 @@ describe('usage-ledger', () => {
 
             usageLedger.recordUsage({
                 userId: 'user2',
-                model: 'anthropic/claude-sonnet',
+                model: 'anthropic/claude-sonnet-4-20250514',
                 provider: 'anthropic',
                 inputTokens: 2000,
                 outputTokens: 1000,
@@ -458,7 +458,7 @@ describe('usage-ledger', () => {
         it('should include request count', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -473,7 +473,7 @@ describe('usage-ledger', () => {
         it('should identify most used model', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -482,7 +482,7 @@ describe('usage-ledger', () => {
 
             const topSpenders = usageLedger.getTopSpenders();
             const user1 = topSpenders.find((s) => s.userId === 'user1');
-            expect(user1?.mostUsedModel).toBe('groq/llama-3.3-70b');
+            expect(user1?.mostUsedModel).toBe('groq/llama-3.1-70b-versatile');
         });
 
         it('should limit results', () => {
@@ -500,7 +500,7 @@ describe('usage-ledger', () => {
             for (let i = 4; i <= 15; i++) {
                 usageLedger.recordUsage({
                     userId: `user${i}`,
-                    model: 'groq/llama-3.3-70b',
+                    model: 'groq/llama-3.1-70b-versatile',
                     provider: 'groq',
                     inputTokens: 1000,
                     outputTokens: 500,
@@ -517,7 +517,7 @@ describe('usage-ledger', () => {
         it('should clear all entries', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -533,7 +533,7 @@ describe('usage-ledger', () => {
 
     describe('edge cases', () => {
         it('should handle very large token counts', () => {
-            const cost = calculateCostFromTokens('anthropic/claude-sonnet', 10_000_000, 5_000_000);
+            const cost = calculateCostFromTokens('anthropic/claude-sonnet-4-20250514', 10_000_000, 5_000_000);
             expect(cost).toBeGreaterThan(0);
             expect(Number.isFinite(cost)).toBe(true);
         });
@@ -542,7 +542,7 @@ describe('usage-ledger', () => {
             for (let i = 0; i < 5; i++) {
                 usageLedger.recordUsage({
                     userId: 'user1',
-                    model: 'groq/llama-3.3-70b',
+                    model: 'groq/llama-3.1-70b-versatile',
                     provider: 'groq',
                     inputTokens: 1000,
                     outputTokens: 500,
@@ -551,14 +551,14 @@ describe('usage-ledger', () => {
             }
 
             const costs = usageLedger.getUserCosts('user1');
-            expect(costs.byModel['groq/llama-3.3-70b'].requestCount).toBe(5);
+            expect(costs.byModel['groq/llama-3.1-70b-versatile'].requestCount).toBe(5);
             expect(costs.totalCost).toBeCloseTo(0.005, 6);
         });
 
         it('should handle fractional costs correctly', () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 100,
                 outputTokens: 50,

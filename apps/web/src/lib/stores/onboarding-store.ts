@@ -12,13 +12,13 @@ import { createJSONStorage, persist } from 'zustand/middleware';
  * States: welcome → import-demo → pac-demo → council-demo → complete
  */
 
-export type OnboardingStep = 'welcome' | 'import-demo' | 'pac-demo' | 'council-demo' | 'complete';
+export type OnboardingStep = 'welcome' | 'import-demo' | 'memory-demo' | 'pac-demo' | 'council-demo' | 'complete';
 
 export interface OnboardingStepConfig {
     id: OnboardingStep;
     title: string;
     description: string;
-    feature: 'welcome' | 'import' | 'pac' | 'council' | 'complete';
+    feature: 'welcome' | 'import' | 'memory' | 'pac' | 'council' | 'complete';
     accentColor: string;
     next: OnboardingStep | null;
     prev: OnboardingStep | null;
@@ -41,8 +41,17 @@ export const ONBOARDING_STEPS: Record<OnboardingStep, OnboardingStepConfig> = {
         description: 'Bring your ChatGPT and Claude conversations',
         feature: 'import',
         accentColor: '#2563EB', // Electric Blue for IMPORT
-        next: 'pac-demo',
+        next: 'memory-demo',
         prev: 'welcome',
+    },
+    'memory-demo': {
+        id: 'memory-demo',
+        title: 'Memory That Follows You',
+        description: 'Your context works across all AI models',
+        feature: 'memory',
+        accentColor: '#EC4899', // Pink/Rose for MEMORY
+        next: 'pac-demo',
+        prev: 'import-demo',
     },
     'pac-demo': {
         id: 'pac-demo',
@@ -51,7 +60,7 @@ export const ONBOARDING_STEPS: Record<OnboardingStep, OnboardingStepConfig> = {
         feature: 'pac',
         accentColor: '#D97706', // Electric Amber for PAC
         next: 'council-demo',
-        prev: 'import-demo',
+        prev: 'memory-demo',
     },
     'council-demo': {
         id: 'council-demo',
@@ -77,6 +86,7 @@ export const ONBOARDING_STEPS: Record<OnboardingStep, OnboardingStepConfig> = {
 export const STEP_ORDER: OnboardingStep[] = [
     'welcome',
     'import-demo',
+    'memory-demo',
     'pac-demo',
     'council-demo',
     'complete',
@@ -293,6 +303,13 @@ export const SPOTLIGHT_TARGETS: SpotlightTarget[] = [
         id: 'sidebar-import',
         step: 'import-demo',
         selector: '[data-spotlight="import-button"]',
+        padding: 8,
+        position: 'right',
+    },
+    {
+        id: 'sidebar-memory',
+        step: 'memory-demo',
+        selector: '[data-spotlight="memory-button"]',
         padding: 8,
         position: 'right',
     },

@@ -33,9 +33,9 @@ modelsRoutes.get('/', (c) => {
 // GET /pinned - Pinned/recommended models
 modelsRoutes.get('/pinned', (c) => {
     const pinnedModels = [
-        SUPPORTED_MODELS.find((m) => m.id === 'openai/gpt-4o-mini'),
-        SUPPORTED_MODELS.find((m) => m.id === 'anthropic/claude-3-5-haiku-20241022'),
-        SUPPORTED_MODELS.find((m) => m.id === 'google/gemini-2.0-flash'),
+        SUPPORTED_MODELS.find((m) => m.id === 'groq/llama-3.1-70b-versatile'),
+        SUPPORTED_MODELS.find((m) => m.id === 'groq/llama-3.1-8b-instant'),
+        SUPPORTED_MODELS.find((m) => m.id === 'groq/mixtral-8x7b-32768'),
     ].filter(Boolean);
 
     return c.json({

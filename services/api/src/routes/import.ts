@@ -139,23 +139,20 @@ app.post('/jobs', enforceTierLimit('monthlyImports'), validateBody(createImportJ
 
     const { source: rawSource, fileName, fileSize, content } = validatedBody;
 
-    // Auto-detect format if source not specified or validate if specified
-    let source = rawSource;
+    // Auto-detect format from content structure (more reliable than filename-based detection)
     const detectedFormat = detectImportFormat(content);
 
-    if (!source) {
-        if (!detectedFormat) {
-            return c.json(
-                {
-                    error: 'Could not auto-detect format. Please specify source as CHATGPT, CLAUDE, GEMINI, or PERPLEXITY.',
-                },
-                400
-            );
-        }
+    // Prefer content-based detection over client-supplied source (filename guessing is unreliable)
+    let source: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
+    if (detectedFormat) {
         source = detectedFormat;
-    } else if (!['CHATGPT', 'CLAUDE', 'GEMINI', 'PERPLEXITY'].includes(source)) {
+    } else if (rawSource && ['CHATGPT', 'CLAUDE', 'GEMINI', 'PERPLEXITY'].includes(rawSource)) {
+        source = rawSource;
+    } else {
         return c.json(
-            { error: 'Invalid source. Must be CHATGPT, CLAUDE, GEMINI, or PERPLEXITY' },
+            {
+                error: 'Could not auto-detect format. Please specify source as CHATGPT, CLAUDE, GEMINI, or PERPLEXITY.',
+            },
             400
         );
     }
@@ -363,7 +360,7 @@ app.post(
  */
 app.post(
     '/jobs/:id/execute',
-    enforceTierLimit('monthlyImageGenerations'),
+    enforceTierLimit('monthlyImports'),
     validateParams(jobIdParamSchema),
     validateBody(executeImportSchema),
     async (c) => {

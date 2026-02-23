@@ -90,7 +90,7 @@ export const authInstance = betterAuth({
         // Polar plugin for payments
         polar({
             client: polarClient,
-            createCustomerOnSignUp: true,
+            createCustomerOnSignUp: false,
             use: [
                 checkout({
                     products: [

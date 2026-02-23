@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { generatePageMetadata } from '@/lib/seo/metadata';
+import { ChatLayoutClient } from './layout-client';
 
 export const metadata: Metadata = generatePageMetadata(
     'Chat - Talk to Any AI Model',
@@ -20,5 +21,5 @@ export const metadata: Metadata = generatePageMetadata(
 );
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
-    return children;
+    return <ChatLayoutClient>{children}</ChatLayoutClient>;
 }

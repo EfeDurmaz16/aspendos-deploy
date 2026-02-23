@@ -51,7 +51,7 @@ describe('Usage Routes', () => {
             // Record some usage
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -60,7 +60,7 @@ describe('Usage Routes', () => {
 
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'anthropic/claude-sonnet',
+                model: 'anthropic/claude-sonnet-4-20250514',
                 provider: 'anthropic',
                 inputTokens: 2000,
                 outputTokens: 1000,
@@ -76,15 +76,15 @@ describe('Usage Routes', () => {
             expect(data.userId).toBe('user1');
             expect(data.period).toBe('month');
             expect(data.totalCost).toBeCloseTo(0.021, 6);
-            expect(data.byModel['groq/llama-3.3-70b']).toBeDefined();
-            expect(data.byModel['anthropic/claude-sonnet']).toBeDefined();
+            expect(data.byModel['groq/llama-3.1-70b-versatile']).toBeDefined();
+            expect(data.byModel['anthropic/claude-sonnet-4-20250514']).toBeDefined();
             expect(Object.keys(data.byDay).length).toBeGreaterThan(0);
         });
 
         it('should filter by period', async () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -149,7 +149,7 @@ describe('Usage Routes', () => {
             // Record usage for multiple users
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -158,7 +158,7 @@ describe('Usage Routes', () => {
 
             usageLedger.recordUsage({
                 userId: 'user2',
-                model: 'anthropic/claude-sonnet',
+                model: 'anthropic/claude-sonnet-4-20250514',
                 provider: 'anthropic',
                 inputTokens: 2000,
                 outputTokens: 1000,
@@ -214,7 +214,7 @@ describe('Usage Routes', () => {
         it('should filter by period', async () => {
             usageLedger.recordUsage({
                 userId: 'user1',
-                model: 'groq/llama-3.3-70b',
+                model: 'groq/llama-3.1-70b-versatile',
                 provider: 'groq',
                 inputTokens: 1000,
                 outputTokens: 500,
@@ -244,7 +244,7 @@ describe('Usage Routes', () => {
             for (let i = 1; i <= 15; i++) {
                 usageLedger.recordUsage({
                     userId: `user${i}`,
-                    model: 'groq/llama-3.3-70b',
+                    model: 'groq/llama-3.1-70b-versatile',
                     provider: 'groq',
                     inputTokens: 1000,
                     outputTokens: 500,
@@ -311,7 +311,7 @@ describe('Usage Routes', () => {
                 date.setDate(date.getDate() - i);
                 usageLedger.recordUsage({
                     userId: 'user1',
-                    model: 'groq/llama-3.3-70b',
+                    model: 'groq/llama-3.1-70b-versatile',
                     provider: 'groq',
                     inputTokens: 1000,
                     outputTokens: 500,

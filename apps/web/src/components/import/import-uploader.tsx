@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
  * Supports: ChatGPT JSON export, Claude JSON export
  */
 
-export type ImportSource = 'CHATGPT' | 'CLAUDE' | 'UNKNOWN';
+export type ImportSource = 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY' | 'UNKNOWN';
 
 export interface UploadedFile {
     file: File;
@@ -39,12 +39,19 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 function detectSource(fileName: string): ImportSource {
     const lower = fileName.toLowerCase();
-    if (lower.includes('chatgpt') || lower.includes('conversations')) {
+    if (lower.includes('chatgpt')) {
         return 'CHATGPT';
     }
     if (lower.includes('claude')) {
         return 'CLAUDE';
     }
+    if (lower.includes('gemini') || lower.includes('bard')) {
+        return 'GEMINI';
+    }
+    if (lower.includes('perplexity')) {
+        return 'PERPLEXITY';
+    }
+    // Generic names like 'conversations.json' - let backend auto-detect from content
     return 'UNKNOWN';
 }
 
@@ -184,7 +191,7 @@ export function ImportUploader({
             </div>
 
             {/* Supported Sources */}
-            <div className="flex items-center justify-center gap-6 py-2">
+            <div className="flex items-center justify-center gap-4 py-2 flex-wrap">
                 <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
                     <div className="w-6 h-6 rounded bg-emerald-500/10 flex items-center justify-center">
                         <span className="text-xs font-bold text-emerald-600">G</span>
@@ -196,6 +203,18 @@ export function ImportUploader({
                         <span className="text-xs font-bold text-orange-600">C</span>
                     </div>
                     <span>Claude</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+                    <div className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-blue-600">G</span>
+                    </div>
+                    <span>Gemini</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+                    <div className="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-purple-600">P</span>
+                    </div>
+                    <span>Perplexity</span>
                 </div>
             </div>
 
@@ -233,6 +252,8 @@ function FileItem({ file, onRemove, isUploading }: FileItemProps) {
     const sourceColors = {
         CHATGPT: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
         CLAUDE: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+        GEMINI: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+        PERPLEXITY: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
         UNKNOWN: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400',
     };
 

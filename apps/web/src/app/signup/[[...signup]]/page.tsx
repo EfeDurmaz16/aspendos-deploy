@@ -61,8 +61,15 @@ export default function SignupPage() {
                     onResponse: () => setIsLoading(false),
                     onRequest: () => setIsLoading(true),
                     onError: (ctx) => {
-                        toast.error(ctx.error.message);
-                        setError(ctx.error.message);
+                        const status = (ctx.error as { status?: number }).status ?? 0;
+                        if (status >= 500) {
+                            const msg = 'Service temporarily unavailable. Please try again in a moment.';
+                            toast.error(msg);
+                            setError(msg);
+                        } else {
+                            toast.error(ctx.error.message);
+                            setError(ctx.error.message);
+                        }
                     },
                     onSuccess: () => {
                         setSuccess(true);
@@ -71,7 +78,7 @@ export default function SignupPage() {
                 },
             });
         } catch {
-            setError('An unexpected error occurred. Please try again.');
+            setError('Unable to connect. Please check your internet and try again.');
         } finally {
             setIsLoading(false);
         }

@@ -242,6 +242,20 @@ Respond in JSON only: {"type":"<category>","useMemory":true/false,"sectors":["se
         query: string,
         queryType?: QueryType
     ): Promise<MemoryDecision> {
+        // DISABLED: Memory system disabled to avoid API costs
+        // Re-enable by removing this early return
+        if (!process.env.MEMORY_ENABLED || process.env.MEMORY_ENABLED !== 'true') {
+            return {
+                useMemory: false,
+                reasoning: 'Memory system disabled via MEMORY_ENABLED env var',
+                sectors: [],
+                threshold: 0,
+                cost: 0,
+                queryType: QueryType.GENERAL_KNOWLEDGE,
+                confidence: 1.0,
+            };
+        }
+
         // Classify if not provided
         const type = queryType || this.classifyQuery(query);
 

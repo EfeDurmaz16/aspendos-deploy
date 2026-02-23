@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { authInstance } from '@/lib/auth';
 
 // Define public page routes that don't require authentication
 const publicPageRoutes = ['/', '/login', '/signup', '/pricing', '/terms', '/privacy', '/landing', '/yula'];
@@ -10,13 +9,15 @@ const publicApiPrefixes = ['/api/auth/', '/api/webhooks/', '/api/health'];
 // Define protected page routes that require authentication
 const protectedPagePrefixes = ['/chat', '/memory', '/billing', '/settings', '/analytics'];
 
+// Feature page routes (public)
+const publicPagePrefixes = ['/features', '/pricing', '/verify-email', '/forgot-password', '/onboarding', '/import'];
+
 function isPublicPageRoute(pathname: string): boolean {
-    // Check exact public page routes
-    return publicPageRoutes.includes(pathname);
+    if (publicPageRoutes.includes(pathname)) return true;
+    return publicPagePrefixes.some((prefix) => pathname.startsWith(prefix));
 }
 
 function isPublicApiRoute(pathname: string): boolean {
-    // Check public API prefixes
     return publicApiPrefixes.some((prefix) => pathname.startsWith(prefix));
 }
 
@@ -28,6 +29,11 @@ function isApiRoute(pathname: string): boolean {
     return pathname.startsWith('/api/');
 }
 
+/**
+ * Lightweight Edge-compatible middleware.
+ * Only checks cookie presence - actual session validation happens server-side.
+ * This avoids importing Prisma/Better Auth which use Node.js APIs unsupported in Edge Runtime.
+ */
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
@@ -41,60 +47,30 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // DEFAULT-DENY for all /api/* routes (unless explicitly allowed above)
+    // Check for session cookie (lightweight, no DB call)
+    const sessionCookie = request.cookies.get('better-auth.session_token');
+    const hasSession = !!sessionCookie?.value;
+
+    // API routes: return 401 if no session cookie
     if (isApiRoute(pathname)) {
-        try {
-            const session = await authInstance.api.getSession({
-                headers: request.headers,
-            });
-
-            if (!session?.user) {
-                // Return 401 Unauthorized for API routes
-                return NextResponse.json(
-                    { error: 'Unauthorized' },
-                    { status: 401 }
-                );
-            }
-
-            // Session valid, allow access
-            return NextResponse.next();
-        } catch (error) {
-            console.error('API auth verification error:', error);
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
+        if (!hasSession) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+        return NextResponse.next();
     }
 
-    // For protected page routes, verify session and redirect to login
+    // Protected page routes: redirect to login if no session cookie
     if (isProtectedPageRoute(pathname)) {
-        try {
-            const session = await authInstance.api.getSession({
-                headers: request.headers,
-            });
-
-            if (!session?.user) {
-                // Redirect to login with return URL
-                const url = request.nextUrl.clone();
-                url.pathname = '/login';
-                url.searchParams.set('redirect', pathname);
-                return NextResponse.redirect(url);
-            }
-
-            // Session valid, allow access
-            return NextResponse.next();
-        } catch (error) {
-            console.error('Session verification error:', error);
-            // On error, redirect to login
+        if (!hasSession) {
             const url = request.nextUrl.clone();
             url.pathname = '/login';
             url.searchParams.set('redirect', pathname);
             return NextResponse.redirect(url);
         }
+        return NextResponse.next();
     }
 
-    // All other page routes are allowed (e.g., /about, /demo, etc.)
+    // All other page routes are allowed
     return NextResponse.next();
 }
 

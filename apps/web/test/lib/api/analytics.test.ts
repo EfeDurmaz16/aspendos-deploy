@@ -119,10 +119,10 @@ describe('Analytics API', () => {
         it('should return model usage distribution', async () => {
             const mockModels = {
                 data: [
-                    { model: 'openai/gpt-4o', count: 245, percentage: 42.5 },
-                    { model: 'anthropic/claude-3-5-sonnet', count: 189, percentage: 32.8 },
-                    { model: 'google/gemini-2.0-flash', count: 87, percentage: 15.1 },
-                    { model: 'groq/llama-3.3-70b', count: 56, percentage: 9.7 },
+                    { model: 'groq/llama-3.1-70b-versatile', count: 245, percentage: 42.5 },
+                    { model: 'groq/llama-3.1-8b-instant', count: 189, percentage: 32.8 },
+                    { model: 'groq/mixtral-8x7b-32768', count: 87, percentage: 15.1 },
+                    { model: 'groq/llama3-8b-8192', count: 56, percentage: 9.7 },
                 ],
                 days: 30,
             };

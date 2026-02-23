@@ -91,6 +91,7 @@ export function useStreamingChat(chatId: string) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
             }),
         [actualChatId]
     );

@@ -28,7 +28,8 @@
   },
   "dependencies": {
     "@polar-sh/better-auth": "^1.6.4",
-    "@polar-sh/sdk": "^0.42.2"
+    "@polar-sh/sdk": "^0.42.2",
+    "@prisma/client": "6.19.2"
   },
   "overrides": {
     "ai": "^6.0.49",

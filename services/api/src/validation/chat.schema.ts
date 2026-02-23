@@ -58,9 +58,9 @@ export const multiModelSchema = z.object({
         .min(1, 'At least one model is required')
         .max(5, 'Maximum 5 models allowed')
         .default([
-            'openai/gpt-4o',
-            'anthropic/claude-sonnet-4-20250514',
-            'google/gemini-2.0-flash',
+            'groq/llama-3.1-70b-versatile',
+            'groq/mixtral-8x7b-32768',
+            'groq/llama-3.1-8b-instant',
         ]),
 });
 

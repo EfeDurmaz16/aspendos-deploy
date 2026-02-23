@@ -272,9 +272,11 @@ export function parseClaudeExport(data: unknown): ParsedConversation[] {
             }
         }
 
+        // Use first user message as title fallback when name is empty
+        const fallbackTitle = messages.find((m) => m.role === 'user')?.content?.slice(0, 80) || 'Untitled Conversation';
         conversations.push({
             externalId: conv.uuid || `claude-${randomUUID()}`,
-            title: conv.name || 'Untitled Conversation',
+            title: conv.name || fallbackTitle,
             messages,
             createdAt: new Date(conv.created_at),
             updatedAt: new Date(conv.updated_at),

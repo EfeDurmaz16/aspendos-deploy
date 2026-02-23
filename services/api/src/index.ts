@@ -102,8 +102,13 @@ app.use('*', async (c, next) => {
     return next();
 });
 
-// Request timeout middleware (30 seconds)
-app.use('*', requestTimeout(30000));
+// Request timeout middleware (30 seconds, 5 minutes for import)
+app.use('*', async (c, next) => {
+    if (c.req.path.startsWith('/api/import')) {
+        return requestTimeout(300000)(c, next); // 5 minutes for import
+    }
+    return requestTimeout(30000)(c, next);
+});
 
 // Security Headers (Helmet-style) + API Versioning + Request Timing
 app.use('*', async (c, next) => {
@@ -315,6 +320,10 @@ app.use('*', async (c, next) => {
 
 // Body size limit: reject payloads over 10MB (except import which has its own limit)
 app.use('*', async (c, next) => {
+    // Import routes handle their own size limit (100MB for large exports)
+    if (c.req.path.startsWith('/api/import')) {
+        return next();
+    }
     const contentLength = c.req.header('content-length');
     if (contentLength) {
         const size = parseInt(contentLength, 10);
@@ -483,7 +492,7 @@ app.route('/api/admin', adminAuditRoutes);
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);
 
-async function startServer() {
+async function initialize() {
     console.log('🚀 Yula API Server starting...');
 
     // Initialize MCP clients (optional, non-blocking)
@@ -494,12 +503,6 @@ async function startServer() {
         // Continue without MCP - it's optional
     }
 
-    const { serve } = await import('@hono/node-server');
-    const server = serve({
-        fetch: app.fetch,
-        port,
-    });
-
     console.log(`✅ Yula API Server running on port ${port}`);
 
     // Graceful shutdown
@@ -507,12 +510,6 @@ async function startServer() {
         if (isShuttingDown) return; // Prevent double shutdown
         isShuttingDown = true;
         console.log('\n🛑 Shutting down gracefully...');
-
-        // Stop accepting new connections
-        server.close();
-
-        // Give in-flight requests time to complete
-        await new Promise((resolve) => setTimeout(resolve, 30000));
 
         try {
             await jobQueue.shutdown(10000);
@@ -538,13 +535,15 @@ async function startServer() {
 
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
-
-    return server;
 }
 
 // Don't start server when running tests
 if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
-    startServer().catch(console.error);
+    initialize().catch(console.error);
 }
 
-export default app;
+// Bun auto-serves this via Bun.serve() when detecting export default with .fetch
+export default {
+    port,
+    fetch: app.fetch,
+};

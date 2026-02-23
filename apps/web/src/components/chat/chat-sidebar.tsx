@@ -5,7 +5,9 @@ import {
     ChatCircle,
     CircleNotch,
     CreditCard,
+    DownloadSimple,
     Gear,
+    GraduationCap,
     MagnifyingGlass,
     Moon,
     Plus,
@@ -116,7 +118,7 @@ export function ChatSidebar({
                 </Link>
                 <Link
                     href="/memory"
-                    data-spotlight="import-button"
+                    data-spotlight="memory-button"
                     className={cn(
                         'flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
                         pathname?.startsWith('/memory')
@@ -126,6 +128,19 @@ export function ChatSidebar({
                 >
                     <Brain className="size-4" />
                     Memory
+                </Link>
+                <Link
+                    href="/import"
+                    data-spotlight="import-button"
+                    className={cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
+                        pathname?.startsWith('/import')
+                            ? 'bg-muted text-foreground font-medium'
+                            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    )}
+                >
+                    <DownloadSimple className="size-4" />
+                    Import
                 </Link>
             </nav>
 
@@ -239,7 +254,9 @@ export function ChatSidebar({
                         <span className="text-sm font-medium truncate max-w-[120px]">
                             {user?.firstName || 'User'}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">Pro Plan</span>
+                        <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
+                            {user?.primaryEmailAddress?.emailAddress || ''}
+                        </span>
                     </div>
                 </div>
                 <DropdownMenu>
@@ -271,6 +288,10 @@ export function ChatSidebar({
                         <DropdownMenuItem onClick={() => router.push('/billing')}>
                             <CreditCard className="size-4 mr-2" />
                             Billing
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/onboarding')}>
+                            <GraduationCap className="size-4 mr-2" />
+                            Restart Tour
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

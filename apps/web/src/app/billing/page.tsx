@@ -205,7 +205,7 @@ function BillingContent() {
 
                 {/* Header */}
                 <div className="animate-fade-up">
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-3" style={{ textWrap: 'balance' as any }}
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-3" style={{ textWrap: 'balance' as any }}>
                         Billing & Usage
                     </h1>
                     <p className="text-lg text-zinc-600 dark:text-zinc-400">

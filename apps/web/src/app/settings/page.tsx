@@ -467,7 +467,7 @@ export default function SettingsPage() {
                                     />
                                     <SettingRow
                                         label="Public Profile"
-                                        description="Allow others to see your profile on the leaderboard"
+                                        description="Allow others to see your profile"
                                         checked={settings.privacy.publicProfile}
                                         onChange={(v) =>
                                             updateSettings('privacy', 'publicProfile', v)

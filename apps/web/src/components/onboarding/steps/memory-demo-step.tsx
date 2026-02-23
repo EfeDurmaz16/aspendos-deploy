@@ -74,10 +74,10 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 />
             </div>
 
-            <h2 className="mb-2 text-2xl font-bold text-foreground">Memory That Follows You</h2>
+            <h2 className="mb-2 text-2xl font-bold text-foreground">The More You Use, The Smarter It Gets</h2>
             <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
-                Your conversations, preferences, and context work across all AI models.
-                Switch freely — Yula remembers everything.
+                Every conversation teaches Yula something new about you. Your preferences,
+                context, and style — growing smarter with every message.
             </p>
 
             {/* Model switcher demo */}
@@ -168,14 +168,14 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 </div>
             </div>
 
-            {/* How it works */}
+            {/* Investment growth visualization */}
             <div className="mb-6 w-full max-w-md">
                 <div className="flex items-start gap-3">
                     <StepIndicator number={1} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">Chat with any model</div>
+                        <div className="text-sm font-medium text-foreground">Day 1: Yula learns your basics</div>
                         <div className="text-xs text-muted-foreground">
-                            Switch between Auto, Smart, Fast, Creative
+                            Language, tone, common topics
                         </div>
                     </div>
                 </div>
@@ -183,9 +183,9 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 <div className="flex items-start gap-3">
                     <StepIndicator number={2} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">Yula remembers everything</div>
+                        <div className="text-sm font-medium text-foreground">Week 1: Yula knows your style</div>
                         <div className="text-xs text-muted-foreground">
-                            Preferences, context, and history persist
+                            Preferences, projects, and patterns emerge
                         </div>
                     </div>
                 </div>
@@ -193,9 +193,9 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 <div className="flex items-start gap-3">
                     <StepIndicator number={3} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">Every model knows you</div>
+                        <div className="text-sm font-medium text-foreground">Month 1: Yula knows you</div>
                         <div className="text-xs text-muted-foreground">
-                            No re-explaining when you switch models
+                            Irreplaceable context — switching means starting over
                         </div>
                     </div>
                 </div>

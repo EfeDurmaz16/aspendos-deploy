@@ -29,10 +29,10 @@ vi.mock('../../services/scheduler.service', () => ({
 
 vi.mock('../../services/council.service', () => ({
     COUNCIL_PERSONAS: {
-        SCHOLAR: { modelId: 'openai/gpt-4o' },
-        CREATIVE: { modelId: 'anthropic/claude-3-5-sonnet' },
-        PRACTICAL: { modelId: 'google/gemini-2.0-flash' },
-        DEVILS_ADVOCATE: { modelId: 'openai/gpt-4o-mini' },
+        SCHOLAR: { modelId: 'groq/llama-3.1-70b-versatile' },
+        CREATIVE: { modelId: 'groq/mixtral-8x7b-32768' },
+        PRACTICAL: { modelId: 'groq/llama-3.1-8b-instant' },
+        DEVILS_ADVOCATE: { modelId: 'groq/llama-3.1-70b-versatile' },
     },
 }));
 

@@ -73,10 +73,10 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 </motion.div>
             </div>
 
-            <h2 className="mb-2 text-2xl font-bold text-foreground">Proactive AI Callbacks</h2>
+            <h2 className="mb-2 text-2xl font-bold text-foreground">AI That Reaches Out First</h2>
             <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
-                Yula doesn't wait for you to ask. It remembers your commitments and reaches out when
-                it matters.
+                Other AIs wait for you to ask. Yula reaches out when it matters —
+                reminders, follow-ups, and ideas, right on time.
             </p>
 
             {/* Demo notification card */}
@@ -119,13 +119,13 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 </div>
             </div>
 
-            {/* How it works */}
+            {/* How it works - Trigger loading */}
             <div className="mb-6 w-full max-w-md">
                 <div className="flex items-start gap-3">
                     <StepIndicator number={1} color={ACCENT_COLOR} />
                     <div>
                         <div className="text-sm font-medium text-foreground">
-                            You mention a commitment
+                            Just chat naturally
                         </div>
                         <div className="text-xs text-muted-foreground">"I need to call mom tomorrow"</div>
                     </div>
@@ -134,9 +134,9 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 <div className="flex items-start gap-3">
                     <StepIndicator number={2} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">Yula remembers</div>
+                        <div className="text-sm font-medium text-foreground">Yula picks up on it</div>
                         <div className="text-xs text-muted-foreground">
-                            Stores the intent and schedules follow-up
+                            Detects commitments, deadlines, and follow-ups automatically
                         </div>
                     </div>
                 </div>
@@ -144,9 +144,9 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 <div className="flex items-start gap-3">
                     <StepIndicator number={3} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">You get a nudge</div>
+                        <div className="text-sm font-medium text-foreground">You get pulled back in</div>
                         <div className="text-xs text-muted-foreground">
-                            At the right time, Yula checks in
+                            A timely nudge brings you back — no effort needed
                         </div>
                     </div>
                 </div>
