@@ -201,20 +201,55 @@ async function sendPushNotification(
 }
 
 /**
- * Send email notification (stub - requires email service setup)
+ * Send email notification via Resend
  */
 async function sendEmailNotification(
     userId: string,
     title: string,
-    _body: string
+    body: string
 ): Promise<DeliveryResult> {
-    console.log(`[Notification] Email to user ${userId}: ${title}`);
-    // TODO: Implement email service (SendGrid, Resend, etc.)
-    return {
-        success: false,
-        channel: 'email',
-        error: 'Email service not yet implemented',
-    };
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+        console.warn('[Notification] RESEND_API_KEY not set, skipping email notification');
+        return { success: false, channel: 'email', error: 'Email service not configured' };
+    }
+
+    // Look up user email
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, name: true },
+    });
+
+    if (!user?.email) {
+        return { success: false, channel: 'email', error: 'User email not found' };
+    }
+
+    try {
+        const { Resend } = await import('resend');
+        const resend = new Resend(apiKey);
+        const fromEmail = process.env.RESEND_FROM_EMAIL || 'YULA <noreply@yula.dev>';
+
+        await resend.emails.send({
+            from: fromEmail,
+            to: user.email,
+            subject: title,
+            html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #1a1a1a;">${title}</h2>
+                <p style="color: #4a4a4a; line-height: 1.6;">${body}</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+                <p style="color: #999; font-size: 12px;">From YULA — Your Universal Learning Assistant</p>
+            </div>`,
+        });
+
+        return { success: true, channel: 'email' };
+    } catch (error) {
+        console.error('[Notification] Email send failed:', error);
+        return {
+            success: false,
+            channel: 'email',
+            error: error instanceof Error ? error.message : 'Email send failed',
+        };
+    }
 }
 
 /**
