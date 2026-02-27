@@ -3,6 +3,7 @@
  * Handles billing status, checkout, and Polar webhooks.
  */
 import { Hono } from 'hono';
+import { prisma } from '@aspendos/db';
 import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
@@ -279,8 +280,32 @@ app.post('/webhook', async (c) => {
 
     try {
         const event = JSON.parse(rawBody) as polarService.PolarWebhookEvent;
+        const eventId = (event as unknown as Record<string, unknown>).id as string | undefined;
+        const eventType =
+            (event as unknown as Record<string, unknown>).type as string | undefined;
+
+        // Idempotency check: skip already-processed events
+        if (eventId) {
+            const existing = await prisma.processedWebhookEvent.findUnique({
+                where: { id: eventId },
+            });
+            if (existing) {
+                console.log(`[Webhook] Skipping duplicate event ${eventId} (${eventType})`);
+                return c.json({ received: true, duplicate: true });
+            }
+        }
 
         await polarService.handleWebhook(event);
+
+        // Record processed event for idempotency
+        if (eventId) {
+            await prisma.processedWebhookEvent.create({
+                data: { id: eventId, type: eventType || 'unknown' },
+            }).catch((err: unknown) => {
+                // Unique constraint = concurrent duplicate, safe to ignore
+                console.warn('[Webhook] Failed to record event:', err);
+            });
+        }
 
         return c.json({ received: true });
     } catch (error) {

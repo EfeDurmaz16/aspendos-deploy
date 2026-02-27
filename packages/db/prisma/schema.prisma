@@ -768,3 +768,12 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_log")
 }
+
+model ProcessedWebhookEvent {
+  id        String   @id // Webhook event ID from Polar
+  type      String // Event type (e.g., "subscription.created")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("processed_webhook_event")
+}
