@@ -5,7 +5,10 @@
 import { Hono } from 'hono';
 import { prisma } from '@aspendos/db';
 import { auditLog } from '../lib/audit-log';
+import { createLogger } from '../lib/logger';
 import { requireAuth } from '../middleware/auth';
+
+const log = createLogger({ action: 'billing' });
 import { validateBody, validateQuery } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
 import * as polarService from '../services/polar.service';
@@ -38,13 +41,13 @@ setInterval(async () => {
             // Remove from queue on success
             const idx = webhookRetryQueue.indexOf(item);
             if (idx > -1) webhookRetryQueue.splice(idx, 1);
-            console.log(`[Webhook] Retry attempt ${item.attempt} succeeded`);
+            log.info(`Webhook retry attempt ${item.attempt} succeeded`);
         } catch (_error) {
             item.attempt++;
             if (item.attempt >= MAX_RETRY_ATTEMPTS) {
                 const idx = webhookRetryQueue.indexOf(item);
                 if (idx > -1) webhookRetryQueue.splice(idx, 1);
-                console.error(`[Webhook] Failed after ${MAX_RETRY_ATTEMPTS} attempts, dropping`);
+                log.error(`Webhook failed after ${MAX_RETRY_ATTEMPTS} attempts, dropping`);
             } else {
                 // Exponential backoff: 30s, 120s, 480s
                 item.nextRetryAt = now + 30000 * 4 ** (item.attempt - 1);
@@ -88,7 +91,7 @@ app.post('/sync', requireAuth, async (c) => {
             message: 'Customer synced with Polar',
         });
     } catch (error) {
-        console.error('Customer sync failed:', error);
+        log.error('Customer sync failed', { metadata: { error: String(error) } });
         return c.json({ error: 'Failed to sync customer with Polar' }, 500);
     }
 });
@@ -167,7 +170,7 @@ app.post('/checkout', requireAuth, validateBody(createCheckoutSchema), async (c)
             cycle,
         });
     } catch (error) {
-        console.error('Checkout creation failed:', error);
+        log.error('Checkout creation failed', { metadata: { error: String(error) } });
         return c.json({ error: 'Failed to create checkout session' }, 500);
     }
 });
@@ -201,7 +204,7 @@ app.post('/cancel', requireAuth, async (c) => {
             message: 'Subscription will be canceled at the end of the billing period',
         });
     } catch (error) {
-        console.error('Subscription cancellation failed:', error);
+        log.error('Subscription cancellation failed', { metadata: { error: String(error) } });
         return c.json({ error: 'Failed to cancel subscription' }, 500);
     }
 });
@@ -270,11 +273,11 @@ app.post('/webhook', async (c) => {
 
     // Fail-closed: reject webhooks if secret is not configured
     if (!webhookSecret) {
-        console.error('POLAR_WEBHOOK_SECRET is not configured - rejecting webhook');
+        log.error('POLAR_WEBHOOK_SECRET is not configured - rejecting webhook');
         return c.json({ error: 'Webhook not configured' }, 500);
     }
     if (!signature || !polarService.verifyWebhookSignature(rawBody, signature, webhookSecret)) {
-        console.error('Invalid webhook signature');
+        log.error('Invalid webhook signature');
         return c.json({ error: 'Invalid signature' }, 401);
     }
 
@@ -290,7 +293,7 @@ app.post('/webhook', async (c) => {
                 where: { id: eventId },
             });
             if (existing) {
-                console.log(`[Webhook] Skipping duplicate event ${eventId} (${eventType})`);
+                log.info(`Skipping duplicate webhook event ${eventId} (${eventType})`);
                 return c.json({ received: true, duplicate: true });
             }
         }
@@ -303,13 +306,13 @@ app.post('/webhook', async (c) => {
                 data: { id: eventId, type: eventType || 'unknown' },
             }).catch((err: unknown) => {
                 // Unique constraint = concurrent duplicate, safe to ignore
-                console.warn('[Webhook] Failed to record event:', err);
+                log.warn('Failed to record webhook event', { metadata: { error: String(err) } });
             });
         }
 
         return c.json({ received: true });
     } catch (error) {
-        console.error('Webhook processing error:', error);
+        log.error('Webhook processing error', { metadata: { error: String(error) } });
         // Queue for retry with exponential backoff
         if (webhookRetryQueue.length < 100) {
             // Prevent memory leak

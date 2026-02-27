@@ -12,8 +12,11 @@ import {
     getSmartModelId,
     isModelAvailableForTier,
 } from '../lib/ai-providers';
+import { createLogger } from '../lib/logger';
 import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
 import { requireAuth } from '../middleware/auth';
+
+const log = createLogger({ action: 'chat' });
 import { validateBody, validateParams } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
 import { maybeCreateSpendingNotification } from '../services/billing.service';
@@ -316,7 +319,7 @@ app.post(
                 }
             }
         } catch (pacError) {
-            console.error('[PAC] Commitment detection failed:', pacError);
+            log.error('PAC commitment detection failed', { metadata: { error: String(pacError) } });
             // Non-blocking - continue with chat
         }
 
@@ -354,7 +357,7 @@ app.post(
                     trace: m.trace,
                 }));
             } catch (error) {
-                console.error('[Memory] OpenMemory search failed:', error);
+                log.error('OpenMemory search failed', { metadata: { error: String(error) } });
                 // Continue without memory context
             }
         }
@@ -378,7 +381,7 @@ app.post(
                 const mcpTools = await getMCPTools();
                 allTools = { ...tools, ...mcpTools };
             } catch (error) {
-                console.error('[MCP] Failed to get MCP tools:', error);
+                log.error('Failed to get MCP tools', { metadata: { error: String(error) } });
             }
         }
 
@@ -426,17 +429,17 @@ app.post(
                                 maybeCreateSpendingNotification(userId).catch(() => {});
                             }
                         } catch (err) {
-                            console.error(
-                                `[Chat] Critical: onFinish save/billing failed for chat=${chatId} request=${requestId}:`,
-                                err
-                            );
+                            log.error('Critical: onFinish save/billing failed', {
+                                requestId,
+                                metadata: { chatId, error: String(err) },
+                            });
                         }
 
                         // Auto-extract memories from conversation (fire-and-forget)
                         // Only for PRO+ tiers to control API costs
                         if (userTier === 'PRO' || userTier === 'ULTRA') {
                             extractMemoriesFromExchange(userId, content, text).catch((err) =>
-                                console.error('[Memory] Auto-extraction failed:', err)
+                                log.error('Memory auto-extraction failed', { metadata: { error: String(err) } })
                             );
                         }
 
@@ -447,9 +450,13 @@ app.post(
                                 .reflectOnResponse(content, text, decision.useMemory)
                                 .then((reflection) => {
                                     if (!reflection.satisfied) {
-                                        console.warn(
-                                            `[Quality] Low score ${reflection.qualityScore}/100 for query "${content.slice(0, 60)}..." - ${reflection.retryStrategy || 'no strategy'}`
-                                        );
+                                        log.warn('Low quality score', {
+                                            metadata: {
+                                                score: reflection.qualityScore,
+                                                query: content.slice(0, 60),
+                                                strategy: reflection.retryStrategy,
+                                            },
+                                        });
                                     }
                                 })
                                 .catch(() => {
@@ -484,7 +491,7 @@ app.post(
                 return response;
             } catch (error) {
                 const errMsg = error instanceof Error ? error.message : 'Unknown';
-                console.error('[Chat] Streaming error:', errMsg);
+                log.error('Streaming error', { metadata: { error: errMsg } });
                 return c.json(classifyAIError(errMsg), classifyAIErrorStatus(errMsg));
             }
         }
@@ -536,7 +543,7 @@ app.post(
             });
         } catch (error) {
             const errMsg = error instanceof Error ? error.message : 'Unknown';
-            console.error('[Chat] Generation error:', errMsg);
+            log.error('Generation error', { metadata: { error: errMsg } });
             return c.json(classifyAIError(errMsg), classifyAIErrorStatus(errMsg));
         }
     }
@@ -586,7 +593,7 @@ app.post(
                     confidence: m.salience || 0.8,
                 }));
             } catch (error) {
-                console.error('[Memory] OpenMemory search failed in /multi:', error);
+                log.error('OpenMemory search failed in /multi', { metadata: { error: String(error) } });
                 // Continue without memory context
             }
         }
