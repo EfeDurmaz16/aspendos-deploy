@@ -139,6 +139,60 @@ export async function addMemory(
 }
 
 /**
+ * Add multiple memories in batch for a user.
+ * Flushes in configurable batch sizes with delay between batches to avoid rate limits.
+ * Returns results for successful adds and logs errors for failures.
+ */
+export async function addMemoriesBatch(
+    memories: Array<{
+        content: string;
+        tags?: string[];
+        sector?: string;
+        metadata?: Record<string, unknown>;
+    }>,
+    userId: string,
+    options?: { batchSize?: number; delayMs?: number }
+): Promise<{ succeeded: number; failed: number; results: MemoryResult[] }> {
+    const batchSize = options?.batchSize || 100;
+    const delayMs = options?.delayMs || 200;
+    const results: MemoryResult[] = [];
+    let succeeded = 0;
+    let failed = 0;
+
+    for (let i = 0; i < memories.length; i += batchSize) {
+        const batch = memories.slice(i, i + batchSize);
+
+        // Process batch concurrently
+        const batchResults = await Promise.allSettled(
+            batch.map((m) =>
+                addMemory(m.content, userId, {
+                    tags: m.tags,
+                    sector: m.sector,
+                    metadata: m.metadata,
+                })
+            )
+        );
+
+        for (const result of batchResults) {
+            if (result.status === 'fulfilled') {
+                results.push(result.value);
+                succeeded++;
+            } else {
+                console.error('[Qdrant] Batch add failed for item:', result.reason);
+                failed++;
+            }
+        }
+
+        // Delay between batches to avoid overwhelming Qdrant
+        if (i + batchSize < memories.length) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+    }
+
+    return { succeeded, failed, results };
+}
+
+/**
  * Search memories for a user
  */
 export async function searchMemories(

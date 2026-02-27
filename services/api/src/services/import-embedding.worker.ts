@@ -45,41 +45,40 @@ export async function processImportEmbeddings(
         `[ImportEmbedding] Processing ${pendingMemories.length} pending memories for job ${jobId}`
     );
 
-    // Process in batches
+    // Process in batches using batch upsert
     for (let i = 0; i < pendingMemories.length; i += BATCH_SIZE) {
         const batch = pendingMemories.slice(i, i + BATCH_SIZE);
 
-        for (const memory of batch) {
-            try {
-                // Create embedding in Qdrant via OpenMemory
-                await openMemory.addMemory(memory.content, userId, {
-                    sector: memory.sector,
-                    tags: memory.tags,
-                    metadata: {
-                        type: memory.type,
-                        postgresId: memory.id,
-                    },
-                });
+        // Batch upsert to Qdrant
+        const batchItems = batch.map((memory) => ({
+            content: memory.content,
+            sector: memory.sector,
+            tags: memory.tags,
+            metadata: {
+                type: memory.type,
+                postgresId: memory.id,
+            },
+        }));
 
-                // Update PostgreSQL record: mark as synced
-                await prisma.memory.update({
-                    where: { id: memory.id },
-                    data: {
-                        source: 'import_synced',
-                        decayScore: 1.0,
-                    },
-                });
+        const batchResult = await openMemory.addMemoriesBatch(batchItems, userId, {
+            batchSize: BATCH_SIZE,
+            delayMs: 100,
+        });
 
-                processed++;
-            } catch (error) {
-                console.error(
-                    `[ImportEmbedding] Failed to embed memory ${memory.id}:`,
-                    error
-                );
-                failed++;
-                // Continue with the rest - don't let one failure block others
-            }
+        // Update PostgreSQL records for successful embeddings
+        const successIds = batch.slice(0, batchResult.succeeded).map((m) => m.id);
+        if (successIds.length > 0) {
+            await prisma.memory.updateMany({
+                where: { id: { in: successIds } },
+                data: {
+                    source: 'import_synced',
+                    decayScore: 1.0,
+                },
+            });
         }
+
+        processed += batchResult.succeeded;
+        failed += batchResult.failed;
 
         // Delay between batches to avoid rate limits
         if (i + BATCH_SIZE < pendingMemories.length) {
