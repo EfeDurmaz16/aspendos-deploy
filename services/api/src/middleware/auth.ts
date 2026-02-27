@@ -3,6 +3,7 @@
  * Verifies sessions via HTTP-only cookies.
  */
 
+import { prisma } from '@aspendos/db';
 import type { Context, Next } from 'hono';
 import { auth } from '../lib/auth';
 
@@ -106,8 +107,18 @@ export async function authMiddleware(c: Context, next: Next) {
 export async function requireAuth(c: Context, next: Next) {
     await authMiddleware(c, async () => {});
 
-    if (!c.get('userId')) {
+    const userId = c.get('userId');
+    if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // Check if user is banned
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { banned: true },
+    });
+    if (user?.banned) {
+        return c.json({ error: 'Account suspended', code: 'ACCOUNT_BANNED' }, 403);
     }
 
     return next();

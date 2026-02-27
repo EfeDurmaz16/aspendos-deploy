@@ -48,6 +48,11 @@ model User {
   accounts      Account[]
   passkeys      Passkey[]
 
+  // Ban system
+  banned       Boolean   @default(false)
+  bannedReason String?
+  bannedAt     DateTime?
+
   @@index([email])
   @@map("user")
 }

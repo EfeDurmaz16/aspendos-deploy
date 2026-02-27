@@ -284,16 +284,15 @@ app.post('/users/:id/ban', async (c) => {
     }
 
     try {
-        // Store ban status in billing account (we don't have a dedicated ban field in User model)
-        // For a real implementation, add a 'banned' field to User model
-        const user = await prisma.user.findUnique({
+        const user = await prisma.user.update({
             where: { id: userId },
-            select: { id: true, email: true },
+            data: {
+                banned,
+                bannedReason: banned ? (reason || 'No reason provided') : null,
+                bannedAt: banned ? new Date() : null,
+            },
+            select: { id: true, email: true, banned: true },
         });
-
-        if (!user) {
-            return c.json({ error: 'User not found' }, 404);
-        }
 
         await auditLog({
             userId: c.get('userId')!,
@@ -307,8 +306,7 @@ app.post('/users/:id/ban', async (c) => {
         return c.json({
             success: true,
             message: `User ${banned ? 'banned' : 'unbanned'} successfully`,
-            user: { id: user.id, email: user.email },
-            note: 'Ban enforcement requires adding a banned field to User model',
+            user,
         });
     } catch (error) {
         console.error('[Admin] Error updating ban status:', error);
