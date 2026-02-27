@@ -78,7 +78,17 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Check for known vulnerabilities
-        run: bun audit 2>/dev/null || true
+        run: |
+          if bun audit 2>&1 | tee /tmp/audit-output.txt; then
+            echo "No vulnerabilities found."
+          else
+            if grep -qiE '(high|critical)' /tmp/audit-output.txt 2>/dev/null; then
+              echo "High or critical vulnerabilities detected"
+              exit 1
+            else
+              echo "Low or moderate vulnerabilities found - review recommended"
+            fi
+          fi
 
       - name: Scan for hardcoded secrets
         run: |
