@@ -132,19 +132,32 @@ app.post('/', validateBody(createChatSchema), async (c) => {
     return c.json(chat, 201);
 });
 
-// GET /api/chat/:id - Get chat by ID with messages
+// GET /api/chat/:id - Get chat by ID with paginated messages
 app.get('/:id', validateParams(chatIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
     const validatedParams = c.get('validatedParams') as { id: string };
     const chatId = validatedParams.id;
+    const cursor = c.req.query('cursor') || undefined;
+    const limit = Math.min(parseInt(c.req.query('limit') || '50', 10) || 50, 200);
 
-    const chat = await chatService.getChatWithMessages(chatId, userId);
+    const chat = await chatService.getChatWithMessages(chatId, userId, { cursor, limit });
 
     if (!chat) {
         return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
     }
 
-    return c.json(chat);
+    // Include pagination metadata
+    const messages = chat.messages || [];
+    const nextCursor = messages.length === limit ? messages[messages.length - 1]?.id : undefined;
+
+    return c.json({
+        ...chat,
+        pagination: {
+            nextCursor,
+            hasMore: messages.length === limit,
+            limit,
+        },
+    });
 });
 
 // PATCH /api/chat/:id - Update chat

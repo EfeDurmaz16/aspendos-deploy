@@ -90,9 +90,14 @@ export async function listChats(options: ListChatsOptions): Promise<Chat[]> {
 }
 
 /**
- * Get chat by ID with messages
+ * Get chat by ID with paginated messages (cursor-based)
  */
-export async function getChatWithMessages(chatId: string, userId: string) {
+export async function getChatWithMessages(
+    chatId: string,
+    userId: string,
+    options?: { cursor?: string; limit?: number }
+) {
+    const limit = Math.min(options?.limit || 50, 200);
     return prisma.chat.findFirst({
         where: {
             id: chatId,
@@ -101,6 +106,10 @@ export async function getChatWithMessages(chatId: string, userId: string) {
         include: {
             messages: {
                 orderBy: { createdAt: 'asc' },
+                take: limit,
+                ...(options?.cursor
+                    ? { cursor: { id: options.cursor }, skip: 1 }
+                    : {}),
             },
         },
     });
