@@ -69,4 +69,21 @@ export function validateEnv() {
     if (missingOptional.length > 0) {
         console.warn(`[env] Missing optional environment variables: ${missingOptional.join(', ')}`);
     }
+
+    // Production-only required vars: billing, encryption, and rate limiting
+    if (process.env.NODE_ENV === 'production') {
+        const productionRequired = [
+            'POLAR_ACCESS_TOKEN',
+            'POLAR_WEBHOOK_SECRET',
+            'ENCRYPTION_KEY',
+            'UPSTASH_REDIS_REST_URL',
+            'UPSTASH_REDIS_REST_TOKEN',
+        ];
+        const missingProd = productionRequired.filter((v) => !process.env[v]);
+        if (missingProd.length > 0) {
+            throw new Error(
+                `Missing production-required environment variables:\n${missingProd.map((v) => `  - ${v}`).join('\n')}`
+            );
+        }
+    }
 }

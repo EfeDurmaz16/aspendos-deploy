@@ -48,9 +48,13 @@ const isRedisEnabled = redis !== null;
 
 if (isRedisEnabled) {
     console.info('✅ Rate limiting: Upstash Redis (distributed, production-ready)');
+} else if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+        'FATAL: Redis not configured in production. Rate limiting requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.'
+    );
 } else {
     console.warn(
-        '⚠️  Rate limiting: In-memory fallback. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production.'
+        '⚠️  Rate limiting: In-memory fallback (dev only). Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production.'
     );
 }
 

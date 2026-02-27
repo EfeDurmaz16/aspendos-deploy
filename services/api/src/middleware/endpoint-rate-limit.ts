@@ -26,7 +26,12 @@ interface RateLimitEntry {
     hourlyResetAt?: number;
 }
 
-// In-memory store for rate limits
+// In-memory store for rate limits (dev only — production uses global Redis rate limiter)
+if (process.env.NODE_ENV === 'production') {
+    console.warn(
+        '⚠️  Endpoint rate limiting: in-memory store active. For multi-instance deployments, the global Redis rate limiter handles production rate limiting.'
+    );
+}
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
 // Cleanup expired entries every 60 seconds
