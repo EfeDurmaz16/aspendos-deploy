@@ -1,4 +1,3 @@
-import { UploadSimple } from '@phosphor-icons/react/dist/ssr';
 import type { Metadata } from 'next';
 import { type FeatureData, FeaturePage } from '@/components/seo/FeaturePage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
@@ -25,7 +24,7 @@ const importData: FeatureData = {
     tagline:
         'Bring your ChatGPT and Claude conversations to Yula. Your AI history becomes searchable semantic memory - never start from scratch again.',
     description: `Yula's Import feature lets you bring your entire conversation history from ChatGPT and Claude. Simply export your data from OpenAI or Anthropic, upload to Yula, and all your past conversations become part of your semantic memory. Ask any AI model about discussions you had months ago on another platform - Yula remembers.`,
-    heroIcon: <UploadSimple className="w-16 h-16 text-primary" weight="duotone" />,
+    heroIcon: 'upload-simple',
     benefits: [
         {
             title: 'Never Start Fresh',

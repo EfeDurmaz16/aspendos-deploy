@@ -1,4 +1,3 @@
-import { Brain } from '@phosphor-icons/react/dist/ssr';
 import type { Metadata } from 'next';
 import { type FeatureData, FeaturePage } from '@/components/seo/FeaturePage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
@@ -25,7 +24,7 @@ const memoryData: FeatureData = {
     tagline:
         'AI that remembers everything. Every conversation, every preference, every context - available across all AI models.',
     description: `Yula's Semantic Memory is powered by vector embeddings stored in Qdrant, enabling true semantic search across your entire conversation history. Unlike other AI assistants that forget between sessions, Yula maintains persistent context that works across GPT-5, Claude, Gemini, and all other models. Ask any model about something you discussed months ago with a different model - Yula remembers.`,
-    heroIcon: <Brain className="w-16 h-16 text-primary" weight="duotone" />,
+    heroIcon: 'brain',
     benefits: [
         {
             title: 'Cross-Model Memory',

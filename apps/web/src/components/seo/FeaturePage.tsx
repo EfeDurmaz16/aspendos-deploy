@@ -1,6 +1,14 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, CheckCircle } from '@phosphor-icons/react';
+import {
+    ArrowLeft,
+    ArrowRight,
+    BellRinging,
+    Brain,
+    CheckCircle,
+    UploadSimple,
+    UsersThree,
+} from '@phosphor-icons/react';
 import Link from 'next/link';
 import { ModeToggle } from '@/components/mode-toggle';
 import {
@@ -17,7 +25,7 @@ export interface FeatureData {
     slug: string;
     tagline: string;
     description: string;
-    heroIcon: React.ReactNode;
+    heroIcon: FeatureHeroIcon;
     benefits: {
         title: string;
         description: string;
@@ -43,11 +51,22 @@ export interface FeatureData {
     }[];
 }
 
+type FeatureHeroIcon = 'brain' | 'users-three' | 'bell-ringing' | 'upload-simple';
+
 interface FeaturePageProps {
     feature: FeatureData;
 }
 
+const heroIcons = {
+    brain: Brain,
+    'users-three': UsersThree,
+    'bell-ringing': BellRinging,
+    'upload-simple': UploadSimple,
+} as const;
+
 export function FeaturePage({ feature }: FeaturePageProps) {
+    const HeroIcon = heroIcons[feature.heroIcon];
+
     return (
         <div className="min-h-screen bg-background text-foreground">
             {/* Header */}
@@ -106,7 +125,9 @@ export function FeaturePage({ feature }: FeaturePageProps) {
 
                 {/* Hero */}
                 <header className="text-center mb-16 space-y-6">
-                    <div className="flex justify-center mb-4">{feature.heroIcon}</div>
+                    <div className="flex justify-center mb-4">
+                        <HeroIcon className="w-16 h-16 text-primary" weight="duotone" />
+                    </div>
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
                         {feature.name}
                     </h1>

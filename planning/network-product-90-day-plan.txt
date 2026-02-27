@@ -1,0 +1,79 @@
+Yula 90-Day Network + Habit Plan
+
+Goal
+- Find and scale a repeatable atomic network.
+- Increase weekly retention with Trigger-Action-Reward-Investment loops.
+- Protect quality while growing.
+
+North Star
+- Weekly retained teams (teams with >=3 active users/week and >=5 shared interactions/week)
+
+Core Metrics
+- Atomic network activation rate (new teams reaching first value in 24h)
+- Hard-side retention (4-week retention of power users: PM/lead/power contributor)
+- Network density (team-level interactions per active user)
+- TARI completion rate (triggered flow completion)
+- Time-to-first-value (signup -> first successful outcome)
+- Route performance SLO (dev compile times for critical routes)
+
+Phase 1 (Days 1-30): Atomic Network
+- Target segment: 5-12 person product/engineering teams.
+- Primary use case: decision logging + follow-up execution from AI chat context.
+- Hard side focus: PM/tech lead/power user who produces reusable context.
+- Product tasks:
+  - One-click decision card from chat.
+  - Follow-up scheduling from decision card.
+  - Team-visible decision timeline.
+- GTM tasks:
+  - 10 pilot teams.
+  - Concierge onboarding for first 3 sessions/team.
+- Exit criteria:
+  - >=40% pilot teams hit activation in 24h.
+  - >=60% hard-side users active in week 4.
+
+Phase 2 (Days 31-60): Tipping Point Mechanics
+- Trigger:
+  - Post-meeting prompt and digest reminders.
+- Action:
+  - 1-click convert suggestion to task/follow-up.
+- Variable Reward:
+  - Better summaries and recommendations from accumulated context.
+- Investment:
+  - Stored decisions, history imports, personalized memory quality gains.
+- Product tasks:
+  - Digest quality scoring + feedback loop.
+  - Import flow hardening for ChatGPT/Claude history.
+  - Shared memory highlights for teams.
+- Exit criteria:
+  - >=30% increase in weekly retained teams vs phase start.
+  - >=25% improvement in TARI completion.
+
+Phase 3 (Days 61-90): Escape Velocity Readiness
+- Growth loops:
+  - Team invites from shared outcomes (not generic invites).
+  - Cross-team templates for decision workflows.
+- Ceiling defenses:
+  - Overcrowding: better search, tagging, and feed ranking.
+  - Hard-side revolt: power-user controls, visibility, credit.
+  - Quality drift: stricter onboarding defaults + curation.
+- Product tasks:
+  - Workspace discovery improvements.
+  - Quality guardrails for noisy content.
+  - Retention win-back flows for churned teams.
+- Exit criteria:
+  - 2 repeatable acquisition channels with measurable CAC/LTV profile.
+  - Plateau response playbook defined and tested.
+
+Weekly Operating Cadence
+- Monday: metric review + bottleneck selection.
+- Tuesday-Wednesday: ship 1 growth experiment + 1 retention experiment.
+- Thursday: pilot interviews (at least 5 users, hard side weighted).
+- Friday: retro with keep/kill/iterate decisions.
+
+Immediate Backlog (this week)
+- Finalize atomic network ICP and pilot list.
+- Instrument metrics for activation, hard-side retention, density.
+- Ship onboarding flow for first-value in under 15 minutes.
+- Launch 2 trigger experiments:
+  - Meeting-end decision capture prompt.
+  - 24h follow-up reminder with one-click action.

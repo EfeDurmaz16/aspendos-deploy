@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 .pnpm-store/
+yarn.lock
+bun 2.lock
 
 # Local samples (not tracked)
 ui-samples/

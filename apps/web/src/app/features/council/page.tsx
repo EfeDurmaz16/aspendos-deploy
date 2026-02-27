@@ -1,4 +1,3 @@
-import { UsersThree } from '@phosphor-icons/react/dist/ssr';
 import type { Metadata } from 'next';
 import { type FeatureData, FeaturePage } from '@/components/seo/FeaturePage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
@@ -25,7 +24,7 @@ const councilData: FeatureData = {
     tagline:
         'Query multiple AI models simultaneously. Compare GPT-5, Claude, Gemini, and Llama responses side-by-side to get the best answer.',
     description: `Council Mode is Yula's unique multi-model querying feature. Send a single question to up to 4 AI models at once and compare their responses in real-time. Perfect for important decisions, complex questions, or when you want multiple perspectives. Pro users can compare 2 models; Ultra users get 4x parallel queries.`,
-    heroIcon: <UsersThree className="w-16 h-16 text-primary" weight="duotone" />,
+    heroIcon: 'users-three',
     benefits: [
         {
             title: 'Get Multiple Perspectives',

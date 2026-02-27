@@ -61,6 +61,42 @@ interface Summary {
     messagesThisMonth: number;
 }
 
+interface FrameworkScorecard {
+    network: {
+        stage:
+            | 'cold_start'
+            | 'atomic_network'
+            | 'tipping_point'
+            | 'escape_velocity'
+            | 'hitting_ceiling'
+            | 'moat';
+        activationLevel: 'not_started' | 'exploring' | 'activated' | 'power_activated';
+        completedMilestones: number;
+        engagementScore: number;
+        stickiness: number;
+        churnRisk: 'low' | 'medium' | 'high' | 'critical';
+        switchingCostScore: number;
+        timeToFirstValueMs: number | null;
+    };
+    hooked: {
+        tariScore: number;
+        stage: 'early' | 'building' | 'engaged' | 'habitual';
+        components: {
+            trigger: number;
+            action: number;
+            reward: number;
+            investment: number;
+        };
+    };
+    growth: {
+        chatsLast7d: number;
+        chatsLast30d: number;
+        retentionRatio: number;
+        pacCompletionRate: number;
+    };
+    recommendations: string[];
+}
+
 export default function AnalyticsPage() {
     const router = useRouter();
     const { isLoaded, isSignedIn } = useAuth();
@@ -69,6 +105,7 @@ export default function AnalyticsPage() {
     const [usageData, setUsageData] = useState<UsageData[]>([]);
     const [messageData, setMessageData] = useState<MessageData[]>([]);
     const [modelData, setModelData] = useState<ModelData[]>([]);
+    const [scorecard, setScorecard] = useState<FrameworkScorecard | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [interval, setInterval] = useState<'day' | 'week' | 'month'>('day');
 
@@ -83,16 +120,22 @@ export default function AnalyticsPage() {
                 setIsLoading(true);
 
                 // Fetch all analytics data in parallel
-                const [summaryRes, usageRes, messagesRes, modelsRes] = await Promise.all([
-                    fetch(`${API_BASE}/api/analytics/summary`, { credentials: 'include' }),
-                    fetch(`${API_BASE}/api/analytics/usage?interval=${interval}&limit=30`, {
-                        credentials: 'include',
-                    }),
-                    fetch(`${API_BASE}/api/analytics/messages?limit=30`, {
-                        credentials: 'include',
-                    }),
-                    fetch(`${API_BASE}/api/analytics/models?days=30`, { credentials: 'include' }),
-                ]);
+                const [summaryRes, usageRes, messagesRes, modelsRes, scorecardRes] =
+                    await Promise.all([
+                        fetch(`${API_BASE}/api/analytics/summary`, { credentials: 'include' }),
+                        fetch(`${API_BASE}/api/analytics/usage?interval=${interval}&limit=30`, {
+                            credentials: 'include',
+                        }),
+                        fetch(`${API_BASE}/api/analytics/messages?limit=30`, {
+                            credentials: 'include',
+                        }),
+                        fetch(`${API_BASE}/api/analytics/models?days=30`, {
+                            credentials: 'include',
+                        }),
+                        fetch(`${API_BASE}/api/analytics/framework-scorecard`, {
+                            credentials: 'include',
+                        }),
+                    ]);
 
                 if (summaryRes.ok) {
                     const data = await summaryRes.json();
@@ -112,6 +155,11 @@ export default function AnalyticsPage() {
                 if (modelsRes.ok) {
                     const data = await modelsRes.json();
                     setModelData(data.data || []);
+                }
+
+                if (scorecardRes.ok) {
+                    const data = await scorecardRes.json();
+                    setScorecard(data);
                 }
             } catch (error) {
                 console.error('Failed to load analytics:', error);
@@ -232,6 +280,97 @@ export default function AnalyticsPage() {
                                     </CardContent>
                                 </Card>
                             </div>
+                        )}
+
+                        {/* Network + Habit Framework Scorecard */}
+                        {scorecard && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">
+                                            Network Stage
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-xl font-bold capitalize">
+                                            {scorecard.network.stage.replace('_', ' ')}
+                                        </div>
+                                        <p className="text-xs text-zinc-500 mt-1">
+                                            Activation:{' '}
+                                            {scorecard.network.activationLevel.replace('_', ' ')}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">
+                                            Hooked / TARI Score
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-xl font-bold">
+                                            {scorecard.hooked.tariScore}/100
+                                        </div>
+                                        <p className="text-xs text-zinc-500 mt-1 capitalize">
+                                            Stage: {scorecard.hooked.stage}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">
+                                            Stickiness & Churn
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-xl font-bold">
+                                            {scorecard.network.stickiness}%
+                                        </div>
+                                        <p className="text-xs text-zinc-500 mt-1 capitalize">
+                                            Churn risk: {scorecard.network.churnRisk}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium">
+                                            Moat (Switching Cost)
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-xl font-bold">
+                                            {scorecard.network.switchingCostScore}/100
+                                        </div>
+                                        <p className="text-xs text-zinc-500 mt-1">
+                                            Milestones: {scorecard.network.completedMilestones}/5
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+
+                        {scorecard && (
+                            <Card className="mb-8">
+                                <CardHeader>
+                                    <CardTitle>Framework Recommendations</CardTitle>
+                                    <CardDescription>
+                                        Next actions based on Cold Start + Hooked metrics
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+                                        {scorecard.recommendations.map((item) => (
+                                            <li key={item} className="flex items-start gap-2">
+                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
                         )}
 
                         {/* Token Usage Chart */}
@@ -430,9 +569,9 @@ export default function AnalyticsPage() {
                                                         return `${model}: ${percentage.toFixed(1)}%`;
                                                     }}
                                                 >
-                                                    {modelData.map((_, index) => (
+                                                    {modelData.map((entry, index) => (
                                                         <Cell
-                                                            key={`cell-${index}`}
+                                                            key={`cell-${entry.model}`}
                                                             fill={COLORS[index % COLORS.length]}
                                                         />
                                                     ))}

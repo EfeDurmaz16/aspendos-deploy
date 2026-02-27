@@ -1,0 +1,41 @@
+Network Product Sprint Plan (Weeks 1-2)
+Date: 2026-02-23
+
+Sprint Goal
+- Validate atomic network setup and install first repeatable habit loop.
+
+Week 1
+- NP-001 Define Atomic Network ICP + Pilot List
+  - Deliverable: 10-team pilot tracker with owners.
+- NP-002 Instrument Activation + Retention + Density
+  - Deliverable: events + initial dashboard query.
+- NP-003 First Value Onboarding (<15 min) - v1
+  - Deliverable: 4-step first-run flow.
+
+Week 2
+- NP-004 Meeting-End Decision Capture Trigger
+  - Deliverable: prompt + conversion tracking.
+- NP-005 24h Follow-Up Reminder Trigger
+  - Deliverable: reminder job + deep link + opt-out.
+- NP-006 Concierge Onboarding Playbook
+  - Deliverable: session script + churn-risk checklist.
+
+Weekly Checkpoints
+- Monday:
+  - review prior week metrics
+  - commit top bottleneck
+- Wednesday:
+  - mid-sprint risk check
+  - unblock dependencies
+- Friday:
+  - demo shipped flows
+  - pilot feedback summary
+
+Exit Criteria (end of week 2)
+- Pilot tracker active with 10 teams.
+- Core metric events live and queryable.
+- At least 1 trigger loop live in production.
+- Baseline numbers published for:
+  - activation rate
+  - hard-side retention
+  - weekly retained teams

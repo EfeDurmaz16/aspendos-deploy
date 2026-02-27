@@ -1121,4 +1121,298 @@ app.get('/popular-models', requireAuth, async (c) => {
     }
 });
 
+/**
+ * GET /api/analytics/framework-scorecard - Unified Network + Hooked scorecard
+ *
+ * Consolidates product metrics into an actionable scorecard mapped to:
+ * - Network stages (Cold Start Theory)
+ * - Habit loops (Hooked / TARI)
+ * - Retention and moat signals
+ */
+app.get('/framework-scorecard', requireAuth, async (c) => {
+    const userId = c.get('userId')!;
+
+    try {
+        const now = Date.now();
+        const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+        const [
+            user,
+            totalChats,
+            chatsLast30d,
+            chatsLast7d,
+            totalMessages,
+            totalUserMessages,
+            totalMemories,
+            councilSessions,
+            pacReminders,
+            pacCompleted,
+            importJobs,
+            achievements,
+            firstChat,
+            firstCouncil,
+            firstImport,
+            firstPAC,
+            lastMessage,
+            lastChat,
+        ] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { createdAt: true },
+            }),
+            prisma.chat.count({ where: { userId } }),
+            prisma.chat.count({ where: { userId, createdAt: { gte: thirtyDaysAgo } } }),
+            prisma.chat.count({ where: { userId, createdAt: { gte: sevenDaysAgo } } }),
+            prisma.message.count({ where: { userId } }),
+            prisma.message.count({ where: { userId, role: 'user' } }),
+            prisma.memory.count({ where: { userId, isActive: true } }),
+            prisma.councilSession.count({ where: { userId } }),
+            prisma.pACReminder.count({ where: { userId } }),
+            prisma.pACReminder.count({ where: { userId, status: 'ACKNOWLEDGED' } }),
+            prisma.importJob.count({ where: { userId, status: 'COMPLETED' } }),
+            prisma.achievement.count({ where: { profile: { userId } } }),
+            prisma.chat.findFirst({
+                where: { userId },
+                orderBy: { createdAt: 'asc' },
+                select: { createdAt: true },
+            }),
+            prisma.councilSession.findFirst({
+                where: { userId },
+                orderBy: { createdAt: 'asc' },
+                select: { createdAt: true },
+            }),
+            prisma.importJob.findFirst({
+                where: { userId, status: 'COMPLETED' },
+                orderBy: { createdAt: 'asc' },
+                select: { createdAt: true },
+            }),
+            prisma.pACReminder.findFirst({
+                where: { userId },
+                orderBy: { createdAt: 'asc' },
+                select: { createdAt: true },
+            }),
+            prisma.message.findFirst({
+                where: { userId, role: 'user' },
+                orderBy: { createdAt: 'desc' },
+                select: { createdAt: true },
+            }),
+            prisma.chat.findFirst({
+                where: { userId },
+                orderBy: { createdAt: 'desc' },
+                select: { createdAt: true },
+            }),
+        ]);
+
+        const signupDate = user?.createdAt || new Date();
+        const lastActiveAt = lastMessage?.createdAt || lastChat?.createdAt || signupDate;
+        const daysSinceLastActive = Math.floor(
+            (now - lastActiveAt.getTime()) / (24 * 60 * 60 * 1000)
+        );
+
+        // Activation milestones
+        const milestones = {
+            first_chat: firstChat?.createdAt || null,
+            first_memory: totalMemories > 0,
+            first_council: firstCouncil?.createdAt || null,
+            first_import: firstImport?.createdAt || null,
+            first_pac: firstPAC?.createdAt || null,
+        };
+        const completedMilestones = Object.values(milestones).filter(Boolean).length;
+        const timeToFirstValueMs = firstChat
+            ? firstChat.createdAt.getTime() - signupDate.getTime()
+            : null;
+
+        let activationLevel: 'not_started' | 'exploring' | 'activated' | 'power_activated';
+        if (completedMilestones >= 4) activationLevel = 'power_activated';
+        else if (completedMilestones >= 2) activationLevel = 'activated';
+        else if (completedMilestones >= 1) activationLevel = 'exploring';
+        else activationLevel = 'not_started';
+
+        // Engagement score (0-100)
+        const chatFreqScore = Math.min(25, Math.round((chatsLast30d / 30) * 25));
+        let featuresUsed = 0;
+        if (totalChats > 0) featuresUsed++;
+        if (councilSessions > 0) featuresUsed++;
+        if (pacReminders > 0) featuresUsed++;
+        if (importJobs > 0) featuresUsed++;
+        if (achievements > 0) featuresUsed++;
+        const featureBreadthScore = Math.min(25, featuresUsed * 5);
+
+        const avgMessagesPerChat = totalChats > 0 ? totalUserMessages / totalChats : 0;
+        const depthFromMessages = Math.min(15, Math.round(avgMessagesPerChat * 1.5));
+        const pacCompletionRate = pacReminders > 0 ? pacCompleted / pacReminders : 0;
+        const depthFromPAC = Math.round(pacCompletionRate * 10);
+        const depthScore = Math.min(25, depthFromMessages + depthFromPAC);
+
+        const retentionRatio = chatsLast30d > 0 ? chatsLast7d / chatsLast30d : 0;
+        const retentionScore = Math.min(25, Math.round(retentionRatio * 25));
+        const engagementScore = chatFreqScore + featureBreadthScore + depthScore + retentionScore;
+
+        // Retention/churn signals
+        const stickiness = chatsLast30d > 0 ? Math.round((chatsLast7d / chatsLast30d) * 100) : 0;
+        let churnRisk: 'low' | 'medium' | 'high' | 'critical';
+        if (daysSinceLastActive <= 2) churnRisk = 'low';
+        else if (daysSinceLastActive <= 7) churnRisk = 'medium';
+        else if (daysSinceLastActive <= 14) churnRisk = 'high';
+        else churnRisk = 'critical';
+
+        // Switching cost / moat score (0-100)
+        const dataPoints = totalMessages + totalChats;
+        let dataVolume = 0;
+        if (dataPoints >= 1000) dataVolume = 30;
+        else if (dataPoints >= 500) dataVolume = 25;
+        else if (dataPoints >= 250) dataVolume = 20;
+        else if (dataPoints >= 100) dataVolume = 15;
+        else if (dataPoints >= 50) dataVolume = 10;
+        else if (dataPoints >= 10) dataVolume = 5;
+
+        const featurePoints = councilSessions + pacReminders + achievements;
+        let featureInvestment = 0;
+        if (featurePoints >= 100) featureInvestment = 30;
+        else if (featurePoints >= 50) featureInvestment = 25;
+        else if (featurePoints >= 25) featureInvestment = 20;
+        else if (featurePoints >= 10) featureInvestment = 15;
+        else if (featurePoints >= 5) featureInvestment = 10;
+        else if (featurePoints >= 1) featureInvestment = 5;
+
+        let importedData = 0;
+        if (importJobs >= 5) importedData = 20;
+        else if (importJobs >= 3) importedData = 15;
+        else if (importJobs >= 2) importedData = 12;
+        else if (importJobs >= 1) importedData = 10;
+
+        let memoryDepth = 0;
+        if (totalMemories >= 500) memoryDepth = 20;
+        else if (totalMemories >= 250) memoryDepth = 15;
+        else if (totalMemories >= 100) memoryDepth = 10;
+        else if (totalMemories >= 25) memoryDepth = 5;
+
+        const switchingCostScore = dataVolume + featureInvestment + importedData + memoryDepth;
+
+        // TARI score (0-100)
+        let triggerScore = 0;
+        if (chatsLast7d > 0) triggerScore += 10;
+        if (pacReminders > 0) triggerScore += 10;
+        if (daysSinceLastActive <= 2) triggerScore += 5;
+
+        const actionScore = Math.min(25, Math.round(avgMessagesPerChat * 3));
+        const rewardScore = Math.min(
+            25,
+            Math.round(pacCompletionRate * 15 + Math.min(10, stickiness / 10))
+        );
+
+        let investmentScore = 0;
+        if (totalMemories >= 50) investmentScore += 10;
+        else if (totalMemories >= 10) investmentScore += 7;
+        else if (totalMemories >= 1) investmentScore += 4;
+        if (importJobs >= 1) investmentScore += 7;
+        if (achievements >= 5) investmentScore += 5;
+        else if (achievements >= 1) investmentScore += 3;
+        if (totalChats >= 20) investmentScore += 3;
+        else if (totalChats >= 5) investmentScore += 1;
+        investmentScore = Math.min(25, investmentScore);
+
+        const tariScore = triggerScore + actionScore + rewardScore + investmentScore;
+        let tariStage: 'early' | 'building' | 'engaged' | 'habitual';
+        if (tariScore >= 75) tariStage = 'habitual';
+        else if (tariScore >= 50) tariStage = 'engaged';
+        else if (tariScore >= 25) tariStage = 'building';
+        else tariStage = 'early';
+
+        // Network stage (Cold Start Theory)
+        let networkStage:
+            | 'cold_start'
+            | 'atomic_network'
+            | 'tipping_point'
+            | 'escape_velocity'
+            | 'hitting_ceiling'
+            | 'moat';
+
+        if (totalChats === 0) networkStage = 'cold_start';
+        else if (completedMilestones < 2) networkStage = 'atomic_network';
+        else if (churnRisk === 'high' || churnRisk === 'critical') networkStage = 'hitting_ceiling';
+        else if (switchingCostScore >= 70) networkStage = 'moat';
+        else if (engagementScore >= 50 && stickiness >= 25) networkStage = 'escape_velocity';
+        else networkStage = 'tipping_point';
+
+        const recommendations: string[] = [];
+        if (completedMilestones < 2) {
+            recommendations.push(
+                'Improve onboarding to reach 2+ activation milestones in first 7 days.'
+            );
+        }
+        if (pacReminders === 0) {
+            recommendations.push(
+                'Add proactive reminder triggers to strengthen the Trigger phase of TARI.'
+            );
+        }
+        if (pacReminders > 0 && pacCompletionRate < 0.5) {
+            recommendations.push(
+                'Increase reminder relevance and timing quality to improve Reward and completion rate.'
+            );
+        }
+        if (switchingCostScore < 40) {
+            recommendations.push(
+                'Increase user investment via imports, memory depth, and reusable workflows.'
+            );
+        }
+        if (churnRisk === 'high' || churnRisk === 'critical') {
+            recommendations.push(
+                'Launch re-engagement sequence for inactive users (context recap + one-click restart).'
+            );
+        }
+        if (recommendations.length === 0) {
+            recommendations.push(
+                'Current metrics are healthy. Focus on referral loops and team-level virality.'
+            );
+        }
+
+        return c.json({
+            network: {
+                stage: networkStage,
+                activationLevel,
+                completedMilestones,
+                engagementScore,
+                stickiness,
+                churnRisk,
+                switchingCostScore,
+                timeToFirstValueMs,
+            },
+            hooked: {
+                tariScore,
+                stage: tariStage,
+                components: {
+                    trigger: triggerScore,
+                    action: actionScore,
+                    reward: rewardScore,
+                    investment: investmentScore,
+                },
+            },
+            growth: {
+                chatsLast7d,
+                chatsLast30d,
+                retentionRatio: Math.round(retentionRatio * 100),
+                pacCompletionRate: Math.round(pacCompletionRate * 100),
+            },
+            recommendations,
+            raw: {
+                totalChats,
+                totalMessages,
+                totalUserMessages,
+                totalMemories,
+                councilSessions,
+                pacReminders,
+                pacCompleted,
+                importJobs,
+                achievements,
+                daysSinceLastActive,
+            },
+        });
+    } catch (error) {
+        console.error('[Analytics] Error computing framework scorecard:', error);
+        return c.json({ error: 'Failed to compute framework scorecard' }, 500);
+    }
+});
+
 export default app;

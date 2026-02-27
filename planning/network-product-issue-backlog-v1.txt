@@ -1,0 +1,215 @@
+Yula Network Product Issue Backlog v1
+Date: 2026-02-23
+Source: planning/network-product-90-day-plan.txt
+
+Format
+- ID / Priority / Track / Title
+- Why
+- Scope
+- Acceptance Criteria
+- KPI Impact
+- Dependencies
+
+P0 (Week 1-2)
+
+NP-001 / P0 / Strategy / Define Atomic Network ICP + Pilot List (10 teams)
+- Why: Growth cannot be repeatable without a strict first network definition.
+- Scope:
+  - Define ICP: 5-12 person product+engineering teams.
+  - Create pilot pipeline with 10 target teams.
+  - Assign owner + status for each pilot (invited/onboarding/active/churn-risk).
+- Acceptance Criteria:
+  - ICP doc finalized with inclusion/exclusion rules.
+  - Pilot tracker includes 10 teams and named owner per team.
+  - Weekly review ritual defined (Mon/Fri).
+- KPI Impact: activation rate baseline.
+- Dependencies: none.
+
+NP-002 / P0 / Data / Instrument Activation + Retention + Density Metrics
+- Why: No metric loop means no reliable optimization.
+- Scope:
+  - Add events for:
+    - signup_completed
+    - workspace_created
+    - first_decision_created
+    - followup_created
+    - followup_completed
+    - team_invite_sent
+    - team_invite_accepted
+  - Add weekly retained teams metric computation.
+  - Add hard-side cohort metric (PM/lead/power user).
+- Acceptance Criteria:
+  - Events visible in analytics in staging and prod.
+  - Weekly retained teams query/dashboard available.
+  - Hard-side 4-week retention report can be generated.
+- KPI Impact: all core metrics.
+- Dependencies: NP-001.
+
+NP-003 / P0 / Product / Ship First Value Onboarding (<15 min)
+- Why: Slow first value kills atomic network activation.
+- Scope:
+  - First-run flow:
+    - choose workspace template
+    - create first decision card from chat
+    - create first follow-up
+    - invite one teammate
+  - Add progress indicator for 4-step setup.
+- Acceptance Criteria:
+  - Median time-to-first-value < 15 min in pilot cohort.
+  - 70%+ onboarding step completion from step1->step3.
+  - No blocking error in happy path.
+- KPI Impact: activation rate, time-to-first-value.
+- Dependencies: NP-002.
+
+NP-004 / P0 / Product / Meeting-End Trigger: Decision Capture Prompt
+- Why: Trigger quality directly affects repeated action.
+- Scope:
+  - Detect end-of-session state and show "Capture decision?" prompt.
+  - One-click create decision card with editable summary.
+- Acceptance Criteria:
+  - Prompt shown in eligible sessions.
+  - Decision creation conversion >= 20% for prompted sessions.
+  - Prompt dismissal does not re-appear in same session.
+- KPI Impact: TARI completion (Trigger->Action), density.
+- Dependencies: NP-002, NP-003.
+
+NP-005 / P0 / Product / 24h Follow-Up Reminder Trigger
+- Why: Reinforces habit loop and return behavior.
+- Scope:
+  - 24h reminder for unresolved follow-ups.
+  - Reminder deep-links to relevant decision context.
+- Acceptance Criteria:
+  - Reminder delivery success >= 98%.
+  - Reminder->open conversion tracked.
+  - Opt-out preference respected.
+- KPI Impact: weekly retention, followup completion.
+- Dependencies: NP-002, NP-003.
+
+NP-006 / P0 / GrowthOps / Concierge Onboarding Playbook for Pilot Teams
+- Why: Early manual support accelerates network quality.
+- Scope:
+  - Define first 3-session script.
+  - Create objection handling + FAQ.
+  - Create "pilot risk" checklist.
+- Acceptance Criteria:
+  - Playbook used for all pilot teams.
+  - Session notes captured in a shared tracker.
+  - Churn-risk teams flagged within 48h.
+- KPI Impact: hard-side retention, pilot survival.
+- Dependencies: NP-001.
+
+P1 (Week 3-6)
+
+NP-007 / P1 / Product / Shared Decision Timeline (Team View)
+- Why: Team-visible artifacts increase cross-node interactions.
+- Scope:
+  - Timeline page with filter by owner/status/date/tag.
+  - Quick actions: assign, complete, reopen.
+- Acceptance Criteria:
+  - Timeline load p95 < 1.5s in pilot workspaces.
+  - 40%+ active teams use timeline weekly.
+- KPI Impact: network density, retention.
+- Dependencies: NP-002, NP-003.
+
+NP-008 / P1 / Product / Digest Quality Feedback Loop
+- Why: Variable reward must improve with usage.
+- Scope:
+  - Weekly digest with rating prompt (thumb up/down + reason).
+  - Feedback linked to digest generation metadata.
+- Acceptance Criteria:
+  - Feedback capture rate >= 15%.
+  - At least 3 actionable quality insights per sprint.
+- KPI Impact: reward quality, retention.
+- Dependencies: NP-002, NP-005.
+
+NP-009 / P1 / Product / Hard-Side Controls (Power User Toolkit)
+- Why: Prevent hard-side revolt, keep key creators engaged.
+- Scope:
+  - Priority settings for reminders/digests.
+  - Visibility controls on decision cards.
+  - Attribution badge for top contributors.
+- Acceptance Criteria:
+  - 50%+ hard-side users configure at least one control.
+  - Hard-side week-4 retention improves vs baseline.
+- KPI Impact: hard-side retention.
+- Dependencies: NP-002, NP-007.
+
+NP-010 / P1 / Growth / Outcome-Based Team Invite Flow
+- Why: Invite loops should originate from value, not generic prompts.
+- Scope:
+  - Invite CTA attached to concrete outcome pages (decision/follow-up complete).
+  - Track invite source context.
+- Acceptance Criteria:
+  - Invite accepted rate from outcome surfaces > generic baseline.
+  - Team invite funnel visible in analytics.
+- KPI Impact: acquisition effect, density.
+- Dependencies: NP-002, NP-007.
+
+NP-011 / P1 / Data / Weekly Network Health Dashboard
+- Why: Plateau detection needs a single source of truth.
+- Scope:
+  - Dashboard widgets:
+    - weekly retained teams
+    - activation rate
+    - hard-side retention
+    - density
+    - TARI completion
+  - Weekly snapshot export.
+- Acceptance Criteria:
+  - Dashboard live and reviewed every Monday.
+  - Last 8 weeks trend visible.
+- KPI Impact: decision velocity.
+- Dependencies: NP-002.
+
+P2 (Week 7-12)
+
+NP-012 / P2 / Product / Overcrowding Defense: Search + Ranking Upgrade
+- Why: Discovery quality drops as network grows.
+- Scope:
+  - Search by semantic intent + tags.
+  - Ranking boosts for unresolved/high-impact items.
+- Acceptance Criteria:
+  - Search success rate improves vs baseline.
+  - p95 query latency within target.
+- KPI Impact: ceiling defense, retention.
+- Dependencies: NP-007, NP-011.
+
+NP-013 / P2 / Product / Retention Win-Back Flow for Churned Teams
+- Why: Reactivation is a core engagement effect lever.
+- Scope:
+  - Detect inactive team after threshold.
+  - Send context-rich reactivation prompt + one-click resume.
+- Acceptance Criteria:
+  - Win-back funnel measurable.
+  - Reactivation rate baseline established and improved in 2 iterations.
+- KPI Impact: retained teams.
+- Dependencies: NP-002, NP-005, NP-011.
+
+NP-014 / P2 / Growth / Cross-Team Workflow Templates
+- Why: Repeatable setup reduces growth friction.
+- Scope:
+  - 3 templates: product planning, bug triage, launch checklist.
+  - One-click apply at workspace setup.
+- Acceptance Criteria:
+  - Template adoption tracked.
+  - Activation lift for template users > non-template users.
+- KPI Impact: activation, scaling readiness.
+- Dependencies: NP-003, NP-011.
+
+Execution Order (recommended)
+1) NP-001
+2) NP-002
+3) NP-003
+4) NP-004 + NP-005
+5) NP-006
+6) NP-007
+7) NP-010 + NP-011
+8) NP-008 + NP-009
+9) NP-012 + NP-013 + NP-014
+
+Definition of Done (all issues)
+- Feature flag (if risky rollout).
+- Event instrumentation included.
+- Basic dashboard/query updated.
+- Pilot feedback collected (minimum 3 users or 1 team).
+- Short release note added.

@@ -1,4 +1,3 @@
-import { BellRinging } from '@phosphor-icons/react/dist/ssr';
 import type { Metadata } from 'next';
 import { type FeatureData, FeaturePage } from '@/components/seo/FeaturePage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
@@ -25,7 +24,7 @@ const pacData: FeatureData = {
     tagline:
         'The first AI that messages YOU first. Schedule reminders, get follow-ups, and let Yula reach out when it matters most.',
     description: `PAC (Proactive Agentic Callback) is Yula's revolutionary feature that flips the AI interaction model. Instead of always waiting for you to ask, Yula can proactively reach out. Tell Yula to remind you about something in a week, follow up on a goal, or check in about a decision - and it will. No other AI platform offers this capability.`,
-    heroIcon: <BellRinging className="w-16 h-16 text-primary" weight="duotone" />,
+    heroIcon: 'bell-ringing',
     benefits: [
         {
             title: 'AI That Initiates',
