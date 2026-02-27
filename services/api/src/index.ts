@@ -404,8 +404,15 @@ Policy: https://yula.dev/security-policy
 `);
 });
 
-// Prometheus metrics endpoint
+// Prometheus metrics endpoint (bearer token protected)
 app.get('/metrics', async (c) => {
+    const metricsToken = process.env.METRICS_BEARER_TOKEN;
+    if (metricsToken) {
+        const authHeader = c.req.header('authorization');
+        if (authHeader !== `Bearer ${metricsToken}`) {
+            return c.json({ error: 'Unauthorized' }, 401);
+        }
+    }
     const { getMetricsText } = await import('./lib/metrics');
     return c.text(getMetricsText(), 200, {
         'Content-Type': 'text/plain; version=0.0.4',
