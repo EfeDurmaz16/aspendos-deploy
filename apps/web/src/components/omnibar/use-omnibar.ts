@@ -4,6 +4,59 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo } from 'react';
 import { type OmnibarResult, useYulaStore } from '@/stores/yula-store';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+async function fetchWithAuth(url: string, options: RequestInit = {}) {
+    const response = await fetch(`${API_BASE}${url}`, {
+        ...options,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...options.headers },
+    });
+    if (!response.ok) return null;
+    return response.json();
+}
+
+async function searchMemories(query: string): Promise<OmnibarResult[]> {
+    try {
+        const data = await fetchWithAuth('/api/memory/search', {
+            method: 'POST',
+            body: JSON.stringify({ query, limit: 5 }),
+        });
+        if (!data?.memories) return [];
+        return data.memories.map((m: { id: string; content: string; sector?: string }) => ({
+            id: `memory-${m.id}`,
+            type: 'memory' as const,
+            title: m.content.slice(0, 80) + (m.content.length > 80 ? '...' : ''),
+            description: m.sector ? `Memory · ${m.sector}` : 'Memory',
+            icon: 'brain',
+        }));
+    } catch {
+        return [];
+    }
+}
+
+async function searchChats(query: string): Promise<OmnibarResult[]> {
+    try {
+        const data = await fetchWithAuth('/api/chat?limit=100');
+        if (!data?.chats) return [];
+        const lowerQuery = query.toLowerCase();
+        return data.chats
+            .filter((c: { title?: string }) => c.title?.toLowerCase().includes(lowerQuery))
+            .slice(0, 5)
+            .map((c: { id: string; title?: string; updatedAt?: string }) => ({
+                id: `chat-${c.id}`,
+                type: 'chat' as const,
+                title: c.title || 'Untitled chat',
+                description: c.updatedAt
+                    ? `Chat · ${new Date(c.updatedAt).toLocaleDateString()}`
+                    : 'Chat',
+                icon: 'chat',
+            }));
+    } catch {
+        return [];
+    }
+}
+
 // Quick action definitions
 const QUICK_ACTIONS: OmnibarResult[] = [
     {
@@ -155,11 +208,11 @@ export function useOmnibar() {
                         fuzzyMatch(query, item.title) || fuzzyMatch(query, item.description || '')
                 );
 
-                // TODO: Add memory search here
-                // const memoryResults = await searchMemories(query);
-
-                // TODO: Add chat search here
-                // const chatResults = await searchChats(query);
+                // Search memories and chats in parallel
+                const [memoryResults, chatResults] = await Promise.all([
+                    searchMemories(query),
+                    searchChats(query),
+                ]);
 
                 const results: OmnibarResult[] = [
                     ...matchedActions.map((item) => ({
@@ -186,6 +239,14 @@ export function useOmnibar() {
                                     ? '/memory'
                                     : '/settings'
                         ),
+                    })),
+                    ...memoryResults.map((item) => ({
+                        ...item,
+                        action: () => router.push('/memory'),
+                    })),
+                    ...chatResults.map((item) => ({
+                        ...item,
+                        action: () => router.push(`/chat/${item.id.replace('chat-', '')}`),
                     })),
                 ];
 
