@@ -25,6 +25,7 @@ import {
 } from '../services/memory-agent';
 import * as openMemory from '../services/openmemory.service';
 import { createReminder, detectCommitments, getPACSettings } from '../services/pac.service';
+import { moderateContent } from '../lib/content-moderation';
 import { getToolsForTier, type UserTier } from '../tools';
 import {
     chatIdParamSchema,
@@ -204,6 +205,19 @@ app.post(
                     code: 'MESSAGE_TOO_LONG',
                 },
                 413
+            );
+        }
+
+        // Content moderation: block messages with critical safety issues
+        const moderation = moderateContent(content);
+        if (moderation.action === 'block') {
+            return c.json(
+                {
+                    error: 'Message blocked by content safety policy',
+                    code: 'CONTENT_BLOCKED',
+                    categories: moderation.categories,
+                },
+                400
             );
         }
 

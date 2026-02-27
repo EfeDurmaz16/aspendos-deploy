@@ -8,6 +8,7 @@ import { stream } from 'hono/streaming';
 import type { TierName } from '../config/tiers';
 import { getLimit } from '../config/tiers';
 import { prisma } from '../lib/prisma';
+import { moderateContent } from '../lib/content-moderation';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
@@ -45,6 +46,19 @@ app.use('*', requireAuth);
 app.post('/sessions', validateBody(createCouncilSessionSchema), async (c) => {
     const userId = c.get('userId')!;
     const { query } = c.get('validatedBody') as { query: string };
+
+    // Content moderation: block queries with critical safety issues
+    const moderation = moderateContent(query);
+    if (moderation.action === 'block') {
+        return c.json(
+            {
+                error: 'Query blocked by content safety policy',
+                code: 'CONTENT_BLOCKED',
+                categories: moderation.categories,
+            },
+            400
+        );
+    }
 
     // Check council session limit based on user's tier
     const user = await prisma.user.findUnique({
