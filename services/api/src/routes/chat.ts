@@ -288,8 +288,8 @@ app.post(
             );
         }
 
-        // Decrement chat quota
-        await billingService.recordChatUsage(userId);
+        // NOTE: Chat quota decrement deferred to onFinish (after message save succeeds)
+        // This ensures we don't charge the user if the stream fails before saving.
 
         // Save user message to database
         await chatService.createMessage({
@@ -398,27 +398,38 @@ app.post(
                     stopWhen: stepCountIs(5), // Allow up to 5 tool calls
                     temperature: 0.7,
                     onFinish: async ({ text, usage }) => {
-                        // Save assistant message to database (track actual model used for transparency)
-                        await chatService.createMessage({
-                            chatId,
-                            userId,
-                            role: 'assistant',
-                            content: text,
-                            modelUsed: actualModelId,
-                            tokensIn: usage?.inputTokens,
-                            tokensOut: usage?.outputTokens,
-                        });
-
-                        // Record token usage for billing (bill for actual model, not requested)
-                        if (usage?.inputTokens || usage?.outputTokens) {
-                            await billingService.recordTokenUsage(
+                        const requestId = c.get('requestId') || 'unknown';
+                        try {
+                            // Save assistant message to database (critical-path — must succeed)
+                            await chatService.createMessage({
+                                chatId,
                                 userId,
-                                usage.inputTokens || 0,
-                                usage.outputTokens || 0,
-                                actualModelId
+                                role: 'assistant',
+                                content: text,
+                                modelUsed: actualModelId,
+                                tokensIn: usage?.inputTokens,
+                                tokensOut: usage?.outputTokens,
+                            });
+
+                            // Decrement chat quota AFTER message save succeeds (atomic billing)
+                            await billingService.recordChatUsage(userId);
+
+                            // Record token usage for billing (critical-path)
+                            if (usage?.inputTokens || usage?.outputTokens) {
+                                await billingService.recordTokenUsage(
+                                    userId,
+                                    usage.inputTokens || 0,
+                                    usage.outputTokens || 0,
+                                    actualModelId
+                                );
+                                // Proactive spending alert (fire-and-forget)
+                                maybeCreateSpendingNotification(userId).catch(() => {});
+                            }
+                        } catch (err) {
+                            console.error(
+                                `[Chat] Critical: onFinish save/billing failed for chat=${chatId} request=${requestId}:`,
+                                err
                             );
-                            // Proactive spending alert (fire-and-forget)
-                            maybeCreateSpendingNotification(userId).catch(() => {});
                         }
 
                         // Auto-extract memories from conversation (fire-and-forget)
@@ -445,12 +456,6 @@ app.post(
                                     /* non-blocking */
                                 });
                         }
-
-                        // MOAT: Routing feedback loop
-                        // The routing decision (useMemory, queryType, sectors) is captured in X-Memory-Decision header.
-                        // User feedback (thumbs up/down) on the message links back to this routing choice.
-                        // Over time, we learn: which routing decisions lead to quality responses.
-                        // This is a compounding advantage: competitors route once, we learn and improve routing.
                     },
                 });
 
