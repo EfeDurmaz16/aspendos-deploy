@@ -18,13 +18,22 @@
     "format": "biome format --write .",
     "check": "biome check .",
     "check:fix": "biome check --write .",
+    "bench:web-dev": "bash scripts/benchmark_web_dev.sh",
     "release:ready": "bash ./scripts/check_release_readiness.sh",
     "db:generate": "turbo run db:generate --filter=@aspendos/db",
-    "db:push": "turbo run db:push --filter=@aspendos/db"
+    "db:push": "turbo run db:push --filter=@aspendos/db",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.2.0",
     "turbo": "^2.4.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,css}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
   },
   "dependencies": {
     "@polar-sh/better-auth": "^1.6.4",
