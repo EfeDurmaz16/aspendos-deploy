@@ -119,6 +119,64 @@ export function createMemoryReinforceTool(_userId: string) {
 // ============================================
 
 /**
+ * Safe recursive-descent math parser.
+ * Supports: +, -, *, /, parentheses, unary minus, decimals.
+ * No code execution — purely structural parsing.
+ */
+function safeMathEval(expr: string): number {
+    let pos = 0;
+    const str = expr.replace(/\s+/g, '');
+
+    function parseExpression(): number {
+        let result = parseTerm();
+        while (pos < str.length && (str[pos] === '+' || str[pos] === '-')) {
+            const op = str[pos++];
+            const right = parseTerm();
+            result = op === '+' ? result + right : result - right;
+        }
+        return result;
+    }
+
+    function parseTerm(): number {
+        let result = parseFactor();
+        while (pos < str.length && (str[pos] === '*' || str[pos] === '/')) {
+            const op = str[pos++];
+            const right = parseFactor();
+            result = op === '*' ? result * right : result / right;
+        }
+        return result;
+    }
+
+    function parseFactor(): number {
+        if (str[pos] === '-') {
+            pos++;
+            return -parseFactor();
+        }
+        if (str[pos] === '(') {
+            pos++; // skip '('
+            const result = parseExpression();
+            if (str[pos] !== ')') throw new Error('Missing closing parenthesis');
+            pos++; // skip ')'
+            return result;
+        }
+        return parseNumber();
+    }
+
+    function parseNumber(): number {
+        const start = pos;
+        while (pos < str.length && (str[pos] >= '0' && str[pos] <= '9' || str[pos] === '.')) {
+            pos++;
+        }
+        if (start === pos) throw new Error(`Unexpected character: ${str[pos] || 'end of input'}`);
+        return parseFloat(str.slice(start, pos));
+    }
+
+    const result = parseExpression();
+    if (pos < str.length) throw new Error(`Unexpected character: ${str[pos]}`);
+    return result;
+}
+
+/**
  * Calculator tool for basic math
  */
 export const calculatorTool = tool({
@@ -130,20 +188,21 @@ export const calculatorTool = tool({
     }),
     execute: async ({ expression }) => {
         try {
-            // Simple safe evaluation using Function constructor
-            // Only allow numbers, operators, parentheses, and spaces
-            const sanitized = expression.replace(/[^0-9+\-*/.() ]/g, '');
-            if (sanitized !== expression) {
+            // Reject any characters that aren't part of math expressions
+            if (!/^[0-9+\-*/.() \t]+$/.test(expression)) {
                 return { success: false, error: 'Invalid characters in expression' };
             }
 
-            // Use Function for safer evaluation than eval
-            const result = new Function(`return ${sanitized}`)();
+            const result = safeMathEval(expression);
+
+            if (!Number.isFinite(result)) {
+                return { success: false, error: 'Result is not a finite number' };
+            }
 
             return {
                 success: true,
                 expression,
-                result: Number(result),
+                result,
             };
         } catch (_error) {
             return {
