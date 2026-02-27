@@ -41,7 +41,7 @@ async function requireAdmin(c: any, next: any) {
     // Check if user is in admin list
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, tier: true },
+        select: { id: true, email: true },
     });
 
     if (!user) {
@@ -50,8 +50,7 @@ async function requireAdmin(c: any, next: any) {
 
     const isAdmin =
         ADMIN_USER_IDS.includes(user.id) ||
-        ADMIN_EMAILS.includes(user.email) ||
-        user.tier === 'ULTRA'; // ULTRA tier users have admin access
+        ADMIN_EMAILS.includes(user.email);
 
     if (!isAdmin) {
         await auditLog({
