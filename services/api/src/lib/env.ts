@@ -34,6 +34,9 @@ const optionalEnvVars = [
     'AGENTS_URL',
     'FRONTEND_URL',
     'CORS_ORIGINS',
+    'RESEND_API_KEY',
+    'RESEND_FROM_EMAIL',
+    'METRICS_BEARER_TOKEN',
 ] as const;
 
 export function validateEnv() {

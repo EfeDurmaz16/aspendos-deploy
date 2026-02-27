@@ -3,6 +3,7 @@ import { checkout, polar, portal } from '@polar-sh/better-auth';
 import { Polar } from '@polar-sh/sdk';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { Resend } from 'resend';
 
 // Initialize Polar client
 const accessToken = process.env.POLAR_ACCESS_TOKEN || '';
@@ -26,8 +27,18 @@ export const auth = betterAuth({
         // Revoke all other sessions when password changes (security best practice)
         revokeSessionsOnPasswordReset: true,
         sendResetPassword: async ({ user, url }) => {
-            // TODO: Integrate email provider (Resend/SendGrid)
-            console.log(`[Auth] Password reset requested for ${user.id}, url: ${url}`);
+            const apiKey = process.env.RESEND_API_KEY;
+            if (!apiKey) {
+                console.error('[Auth] RESEND_API_KEY not set, cannot send password reset email');
+                return;
+            }
+            const resend = new Resend(apiKey);
+            await resend.emails.send({
+                from: process.env.RESEND_FROM_EMAIL || 'YULA <noreply@yula.dev>',
+                to: user.email,
+                subject: 'Reset your YULA password',
+                html: `<p>Click the link below to reset your password:</p><p><a href="${url}">Reset Password</a></p><p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>`,
+            });
         },
     },
     account: {
