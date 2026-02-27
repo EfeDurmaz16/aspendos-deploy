@@ -36,6 +36,18 @@ export const prisma =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
+// Log connection pool configuration on startup
+{
+    const dbUrl = process.env.DATABASE_URL || '';
+    const params = new URL(dbUrl.startsWith('postgresql') ? dbUrl : 'postgresql://x@x/x').searchParams;
+    const poolConfig = {
+        connection_limit: params.get('connection_limit') || 'default',
+        pool_timeout: params.get('pool_timeout') || 'default',
+        pgbouncer: params.get('pgbouncer') || 'false',
+    };
+    console.log('[DB] Pool config:', JSON.stringify(poolConfig));
+}
+
 // ---------------------------------------------------------------------------
 // Initial Connection with Retry
 // ---------------------------------------------------------------------------
