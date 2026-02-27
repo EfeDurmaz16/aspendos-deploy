@@ -190,6 +190,61 @@ class MetricsCollector {
     }
 
     /**
+     * Garbage collect stale label combinations to prevent unbounded memory growth.
+     * Removes label entries with zero values from counters and gauges,
+     * and caps the maximum number of unique label combinations per metric.
+     */
+    gc(maxLabelsPerMetric = 500): { pruned: number } {
+        let pruned = 0;
+
+        for (const [, counter] of this.counters) {
+            // Prune zero-value labels
+            for (const [labelKey, value] of counter.labels) {
+                if (value === 0) {
+                    counter.labels.delete(labelKey);
+                    pruned++;
+                }
+            }
+            // Cap labels
+            if (counter.labels.size > maxLabelsPerMetric) {
+                const entries = Array.from(counter.labels.entries())
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, maxLabelsPerMetric);
+                pruned += counter.labels.size - entries.length;
+                counter.labels = new Map(entries);
+            }
+        }
+
+        for (const [, gauge] of this.gauges) {
+            for (const [labelKey, value] of gauge.labels) {
+                if (value === 0) {
+                    gauge.labels.delete(labelKey);
+                    pruned++;
+                }
+            }
+            if (gauge.labels.size > maxLabelsPerMetric) {
+                const entries = Array.from(gauge.labels.entries())
+                    .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
+                    .slice(0, maxLabelsPerMetric);
+                pruned += gauge.labels.size - entries.length;
+                gauge.labels = new Map(entries);
+            }
+        }
+
+        for (const [, histogram] of this.histograms) {
+            if (histogram.labels.size > maxLabelsPerMetric) {
+                const entries = Array.from(histogram.labels.entries())
+                    .sort(([, a], [, b]) => b.count - a.count)
+                    .slice(0, maxLabelsPerMetric);
+                pruned += histogram.labels.size - entries.length;
+                histogram.labels = new Map(entries);
+            }
+        }
+
+        return { pruned };
+    }
+
+    /**
      * Serialize label object to a consistent string key
      */
     private serializeLabels(labels: Record<string, string>): string {
@@ -292,6 +347,17 @@ class MetricsCollector {
 
 // Global metrics instance
 const metrics = new MetricsCollector();
+
+// Periodic garbage collection every 5 minutes to prevent unbounded memory growth
+const GC_INTERVAL_MS = 5 * 60 * 1000;
+if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+    setInterval(() => {
+        const { pruned } = metrics.gc();
+        if (pruned > 0) {
+            console.log(`[Metrics] GC pruned ${pruned} stale label combinations`);
+        }
+    }, GC_INTERVAL_MS);
+}
 
 // Exported functions
 export function incrementCounter(
