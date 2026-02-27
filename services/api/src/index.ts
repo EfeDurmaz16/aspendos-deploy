@@ -278,14 +278,14 @@ app.use('*', async (c, next) => {
         return next();
     }
 
-    // Skip CSRF check for webhook endpoints (they use signature verification)
+    // Skip CSRF check for specific exempt paths (auth, webhooks with signature verification, cron with secret)
     const path = c.req.path;
-    if (path.startsWith('/api/auth/') || path.includes('/webhook') || path === '/health') {
-        return next();
-    }
-
-    // Skip for CRON endpoints (they use secret header)
-    if (path.startsWith('/api/scheduler') || path.startsWith('/api/cron')) {
+    const CSRF_EXEMPT_PATHS = new Set(['/api/billing/webhook', '/health']);
+    const CSRF_EXEMPT_PREFIXES = ['/api/auth/', '/api/scheduler/webhook', '/api/cron'];
+    if (
+        CSRF_EXEMPT_PATHS.has(path) ||
+        CSRF_EXEMPT_PREFIXES.some((p) => path.startsWith(p))
+    ) {
         return next();
     }
 

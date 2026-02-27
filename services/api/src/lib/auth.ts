@@ -20,7 +20,7 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
-        requireEmailVerification: process.env.NODE_ENV === 'production',
+        requireEmailVerification: process.env.DISABLE_EMAIL_VERIFICATION !== 'true',
         minPasswordLength: 8,
         maxPasswordLength: 128,
         autoSignIn: true,

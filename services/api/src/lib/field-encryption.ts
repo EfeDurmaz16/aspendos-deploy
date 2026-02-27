@@ -4,27 +4,32 @@
  * Encrypts individual fields (e.g. API keys, PII) before storing in the database.
  * Uses PBKDF2 for key derivation from the ENCRYPTION_KEY environment variable.
  *
- * Output format (base64-encoded):
- *   [16-byte IV][12-byte auth tag][ciphertext]
+ * New format (v2, with random salt, base64-encoded):
+ *   [16-byte salt][16-byte IV][16-byte auth tag][ciphertext]
+ *
+ * Legacy format (v1, static salt, base64-encoded):
+ *   [16-byte IV][16-byte auth tag][ciphertext]
  *
  * Prefix: "enc::" marks a value as encrypted for easy detection.
+ * Decryption auto-detects format by trying v2 first, then falling back to v1.
  */
 import { createCipheriv, createDecipheriv, pbkdf2Sync, randomBytes } from 'node:crypto';
 
 const ALGORITHM = 'aes-256-gcm';
+const SALT_LENGTH = 16;
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 const KEY_LENGTH = 32; // 256 bits
 const PBKDF2_ITERATIONS = 100_000;
 const PBKDF2_DIGEST = 'sha512';
-const SALT = 'yula-os-field-encryption-salt'; // Static salt; key uniqueness comes from ENCRYPTION_KEY
+const LEGACY_SALT = 'yula-os-field-encryption-salt'; // Static salt for v1 backward compat
 const ENCRYPTED_PREFIX = 'enc::';
 
 /**
- * Derive a 256-bit key from a passphrase using PBKDF2.
+ * Derive a 256-bit key from a passphrase and salt using PBKDF2.
  */
-function deriveKey(passphrase: string): Buffer {
-    return pbkdf2Sync(passphrase, SALT, PBKDF2_ITERATIONS, KEY_LENGTH, PBKDF2_DIGEST);
+function deriveKey(passphrase: string, salt: string | Buffer): Buffer {
+    return pbkdf2Sync(passphrase, salt, PBKDF2_ITERATIONS, KEY_LENGTH, PBKDF2_DIGEST);
 }
 
 /**
@@ -40,25 +45,26 @@ function getEncryptionKey(): string {
 }
 
 /**
- * Encrypt a plaintext string using AES-256-GCM.
- * Returns a prefixed base64 string containing the IV, auth tag, and ciphertext.
+ * Encrypt a plaintext string using AES-256-GCM with a random per-value salt.
+ * Returns a prefixed base64 string containing the salt, IV, auth tag, and ciphertext.
  */
 export function encryptField(plaintext: string): string {
-    const key = deriveKey(getEncryptionKey());
+    const salt = randomBytes(SALT_LENGTH);
+    const key = deriveKey(getEncryptionKey(), salt);
     const iv = randomBytes(IV_LENGTH);
 
     const cipher = createCipheriv(ALGORITHM, key, iv);
     const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
     const authTag = cipher.getAuthTag();
 
-    // Pack: [IV][authTag][ciphertext]
-    const packed = Buffer.concat([iv, authTag, encrypted]);
+    // Pack v2: [salt][IV][authTag][ciphertext]
+    const packed = Buffer.concat([salt, iv, authTag, encrypted]);
     return ENCRYPTED_PREFIX + packed.toString('base64');
 }
 
 /**
  * Decrypt an encrypted field string back to plaintext.
- * Expects the prefixed format produced by encryptField.
+ * Auto-detects v2 (random salt) vs v1 (static salt) format.
  */
 export function decryptField(ciphertext: string): string {
     return decryptFieldWithKey(getEncryptionKey(), ciphertext);
@@ -66,6 +72,7 @@ export function decryptField(ciphertext: string): string {
 
 /**
  * Decrypt using a specific key (used internally and for key rotation).
+ * Tries v2 format first, falls back to v1 legacy format.
  */
 function decryptFieldWithKey(passphrase: string, ciphertext: string): string {
     if (!ciphertext.startsWith(ENCRYPTED_PREFIX)) {
@@ -75,6 +82,26 @@ function decryptFieldWithKey(passphrase: string, ciphertext: string): string {
     const raw = ciphertext.slice(ENCRYPTED_PREFIX.length);
     const packed = Buffer.from(raw, 'base64');
 
+    // Try v2 format first (with per-value salt)
+    if (packed.length >= SALT_LENGTH + IV_LENGTH + AUTH_TAG_LENGTH) {
+        try {
+            const salt = packed.subarray(0, SALT_LENGTH);
+            const iv = packed.subarray(SALT_LENGTH, SALT_LENGTH + IV_LENGTH);
+            const authTag = packed.subarray(SALT_LENGTH + IV_LENGTH, SALT_LENGTH + IV_LENGTH + AUTH_TAG_LENGTH);
+            const encrypted = packed.subarray(SALT_LENGTH + IV_LENGTH + AUTH_TAG_LENGTH);
+
+            const key = deriveKey(passphrase, salt);
+            const decipher = createDecipheriv(ALGORITHM, key, iv);
+            decipher.setAuthTag(authTag);
+
+            const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+            return decrypted.toString('utf8');
+        } catch {
+            // v2 decryption failed — try v1 legacy format below
+        }
+    }
+
+    // Fallback: v1 legacy format (static salt)
     if (packed.length < IV_LENGTH + AUTH_TAG_LENGTH) {
         throw new Error('Encrypted value is too short to be valid');
     }
@@ -83,7 +110,7 @@ function decryptFieldWithKey(passphrase: string, ciphertext: string): string {
     const authTag = packed.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
     const encrypted = packed.subarray(IV_LENGTH + AUTH_TAG_LENGTH);
 
-    const key = deriveKey(passphrase);
+    const key = deriveKey(passphrase, LEGACY_SALT);
     const decipher = createDecipheriv(ALGORITHM, key, iv);
     decipher.setAuthTag(authTag);
 
@@ -111,20 +138,19 @@ export function isEncrypted(value: string): boolean {
 
 /**
  * Re-encrypt a ciphertext from an old key to a new key.
- * Useful during key rotation: decrypt with the old key, then encrypt with the new key.
+ * Always produces v2 format (random salt) output.
  */
 export function rotateEncryption(oldKey: string, newKey: string, ciphertext: string): string {
-    // Decrypt with the old key
     const plaintext = decryptFieldWithKey(oldKey, ciphertext);
 
-    // Encrypt with the new key
-    const key = deriveKey(newKey);
+    const salt = randomBytes(SALT_LENGTH);
+    const key = deriveKey(newKey, salt);
     const iv = randomBytes(IV_LENGTH);
 
     const cipher = createCipheriv(ALGORITHM, key, iv);
     const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
     const authTag = cipher.getAuthTag();
 
-    const packed = Buffer.concat([iv, authTag, encrypted]);
+    const packed = Buffer.concat([salt, iv, authTag, encrypted]);
     return ENCRYPTED_PREFIX + packed.toString('base64');
 }
