@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { Redis } from '@upstash/redis';
 
 interface CacheEntry {
     key: string;
@@ -7,8 +8,8 @@ interface CacheEntry {
     model: string;
     response: string;
     hitCount: number;
-    createdAt: Date;
-    lastAccessedAt: Date;
+    createdAt: string; // ISO string for JSON serialization
+    lastAccessedAt: string; // ISO string for JSON serialization
     ttl: number;
     metadata?: {
         inputTokens?: number;
@@ -42,18 +43,37 @@ const MAX_CACHE_SIZE = 5000;
 const CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 minutes
 
 class SemanticCache {
-    private cache: Map<string, CacheEntry>;
-    private accessOrder: string[]; // For LRU eviction
+    private cache: Map<string, CacheEntry>; // In-memory fallback / dev store
+    private accessOrder: string[]; // For LRU eviction (in-memory only)
     private totalHits: number;
     private totalMisses: number;
     private cleanupTimer?: NodeJS.Timeout;
+    private redis: Redis | null = null;
+    private readonly REDIS_PREFIX = 'scache:';
+    private readonly TTL_SECONDS: number;
 
     constructor() {
         this.cache = new Map();
         this.accessOrder = [];
         this.totalHits = 0;
         this.totalMisses = 0;
+        this.TTL_SECONDS = Math.ceil(DEFAULT_TTL / 1000);
+        this.initRedis();
         this.startAutoCleanup();
+    }
+
+    private initRedis(): void {
+        const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+        const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+        if (redisUrl && redisToken) {
+            try {
+                this.redis = new Redis({ url: redisUrl, token: redisToken });
+                console.log('[SemanticCache] Using Redis backing store');
+            } catch (err) {
+                console.warn('[SemanticCache] Failed to init Redis, using in-memory:', err);
+                this.redis = null;
+            }
+        }
     }
 
     /**
@@ -93,11 +113,7 @@ class SemanticCache {
     ): void {
         const normalizedQuery = this.normalizeQuery(query);
         const key = this.getCacheKey(normalizedQuery, model);
-
-        // Check if we need to evict (LRU)
-        if (this.cache.size >= MAX_CACHE_SIZE && !this.cache.has(key)) {
-            this.evictLRU();
-        }
+        const now = new Date().toISOString();
 
         const entry: CacheEntry = {
             key,
@@ -106,24 +122,54 @@ class SemanticCache {
             model,
             response,
             hitCount: 0,
-            createdAt: new Date(),
-            lastAccessedAt: new Date(),
+            createdAt: now,
+            lastAccessedAt: now,
             ttl: DEFAULT_TTL,
             metadata,
         };
 
+        // Write to Redis if available (fire-and-forget)
+        if (this.redis) {
+            this.redis
+                .set(this.REDIS_PREFIX + key, JSON.stringify(entry), { ex: this.TTL_SECONDS })
+                .catch(() => {});
+        }
+
+        // Also keep in local cache for fast reads
+        if (this.cache.size >= MAX_CACHE_SIZE && !this.cache.has(key)) {
+            this.evictLRU();
+        }
         this.cache.set(key, entry);
         this.updateAccessOrder(key);
     }
 
     /**
-     * Find cached response
+     * Find cached response (checks local cache first, then Redis)
      */
-    lookupCache(query: string, model: string): CacheLookupResult {
+    async lookupCache(query: string, model: string): Promise<CacheLookupResult> {
         const normalizedQuery = this.normalizeQuery(query);
         const key = this.getCacheKey(normalizedQuery, model);
+        const now = new Date();
 
-        const entry = this.cache.get(key);
+        // Check local cache first
+        let entry = this.cache.get(key);
+
+        // On local miss, check Redis
+        if (!entry && this.redis) {
+            try {
+                const raw = await this.redis.get<string>(this.REDIS_PREFIX + key);
+                if (raw) {
+                    entry = typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as CacheEntry);
+                    // Populate local cache for subsequent fast reads
+                    if (entry) {
+                        this.cache.set(key, entry);
+                        this.updateAccessOrder(key);
+                    }
+                }
+            } catch {
+                // Redis read failed — treat as miss
+            }
+        }
 
         if (!entry) {
             this.totalMisses++;
@@ -131,20 +177,28 @@ class SemanticCache {
         }
 
         // Check TTL
-        const now = new Date();
-        const age = now.getTime() - entry.createdAt.getTime();
+        const age = now.getTime() - new Date(entry.createdAt).getTime();
         if (age > entry.ttl) {
             this.cache.delete(key);
             this.removeFromAccessOrder(key);
+            if (this.redis) this.redis.del(this.REDIS_PREFIX + key).catch(() => {});
             this.totalMisses++;
             return { hit: false };
         }
 
         // Update hit count and last accessed
         entry.hitCount++;
-        entry.lastAccessedAt = now;
+        entry.lastAccessedAt = now.toISOString();
         this.totalHits++;
         this.updateAccessOrder(key);
+
+        // Update Redis entry (fire-and-forget)
+        if (this.redis) {
+            const remainingTtl = Math.ceil((entry.ttl - age) / 1000);
+            this.redis
+                .set(this.REDIS_PREFIX + key, JSON.stringify(entry), { ex: remainingTtl })
+                .catch(() => {});
+        }
 
         return {
             hit: true,
@@ -202,14 +256,15 @@ class SemanticCache {
      * Remove entries older than TTL
      */
     evictStale(): number {
-        const now = new Date();
+        const now = Date.now();
         let evicted = 0;
 
         for (const [key, entry] of this.cache.entries()) {
-            const age = now.getTime() - entry.createdAt.getTime();
+            const age = now - new Date(entry.createdAt).getTime();
             if (age > entry.ttl) {
                 this.cache.delete(key);
                 this.removeFromAccessOrder(key);
+                if (this.redis) this.redis.del(this.REDIS_PREFIX + key).catch(() => {});
                 evicted++;
             }
         }
@@ -221,11 +276,11 @@ class SemanticCache {
      * Return estimated cost savings for period
      */
     getCostSavings(period?: number): number {
-        const cutoffTime = period ? new Date(Date.now() - period) : new Date(0);
+        const cutoffMs = period ? Date.now() - period : 0;
         let savings = 0;
 
         for (const entry of this.cache.values()) {
-            if (entry.lastAccessedAt >= cutoffTime) {
+            if (new Date(entry.lastAccessedAt).getTime() >= cutoffMs) {
                 savings += (entry.metadata?.costSaved || 0) * entry.hitCount;
             }
         }
