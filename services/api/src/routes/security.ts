@@ -7,8 +7,12 @@
 
 import { Hono } from 'hono';
 import { getSecretsHealth, getAccessLog } from '../lib/secrets-manager';
+import { requireAdmin } from './admin';
 
 const securityRoutes = new Hono();
+
+// All security routes require admin authentication
+securityRoutes.use('*', requireAdmin);
 
 // GET /security/secrets-health - Check secrets configuration
 securityRoutes.get('/secrets-health', (c) => {

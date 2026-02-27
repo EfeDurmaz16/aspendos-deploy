@@ -30,7 +30,7 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').filter(Boolean)
 /**
  * Middleware to check if user is an admin
  */
-async function requireAdmin(c: any, next: any) {
+export async function requireAdmin(c: any, next: any) {
     await requireAuth(c, async () => {});
 
     const userId = c.get('userId');
