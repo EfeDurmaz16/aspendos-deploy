@@ -1,4 +1,4 @@
-import { prisma } from '@aspendos/db';
+import { prisma } from './prisma';
 import { checkout, polar, portal } from '@polar-sh/better-auth';
 import { Polar } from '@polar-sh/sdk';
 import { betterAuth } from 'better-auth';
