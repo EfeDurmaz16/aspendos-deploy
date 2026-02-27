@@ -42,6 +42,27 @@ healthRoutes.get('/', async (c) => {
         dependencies.qdrant = { status: qdrantStatus };
     }
 
+    // Check Redis with timing
+    let redisStatus: 'up' | 'down' | 'not_configured' = 'not_configured';
+    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (redisUrl && redisToken) {
+        try {
+            const redisStart = Date.now();
+            const response = await fetch(`${redisUrl}/ping`, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${redisToken}` },
+                signal: AbortSignal.timeout(5000),
+            });
+            const redisLatency = Date.now() - redisStart;
+            redisStatus = response.ok ? 'up' : 'down';
+            dependencies.redis = { status: redisStatus as 'up' | 'down', latencyMs: redisLatency };
+        } catch {
+            redisStatus = 'down';
+            dependencies.redis = { status: 'down' };
+        }
+    }
+
     // Get circuit breaker states
     const circuitBreakers = {
         openai: breakers.openai.getState(),
@@ -57,6 +78,7 @@ healthRoutes.get('/', async (c) => {
         overallStatus = 'unhealthy';
     } else if (
         qdrantStatus === 'down' ||
+        redisStatus === 'down' ||
         Object.values(circuitBreakers).some((cb) => cb.state === 'OPEN')
     ) {
         overallStatus = 'degraded';
