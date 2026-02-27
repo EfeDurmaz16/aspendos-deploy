@@ -30,6 +30,37 @@ function isApiRoute(pathname: string): boolean {
 }
 
 /**
+ * Generate a cryptographic nonce for CSP headers (Edge-compatible).
+ */
+function generateNonce(): string {
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    return btoa(String.fromCharCode(...array));
+}
+
+/**
+ * Build Content-Security-Policy header with nonce for script-src.
+ */
+function buildCSP(nonce: string): string {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.yula.dev';
+    return [
+        "default-src 'self'",
+        `script-src 'self' 'nonce-${nonce}' https://cdn.onesignal.com`,
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob: https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
+        "font-src 'self' data:",
+        `connect-src 'self' ${apiUrl} https://yula.dev https://www.yula.dev https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
+        "frame-src 'self'",
+        "worker-src 'self' blob:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        'upgrade-insecure-requests',
+    ].join('; ');
+}
+
+/**
  * Lightweight Edge-compatible middleware.
  * Only checks cookie presence - actual session validation happens server-side.
  * This avoids importing Prisma/Better Auth which use Node.js APIs unsupported in Edge Runtime.
@@ -37,9 +68,21 @@ function isApiRoute(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
+    // Generate CSP nonce for every request
+    const nonce = generateNonce();
+
+    // Helper to create response with CSP headers
+    function withCSP(response: NextResponse): NextResponse {
+        if (process.env.NODE_ENV === 'production') {
+            response.headers.set('Content-Security-Policy', buildCSP(nonce));
+        }
+        response.headers.set('x-nonce', nonce);
+        return response;
+    }
+
     // Allow public page routes
     if (isPublicPageRoute(pathname)) {
-        return NextResponse.next();
+        return withCSP(NextResponse.next({ headers: { 'x-nonce': nonce } }));
     }
 
     // Allow public API routes (auth, webhooks, health)
@@ -67,11 +110,11 @@ export async function middleware(request: NextRequest) {
             url.searchParams.set('redirect', pathname);
             return NextResponse.redirect(url);
         }
-        return NextResponse.next();
+        return withCSP(NextResponse.next({ headers: { 'x-nonce': nonce } }));
     }
 
     // All other page routes are allowed
-    return NextResponse.next();
+    return withCSP(NextResponse.next({ headers: { 'x-nonce': nonce } }));
 }
 
 export const config = {

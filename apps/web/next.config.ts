@@ -29,8 +29,6 @@ const nextConfig: NextConfig = {
             'framer-motion',
             '@radix-ui/react-icons',
             'lucide-react',
-            '@hugeicons/react',
-            '@bettericons/react',
         ],
     },
 
@@ -68,32 +66,7 @@ const nextConfig: NextConfig = {
                         key: 'Permissions-Policy',
                         value: 'camera=(), microphone=(self), geolocation=()',
                     },
-                    // Content-Security-Policy - only enabled in production
-                    // Development needs more permissive settings for hot reload
-                    ...(process.env.NODE_ENV === 'production'
-                        ? [
-                              {
-                                  key: 'Content-Security-Policy',
-                                  value: [
-                                      "default-src 'self'",
-                                      // unsafe-inline required by Next.js for inline scripts/styles
-                                      // TODO: migrate to nonce-based CSP via Next.js middleware when stable
-                                      "script-src 'self' 'unsafe-inline' https://cdn.onesignal.com",
-                                      "style-src 'self' 'unsafe-inline'",
-                                      "img-src 'self' data: blob: https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
-                                      "font-src 'self' data:",
-                                      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://api.yula.dev'} https://yula.dev https://www.yula.dev https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
-                                      "frame-src 'self'",
-                                      "worker-src 'self' blob:",
-                                      "object-src 'none'",
-                                      "base-uri 'self'",
-                                      "form-action 'self'",
-                                      "frame-ancestors 'none'",
-                                      'upgrade-insecure-requests',
-                                  ].join('; '),
-                              },
-                          ]
-                        : []),
+                    // CSP is now handled by middleware with per-request nonce (see middleware.ts)
                 ],
             },
         ];

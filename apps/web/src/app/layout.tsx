@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import Script from 'next/script';
 import './globals.css';
 import { SkipLink } from '@/components/accessibility/skip-link';
@@ -34,11 +35,14 @@ export const viewport: Viewport = {
     colorScheme: 'dark light',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const headersList = await headers();
+    const nonce = headersList.get('x-nonce') || undefined;
+
     return (
         <html lang="en" suppressHydrationWarning>
             <head>
@@ -59,21 +63,21 @@ export default function RootLayout({
                 <Script
                     id="organization-schema"
                     type="application/ld+json"
-                    strategy="afterInteractive"
+                    strategy="afterInteractive" nonce={nonce}
                 >
                     {serializeSchema(organizationSchema)}
                 </Script>
-                <Script id="website-schema" type="application/ld+json" strategy="afterInteractive">
+                <Script id="website-schema" type="application/ld+json" strategy="afterInteractive" nonce={nonce}>
                     {serializeSchema(websiteSchema)}
                 </Script>
                 <Script
                     id="software-app-schema"
                     type="application/ld+json"
-                    strategy="afterInteractive"
+                    strategy="afterInteractive" nonce={nonce}
                 >
                     {serializeSchema(softwareAppSchema)}
                 </Script>
-                <Script id="faq-schema" type="application/ld+json" strategy="afterInteractive">
+                <Script id="faq-schema" type="application/ld+json" strategy="afterInteractive" nonce={nonce}>
                     {serializeSchema(faqSchema)}
                 </Script>
             </head>
