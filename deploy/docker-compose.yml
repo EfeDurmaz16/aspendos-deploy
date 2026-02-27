@@ -4,6 +4,31 @@
 # Node 1 (frontend): docker compose --profile frontend up -d
 # Node 2 (backend):  docker compose --profile backend up -d
 # Single node (all):  docker compose --profile frontend --profile backend up -d
+#
+# ============================================
+# EXTERNAL SERVICE REQUIREMENTS
+# ============================================
+# The following services are NOT included in this compose file.
+# They must be provisioned as managed/external services:
+#
+# 1. PostgreSQL Database
+#    - Provider: Railway, Neon, Supabase, or self-hosted
+#    - Set via: DATABASE_URL in .env.production
+#    - Required: Yes (core data store)
+#    - Recommended: connection pooler (PgBouncer) with ?connection_limit=20&pool_timeout=30
+#
+# 2. Redis (Upstash)
+#    - Provider: Upstash (REST API), or self-hosted Redis
+#    - Set via: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN in .env.production
+#    - Required: Yes in production (rate limiting, semantic cache, session store)
+#    - Note: Without Redis, rate limiting falls back to in-memory (single-instance only)
+#
+# 3. Qdrant Vector Database
+#    - Provider: Qdrant Cloud, or self-hosted
+#    - Set via: QDRANT_URL, QDRANT_API_KEY in .env.production
+#    - Required: Yes (memory/embedding storage and semantic search)
+#
+# For self-hosted Redis + Qdrant, see: docker-compose.selfhosted.yml
 
 services:
   # ============================================
