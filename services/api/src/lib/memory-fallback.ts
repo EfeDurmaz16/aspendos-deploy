@@ -1,14 +1,13 @@
 /**
  * Memory Fallback Service
  *
- * Provides PostgreSQL-based fallback for memory operations when Qdrant is unavailable.
- * When the Qdrant circuit breaker is OPEN or operations fail, memories are written to
- * PostgreSQL and later synced back to Qdrant on recovery.
+ * Provides PostgreSQL-based fallback for memory operations when the vector
+ * store (Qdrant or SuperMemory) is unavailable.
  *
  * Flow:
- * 1. Qdrant write fails -> queueFallbackWrite() stores in PostgreSQL with qdrantSynced=false
- * 2. Periodic syncPendingMemories() picks up unsynced rows and writes them to Qdrant
- * 3. Qdrant search fails -> searchFallback() uses PostgreSQL ILIKE text search
+ * 1. Vector store write fails -> queueFallbackWrite() stores in PostgreSQL with decayScore=0
+ * 2. Periodic syncPendingMemories() picks up unsynced rows and writes them to the active backend
+ * 3. Vector store search fails -> searchFallback() uses PostgreSQL ILIKE text search
  */
 
 import { prisma } from '@aspendos/db';
@@ -114,27 +113,30 @@ export async function queueFallbackWrite(
 // ============================================
 
 /**
- * Sync memories that were written to PostgreSQL during Qdrant downtime
- * back to Qdrant. This should be called periodically (e.g., every 60s)
- * or when the Qdrant circuit breaker transitions from OPEN to CLOSED.
+ * Sync memories that were written to PostgreSQL during vector store downtime
+ * back to the active backend. Called periodically or on circuit recovery.
  *
- * Only attempts sync when the Qdrant breaker is not OPEN.
+ * Routes to SuperMemory or OpenMemory based on MEMORY_BACKEND env var.
  */
 export async function syncPendingMemories(client?: MemoryClient): Promise<SyncResult> {
     const memClient = client || mem;
     const result: SyncResult = { synced: 0, failed: 0, errors: [] };
 
-    // Do not attempt sync if Qdrant is still down
-    const qdrantState = breakers.qdrant.getState();
-    if (qdrantState.state === 'OPEN') {
-        console.warn('[MemoryFallback] Qdrant circuit still OPEN, skipping sync');
+    const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
+    const isSupermemory = memoryBackend === 'supermemory' || memoryBackend === 'dual';
+    const breaker = isSupermemory ? breakers.supermemory : breakers.qdrant;
+    const backendLabel = isSupermemory ? 'SuperMemory' : 'Qdrant';
+
+    // Do not attempt sync if the backend is still down
+    if (breaker.getState().state === 'OPEN') {
+        console.warn(`[MemoryFallback] ${backendLabel} circuit still OPEN, skipping sync`);
         return result;
     }
 
-    // Find all unsynced memories (decayScore=0, source=qdrant_fallback)
+    // Find all unsynced memories (decayScore=0, source=qdrant_fallback or supermemory_fallback)
     const pendingMemories = await prisma.memory.findMany({
         where: {
-            source: FALLBACK_SOURCE,
+            source: { in: [FALLBACK_SOURCE, 'supermemory_fallback'] },
             decayScore: 0,
             isActive: true,
         },
@@ -147,27 +149,38 @@ export async function syncPendingMemories(client?: MemoryClient): Promise<SyncRe
     }
 
     console.info(
-        `[MemoryFallback] Syncing ${pendingMemories.length} pending memories to Qdrant`
+        `[MemoryFallback] Syncing ${pendingMemories.length} pending memories to ${backendLabel}`
     );
 
     for (const memory of pendingMemories) {
         try {
-            // Write to Qdrant via OpenMemory SDK
-            await memClient.add(memory.content, {
-                user_id: memory.userId,
-                tags: memory.tags,
-                metadata: {
+            if (isSupermemory) {
+                // Sync to SuperMemory via service
+                const { addMemory } = await import('../services/supermemory.service');
+                await addMemory(memory.content, memory.userId, {
                     sector: memory.sector,
-                    pgFallbackId: memory.id,
-                },
-            });
+                    tags: memory.tags,
+                    metadata: { pgFallbackId: memory.id },
+                });
+            } else {
+                // Sync to Qdrant via OpenMemory SDK
+                await memClient.add(memory.content, {
+                    user_id: memory.userId,
+                    tags: memory.tags,
+                    metadata: {
+                        sector: memory.sector,
+                        pgFallbackId: memory.id,
+                    },
+                });
+            }
 
-            // Mark as synced: restore decayScore to 1.0 and update source
+            // Mark as synced
+            const syncedSource = isSupermemory ? 'supermemory_synced' : 'qdrant_synced';
             await prisma.memory.update({
                 where: { id: memory.id },
                 data: {
                     decayScore: 1.0,
-                    source: 'qdrant_synced',
+                    source: syncedSource,
                 },
             });
 
@@ -177,10 +190,10 @@ export async function syncPendingMemories(client?: MemoryClient): Promise<SyncRe
             result.failed++;
             result.errors.push(`Memory ${memory.id}: ${message}`);
 
-            // If Qdrant circuit opens again during sync, stop early
-            if (breakers.qdrant.getState().state === 'OPEN') {
+            // If circuit opens again during sync, stop early
+            if (breaker.getState().state === 'OPEN') {
                 console.warn(
-                    '[MemoryFallback] Qdrant circuit opened during sync, stopping batch'
+                    `[MemoryFallback] ${backendLabel} circuit opened during sync, stopping batch`
                 );
                 break;
             }
@@ -210,9 +223,7 @@ export async function searchFallback(
     query: string,
     limit = 5
 ): Promise<FallbackMemory[]> {
-    console.warn(
-        `[MemoryFallback] Using PostgreSQL text search fallback for user=${userId}`
-    );
+    console.warn(`[MemoryFallback] Using PostgreSQL text search fallback for user=${userId}`);
 
     // Split query into individual words for broader matching
     const queryWords = query

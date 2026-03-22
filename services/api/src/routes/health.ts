@@ -26,20 +26,23 @@ healthRoutes.get('/', async (c) => {
     }
     dependencies.database = { status: dbStatus, latencyMs: dbLatency };
 
-    // Check Qdrant (via circuit breaker) with actual ping
-    let qdrantStatus: 'up' | 'down' = 'down';
+    // Check memory backend (Qdrant or SuperMemory) via circuit breaker
+    const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
+    let memoryStatus: 'up' | 'down' = 'down';
+    const memoryLabel =
+        memoryBackend === 'supermemory' || memoryBackend === 'dual' ? 'supermemory' : 'qdrant';
+    const breaker = memoryLabel === 'supermemory' ? breakers.supermemory : breakers.qdrant;
     try {
-        const qdrantStart = Date.now();
-        await breakers.qdrant.execute(async () => {
+        const memStart = Date.now();
+        await breaker.execute(async () => {
             const { searchMemories } = await import('../services/memory-router.service');
-            // Lightweight probe: search with empty query, limit 1
             await searchMemories('health-check-probe', 'system', { limit: 1 });
         });
-        const qdrantLatency = Date.now() - qdrantStart;
-        qdrantStatus = 'up';
-        dependencies.qdrant = { status: qdrantStatus, latencyMs: qdrantLatency };
+        const memLatency = Date.now() - memStart;
+        memoryStatus = 'up';
+        dependencies[memoryLabel] = { status: memoryStatus, latencyMs: memLatency };
     } catch {
-        dependencies.qdrant = { status: qdrantStatus };
+        dependencies[memoryLabel] = { status: memoryStatus };
     }
 
     // Check Redis with timing

@@ -58,11 +58,16 @@ export async function checkCriticalReadiness(): Promise<CriticalReadinessReport>
         );
     }
 
-    const qdrantState = breakers.qdrant.getState().state;
-    const memoryFallbackMode = qdrantState === 'OPEN';
+    const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
+    const isSupermemory = memoryBackend === 'supermemory' || memoryBackend === 'dual';
+    const breaker = isSupermemory ? breakers.supermemory : breakers.qdrant;
+    const circuitState = breaker.getState().state;
+    const memoryFallbackMode = circuitState === 'OPEN';
     if (sharedMemoryStatus !== 'blocked' && memoryFallbackMode) {
         sharedMemoryStatus = 'degraded';
-        warnings.push('Shared memory is running in fallback mode (vector store circuit is OPEN).');
+        warnings.push(
+            `Shared memory is running in fallback mode (${isSupermemory ? 'SuperMemory' : 'Qdrant'} circuit is OPEN).`
+        );
     }
 
     // 2) Proactive callback readiness (PAC / scheduler)
@@ -146,7 +151,8 @@ export async function checkCriticalReadiness(): Promise<CriticalReadinessReport>
                 details: {
                     memoryCount,
                     memorySearchProbe,
-                    qdrantCircuit: qdrantState,
+                    memoryBackend,
+                    memoryCircuit: circuitState,
                     fallbackMode: memoryFallbackMode,
                     sharedContextEnabled: true,
                 },
