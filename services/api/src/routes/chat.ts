@@ -27,8 +27,9 @@ import { maybeCreateSpendingNotification } from '../services/billing.service';
 import * as chatService from '../services/chat.service';
 import { extractMemoriesFromExchange, getMemoryAgent } from '../services/memory-agent';
 import * as openMemory from '../services/memory-router.service';
+import { supermemory as smFeatures } from '../services/memory-router.service';
 import { createReminder, detectCommitments, getPACSettings } from '../services/pac.service';
-import { getToolsForTier, type UserTier } from '../tools';
+import { getToolsForTier, getToolsForTierWithSupermemory, type UserTier } from '../tools';
 import {
     chatIdParamSchema,
     createChatSchema,
@@ -335,8 +336,12 @@ app.post(
         const decision = await memoryAgent.decideMemoryUsage(userId, content);
 
         // ========================================
-        // OPENMEMORY RETRIEVAL
+        // MEMORY RETRIEVAL
         // ========================================
+        const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
+        const useSupermemoryWrapper =
+            (memoryBackend === 'supermemory' || memoryBackend === 'dual') && decision.useMemory;
+
         let memoriesUsed: {
             id: string;
             content: string;
@@ -345,7 +350,9 @@ app.post(
             trace?: { recall_reason: string };
         }[] = [];
 
-        if (decision.useMemory) {
+        // When using SuperMemory wrapper, it auto-injects memories into the system prompt.
+        // Only do manual retrieval for openmemory/off backends.
+        if (decision.useMemory && !useSupermemoryWrapper) {
             try {
                 const memories = await openMemory.searchMemories(content, userId, { limit: 5 });
                 memoriesUsed = memories.map((m) => ({
@@ -356,7 +363,7 @@ app.post(
                     trace: m.trace,
                 }));
             } catch (error) {
-                log.error('OpenMemory search failed', { metadata: { error: String(error) } });
+                log.error('Memory search failed', { metadata: { error: String(error) } });
                 // Continue without memory context
             }
         }
@@ -368,10 +375,15 @@ app.post(
         }));
 
         // Build system prompt with memory context
-        const systemPrompt = buildSystemPrompt(decision, memoriesUsed, enable_thinking);
+        // When using SuperMemory wrapper, it injects memories directly - skip manual injection
+        const systemPrompt = buildSystemPrompt(decision, memoriesUsed, enable_thinking, {
+            skipMemoryInjection: useSupermemoryWrapper,
+        });
 
-        // Get tools for user's tier
-        const tools = getToolsForTier(userTier, userId);
+        // Get tools for user's tier (with SuperMemory tools when enabled)
+        const tools = useSupermemoryWrapper
+            ? await getToolsForTierWithSupermemory(userTier, userId)
+            : getToolsForTier(userTier, userId);
 
         // Merge MCP tools if available
         let allTools = { ...tools };
@@ -392,8 +404,25 @@ app.post(
                 // Use fallback-aware model resolution (auto-switches provider if circuit breaker is open)
                 const { model: resolvedModel, actualModelId } = getModelWithFallback(smartModelId);
 
+                // Wrap model with SuperMemory for automatic memory injection when enabled
+                let streamModel = resolvedModel;
+                if (useSupermemoryWrapper) {
+                    try {
+                        const { withSupermemory } = await import('@supermemory/tools/ai-sdk');
+                        streamModel = withSupermemory(resolvedModel, {
+                            apiKey: process.env.SUPERMEMORY_API_KEY!,
+                            containerTags: [`user_${userId}`],
+                        });
+                    } catch (smError) {
+                        log.error('SuperMemory wrapper failed, using base model', {
+                            metadata: { error: String(smError) },
+                        });
+                        // Falls back to base model without memory injection
+                    }
+                }
+
                 const result = streamText({
-                    model: resolvedModel,
+                    model: streamModel,
                     system: systemPrompt,
                     messages: history,
                     tools: allTools,
@@ -437,11 +466,25 @@ app.post(
                         // Auto-extract memories from conversation (fire-and-forget)
                         // Only for PRO+ tiers to control API costs
                         if (userTier === 'PRO' || userTier === 'ULTRA') {
-                            extractMemoriesFromExchange(userId, content, text).catch((err) =>
-                                log.error('Memory auto-extraction failed', {
-                                    metadata: { error: String(err) },
-                                })
-                            );
+                            if (useSupermemoryWrapper) {
+                                // SuperMemory conversation API handles extraction with smart diffing
+                                smFeatures
+                                    .processConversation(chatId, userId, [
+                                        { role: 'user', content },
+                                        { role: 'assistant', content: text },
+                                    ])
+                                    .catch((err) =>
+                                        log.error('SuperMemory conversation extraction failed', {
+                                            metadata: { error: String(err) },
+                                        })
+                                    );
+                            } else {
+                                extractMemoriesFromExchange(userId, content, text).catch((err) =>
+                                    log.error('Memory auto-extraction failed', {
+                                        metadata: { error: String(err) },
+                                    })
+                                );
+                            }
                         }
 
                         // Self-reflection: score response quality (fire-and-forget)

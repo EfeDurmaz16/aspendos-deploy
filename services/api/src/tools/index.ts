@@ -253,6 +253,28 @@ export const currentTimeTool = tool({
 export type UserTier = 'FREE' | 'STARTER' | 'PRO' | 'ULTRA';
 
 /**
+ * Get SuperMemory tools if the backend is supermemory/dual.
+ * Returns null if not using SuperMemory.
+ */
+async function getSupermemoryTools(
+    userId: string
+): Promise<Record<string, ReturnType<typeof tool>> | null> {
+    const backend = process.env.MEMORY_BACKEND || 'openmemory';
+    if (backend !== 'supermemory' && backend !== 'dual') return null;
+    if (!process.env.SUPERMEMORY_API_KEY) return null;
+
+    try {
+        const { supermemoryTools } = await import('@supermemory/tools/ai-sdk');
+        return supermemoryTools({
+            apiKey: process.env.SUPERMEMORY_API_KEY,
+            containerTags: [`user_${userId}`],
+        });
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Get tools available for a user's tier
  */
 export function getToolsForTier(tier: UserTier, userId: string) {
@@ -274,6 +296,29 @@ export function getToolsForTier(tier: UserTier, userId: string) {
 
     // ULTRA tier could add more tools in the future
     // e.g., web_search, code_execution, etc.
+
+    return baseTools;
+}
+
+/**
+ * Get tools with optional SuperMemory tools merged in.
+ * When SuperMemory backend is active, replaces custom memory tools with
+ * SuperMemory's native tools (searchMemories, addMemory, getProfile, etc.)
+ */
+export async function getToolsForTierWithSupermemory(tier: UserTier, userId: string) {
+    const baseTools = getToolsForTier(tier, userId);
+    const smTools = await getSupermemoryTools(userId);
+
+    if (smTools) {
+        // SuperMemory tools replace custom memory tools
+        const {
+            memory_search: _ms,
+            memory_add: _ma,
+            memory_reinforce: _mr,
+            ...nonMemoryTools
+        } = baseTools as any;
+        return { ...nonMemoryTools, ...smTools };
+    }
 
     return baseTools;
 }
