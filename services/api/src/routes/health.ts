@@ -31,7 +31,7 @@ healthRoutes.get('/', async (c) => {
     try {
         const qdrantStart = Date.now();
         await breakers.qdrant.execute(async () => {
-            const { searchMemories } = await import('../services/openmemory.service');
+            const { searchMemories } = await import('../services/memory-router.service');
             // Lightweight probe: search with empty query, limit 1
             await searchMemories('health-check-probe', 'system', { limit: 1 });
         });

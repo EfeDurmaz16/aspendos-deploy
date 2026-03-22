@@ -12,9 +12,8 @@
  * - Memory consolidation pipeline (dedup + decay)
  */
 
-import { gateway } from 'ai';
-import { generateText } from 'ai';
-import * as openMemory from './openmemory.service';
+import { gateway, generateText } from 'ai';
+import * as openMemory from './memory-router.service';
 
 // ============================================
 // TYPES

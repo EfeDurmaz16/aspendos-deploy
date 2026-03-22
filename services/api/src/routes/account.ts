@@ -23,7 +23,7 @@ accountRoutes.delete('/', async (c) => {
 
     try {
         const { prisma } = await import('../lib/prisma');
-        const openMemory = await import('../services/openmemory.service');
+        const openMemory = await import('../services/memory-router.service');
 
         // Delete all user data in dependency order
         await prisma.$transaction(async (tx) => {

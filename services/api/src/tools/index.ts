@@ -4,7 +4,7 @@
  */
 import { tool } from 'ai';
 import { z } from 'zod';
-import * as openMemory from '../services/openmemory.service';
+import * as openMemory from '../services/memory-router.service';
 
 // ============================================
 // MEMORY TOOLS
@@ -164,7 +164,7 @@ function safeMathEval(expr: string): number {
 
     function parseNumber(): number {
         const start = pos;
-        while (pos < str.length && (str[pos] >= '0' && str[pos] <= '9' || str[pos] === '.')) {
+        while (pos < str.length && ((str[pos] >= '0' && str[pos] <= '9') || str[pos] === '.')) {
             pos++;
         }
         if (start === pos) throw new Error(`Unexpected character: ${str[pos] || 'end of input'}`);

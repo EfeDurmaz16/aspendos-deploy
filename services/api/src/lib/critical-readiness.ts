@@ -1,6 +1,6 @@
-import { ScheduledTaskStatus, prisma } from '@aspendos/db';
+import { prisma, ScheduledTaskStatus } from '@aspendos/db';
 import { COUNCIL_PERSONAS } from '../services/council.service';
-import * as openMemory from '../services/openmemory.service';
+import * as openMemory from '../services/memory-router.service';
 import { parseTimeExpression } from '../services/scheduler.service';
 import { breakers } from './circuit-breaker';
 
@@ -97,7 +97,9 @@ export async function checkCriticalReadiness(): Promise<CriticalReadinessReport>
 
     if (pacStatus !== 'blocked' && !cronSecretConfigured) {
         pacStatus = 'degraded';
-        warnings.push('CRON_SECRET is missing. PAC execution endpoints are not secured for production.');
+        warnings.push(
+            'CRON_SECRET is missing. PAC execution endpoints are not secured for production.'
+        );
     }
 
     // 3) Council readiness
@@ -117,7 +119,9 @@ export async function checkCriticalReadiness(): Promise<CriticalReadinessReport>
 
     if (uniqueModelCount < 2) {
         councilStatus = 'blocked';
-        blockingIssues.push('Council model configuration is invalid: fewer than 2 distinct models.');
+        blockingIssues.push(
+            'Council model configuration is invalid: fewer than 2 distinct models.'
+        );
     }
 
     try {

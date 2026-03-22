@@ -10,7 +10,7 @@
  */
 
 import { prisma } from '../lib/prisma';
-import * as openMemory from './openmemory.service';
+import * as openMemory from './memory-router.service';
 
 const BATCH_SIZE = 10;
 const BATCH_DELAY_MS = 500;

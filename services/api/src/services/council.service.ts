@@ -7,7 +7,7 @@
 import { streamText } from 'ai';
 import { getModelWithFallback } from '../lib/ai-providers';
 import { prisma } from '../lib/prisma';
-import * as openMemory from './openmemory.service';
+import * as openMemory from './memory-router.service';
 
 // Persona types
 export type PersonaType = 'SCHOLAR' | 'CREATIVE' | 'PRACTICAL' | 'DEVILS_ADVOCATE';
@@ -337,7 +337,7 @@ export async function selectResponse(sessionId: string, userId: string, persona:
         });
 
         if (response?.content) {
-            const openMemory = await import('./openmemory.service');
+            const openMemory = await import('./memory-router.service');
             const personaName = COUNCIL_PERSONAS[persona]?.name || persona;
 
             // Save both preference pattern and the actual insight

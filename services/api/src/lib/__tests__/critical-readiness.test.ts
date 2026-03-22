@@ -19,7 +19,7 @@ vi.mock('../circuit-breaker', () => ({
     },
 }));
 
-vi.mock('../../services/openmemory.service', () => ({
+vi.mock('../../services/memory-router.service', () => ({
     searchMemories: vi.fn(),
 }));
 
@@ -37,9 +37,9 @@ vi.mock('../../services/council.service', () => ({
 }));
 
 import { prisma } from '@aspendos/db';
-import { breakers } from '../circuit-breaker';
-import { searchMemories } from '../../services/openmemory.service';
+import { searchMemories } from '../../services/memory-router.service';
 import { parseTimeExpression } from '../../services/scheduler.service';
+import { breakers } from '../circuit-breaker';
 import { checkCriticalReadiness } from '../critical-readiness';
 
 const mockPrisma = prisma as any;
@@ -103,8 +103,10 @@ describe('checkCriticalReadiness', () => {
 
         expect(report.status).toBe('blocked');
         expect(report.productionReady).toBe(false);
-        expect(report.blockingIssues.some((issue: string) => issue.includes('Memory table check failed'))).toBe(
-            true
-        );
+        expect(
+            report.blockingIssues.some((issue: string) =>
+                issue.includes('Memory table check failed')
+            )
+        ).toBe(true);
     });
 });

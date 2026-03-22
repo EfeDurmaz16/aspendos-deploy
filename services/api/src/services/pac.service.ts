@@ -253,7 +253,7 @@ export async function completeReminder(reminderId: string, userId: string) {
             where: { id: reminderId, userId },
         });
         if (reminder) {
-            const openMemory = await import('./openmemory.service');
+            const openMemory = await import('./memory-router.service');
             await openMemory.addMemory(`Completed task: ${reminder.content}`, userId, {
                 sector: 'episodic',
                 metadata: { source: 'pac_completion', reminderId },

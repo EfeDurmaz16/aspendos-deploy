@@ -22,7 +22,7 @@ vi.mock('../../middleware/auth', () => ({
 }));
 
 // Mock openmemory service
-vi.mock('../../services/openmemory.service', () => ({
+vi.mock('../../services/memory-router.service', () => ({
     verifyMemoryOwnership: vi.fn(),
     updateMemory: vi.fn(),
     deleteMemory: vi.fn(),
@@ -53,7 +53,8 @@ vi.mock('../../lib/auth', () => ({
     },
 }));
 
-import * as openMemory from '../../services/openmemory.service';
+import * as openMemory from '../../services/memory-router.service';
+
 const mockOpenMemory = openMemory as any;
 
 import memoryRoutes from '../memory';
@@ -234,9 +235,7 @@ describe('Memory Routes - Input Validation', () => {
         });
 
         it('should accept an empty object (all fields optional)', async () => {
-            const res = await app.request(
-                jsonRequest('PATCH', `/memory/dashboard/${validId}`, {})
-            );
+            const res = await app.request(jsonRequest('PATCH', `/memory/dashboard/${validId}`, {}));
             expect(res.status).toBe(200);
         });
 
@@ -272,9 +271,7 @@ describe('Memory Routes - Input Validation', () => {
 
     describe('DELETE /memory/dashboard/:id - param validation', () => {
         it('should reject an ID with special characters', async () => {
-            const res = await app.request(
-                jsonRequest('DELETE', '/memory/dashboard/bad!id%40here')
-            );
+            const res = await app.request(jsonRequest('DELETE', '/memory/dashboard/bad!id%40here'));
             expect(res.status).toBe(400);
             const json = await res.json();
             expect(json.error).toBe('Path parameter validation failed');
@@ -282,9 +279,7 @@ describe('Memory Routes - Input Validation', () => {
 
         it('should reject an ID that is too long', async () => {
             const longId = 'a'.repeat(129);
-            const res = await app.request(
-                jsonRequest('DELETE', `/memory/dashboard/${longId}`)
-            );
+            const res = await app.request(jsonRequest('DELETE', `/memory/dashboard/${longId}`));
             expect(res.status).toBe(400);
             const json = await res.json();
             expect(json.error).toBe('Path parameter validation failed');
@@ -315,9 +310,7 @@ describe('Memory Routes - Input Validation', () => {
 
     describe('DELETE /memory/:id - param validation', () => {
         it('should reject an ID with invalid characters', async () => {
-            const res = await app.request(
-                jsonRequest('DELETE', '/memory/bad!id%40here')
-            );
+            const res = await app.request(jsonRequest('DELETE', '/memory/bad!id%40here'));
             expect(res.status).toBe(400);
             const json = await res.json();
             expect(json.error).toBe('Path parameter validation failed');
@@ -325,9 +318,7 @@ describe('Memory Routes - Input Validation', () => {
 
         it('should accept a valid ID', async () => {
             mockOpenMemory.verifyMemoryOwnership.mockResolvedValue(true);
-            const res = await app.request(
-                jsonRequest('DELETE', '/memory/valid-id-456')
-            );
+            const res = await app.request(jsonRequest('DELETE', '/memory/valid-id-456'));
             expect(res.status).toBe(200);
         });
     });
@@ -338,9 +329,7 @@ describe('Memory Routes - Input Validation', () => {
 
     describe('POST /memory/reinforce/:id - param validation', () => {
         it('should reject an ID with invalid characters', async () => {
-            const res = await app.request(
-                jsonRequest('POST', '/memory/reinforce/bad!id%23')
-            );
+            const res = await app.request(jsonRequest('POST', '/memory/reinforce/bad!id%23'));
             expect(res.status).toBe(400);
             const json = await res.json();
             expect(json.error).toBe('Path parameter validation failed');
@@ -348,17 +337,13 @@ describe('Memory Routes - Input Validation', () => {
 
         it('should reject an ID that is too long', async () => {
             const longId = 'x'.repeat(129);
-            const res = await app.request(
-                jsonRequest('POST', `/memory/reinforce/${longId}`)
-            );
+            const res = await app.request(jsonRequest('POST', `/memory/reinforce/${longId}`));
             expect(res.status).toBe(400);
         });
 
         it('should accept a valid ID and reinforce', async () => {
             mockOpenMemory.verifyMemoryOwnership.mockResolvedValue(true);
-            const res = await app.request(
-                jsonRequest('POST', '/memory/reinforce/valid-mem-789')
-            );
+            const res = await app.request(jsonRequest('POST', '/memory/reinforce/valid-mem-789'));
             expect(res.status).toBe(200);
             expect(mockOpenMemory.reinforceMemory).toHaveBeenCalledWith('valid-mem-789');
         });
@@ -370,18 +355,14 @@ describe('Memory Routes - Input Validation', () => {
 
     describe('POST /memory - body validation', () => {
         it('should reject missing content', async () => {
-            const res = await app.request(
-                jsonRequest('POST', '/memory', { sector: 'semantic' })
-            );
+            const res = await app.request(jsonRequest('POST', '/memory', { sector: 'semantic' }));
             expect(res.status).toBe(400);
             const json = await res.json();
             expect(json.error).toBe('Validation failed');
         });
 
         it('should reject empty content', async () => {
-            const res = await app.request(
-                jsonRequest('POST', '/memory', { content: '' })
-            );
+            const res = await app.request(jsonRequest('POST', '/memory', { content: '' }));
             expect(res.status).toBe(400);
         });
 
@@ -449,9 +430,7 @@ describe('Memory Routes - Input Validation', () => {
         });
 
         it('should reject non-string content', async () => {
-            const res = await app.request(
-                jsonRequest('POST', '/memory', { content: 12345 })
-            );
+            const res = await app.request(jsonRequest('POST', '/memory', { content: 12345 }));
             expect(res.status).toBe(400);
         });
     });
@@ -462,16 +441,12 @@ describe('Memory Routes - Input Validation', () => {
 
     describe('POST /memory/search - body validation', () => {
         it('should reject missing query', async () => {
-            const res = await app.request(
-                jsonRequest('POST', '/memory/search', { limit: 5 })
-            );
+            const res = await app.request(jsonRequest('POST', '/memory/search', { limit: 5 }));
             expect(res.status).toBe(400);
         });
 
         it('should reject empty query', async () => {
-            const res = await app.request(
-                jsonRequest('POST', '/memory/search', { query: '' })
-            );
+            const res = await app.request(jsonRequest('POST', '/memory/search', { query: '' }));
             expect(res.status).toBe(400);
         });
 
@@ -543,9 +518,7 @@ describe('Memory Routes - Input Validation', () => {
 
     describe('POST /memory/dashboard/bulk-delete - body validation', () => {
         it('should reject missing ids field', async () => {
-            const res = await app.request(
-                jsonRequest('POST', '/memory/dashboard/bulk-delete', {})
-            );
+            const res = await app.request(jsonRequest('POST', '/memory/dashboard/bulk-delete', {}));
             expect(res.status).toBe(400);
         });
 
@@ -555,7 +528,9 @@ describe('Memory Routes - Input Validation', () => {
             );
             expect(res.status).toBe(400);
             const json = await res.json();
-            expect(json.details.some((d: any) => d.message.includes('ids array is required'))).toBe(true);
+            expect(json.details.some((d: any) => d.message.includes('ids array is required'))).toBe(
+                true
+            );
         });
 
         it('should reject ids array exceeding 100 items', async () => {
@@ -707,9 +682,7 @@ describe('Memory Routes - Input Validation', () => {
 
     describe('Validation error response format', () => {
         it('should return 400 status code for validation errors', async () => {
-            const res = await app.request(
-                jsonRequest('POST', '/memory', { content: '' })
-            );
+            const res = await app.request(jsonRequest('POST', '/memory', { content: '' }));
             expect(res.status).toBe(400);
         });
 
@@ -726,9 +699,7 @@ describe('Memory Routes - Input Validation', () => {
         });
 
         it('should include path and message in each detail', async () => {
-            const res = await app.request(
-                jsonRequest('POST', '/memory', { content: 123 })
-            );
+            const res = await app.request(jsonRequest('POST', '/memory', { content: 123 }));
             expect(res.status).toBe(400);
             const json = await res.json();
             for (const detail of json.details) {

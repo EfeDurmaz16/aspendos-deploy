@@ -177,7 +177,7 @@ miscRoutes.get('/export', async (c) => {
 
     try {
         const { prisma } = await import('../lib/prisma');
-        const openMemory = await import('../services/openmemory.service');
+        const openMemory = await import('../services/memory-router.service');
 
         // Pagination: prevent OOM on large accounts
         const page = Math.max(1, parseInt(c.req.query('page') || '1', 10) || 1);

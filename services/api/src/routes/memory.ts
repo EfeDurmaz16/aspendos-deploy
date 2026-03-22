@@ -10,7 +10,7 @@ import { requireAuth } from '../middleware/auth';
 import { enforceTierLimit } from '../middleware/tier-enforcement';
 import { validateBody, validateParams } from '../middleware/validate';
 import { consolidateMemories, maybeAutoConsolidate } from '../services/memory-agent';
-import * as openMemory from '../services/openmemory.service';
+import * as openMemory from '../services/memory-router.service';
 import {
     addMemorySchema,
     bulkDeleteSchema,
@@ -85,48 +85,53 @@ app.get('/dashboard/list', async (c) => {
  * PATCH /api/memory/dashboard/:id - Update a memory
  * Note: OpenMemory doesn't support direct updates, so we delete and re-add
  */
-app.patch('/dashboard/:id', validateParams(memoryIdParamSchema), validateBody(updateMemorySchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { id: memoryId } = c.get('validatedParams') as { id: string };
-    const body = c.get('validatedBody') as {
-        content?: string;
-        sector?: string;
-        isPinned?: boolean;
-        metadata?: Record<string, unknown>;
-    };
+app.patch(
+    '/dashboard/:id',
+    validateParams(memoryIdParamSchema),
+    validateBody(updateMemorySchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { id: memoryId } = c.get('validatedParams') as { id: string };
+        const body = c.get('validatedBody') as {
+            content?: string;
+            sector?: string;
+            isPinned?: boolean;
+            metadata?: Record<string, unknown>;
+        };
 
-    // Verify ownership before update
-    const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
-    if (!isOwner) {
-        return c.json({ error: 'Memory not found' }, 404);
-    }
-
-    // Update memory
-    try {
-        const metadata = { ...body.metadata };
-        if (typeof body.isPinned === 'boolean') {
-            metadata.isPinned = body.isPinned;
+        // Verify ownership before update
+        const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+        if (!isOwner) {
+            return c.json({ error: 'Memory not found' }, 404);
         }
 
-        await openMemory.updateMemory(memoryId, body.content, {
-            sector: body.sector,
-            metadata: metadata,
-        });
+        // Update memory
+        try {
+            const metadata = { ...body.metadata };
+            if (typeof body.isPinned === 'boolean') {
+                metadata.isPinned = body.isPinned;
+            }
 
-        return c.json({
-            success: true,
-            memory: {
-                id: memoryId,
-                content: body.content,
+            await openMemory.updateMemory(memoryId, body.content, {
                 sector: body.sector,
                 metadata: metadata,
-                isPinned: metadata.isPinned,
-            },
-        });
-    } catch (_error) {
-        return c.json({ error: 'Failed to update memory' }, 500);
+            });
+
+            return c.json({
+                success: true,
+                memory: {
+                    id: memoryId,
+                    content: body.content,
+                    sector: body.sector,
+                    metadata: metadata,
+                    isPinned: metadata.isPinned,
+                },
+            });
+        } catch (_error) {
+            return c.json({ error: 'Failed to update memory' }, 500);
+        }
     }
-});
+);
 
 /**
  * DELETE /api/memory/dashboard/:id

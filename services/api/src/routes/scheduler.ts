@@ -12,8 +12,8 @@ import { validateBody, validateQuery } from '../middleware/validate';
 import { recordTokenUsage } from '../services/billing.service';
 import * as commitmentService from '../services/commitment-detector.service';
 import { consolidateMemories } from '../services/memory-agent';
+import * as openMemory from '../services/memory-router.service';
 import { sendNotification } from '../services/notification.service';
-import * as openMemory from '../services/openmemory.service';
 import * as schedulerService from '../services/scheduler.service';
 import {
     createScheduledTaskSchema,

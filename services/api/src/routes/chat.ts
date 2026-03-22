@@ -17,19 +17,17 @@ import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
 import { requireAuth } from '../middleware/auth';
 
 const log = createLogger({ action: 'chat' });
+
+import { classifyAIError, classifyAIErrorStatus } from '../lib/ai-error-classifier';
+import { moderateContent } from '../lib/content-moderation';
+import { buildSystemPrompt } from '../lib/system-prompt';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
 import { maybeCreateSpendingNotification } from '../services/billing.service';
 import * as chatService from '../services/chat.service';
-import {
-    extractMemoriesFromExchange,
-    getMemoryAgent,
-} from '../services/memory-agent';
-import * as openMemory from '../services/openmemory.service';
+import { extractMemoriesFromExchange, getMemoryAgent } from '../services/memory-agent';
+import * as openMemory from '../services/memory-router.service';
 import { createReminder, detectCommitments, getPACSettings } from '../services/pac.service';
-import { moderateContent } from '../lib/content-moderation';
-import { buildSystemPrompt } from '../lib/system-prompt';
-import { classifyAIError, classifyAIErrorStatus } from '../lib/ai-error-classifier';
 import { getToolsForTier, type UserTier } from '../tools';
 import {
     chatIdParamSchema,
@@ -440,7 +438,9 @@ app.post(
                         // Only for PRO+ tiers to control API costs
                         if (userTier === 'PRO' || userTier === 'ULTRA') {
                             extractMemoriesFromExchange(userId, content, text).catch((err) =>
-                                log.error('Memory auto-extraction failed', { metadata: { error: String(err) } })
+                                log.error('Memory auto-extraction failed', {
+                                    metadata: { error: String(err) },
+                                })
                             );
                         }
 
@@ -594,19 +594,19 @@ app.post(
                     confidence: m.salience || 0.8,
                 }));
             } catch (error) {
-                log.error('OpenMemory search failed in /multi', { metadata: { error: String(error) } });
+                log.error('OpenMemory search failed in /multi', {
+                    metadata: { error: String(error) },
+                });
                 // Continue without memory context
             }
         }
 
         const systemPrompt = buildSystemPrompt(decision, memoriesUsed, false);
 
-
         // Check token budget (estimate: models.length * 1000 tokens each)
         if (!(await billingService.hasTokens(userId, models.length * 1000))) {
             return c.json({ error: 'Insufficient token budget for multi-model comparison' }, 403);
         }
-
 
         // Save user message
         await chatService.createMessage({

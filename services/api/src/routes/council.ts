@@ -7,8 +7,8 @@ import { Hono } from 'hono';
 import { stream } from 'hono/streaming';
 import type { TierName } from '../config/tiers';
 import { getLimit } from '../config/tiers';
-import { prisma } from '../lib/prisma';
 import { moderateContent } from '../lib/content-moderation';
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
@@ -198,7 +198,9 @@ app.get('/sessions/:id/stream', validateParams(sessionIdParamSchema), async (c) 
             );
         };
 
-        personas.forEach((persona) => queueNext(persona));
+        for (const persona of personas) {
+            queueNext(persona);
+        }
 
         // Stream all persona chunks as soon as each one is ready (no head-of-line blocking).
         while (inFlight.size > 0) {
@@ -232,7 +234,9 @@ app.get('/sessions/:id/stream', validateParams(sessionIdParamSchema), async (c) 
                 generators.delete(persona);
                 completed.add(persona);
             } else if (type === 'error') {
-                await stream.write(`data: ${JSON.stringify({ persona, type: 'error', content })}\n\n`);
+                await stream.write(
+                    `data: ${JSON.stringify({ persona, type: 'error', content })}\n\n`
+                );
                 generators.delete(persona);
             }
         }
@@ -343,7 +347,7 @@ app.post(
             if (councilTier === 'PRO' || councilTier === 'ULTRA') {
                 const session = await councilService.getCouncilSession(sessionId, userId);
                 if (session) {
-                    const openMemory = await import('../services/openmemory.service');
+                    const openMemory = await import('../services/memory-router.service');
                     await openMemory.addMemory(
                         `Preferred AI persona "${persona}" for query type: ${session.query.slice(0, 100)}`,
                         userId,
