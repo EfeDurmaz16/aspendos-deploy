@@ -194,4 +194,9 @@ export const breakers = {
     groq: new CircuitBreaker({ name: 'Groq', failureThreshold: 3, resetTimeout: 15000 }),
     qdrant: new CircuitBreaker({ name: 'Qdrant', failureThreshold: 3, resetTimeout: 20000 }),
     google: new CircuitBreaker({ name: 'Google', failureThreshold: 5, resetTimeout: 30000 }),
+    supermemory: new CircuitBreaker({
+        name: 'SuperMemory',
+        failureThreshold: 3,
+        resetTimeout: 20000,
+    }),
 };

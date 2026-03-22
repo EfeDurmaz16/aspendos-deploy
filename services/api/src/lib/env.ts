@@ -17,6 +17,8 @@ const optionalEnvVars = [
     'SENTRY_DSN',
     'QDRANT_URL',
     'QDRANT_API_KEY',
+    'SUPERMEMORY_API_KEY',
+    'MEMORY_BACKEND', // openmemory | supermemory | dual | off
     'POLAR_ACCESS_TOKEN',
     'POLAR_WEBHOOK_SECRET',
     'POLAR_STARTER_ANNUAL_PRODUCT_ID',
