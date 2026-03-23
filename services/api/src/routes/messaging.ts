@@ -13,6 +13,8 @@ import { SlackGateway } from '../messaging/slack';
 import { TelegramGateway } from '../messaging/telegram';
 import { WhatsAppGateway } from '../messaging/whatsapp';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateParams } from '../middleware/validate';
+import { connectionIdParamSchema, createConnectionSchema } from '../validation/messaging.schema';
 
 const messagingRoutes = new Hono();
 
@@ -37,38 +39,48 @@ messagingRoutes.get('/connections', requireAuth, async (c) => {
 });
 
 // POST /messaging/connections - Link a new platform
-messagingRoutes.post('/connections', requireAuth, async (c) => {
-    const userId = c.get('userId') as string;
-    const body = await c.req.json();
+messagingRoutes.post(
+    '/connections',
+    requireAuth,
+    validateBody(createConnectionSchema),
+    async (c) => {
+        const userId = c.get('userId') as string;
+        const body = await c.req.json();
 
-    const { platform, platformUserId, metadata } = body;
-    if (!platform || !platformUserId) {
-        return c.json({ error: 'platform and platformUserId are required' }, 400);
+        const { platform, platformUserId, metadata } = body;
+        if (!platform || !platformUserId) {
+            return c.json({ error: 'platform and platformUserId are required' }, 400);
+        }
+
+        const connection = await prisma.platformConnection.upsert({
+            where: {
+                platform_platformUserId: { platform, platformUserId },
+            },
+            update: { userId, metadata, isActive: true },
+            create: { userId, platform, platformUserId, metadata },
+        });
+
+        return c.json({ connection }, 201);
     }
-
-    const connection = await prisma.platformConnection.upsert({
-        where: {
-            platform_platformUserId: { platform, platformUserId },
-        },
-        update: { userId, metadata, isActive: true },
-        create: { userId, platform, platformUserId, metadata },
-    });
-
-    return c.json({ connection }, 201);
-});
+);
 
 // DELETE /messaging/connections/:id - Unlink a platform
-messagingRoutes.delete('/connections/:id', requireAuth, async (c) => {
-    const userId = c.get('userId') as string;
-    const id = c.req.param('id');
+messagingRoutes.delete(
+    '/connections/:id',
+    requireAuth,
+    validateParams(connectionIdParamSchema),
+    async (c) => {
+        const userId = c.get('userId') as string;
+        const id = c.req.param('id');
 
-    await prisma.platformConnection.updateMany({
-        where: { id, userId },
-        data: { isActive: false },
-    });
+        await prisma.platformConnection.updateMany({
+            where: { id, userId },
+            data: { isActive: false },
+        });
 
-    return c.json({ success: true });
-});
+        return c.json({ success: true });
+    }
+);
 
 // ============================================
 // WEBHOOK ENDPOINTS (unauthenticated — verified by platform)

@@ -6,14 +6,24 @@
 
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
+import { validateBody, validateParams, validateQuery } from '../middleware/validate';
 import * as skillService from '../services/skill.service';
+import {
+    createSkillSchema,
+    executeSkillSchema,
+    executionIdParamSchema,
+    feedbackSchema,
+    listSkillsQuerySchema,
+    skillIdParamSchema,
+    updateSkillSchema,
+} from '../validation/skills.schema';
 
 const skillRoutes = new Hono();
 
 skillRoutes.use('*', requireAuth);
 
 // GET /skills - List available skills
-skillRoutes.get('/', async (c) => {
+skillRoutes.get('/', validateQuery(listSkillsQuerySchema), async (c) => {
     const userId = c.get('userId') as string;
     const category = c.req.query('category') as skillService.SkillCategory | undefined;
 
@@ -27,7 +37,7 @@ skillRoutes.get('/', async (c) => {
 });
 
 // GET /skills/:id - Get skill details with analytics
-skillRoutes.get('/:id', async (c) => {
+skillRoutes.get('/:id', validateParams(skillIdParamSchema), async (c) => {
     const skillId = c.req.param('id');
     const [skill, analytics] = await Promise.all([
         skillService.getSkill(skillId),
@@ -40,7 +50,7 @@ skillRoutes.get('/:id', async (c) => {
 });
 
 // POST /skills - Create a custom skill
-skillRoutes.post('/', async (c) => {
+skillRoutes.post('/', validateBody(createSkillSchema), async (c) => {
     const userId = c.get('userId') as string;
     const body = await c.req.json();
 
@@ -58,23 +68,28 @@ skillRoutes.post('/', async (c) => {
 });
 
 // PATCH /skills/:id - Update a skill
-skillRoutes.patch('/:id', async (c) => {
-    const userId = c.get('userId') as string;
-    const skillId = c.req.param('id');
-    const body = await c.req.json();
+skillRoutes.patch(
+    '/:id',
+    validateParams(skillIdParamSchema),
+    validateBody(updateSkillSchema),
+    async (c) => {
+        const userId = c.get('userId') as string;
+        const skillId = c.req.param('id');
+        const body = await c.req.json();
 
-    const existing = await skillService.getSkill(skillId);
-    if (!existing) return c.json({ error: 'Skill not found' }, 404);
-    if (existing.isSystem || (existing.createdBy && existing.createdBy !== userId)) {
-        return c.json({ error: 'Cannot modify this skill' }, 403);
+        const existing = await skillService.getSkill(skillId);
+        if (!existing) return c.json({ error: 'Skill not found' }, 404);
+        if (existing.isSystem || (existing.createdBy && existing.createdBy !== userId)) {
+            return c.json({ error: 'Cannot modify this skill' }, 403);
+        }
+
+        const skill = await skillService.updateSkill(skillId, body);
+        return c.json({ skill });
     }
-
-    const skill = await skillService.updateSkill(skillId, body);
-    return c.json({ skill });
-});
+);
 
 // DELETE /skills/:id - Delete a custom skill
-skillRoutes.delete('/:id', async (c) => {
+skillRoutes.delete('/:id', validateParams(skillIdParamSchema), async (c) => {
     const userId = c.get('userId') as string;
     const skillId = c.req.param('id');
 
@@ -89,35 +104,45 @@ skillRoutes.delete('/:id', async (c) => {
 });
 
 // POST /skills/:id/execute - Record a skill execution
-skillRoutes.post('/:id/execute', async (c) => {
-    const userId = c.get('userId') as string;
-    const skillId = c.req.param('id');
-    const body = await c.req.json();
+skillRoutes.post(
+    '/:id/execute',
+    validateParams(skillIdParamSchema),
+    validateBody(executeSkillSchema),
+    async (c) => {
+        const userId = c.get('userId') as string;
+        const skillId = c.req.param('id');
+        const body = await c.req.json();
 
-    const execution = await skillService.recordExecution({
-        skillId,
-        userId,
-        chatId: body.chatId,
-        input: body.input,
-        output: body.output,
-        success: body.success ?? true,
-        durationMs: body.durationMs ?? 0,
-    });
+        const execution = await skillService.recordExecution({
+            skillId,
+            userId,
+            chatId: body.chatId,
+            input: body.input,
+            output: body.output,
+            success: body.success ?? true,
+            durationMs: body.durationMs ?? 0,
+        });
 
-    return c.json({ execution }, 201);
-});
+        return c.json({ execution }, 201);
+    }
+);
 
-// POST /skills/:id/feedback - Rate a skill execution
-skillRoutes.post('/executions/:executionId/feedback', async (c) => {
-    const body = await c.req.json();
-    const executionId = c.req.param('executionId');
+// POST /skills/executions/:executionId/feedback - Rate a skill execution
+skillRoutes.post(
+    '/executions/:executionId/feedback',
+    validateParams(executionIdParamSchema),
+    validateBody(feedbackSchema),
+    async (c) => {
+        const body = await c.req.json();
+        const executionId = c.req.param('executionId');
 
-    const execution = await skillService.recordFeedback(executionId, body.rating);
-    return c.json({ execution });
-});
+        const execution = await skillService.recordFeedback(executionId, body.rating);
+        return c.json({ execution });
+    }
+);
 
 // GET /skills/:id/executions - Get execution history
-skillRoutes.get('/:id/executions', async (c) => {
+skillRoutes.get('/:id/executions', validateParams(skillIdParamSchema), async (c) => {
     const userId = c.get('userId') as string;
     const skillId = c.req.param('id');
 

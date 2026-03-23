@@ -6,7 +6,9 @@
 
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
+import { validateParams } from '../middleware/validate';
 import * as approvalService from '../services/approval.service';
+import { approvalIdParamSchema, toolAllowlistParamSchema } from '../validation/approvals.schema';
 
 const approvalRoutes = new Hono();
 
@@ -21,7 +23,7 @@ approvalRoutes.get('/', async (c) => {
 });
 
 // POST /approvals/:id/approve - Approve a pending request
-approvalRoutes.post('/:id/approve', async (c) => {
+approvalRoutes.post('/:id/approve', validateParams(approvalIdParamSchema), async (c) => {
     const userId = c.get('userId') as string;
     const approvalId = c.req.param('id');
 
@@ -45,7 +47,7 @@ approvalRoutes.post('/:id/approve', async (c) => {
 });
 
 // POST /approvals/:id/reject - Reject a pending request
-approvalRoutes.post('/:id/reject', async (c) => {
+approvalRoutes.post('/:id/reject', validateParams(approvalIdParamSchema), async (c) => {
     const userId = c.get('userId') as string;
     const approvalId = c.req.param('id');
 
@@ -69,11 +71,15 @@ approvalRoutes.get('/allowlist', async (c) => {
 });
 
 // DELETE /approvals/allowlist/:toolName - Remove tool from allowlist
-approvalRoutes.delete('/allowlist/:toolName', async (c) => {
-    const userId = c.get('userId') as string;
-    const toolName = c.req.param('toolName');
-    await approvalService.removeFromAllowlist(userId, toolName);
-    return c.json({ success: true });
-});
+approvalRoutes.delete(
+    '/allowlist/:toolName',
+    validateParams(toolAllowlistParamSchema),
+    async (c) => {
+        const userId = c.get('userId') as string;
+        const toolName = c.req.param('toolName');
+        await approvalService.removeFromAllowlist(userId, toolName);
+        return c.json({ success: true });
+    }
+);
 
 export default approvalRoutes;
