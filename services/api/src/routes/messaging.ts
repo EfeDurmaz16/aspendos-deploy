@@ -83,6 +83,67 @@ messagingRoutes.delete(
 );
 
 // ============================================
+// CHAT PIPELINE FOR INBOUND MESSAGES
+// ============================================
+
+async function processInboundChatMessage(
+    userId: string,
+    text: string,
+    gateway: { sendMessage: (id: string, content: any) => Promise<any> },
+    platformUserId: string
+) {
+    const { generateText, gateway: aiGateway } = await import('ai');
+    const { buildSystemPrompt } = await import('../lib/system-prompt');
+    const { getMemoryAgent } = await import('../services/memory-agent');
+    const memoryRouter = await import('../services/memory-router.service');
+
+    // Memory decision
+    const memoryAgent = getMemoryAgent();
+    const decision = await memoryAgent.decideMemoryUsage(userId, text);
+
+    // Retrieve memories if needed
+    let memories: Array<{ content: string; sector: string; confidence: number }> = [];
+    if (decision.useMemory) {
+        try {
+            const results = await memoryRouter.searchMemories(text, userId, { limit: 5 });
+            memories = results.map((m) => ({
+                content: m.content,
+                sector: m.sector || 'semantic',
+                confidence: m.salience || 0.8,
+            }));
+        } catch {
+            // Continue without memory
+        }
+    }
+
+    const systemPrompt = buildSystemPrompt(decision, memories);
+
+    // Generate response (non-streaming for messaging platforms)
+    const model = aiGateway('groq', { modelId: 'llama-3.3-70b-versatile' });
+    const result = await generateText({
+        model,
+        system: systemPrompt,
+        prompt: text,
+        temperature: 0.7,
+        maxTokens: 1000,
+    });
+
+    // Send response
+    await gateway.sendMessage(platformUserId, {
+        text: result.text || 'I could not generate a response.',
+        type: 'response',
+    });
+
+    // Auto-extract memory from exchange (fire-and-forget)
+    memoryRouter.supermemory
+        .processConversation(`msg_${Date.now()}`, userId, [
+            { role: 'user', content: text },
+            { role: 'assistant', content: result.text },
+        ])
+        .catch(() => {});
+}
+
+// ============================================
 // WEBHOOK ENDPOINTS (unauthenticated — verified by platform)
 // ============================================
 
@@ -145,12 +206,21 @@ messagingRoutes.post('/webhook/telegram', async (c) => {
         return c.json({ ok: true });
     }
 
-    // Regular message — route through the chat pipeline
-    // For now, respond with acknowledgment. Full pipeline integration in WS4 phase 2.
-    await gateway.sendMessage(message.platformUserId, {
-        text: 'Message received! Full chat integration coming soon.',
-        type: 'response',
-    });
+    // Route regular messages through the AI chat pipeline
+    try {
+        await processInboundChatMessage(
+            connection.userId,
+            message.text,
+            gateway,
+            message.platformUserId
+        );
+    } catch (error) {
+        console.error('[Messaging] Chat pipeline error:', error);
+        await gateway.sendMessage(message.platformUserId, {
+            text: 'Sorry, something went wrong processing your message. Please try again.',
+            type: 'response',
+        });
+    }
 
     return c.json({ ok: true });
 });
