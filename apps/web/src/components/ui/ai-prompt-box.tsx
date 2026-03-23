@@ -1,19 +1,19 @@
 'use client';
 
-import * as DialogPrimitive from '@radix-ui/react-dialog';
-import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
     ArrowUp,
-    BrainCog,
-    FolderCode,
-    Globe,
-    Mic,
+    Brain,
+    FolderOpen,
+    GlobeSimple,
+    Microphone,
     Paperclip,
     Square,
     StopCircle,
     X,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import { AnimatePresence, motion } from 'framer-motion';
 import React from 'react';
 
 // Utility function for className merging
@@ -381,7 +381,7 @@ const PromptInputTextarea: React.FC<
             typeof maxHeight === 'number'
                 ? `${Math.min(textareaRef.current.scrollHeight, maxHeight)}px`
                 : `min(${textareaRef.current.scrollHeight}px, ${maxHeight})`;
-    }, [value, maxHeight, disableAutosize]);
+    }, [maxHeight, disableAutosize]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -744,7 +744,7 @@ export const PromptInputBox = React.forwardRef(
                                                 damping: 25,
                                             }}
                                         >
-                                            <Globe
+                                            <GlobeSimple
                                                 className={cn(
                                                     'w-4 h-4',
                                                     showSearch ? 'text-[#1EAEDB]' : 'text-inherit'
@@ -800,7 +800,7 @@ export const PromptInputBox = React.forwardRef(
                                                 damping: 25,
                                             }}
                                         >
-                                            <BrainCog
+                                            <Brain
                                                 className={cn(
                                                     'w-4 h-4',
                                                     showThink ? 'text-[#8B5CF6]' : 'text-inherit'
@@ -856,7 +856,7 @@ export const PromptInputBox = React.forwardRef(
                                                 damping: 25,
                                             }}
                                         >
-                                            <FolderCode
+                                            <FolderOpen
                                                 className={cn(
                                                     'w-4 h-4',
                                                     showCanvas ? 'text-[#F97316]' : 'text-inherit'
@@ -917,7 +917,7 @@ export const PromptInputBox = React.forwardRef(
                                 ) : hasContent ? (
                                     <ArrowUp className="h-4 w-4 text-[#1F2023]" />
                                 ) : (
-                                    <Mic className="h-5 w-5 text-[#1F2023] transition-colors" />
+                                    <Microphone className="h-5 w-5 text-[#1F2023] transition-colors" />
                                 )}
                             </Button>
                         </PromptInputAction>

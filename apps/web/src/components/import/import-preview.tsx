@@ -1,16 +1,16 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
 import {
     ArrowRight,
-    CheckCheck,
-    ChevronDown,
-    ChevronRight,
-    Loader2,
-    MessageSquare,
-    Search,
+    Checks as CheckCheck,
+    CaretDown as ChevronDown,
+    CaretRight as ChevronRight,
+    CircleNotch as Loader2,
+    ChatCircle as MessageSquare,
+    MagnifyingGlass as Search,
     Square,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';

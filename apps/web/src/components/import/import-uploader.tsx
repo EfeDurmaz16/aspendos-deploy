@@ -1,7 +1,14 @@
 'use client';
 
+import {
+    Warning as AlertCircle,
+    CheckCircle as CheckCircle2,
+    FileText,
+    CircleNotch as Loader2,
+    UploadSimple as Upload,
+    X,
+} from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, CheckCircle2, FileText, Loader2, Upload, X } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -79,7 +86,7 @@ export function ImportUploader({
 
             const processedFiles: UploadedFile[] = filesToProcess
                 .filter((file) => {
-                    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+                    const ext = `.${file.name.split('.').pop()?.toLowerCase()}`;
                     return ACCEPTED_TYPES.includes(ext) && file.size <= MAX_FILE_SIZE;
                 })
                 .map((file) => ({
