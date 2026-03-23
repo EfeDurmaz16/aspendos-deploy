@@ -166,6 +166,67 @@ export async function getSkillsNeedingRefinement(userId?: string): Promise<strin
 }
 
 // ============================================
+// SKILL AUTO-REFINEMENT
+// ============================================
+
+export async function refineSkill(skillId: string): Promise<boolean> {
+    const skill = await prisma.skill.findUnique({ where: { id: skillId } });
+    if (!skill) return false;
+
+    const failures = await prisma.skillExecution.findMany({
+        where: { skillId, success: false },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { input: true },
+    });
+
+    if (failures.length === 0) return false;
+
+    const failureInputs = failures.map((f) => f.input).filter(Boolean);
+    const patterns = findCommonWords(failureInputs);
+    if (patterns.length === 0) return false;
+
+    const refinedPrompt = `${skill.systemPrompt}\n\nKnown failure patterns to handle carefully:\n${patterns.map((p) => `- ${p}`).join('\n')}`;
+
+    await prisma.skill.update({
+        where: { id: skillId },
+        data: { systemPrompt: refinedPrompt, version: { increment: 1 } },
+    });
+
+    return true;
+}
+
+export async function runRefinementCycle(userId?: string): Promise<number> {
+    const skillIds = await getSkillsNeedingRefinement(userId);
+    let refined = 0;
+    for (const id of skillIds) {
+        if (await refineSkill(id)) refined++;
+    }
+    return refined;
+}
+
+function findCommonWords(strings: string[]): string[] {
+    if (strings.length < 2) return [];
+    const wordCounts = new Map<string, number>();
+    for (const str of strings) {
+        const words = new Set(
+            str
+                .toLowerCase()
+                .split(/\s+/)
+                .filter((w) => w.length > 4)
+        );
+        for (const word of words) {
+            wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+        }
+    }
+    const threshold = Math.ceil(strings.length * 0.5);
+    return Array.from(wordCounts.entries())
+        .filter(([, count]) => count >= threshold)
+        .map(([word]) => word)
+        .slice(0, 5);
+}
+
+// ============================================
 // HELPERS
 // ============================================
 
