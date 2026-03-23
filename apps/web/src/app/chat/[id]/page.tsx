@@ -133,12 +133,22 @@ export default function ChatPage() {
         startOnboarding: startTour,
     } = useOnboardingStore();
 
-    // First-visit detection: show spotlight overlay if user hasn't completed or skipped onboarding
+    // First-visit detection: show spotlight overlay ONLY on first ever visit
+    // After completing or skipping, never auto-start again
+    const [tourChecked, setTourChecked] = useState(false);
     useEffect(() => {
-        if (isLoaded && isSignedIn && !hasCompleted && !hasSkipped && !onboardingActive) {
-            startTour();
+        if (tourChecked) return;
+        if (!isLoaded || !isSignedIn) return;
+        // Only auto-start if user has NEVER seen the tour (not completed, not skipped, not active)
+        if (!hasCompleted && !hasSkipped && !onboardingActive) {
+            // Check localStorage directly to avoid zustand hydration race
+            const stored = localStorage.getItem('yula-onboarding-store');
+            if (!stored) {
+                startTour();
+            }
         }
-    }, [isLoaded, isSignedIn, hasCompleted, hasSkipped, onboardingActive, startTour]);
+        setTourChecked(true);
+    }, [isLoaded, isSignedIn, hasCompleted, hasSkipped, onboardingActive, startTour, tourChecked]);
 
     // Sync mode from chat preference (map stored model to mode)
     useEffect(() => {
