@@ -40,10 +40,12 @@ aspendos/
 | Fonts | Geist, Geist Mono |
 | Backend API | Hono (Bun runtime) |
 | Database | PostgreSQL + Prisma |
-| Vector Store | Qdrant |
+| Memory | SuperMemory (migrating from Qdrant) |
 | AI Agents | LangGraph (Python) |
+| Agent Governance | Guard chain, approvals, trust scoring (AGIT/SARDIS/FIDES) |
 | Billing | Polar |
 | Auth | Better Auth |
+| Messaging | Telegram Bot (multi-platform gateway) |
 | Deployment | Railway, Vercel |
 
 ### Key Patterns
@@ -53,8 +55,11 @@ aspendos/
   - Fast route: Pattern matching for greetings and obvious memory queries (no LLM call)
   - LLM route: Groq Llama for complex routing decisions (sub-100ms)
   - Routes to: `direct_reply`, `rag_search`, `tool_call`, or `proactive_schedule`
-- **Memory**: Persistent memory via Qdrant embeddings + semantic search
+- **Memory**: SuperMemory API with `withSupermemory()` wrapper for automatic injection. Feature-flagged via `MEMORY_BACKEND` env var (openmemory/supermemory/dual/off). PostgreSQL always source of truth.
+- **Agent Governance**: Guard chain (ToolLoop, DangerousCommand, BlastRadius, RateLimit, Policy) → Action log → Human-in-the-loop approvals → Tool trust scoring (FIDES). Adapted from AGIT/SARDIS/FIDES.
+- **Skills**: 7 system skills + custom user skills with execution tracking and learning loop
 - **PAC Notifications**: Proactive AI Callbacks for scheduled reminders
+- **Messaging Gateway**: Abstract gateway with Telegram bot adapter, webhook-based
 - **Tiered Access**: Free/Pro/Enterprise with rate limiting
 - **Model Registry**: Multi-provider routing (Groq for speed, Anthropic for complex tasks)
 
@@ -105,11 +110,14 @@ aspendos/
 |----------|--------|-------------|
 | `/chat` | POST | Send message, get streaming response |
 | `/chat/history` | GET | Get conversation history |
-| `/memory` | GET/POST | Memory operations |
+| `/memory` | GET/POST | Memory operations (routed via MEMORY_BACKEND) |
 | `/memory/search` | POST | Semantic memory search |
 | `/scheduler` | POST | Schedule PAC notifications |
 | `/billing` | GET/POST | Subscription management |
 | `/notifications` | GET | Get pending notifications |
+| `/approvals` | GET/POST | Human-in-the-loop approval management |
+| `/skills` | GET/POST | Skill CRUD and execution tracking |
+| `/messaging` | GET/POST | Platform connections and webhooks |
 
 ### Web App Routes (`apps/web`)
 
@@ -119,6 +127,8 @@ aspendos/
 | `/chat` | Main chat interface |
 | `/chat/new` | New conversation |
 | `/memory` | Memory management |
+| `/agent-log` | Agent action log and approvals dashboard |
+| `/skills` | Skills management |
 | `/billing` | Subscription settings |
 | `/pricing` | Pricing page |
 
@@ -141,9 +151,16 @@ BETTER_AUTH_URL=...
 POLAR_ACCESS_TOKEN=...
 POLAR_WEBHOOK_SECRET=...
 
-# Vector Store
+# Memory (SuperMemory - replaces Qdrant)
+SUPERMEMORY_API_KEY=...
+MEMORY_BACKEND=supermemory     # openmemory | supermemory | dual | off
+
+# Vector Store (legacy - being replaced by SuperMemory)
 QDRANT_URL=...
 QDRANT_API_KEY=...
+
+# Messaging (optional)
+TELEGRAM_BOT_TOKEN=...
 ```
 
 ## Common Commands
