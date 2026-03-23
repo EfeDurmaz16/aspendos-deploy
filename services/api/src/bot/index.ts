@@ -10,50 +10,98 @@
  *   → streamText() with tools → thread.post(fullStream) → Platform
  */
 
-import { DiscordAdapter } from '@chat-adapter/discord';
-import { SlackAdapter } from '@chat-adapter/slack';
-import { PostgresState } from '@chat-adapter/state-pg';
-import { TelegramAdapter } from '@chat-adapter/telegram';
-import { WhatsAppAdapter } from '@chat-adapter/whatsapp';
 import { gateway, streamText } from 'ai';
-import { Chat } from 'chat';
 import { getSystemPrompt } from './prompt';
 import { getAgentTools } from './tools';
 
 // ============================================
-// STATE ADAPTER (PostgreSQL for thread subscriptions)
+// LAZY INITIALIZATION
+// Chat SDK packages are optional — the API starts without them.
 // ============================================
 
-const state = process.env.DATABASE_URL
-    ? new PostgresState({ connectionString: process.env.DATABASE_URL })
-    : undefined;
+let _bot: any = null;
+let _initAttempted = false;
 
-// ============================================
-// PLATFORM ADAPTERS
-// ============================================
+async function initBot() {
+    if (_initAttempted) return _bot;
+    _initAttempted = true;
 
-const adapters: Record<string, any> = {};
+    try {
+        const { Chat } = await import('chat');
+        const adapters: Record<string, any> = {};
 
-if (process.env.SLACK_BOT_TOKEN) {
-    adapters.slack = new SlackAdapter();
+        if (process.env.SLACK_BOT_TOKEN) {
+            const { SlackAdapter } = await import('@chat-adapter/slack');
+            adapters.slack = new SlackAdapter();
+        }
+        if (process.env.TELEGRAM_BOT_TOKEN) {
+            const { TelegramAdapter } = await import('@chat-adapter/telegram');
+            adapters.telegram = new TelegramAdapter();
+        }
+        if (process.env.DISCORD_BOT_TOKEN) {
+            const { DiscordAdapter } = await import('@chat-adapter/discord');
+            adapters.discord = new DiscordAdapter();
+        }
+        if (process.env.WHATSAPP_TOKEN) {
+            const { WhatsAppAdapter } = await import('@chat-adapter/whatsapp');
+            adapters.whatsapp = new WhatsAppAdapter();
+        }
+
+        let state: any;
+        if (process.env.DATABASE_URL) {
+            try {
+                const { PostgresState } = await import('@chat-adapter/state-pg');
+                state = new PostgresState({ connectionString: process.env.DATABASE_URL });
+            } catch {
+                // State adapter not available
+            }
+        }
+
+        _bot = new Chat({
+            adapters,
+            ...(state ? { state } : {}),
+        });
+
+        console.log(
+            '[Bot] Chat SDK initialized with adapters:',
+            Object.keys(adapters).join(', ') || 'none'
+        );
+    } catch (err) {
+        console.warn(
+            '[Bot] Chat SDK not available — install chat + @chat-adapter/* packages to enable messaging.'
+        );
+        _bot = null;
+    }
+
+    return _bot;
 }
-if (process.env.TELEGRAM_BOT_TOKEN) {
-    adapters.telegram = new TelegramAdapter();
-}
-if (process.env.DISCORD_BOT_TOKEN) {
-    adapters.discord = new DiscordAdapter();
-}
-if (process.env.WHATSAPP_TOKEN) {
-    adapters.whatsapp = new WhatsAppAdapter();
+
+// Export a getter that lazy-initializes
+export async function getBot() {
+    return initBot();
 }
 
-// ============================================
-// BOT INSTANCE
-// ============================================
-
-export const bot = new Chat({
-    adapters,
-    ...(state ? { state } : {}),
+// Proxy export for backwards compat — lazy on first access
+export const bot = new Proxy({} as any, {
+    get(_target, prop) {
+        if (prop === 'webhooks') {
+            return new Proxy(
+                {},
+                {
+                    get(_t, platform) {
+                        return async (req: Request, opts: any) => {
+                            const b = await initBot();
+                            return (
+                                b?.webhooks?.[platform]?.(req, opts) ??
+                                new Response('Bot not configured', { status: 503 })
+                            );
+                        };
+                    },
+                }
+            );
+        }
+        return _bot?.[prop];
+    },
 });
 
 // ============================================

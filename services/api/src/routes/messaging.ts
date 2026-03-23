@@ -11,7 +11,6 @@
 
 import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
-import { bot } from '../bot';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
 import { connectionIdParamSchema, createConnectionSchema } from '../validation/messaging.schema';
@@ -79,21 +78,37 @@ messagingRoutes.delete(
 // message normalization, streaming, and response delivery.
 // ============================================
 
+// Lazy-load the Chat SDK bot to avoid crashing if packages aren't installed
+async function getBot() {
+    try {
+        const { bot } = await import('../bot');
+        return bot;
+    } catch (err) {
+        console.warn(
+            '[Messaging] Chat SDK bot not available:',
+            err instanceof Error ? err.message : 'Unknown'
+        );
+        return null;
+    }
+}
+
 // POST /messaging/webhook/:platform - Universal webhook handler
 messagingRoutes.post('/webhook/:platform', async (c) => {
-    const platform = c.req.param('platform') as keyof typeof bot.webhooks;
-    const handler = bot.webhooks[platform];
+    const bot = await getBot();
+    if (!bot) {
+        return c.json({ error: 'Messaging bot not configured. Install chat SDK packages.' }, 503);
+    }
+
+    const platform = c.req.param('platform') as string;
+    const handler = (bot.webhooks as Record<string, any>)?.[platform];
 
     if (!handler) {
         return c.json({ error: `Unknown platform: ${platform}` }, 404);
     }
 
-    // Pass raw request to Chat SDK handler
-    // Chat SDK adapters handle verification, parsing, and response
     const response = await handler(c.req.raw, {
         waitUntil: (task: Promise<unknown>) => {
-            // Fire-and-forget for background tasks (memory extraction, etc.)
-            task.catch((err) => console.error('[Webhook] Background task failed:', err));
+            task.catch((err: unknown) => console.error('[Webhook] Background task failed:', err));
         },
     });
 
@@ -102,14 +117,18 @@ messagingRoutes.post('/webhook/:platform', async (c) => {
 
 // GET /messaging/webhook/:platform - Verification endpoints (WhatsApp, Slack)
 messagingRoutes.get('/webhook/:platform', async (c) => {
-    const platform = c.req.param('platform') as keyof typeof bot.webhooks;
-    const handler = bot.webhooks[platform];
+    const bot = await getBot();
+    if (!bot) {
+        return c.json({ error: 'Messaging bot not configured' }, 503);
+    }
+
+    const platform = c.req.param('platform') as string;
+    const handler = (bot.webhooks as Record<string, any>)?.[platform];
 
     if (!handler) {
         return c.json({ error: `Unknown platform: ${platform}` }, 404);
     }
 
-    // Some platforms (WhatsApp) use GET for webhook verification
     return handler(c.req.raw, {
         waitUntil: (task: Promise<unknown>) => {
             task.catch(() => {});

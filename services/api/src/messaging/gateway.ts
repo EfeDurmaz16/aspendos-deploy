@@ -6,7 +6,7 @@
  * to send notifications through the Chat SDK bot.
  */
 
-import { bot } from '../bot';
+// Bot is lazy-loaded to avoid crashes when Chat SDK packages aren't installed
 
 export interface MessageContent {
     text: string;
@@ -38,12 +38,17 @@ export async function sendToUser(
     content: MessageContent
 ): Promise<DeliveryResult> {
     try {
+        const { getBot } = await import('../bot');
+        const bot = await getBot();
+        if (!bot) {
+            return { success: false, error: 'Chat SDK bot not initialized', platform };
+        }
+
         const adapter = (bot as any).adapters?.[platform];
         if (!adapter) {
             return { success: false, error: `No adapter for platform: ${platform}`, platform };
         }
 
-        // Use Chat SDK's adapter to send
         await adapter.sendMessage(platformUserId, { text: content.text });
 
         return { success: true, platform };
