@@ -141,7 +141,7 @@ function UsageBar({ current, limit, label }: { current: number; limit: number; l
                 <div
                     className={cn(
                         'h-full transition-all rounded-full',
-                        isWarning ? 'bg-orange-500' : 'bg-primary'
+                        isWarning ? 'bg-foreground' : 'bg-primary'
                     )}
                     style={{ width: `${percentage}%` }}
                 />
@@ -208,8 +208,8 @@ function PricingContent() {
             <div className="container max-w-6xl mx-auto py-12 px-6">
                 {/* Success message */}
                 {success && (
-                    <Card className="mb-8 border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/20">
-                        <CardContent className="p-4 flex items-center justify-center gap-2 text-emerald-800 dark:text-emerald-200 font-medium">
+                    <Card className="mb-8 border-border bg-muted">
+                        <CardContent className="p-4 flex items-center justify-center gap-2 text-foreground font-medium">
                             <CheckCircle className="w-5 h-5" weight="fill" />
                             Payment successful! Your subscription is now active.
                         </CardContent>
@@ -306,7 +306,7 @@ function PricingContent() {
                                         </span>
                                     </div>
                                     {billingPeriod === 'annual' && (
-                                        <p className="text-sm font-medium text-emerald-600 mt-2">
+                                        <p className="text-sm font-medium text-muted-foreground mt-2">
                                             Save ${getAnnualSavings(tier.name)}/year
                                         </p>
                                     )}

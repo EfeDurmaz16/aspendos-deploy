@@ -25,7 +25,7 @@ const chatgptData: CompetitorData = {
         'Yula gives you everything ChatGPT offers, plus persistent memory, multi-model access, and the ability to import your ChatGPT history.',
     description:
         'ChatGPT by OpenAI is the most popular AI assistant, offering GPT-4 and GPT-4o models with a clean interface and plugin ecosystem.',
-    logoColor: 'bg-emerald-500',
+    logoColor: 'bg-zinc-700',
     strengths: [
         'First-mover advantage with massive user base',
         'GPT-4o with fast response times',

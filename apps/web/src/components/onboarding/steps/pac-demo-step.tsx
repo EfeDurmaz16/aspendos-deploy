@@ -11,9 +11,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-// Feature accent color: Electric Amber
-const ACCENT_COLOR = '#D97706';
-
 interface PacDemoStepProps {
     onNext: () => void;
     onPrev: () => void;
@@ -63,14 +60,12 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
         >
             {/* Header with accent */}
             <div
-                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl relative"
-                style={{ backgroundColor: `${ACCENT_COLOR}20` }}
+                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl relative bg-foreground/10"
             >
-                <Bell className="h-8 w-8" style={{ color: ACCENT_COLOR }} />
+                <Bell className="h-8 w-8 text-foreground" />
                 {/* Notification badge */}
                 <motion.div
-                    className="absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                    style={{ backgroundColor: ACCENT_COLOR }}
+                    className="absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold bg-foreground text-background"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.3, type: 'spring' }}
@@ -90,8 +85,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 <div className="rounded-xl border border-border bg-foreground/[0.02] overflow-hidden">
                     {/* Phone mockup header */}
                     <div
-                        className="flex items-center justify-between px-4 py-2"
-                        style={{ backgroundColor: `${ACCENT_COLOR}10` }}
+                        className="flex items-center justify-between px-4 py-2 bg-foreground/[0.03]"
                     >
                         <span className="text-xs text-muted-foreground">Yula Notification</span>
                         <div className="flex gap-1">
@@ -100,7 +94,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                                     key={i}
                                     className={cn(
                                         'h-1.5 w-1.5 rounded-full transition-colors',
-                                        i === activeNotification ? 'bg-amber-500' : 'bg-white/20'
+                                        i === activeNotification ? 'bg-foreground' : 'bg-foreground/10'
                                     )}
                                 />
                             ))}
@@ -128,7 +122,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
             {/* How it works - Trigger loading */}
             <div className="mb-6 w-full max-w-md">
                 <div className="flex items-start gap-3">
-                    <StepIndicator number={1} color={ACCENT_COLOR} />
+                    <StepIndicator number={1} />
                     <div>
                         <div className="text-sm font-medium text-foreground">
                             Just chat naturally
@@ -140,7 +134,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 </div>
                 <div className="ml-4 h-6 border-l border-dashed border-border" />
                 <div className="flex items-start gap-3">
-                    <StepIndicator number={2} color={ACCENT_COLOR} />
+                    <StepIndicator number={2} />
                     <div>
                         <div className="text-sm font-medium text-foreground">
                             Yula picks up on it
@@ -152,7 +146,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 </div>
                 <div className="ml-4 h-6 border-l border-dashed border-border" />
                 <div className="flex items-start gap-3">
-                    <StepIndicator number={3} color={ACCENT_COLOR} />
+                    <StepIndicator number={3} />
                     <div>
                         <div className="text-sm font-medium text-foreground">
                             You get pulled back in
@@ -187,9 +181,8 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                         onClick={onNext}
                         className={cn(
                             'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
-                            'text-white transition-colors hover:opacity-90'
+                            'bg-foreground text-background transition-colors hover:bg-foreground/90'
                         )}
-                        style={{ backgroundColor: ACCENT_COLOR }}
                     >
                         Next
                         <ArrowRight className="h-4 w-4" />
@@ -204,8 +197,7 @@ function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFIC
     return (
         <div className="flex gap-3">
             <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                style={{ backgroundColor: `${ACCENT_COLOR}20`, color: ACCENT_COLOR }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground/10 text-foreground"
             >
                 {notification.icon}
             </div>
@@ -221,8 +213,7 @@ function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFIC
                 </div>
                 <div className="mt-2 flex gap-2">
                     <button
-                        className="rounded-md px-3 py-1 text-xs font-medium text-white"
-                        style={{ backgroundColor: ACCENT_COLOR }}
+                        className="rounded-md px-3 py-1 text-xs font-medium bg-foreground text-background"
                     >
                         Reply
                     </button>
@@ -235,11 +226,10 @@ function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFIC
     );
 }
 
-function StepIndicator({ number, color }: { number: number; color: string }) {
+function StepIndicator({ number }: { number: number }) {
     return (
         <div
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-            style={{ backgroundColor: color }}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-foreground text-background"
         >
             {number}
         </div>

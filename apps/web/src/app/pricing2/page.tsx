@@ -74,37 +74,37 @@ function PricingTier({
             className={cn(
                 'relative p-8 lg:p-10 border transition-all duration-500 flex flex-col',
                 highlighted
-                    ? 'border-cyan-500 bg-gradient-to-b from-cyan-500/10 to-transparent scale-105 z-10'
-                    : 'border-zinc-800 bg-zinc-950/30 hover:border-zinc-700'
+                    ? 'border-foreground bg-gradient-to-b from-foreground/10 to-transparent scale-105 z-10'
+                    : 'border-border bg-card hover:border-muted-foreground'
             )}
         >
             {highlighted && (
                 <>
-                    <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-cyan-500 text-black text-xs font-mono tracking-widest">
+                    <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground to-transparent" />
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-foreground text-background text-xs font-mono tracking-widest">
                         MOST POPULAR
                     </div>
                 </>
             )}
 
             <div className="mb-6">
-                <div className="font-mono text-xs text-zinc-500 tracking-widest uppercase mb-2">
+                <div className="font-mono text-xs text-muted-foreground tracking-widest uppercase mb-2">
                     {name}
                 </div>
-                <p className="text-zinc-400 text-sm">{description}</p>
+                <p className="text-muted-foreground text-sm">{description}</p>
             </div>
 
             <div className="mb-8">
-                <span className="text-5xl font-serif text-white">{price}</span>
-                <span className="text-zinc-500 text-lg ml-1">{period}</span>
+                <span className="text-5xl font-serif text-foreground">{price}</span>
+                <span className="text-muted-foreground text-lg ml-1">{period}</span>
             </div>
 
             <div className="flex-1">
                 <ul className="space-y-4 mb-8">
                     {features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-zinc-300">
+                        <li key={i} className="flex items-start gap-3 text-sm text-foreground">
                             <Check
-                                className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0"
+                                className="w-5 h-5 text-foreground mt-0.5 flex-shrink-0"
                                 weight="bold"
                             />
                             {feature}
@@ -113,10 +113,10 @@ function PricingTier({
                     {limitations?.map((limitation, i) => (
                         <li
                             key={`limit-${i}`}
-                            className="flex items-start gap-3 text-sm text-zinc-600"
+                            className="flex items-start gap-3 text-sm text-muted-foreground"
                         >
                             <X
-                                className="w-5 h-5 text-zinc-700 mt-0.5 flex-shrink-0"
+                                className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0"
                                 weight="bold"
                             />
                             {limitation}
@@ -130,8 +130,8 @@ function PricingTier({
                 className={cn(
                     'block w-full py-4 text-center font-medium transition-all duration-300',
                     highlighted
-                        ? 'bg-cyan-500 text-black hover:bg-cyan-400'
-                        : 'border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white'
+                        ? 'bg-foreground text-background hover:bg-foreground/90'
+                        : 'border border-border text-foreground hover:border-muted-foreground hover:text-foreground'
                 )}
             >
                 {cta}
@@ -157,12 +157,12 @@ function ComparisonRow({
     const renderValue = (val: string | boolean) => {
         if (typeof val === 'boolean') {
             return val ? (
-                <Check className="w-5 h-5 text-cyan-400 mx-auto" weight="bold" />
+                <Check className="w-5 h-5 text-foreground mx-auto" weight="bold" />
             ) : (
-                <X className="w-5 h-5 text-zinc-700 mx-auto" weight="bold" />
+                <X className="w-5 h-5 text-muted-foreground mx-auto" weight="bold" />
             );
         }
-        return <span className="text-zinc-300">{val}</span>;
+        return <span className="text-foreground">{val}</span>;
     };
 
     return (
@@ -171,11 +171,11 @@ function ComparisonRow({
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: index * 0.05 }}
-            className="border-b border-zinc-800/50"
+            className="border-b border-border/50"
         >
-            <td className="py-4 text-sm text-zinc-400 text-left">{feature}</td>
+            <td className="py-4 text-sm text-muted-foreground text-left">{feature}</td>
             <td className="py-4 text-sm text-center">{renderValue(starter)}</td>
-            <td className="py-4 text-sm text-center bg-cyan-500/5">{renderValue(pro)}</td>
+            <td className="py-4 text-sm text-center bg-foreground/5">{renderValue(pro)}</td>
             <td className="py-4 text-sm text-center">{renderValue(ultra)}</td>
         </motion.tr>
     );
@@ -191,18 +191,18 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="border-b border-zinc-800"
+            className="border-b border-border"
         >
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full py-6 flex items-center justify-between text-left group"
             >
-                <h4 className="text-white font-medium group-hover:text-cyan-400 transition-colors">
+                <h4 className="text-foreground font-medium group-hover:text-foreground transition-colors">
                     {question}
                 </h4>
                 <motion.span
                     animate={{ rotate: isOpen ? 45 : 0 }}
-                    className="text-zinc-500 text-2xl"
+                    className="text-muted-foreground text-2xl"
                 >
                     +
                 </motion.span>
@@ -212,7 +212,7 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
                 animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
                 className="overflow-hidden"
             >
-                <p className="text-zinc-400 text-sm leading-relaxed pb-6">{answer}</p>
+                <p className="text-muted-foreground text-sm leading-relaxed pb-6">{answer}</p>
             </motion.div>
         </motion.div>
     );
@@ -319,7 +319,7 @@ export default function Pricing2Page() {
     ];
 
     return (
-        <div className="min-h-screen bg-black text-white overflow-x-hidden">
+        <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
             {/* Noise texture overlay */}
             <div
                 className="fixed inset-0 pointer-events-none opacity-[0.03] z-50"
@@ -329,11 +329,11 @@ export default function Pricing2Page() {
             />
 
             {/* Subtle gradient orbs */}
-            <div className="fixed top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[128px] pointer-events-none" />
-            <div className="fixed bottom-1/4 right-1/4 w-64 h-64 bg-cyan-500/5 rounded-full blur-[96px] pointer-events-none" />
+            <div className="fixed top-1/4 left-1/4 w-96 h-96 bg-foreground/10 rounded-full blur-[128px] pointer-events-none" />
+            <div className="fixed bottom-1/4 right-1/4 w-64 h-64 bg-foreground/5 rounded-full blur-[96px] pointer-events-none" />
 
             {/* Navigation */}
-            <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-6 bg-black/50 backdrop-blur-sm">
+            <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-6 bg-background/50 backdrop-blur-sm">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link href="/v2" className="font-serif text-2xl tracking-tight">
                         Yula
@@ -341,25 +341,25 @@ export default function Pricing2Page() {
                     <div className="flex items-center gap-8">
                         <Link
                             href="/v2#features"
-                            className="text-sm text-zinc-400 hover:text-white transition-colors font-mono tracking-wide"
+                            className="text-sm text-muted-foreground hover:text-foreground transition-colors font-mono tracking-wide"
                         >
                             Features
                         </Link>
                         <Link
                             href="/v2#models"
-                            className="text-sm text-zinc-400 hover:text-white transition-colors font-mono tracking-wide"
+                            className="text-sm text-muted-foreground hover:text-foreground transition-colors font-mono tracking-wide"
                         >
                             Models
                         </Link>
                         <Link
                             href="/pricing2"
-                            className="text-sm text-white transition-colors font-mono tracking-wide"
+                            className="text-sm text-foreground transition-colors font-mono tracking-wide"
                         >
                             Pricing
                         </Link>
                         <Link
                             href="/signup"
-                            className="px-4 py-2 text-sm bg-white text-black hover:bg-zinc-200 transition-colors font-mono tracking-wide"
+                            className="px-4 py-2 text-sm bg-foreground text-background hover:bg-foreground/90 transition-colors font-mono tracking-wide"
                         >
                             Start Free
                         </Link>
@@ -376,8 +376,8 @@ export default function Pricing2Page() {
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="mb-6"
                     >
-                        <span className="inline-flex items-center gap-2 px-4 py-2 border border-zinc-800 text-zinc-500 font-mono text-xs tracking-widest">
-                            <Sparkle className="w-3 h-3 text-cyan-400" weight="fill" />
+                        <span className="inline-flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground font-mono text-xs tracking-widest">
+                            <Sparkle className="w-3 h-3 text-foreground" weight="fill" />
                             TRANSPARENT PRICING
                         </span>
                     </motion.div>
@@ -390,14 +390,14 @@ export default function Pricing2Page() {
                     >
                         Simple pricing.
                         <br />
-                        <span className="text-zinc-500">No surprises.</span>
+                        <span className="text-muted-foreground">No surprises.</span>
                     </motion.h1>
 
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.6 }}
-                        className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto font-light leading-relaxed"
+                        className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light leading-relaxed"
                     >
                         Access GPT-4, Claude, and Gemini for less than what you&apos;d pay for
                         individual subscriptions. All with unified memory and intelligent routing.
@@ -419,7 +419,7 @@ export default function Pricing2Page() {
             {/* Value Proposition */}
             <CinematicSection className="py-24 px-6">
                 <div className="max-w-5xl mx-auto text-center">
-                    <h2 className="text-3xl md:text-4xl font-serif text-white mb-12">
+                    <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-12">
                         Why Yula is worth it
                     </h2>
                     <div className="grid md:grid-cols-3 gap-8">
@@ -430,11 +430,11 @@ export default function Pricing2Page() {
                             transition={{ duration: 0.5, delay: 0 }}
                             className="p-6"
                         >
-                            <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
-                                <Brain className="w-6 h-6 text-cyan-400" weight="thin" />
+                            <div className="w-12 h-12 rounded-full bg-foreground/10 flex items-center justify-center mx-auto mb-4">
+                                <Brain className="w-6 h-6 text-foreground" weight="thin" />
                             </div>
-                            <h3 className="text-white font-medium mb-2">$200+ value</h3>
-                            <p className="text-zinc-500 text-sm">
+                            <h3 className="text-foreground font-medium mb-2">$200+ value</h3>
+                            <p className="text-muted-foreground text-sm">
                                 Individual AI subscriptions cost $20-60 each. Get all of them
                                 unified for less.
                             </p>
@@ -446,11 +446,11 @@ export default function Pricing2Page() {
                             transition={{ duration: 0.5, delay: 0.1 }}
                             className="p-6"
                         >
-                            <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
-                                <Lightning className="w-6 h-6 text-cyan-400" weight="thin" />
+                            <div className="w-12 h-12 rounded-full bg-foreground/10 flex items-center justify-center mx-auto mb-4">
+                                <Lightning className="w-6 h-6 text-foreground" weight="thin" />
                             </div>
-                            <h3 className="text-white font-medium mb-2">Hours saved weekly</h3>
-                            <p className="text-zinc-500 text-sm">
+                            <h3 className="text-foreground font-medium mb-2">Hours saved weekly</h3>
+                            <p className="text-muted-foreground text-sm">
                                 No more re-explaining context. Your memory follows you across models
                                 and sessions.
                             </p>
@@ -462,11 +462,11 @@ export default function Pricing2Page() {
                             transition={{ duration: 0.5, delay: 0.2 }}
                             className="p-6"
                         >
-                            <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
-                                <Shield className="w-6 h-6 text-cyan-400" weight="thin" />
+                            <div className="w-12 h-12 rounded-full bg-foreground/10 flex items-center justify-center mx-auto mb-4">
+                                <Shield className="w-6 h-6 text-foreground" weight="thin" />
                             </div>
-                            <h3 className="text-white font-medium mb-2">Your data, your rules</h3>
-                            <p className="text-zinc-500 text-sm">
+                            <h3 className="text-foreground font-medium mb-2">Your data, your rules</h3>
+                            <p className="text-muted-foreground text-sm">
                                 We never train on your data. Export or delete your memory anytime.
                             </p>
                         </motion.div>
@@ -475,29 +475,29 @@ export default function Pricing2Page() {
             </CinematicSection>
 
             {/* Feature Comparison Table */}
-            <section className="py-24 px-6 bg-zinc-950/50">
+            <section className="py-24 px-6 bg-muted/50">
                 <div className="max-w-5xl mx-auto">
                     <CinematicSection className="mb-12 text-center">
-                        <span className="font-mono text-xs text-cyan-400 tracking-widest uppercase mb-4 block">
+                        <span className="font-mono text-xs text-foreground tracking-widest uppercase mb-4 block">
                             Compare Plans
                         </span>
-                        <h2 className="text-4xl font-serif text-white">Every feature, compared.</h2>
+                        <h2 className="text-4xl font-serif text-foreground">Every feature, compared.</h2>
                     </CinematicSection>
 
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b border-zinc-800">
-                                    <th className="py-4 text-left text-sm font-mono text-zinc-500 tracking-wide">
+                                <tr className="border-b border-border">
+                                    <th className="py-4 text-left text-sm font-mono text-muted-foreground tracking-wide">
                                         Features
                                     </th>
-                                    <th className="py-4 text-center text-sm font-mono text-zinc-500 tracking-wide w-32">
+                                    <th className="py-4 text-center text-sm font-mono text-muted-foreground tracking-wide w-32">
                                         Starter
                                     </th>
-                                    <th className="py-4 text-center text-sm font-mono text-cyan-400 tracking-wide w-32 bg-cyan-500/5">
+                                    <th className="py-4 text-center text-sm font-mono text-foreground tracking-wide w-32 bg-foreground/5">
                                         Pro
                                     </th>
-                                    <th className="py-4 text-center text-sm font-mono text-zinc-500 tracking-wide w-32">
+                                    <th className="py-4 text-center text-sm font-mono text-muted-foreground tracking-wide w-32">
                                         Ultra
                                     </th>
                                 </tr>
@@ -516,10 +516,10 @@ export default function Pricing2Page() {
             <section className="py-24 px-6">
                 <div className="max-w-3xl mx-auto">
                     <CinematicSection className="mb-12 text-center">
-                        <span className="font-mono text-xs text-cyan-400 tracking-widest uppercase mb-4 block">
+                        <span className="font-mono text-xs text-foreground tracking-widest uppercase mb-4 block">
                             FAQ
                         </span>
-                        <h2 className="text-4xl font-serif text-white">Common questions.</h2>
+                        <h2 className="text-4xl font-serif text-foreground">Common questions.</h2>
                     </CinematicSection>
 
                     <div>
@@ -531,18 +531,18 @@ export default function Pricing2Page() {
             </section>
 
             {/* Final CTA */}
-            <CinematicSection className="py-32 px-6 border-t border-zinc-800">
+            <CinematicSection className="py-32 px-6 border-t border-border">
                 <div className="max-w-3xl mx-auto text-center">
-                    <h2 className="text-4xl md:text-5xl font-serif text-white mb-6 leading-tight">
+                    <h2 className="text-4xl md:text-5xl font-serif text-foreground mb-6 leading-tight">
                         Ready to unify your AI?
                     </h2>
-                    <p className="text-zinc-400 text-lg mb-10 max-w-xl mx-auto">
+                    <p className="text-muted-foreground text-lg mb-10 max-w-xl mx-auto">
                         Start with a 7-day free trial. No credit card required.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link
                             href="/signup"
-                            className="group flex items-center gap-3 px-10 py-5 bg-white text-black text-lg font-medium hover:bg-cyan-400 transition-colors duration-300"
+                            className="group flex items-center gap-3 px-10 py-5 bg-foreground text-background text-lg font-medium hover:bg-foreground/90 transition-colors duration-300"
                         >
                             <Command className="w-6 h-6" />
                             Start Free Trial
@@ -550,7 +550,7 @@ export default function Pricing2Page() {
                         </Link>
                         <Link
                             href="/contact"
-                            className="flex items-center gap-2 px-10 py-5 border border-zinc-800 text-zinc-300 hover:border-zinc-600 hover:text-white transition-all duration-300 font-mono text-sm tracking-wide"
+                            className="flex items-center gap-2 px-10 py-5 border border-border text-foreground hover:border-muted-foreground hover:text-foreground transition-all duration-300 font-mono text-sm tracking-wide"
                         >
                             Contact Sales
                         </Link>
@@ -559,30 +559,30 @@ export default function Pricing2Page() {
             </CinematicSection>
 
             {/* Minimal Footer */}
-            <footer className="py-12 px-6 border-t border-zinc-900">
+            <footer className="py-12 px-6 border-t border-border">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="font-serif text-xl text-zinc-600">Yula</div>
-                    <div className="flex items-center gap-8 text-sm text-zinc-600">
-                        <Link href="/privacy" className="hover:text-zinc-400 transition-colors">
+                    <div className="font-serif text-xl text-muted-foreground">Yula</div>
+                    <div className="flex items-center gap-8 text-sm text-muted-foreground">
+                        <Link href="/privacy" className="hover:text-foreground transition-colors">
                             Privacy
                         </Link>
-                        <Link href="/terms" className="hover:text-zinc-400 transition-colors">
+                        <Link href="/terms" className="hover:text-foreground transition-colors">
                             Terms
                         </Link>
                         <a
                             href="https://github.com"
-                            className="hover:text-zinc-400 transition-colors"
+                            className="hover:text-foreground transition-colors"
                         >
                             GitHub
                         </a>
                         <a
                             href="https://twitter.com"
-                            className="hover:text-zinc-400 transition-colors"
+                            className="hover:text-foreground transition-colors"
                         >
                             X
                         </a>
                     </div>
-                    <div className="text-sm text-zinc-700 font-mono">2026 Yula</div>
+                    <div className="text-sm text-muted-foreground font-mono">2026 Yula</div>
                 </div>
             </footer>
         </div>

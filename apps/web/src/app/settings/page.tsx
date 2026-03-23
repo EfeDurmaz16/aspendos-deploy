@@ -231,7 +231,7 @@ export default function SettingsPage() {
                                     onClick={() => setActiveSection(section.id)}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                                         activeSection === section.id
-                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
+                                            ? 'bg-muted dark:bg-muted/20 text-foreground dark:text-foreground/80'
                                             : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                     }`}
                                 >
@@ -254,9 +254,9 @@ export default function SettingsPage() {
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                            <div className="w-16 h-16 rounded-full bg-muted dark:bg-muted/30 flex items-center justify-center">
                                                 <User
-                                                    className="w-8 h-8 text-emerald-600 dark:text-emerald-400"
+                                                    className="w-8 h-8 text-foreground dark:text-foreground/80"
                                                     weight="duotone"
                                                 />
                                             </div>
@@ -283,7 +283,7 @@ export default function SettingsPage() {
                                     <CardContent>
                                         <button
                                             onClick={handleSignOut}
-                                            className="flex items-center gap-2 px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                                            className="flex items-center gap-2 px-4 py-2 text-foreground dark:text-foreground/70 hover:bg-muted dark:hover:bg-muted/20 rounded-lg transition-colors"
                                         >
                                             <SignOut className="w-5 h-5" weight="duotone" />
                                             Sign Out
@@ -368,7 +368,7 @@ export default function SettingsPage() {
                                                     }
                                                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-all ${
                                                         settings.appearance.theme === theme.id
-                                                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
+                                                            ? 'border-foreground bg-muted dark:bg-muted/20 text-foreground dark:text-foreground/80'
                                                             : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                                                     }`}
                                                 >
@@ -500,25 +500,25 @@ export default function SettingsPage() {
                                     </CardContent>
                                 </Card>
 
-                                <Card className="border-rose-200 dark:border-rose-900">
+                                <Card className="border-border dark:border-border">
                                     <CardHeader>
-                                        <CardTitle className="text-rose-600 dark:text-rose-400">
+                                        <CardTitle className="text-foreground dark:text-foreground/70">
                                             Danger Zone
                                         </CardTitle>
                                         <CardDescription>Irreversible actions</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg border border-rose-200 dark:border-rose-800">
+                                        <div className="p-4 bg-muted dark:bg-muted/20 rounded-lg border border-border dark:border-border">
                                             <div className="flex items-start gap-3">
                                                 <WarningCircle
-                                                    className="w-5 h-5 text-rose-600 dark:text-rose-400 mt-0.5"
+                                                    className="w-5 h-5 text-foreground dark:text-foreground/70 mt-0.5"
                                                     weight="fill"
                                                 />
                                                 <div>
-                                                    <p className="font-medium text-rose-900 dark:text-rose-100">
+                                                    <p className="font-medium text-foreground dark:text-foreground">
                                                         Delete Account
                                                     </p>
-                                                    <p className="text-sm text-rose-700 dark:text-rose-300 mb-3">
+                                                    <p className="text-sm text-foreground/80 dark:text-foreground/70 mb-3">
                                                         Once you delete your account, there is no
                                                         going back. All your data will be
                                                         permanently removed.
@@ -528,7 +528,7 @@ export default function SettingsPage() {
                                                             onClick={() =>
                                                                 setShowDeleteConfirm(true)
                                                             }
-                                                            className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors"
+                                                            className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg font-medium hover:bg-foreground/90 transition-colors"
                                                         >
                                                             <Trash
                                                                 className="w-4 h-4"
@@ -540,7 +540,7 @@ export default function SettingsPage() {
                                                         <div className="flex gap-2">
                                                             <button
                                                                 onClick={handleDeleteAccount}
-                                                                className="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors"
+                                                                className="px-4 py-2 bg-foreground text-background rounded-lg font-medium hover:bg-foreground/90 transition-colors"
                                                             >
                                                                 Yes, Delete My Account
                                                             </button>

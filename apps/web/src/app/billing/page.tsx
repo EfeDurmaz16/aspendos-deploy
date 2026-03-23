@@ -66,16 +66,16 @@ function UsageBar({
                 <div
                     className={`h-full rounded-full transition-all duration-500 ${
                         isHigh
-                            ? 'bg-gradient-to-r from-amber-500 to-amber-400 shadow-lg shadow-amber-500/30'
+                            ? 'bg-gradient-to-r from-foreground/60 to-foreground/50 shadow-lg shadow-foreground/20'
                             : isMedium
-                              ? 'bg-gradient-to-r from-amber-400 to-amber-300 shadow-lg shadow-amber-400/30'
-                              : 'bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-lg shadow-emerald-500/30'
+                              ? 'bg-gradient-to-r from-foreground/50 to-foreground/40 shadow-lg shadow-foreground/15'
+                              : 'bg-gradient-to-r from-foreground to-foreground/90 shadow-lg shadow-foreground/20'
                     }`}
                     style={{ width: `${Math.min(percent, 100)}%` }}
                 />
             </div>
             {isHigh && (
-                <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground flex items-center gap-1">
                     <WarningCircle weight="fill" className="w-3.5 h-3.5" />
                     Approaching limit
                 </p>
@@ -135,7 +135,7 @@ function BillingContent() {
                     </p>
                     <a
                         href="/login"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-foreground to-foreground/90 hover:from-foreground/90 hover:to-foreground/80 text-background rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
                     >
                         Sign In
                         <ArrowRight weight="bold" />
@@ -150,7 +150,7 @@ function BillingContent() {
             <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
                 <div className="text-center p-8 bg-white/60 dark:bg-zinc-900/60 backdrop-blur rounded-2xl border border-zinc-200 dark:border-zinc-800 max-w-md">
                     <WarningCircle
-                        className="w-12 h-12 text-amber-500 mx-auto mb-4"
+                        className="w-12 h-12 text-muted-foreground mx-auto mb-4"
                         weight="duotone"
                     />
                     <p className="text-zinc-700 dark:text-zinc-300 mb-6 font-medium">
@@ -179,24 +179,24 @@ function BillingContent() {
         <div className="min-h-screen bg-white dark:bg-zinc-950 py-12 px-4 relative overflow-hidden">
             {/* YULA Monolith Background - Amber glow only */}
             <div className="absolute inset-0 pointer-events-none -z-10">
-                <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-gradient-to-br from-emerald-100/15 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-bl from-amber-100/10 to-transparent dark:from-amber-900/10 rounded-full blur-3xl" />
-                <div className="absolute top-1/2 right-1/3 w-[400px] h-[400px] bg-gradient-to-tr from-amber-50/8 to-transparent dark:from-amber-800/8 rounded-full blur-3xl" />
+                <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-gradient-to-br from-zinc-200/15 to-transparent dark:from-zinc-800/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-bl from-zinc-200/10 to-transparent dark:from-zinc-800/10 rounded-full blur-3xl" />
+                <div className="absolute top-1/2 right-1/3 w-[400px] h-[400px] bg-gradient-to-tr from-zinc-100/8 to-transparent dark:from-zinc-700/8 rounded-full blur-3xl" />
             </div>
 
             <div className="max-w-4xl mx-auto space-y-8 relative z-10">
                 {/* Success message */}
                 {success && (
-                    <div className="p-5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl backdrop-blur animate-fade-up flex items-start gap-3">
+                    <div className="p-5 bg-muted dark:bg-muted/20 border border-border dark:border-border rounded-2xl backdrop-blur animate-fade-up flex items-start gap-3">
                         <CheckCircle
-                            className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5"
+                            className="w-6 h-6 text-foreground dark:text-foreground/80 flex-shrink-0 mt-0.5"
                             weight="fill"
                         />
                         <div>
-                            <p className="text-emerald-900 dark:text-emerald-100 font-semibold mb-1">
+                            <p className="text-foreground dark:text-foreground font-semibold mb-1">
                                 Payment successful!
                             </p>
-                            <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                            <p className="text-sm text-foreground/80 dark:text-foreground/70">
                                 Your subscription is now active and ready to use.
                             </p>
                         </div>
@@ -236,10 +236,10 @@ function BillingContent() {
                         <span
                             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm ${
                                 billing.status === 'active'
-                                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-800'
+                                    ? 'bg-muted dark:bg-muted/30 text-foreground dark:text-foreground/80 ring-1 ring-border dark:ring-border'
                                     : billing.status === 'past_due'
-                                      ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-800'
-                                      : 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 ring-1 ring-rose-200 dark:ring-rose-800'
+                                      ? 'bg-muted dark:bg-muted/30 text-foreground/70 dark:text-foreground/60 ring-1 ring-border dark:ring-border'
+                                      : 'bg-muted dark:bg-muted/30 text-foreground/60 dark:text-foreground/50 ring-1 ring-border dark:ring-border'
                             }`}
                         >
                             <CheckCircle className="w-4 h-4" weight="fill" />
@@ -258,7 +258,7 @@ function BillingContent() {
                             href="https://polar.sh/purchases/subscriptions"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 hover:from-foreground/90 hover:to-foreground/80 text-background font-semibold shadow-md hover:shadow-lg transition-all"
                         >
                             Manage Subscription
                             <ArrowRight weight="bold" />
@@ -300,9 +300,9 @@ function BillingContent() {
                         className="group block p-6 bg-white/50 dark:bg-zinc-900/50 backdrop-blur rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:bg-white/70 dark:hover:bg-zinc-900/70 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg transition-all"
                     >
                         <div className="flex items-start gap-3">
-                            <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50 transition-colors">
+                            <div className="p-3 rounded-xl bg-muted dark:bg-muted/30 group-hover:bg-muted/80 dark:group-hover:bg-muted/50 transition-colors">
                                 <ChatCircle
-                                    className="w-5 h-5 text-emerald-600 dark:text-emerald-400"
+                                    className="w-5 h-5 text-foreground dark:text-foreground/80"
                                     weight="duotone"
                                 />
                             </div>
@@ -321,9 +321,9 @@ function BillingContent() {
                         className="group block p-6 bg-white/50 dark:bg-zinc-900/50 backdrop-blur rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:bg-white/70 dark:hover:bg-zinc-900/70 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg transition-all"
                     >
                         <div className="flex items-start gap-3">
-                            <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                            <div className="p-3 rounded-xl bg-muted dark:bg-muted/30 group-hover:bg-muted/80 dark:group-hover:bg-muted/50 transition-colors">
                                 <Gear
-                                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                                    className="w-5 h-5 text-foreground dark:text-foreground/80"
                                     weight="duotone"
                                 />
                             </div>

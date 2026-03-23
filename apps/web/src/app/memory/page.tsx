@@ -79,11 +79,11 @@ interface PaginationInfo {
 
 const SECTORS = [
     { key: 'all', label: 'All', icon: Database, color: 'bg-zinc-500' },
-    { key: 'episodic', label: 'Episodic', icon: Clock, color: 'bg-blue-500' },
-    { key: 'semantic', label: 'Semantic', icon: Lightbulb, color: 'bg-emerald-500' },
-    { key: 'procedural', label: 'Procedural', icon: Brain, color: 'bg-amber-500' },
-    { key: 'emotional', label: 'Emotional', icon: Heart, color: 'bg-rose-500' },
-    { key: 'reflective', label: 'Reflective', icon: Sparkle, color: 'bg-amber-500' },
+    { key: 'episodic', label: 'Episodic', icon: Clock, color: 'bg-zinc-600' },
+    { key: 'semantic', label: 'Semantic', icon: Lightbulb, color: 'bg-zinc-700' },
+    { key: 'procedural', label: 'Procedural', icon: Brain, color: 'bg-zinc-500' },
+    { key: 'emotional', label: 'Emotional', icon: Heart, color: 'bg-zinc-600' },
+    { key: 'reflective', label: 'Reflective', icon: Sparkle, color: 'bg-zinc-500' },
 ];
 
 const getSectorConfig = (sector: string) => SECTORS.find((s) => s.key === sector) || SECTORS[0];
@@ -149,7 +149,7 @@ function MemoryCard({
                     className={cn(
                         'bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg hover:bg-white/70 dark:hover:bg-zinc-900/70',
                         memory.isPinned &&
-                            'ring-2 ring-amber-500/30 bg-amber-50/20 dark:bg-amber-950/10'
+                            'ring-2 ring-foreground/20 bg-muted/20 dark:bg-muted/10'
                     )}
                 >
                     <div className="flex items-start justify-between gap-2">
@@ -162,7 +162,7 @@ function MemoryCard({
                             </span>
                             {memory.isPinned && (
                                 <PushPin
-                                    className="w-4 h-4 text-amber-500 fill-amber-500"
+                                    className="w-4 h-4 text-foreground/60 fill-foreground/60"
                                     weight="fill"
                                 />
                             )}
@@ -205,25 +205,25 @@ function MemoryCard({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                                className="h-7 w-7 p-0 hover:bg-muted dark:hover:bg-muted/30"
                                 onClick={() => onFeedback(true)}
                                 title="Helpful"
                             >
-                                <ThumbsUp className="w-3.5 h-3.5 text-emerald-500" weight="fill" />
+                                <ThumbsUp className="w-3.5 h-3.5 text-foreground" weight="fill" />
                             </Button>
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-rose-100 dark:hover:bg-rose-900/30"
+                                className="h-7 w-7 p-0 hover:bg-muted dark:hover:bg-muted/30"
                                 onClick={() => onFeedback(false)}
                                 title="Not helpful"
                             >
-                                <ThumbsDown className="w-3.5 h-3.5 text-rose-500" weight="fill" />
+                                <ThumbsDown className="w-3.5 h-3.5 text-foreground" weight="fill" />
                             </Button>
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                                className="h-7 w-7 p-0 hover:bg-muted dark:hover:bg-muted/30"
                                 onClick={onPin}
                                 title={memory.isPinned ? 'Unpin' : 'Pin'}
                             >
@@ -231,7 +231,7 @@ function MemoryCard({
                                     className={cn(
                                         'w-3.5 h-3.5',
                                         memory.isPinned
-                                            ? 'text-amber-500 fill-amber-500'
+                                            ? 'text-foreground/60 fill-foreground/60'
                                             : 'text-zinc-600 dark:text-zinc-400'
                                     )}
                                     weight={memory.isPinned ? 'fill' : 'regular'}
@@ -240,7 +240,7 @@ function MemoryCard({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                                className="h-7 w-7 p-0 hover:bg-muted dark:hover:bg-muted/30"
                                 onClick={onEdit}
                                 title="Edit"
                             >
@@ -268,7 +268,7 @@ function MemoryCard({
                     <PushPin
                         className={cn(
                             'mr-2 h-4 w-4',
-                            memory.isPinned ? 'text-amber-500 fill-amber-500' : ''
+                            memory.isPinned ? 'text-foreground/60 fill-foreground/60' : ''
                         )}
                         weight={memory.isPinned ? 'fill' : 'regular'}
                     />
@@ -277,15 +277,15 @@ function MemoryCard({
                 </ContextMenuItem>
                 <ContextMenuSeparator />
                 <ContextMenuItem onClick={() => onFeedback(true)}>
-                    <ThumbsUp className="mr-2 h-4 w-4 text-emerald-500" />
+                    <ThumbsUp className="mr-2 h-4 w-4 text-foreground" />
                     Mark as Helpful
                 </ContextMenuItem>
                 <ContextMenuItem onClick={() => onFeedback(false)}>
-                    <ThumbsDown className="mr-2 h-4 w-4 text-rose-500" />
+                    <ThumbsDown className="mr-2 h-4 w-4 text-foreground" />
                     Mark as Not Helpful
                 </ContextMenuItem>
                 <ContextMenuSeparator />
-                <ContextMenuItem onClick={onDelete} className="text-rose-500 focus:text-rose-500">
+                <ContextMenuItem onClick={onDelete} className="text-foreground focus:text-foreground">
                     <Trash className="mr-2 h-4 w-4" />
                     Archive Memory
                     <ContextMenuShortcut>⌫</ContextMenuShortcut>
@@ -403,9 +403,9 @@ export default function MemoryDashboardPage() {
         <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-black relative overflow-hidden">
             {/* YULA Monolith Background - Amber glow only */}
             <div className="absolute inset-0 pointer-events-none -z-10">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-100/10 to-transparent dark:from-amber-900/10 rounded-full blur-3xl" />
-                <div className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-amber-50/8 to-transparent dark:from-amber-800/8 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-1/2 w-[700px] h-[700px] bg-gradient-to-t from-emerald-100/10 to-transparent dark:from-emerald-900/10 rounded-full blur-3xl" />
+                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-zinc-200/10 to-transparent dark:from-zinc-800/10 rounded-full blur-3xl" />
+                <div className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-zinc-100/8 to-transparent dark:from-zinc-700/8 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-1/2 w-[700px] h-[700px] bg-gradient-to-t from-zinc-200/10 to-transparent dark:from-zinc-800/10 rounded-full blur-3xl" />
             </div>
             <div className="max-w-6xl mx-auto p-6 space-y-8 relative z-10">
                 <div className="flex items-center justify-between">
@@ -470,19 +470,19 @@ export default function MemoryDashboardPage() {
                             label="Active"
                             value={stats.active}
                             icon={Brain}
-                            color="bg-emerald-600"
+                            color="bg-zinc-600"
                         />
                         <StatsCard
                             label="Pinned"
                             value={stats.pinned}
                             icon={PushPin}
-                            color="bg-amber-600"
+                            color="bg-zinc-500"
                         />
                         <StatsCard
                             label="Avg Confidence"
                             value={`${Math.round(stats.avgConfidence * 100)}%`}
                             icon={Sparkle}
-                            color="bg-amber-600"
+                            color="bg-zinc-500"
                         />
                     </div>
                 )}
@@ -565,14 +565,14 @@ export default function MemoryDashboardPage() {
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && fetchMemories()}
-                                        className="w-full pl-10 pr-4 py-2.5 text-sm bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:focus:ring-emerald-500/50 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-500 transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 text-sm bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 dark:focus:ring-foreground/20 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-500 transition-all"
                                     />
                                 </div>
                             </div>
                         </div>
 
                         {error && (
-                            <div className="bg-rose-500/10 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4 text-center text-rose-700 dark:text-rose-300 animate-fade-up opacity-0 animation-delay-300">
+                            <div className="bg-foreground/5 dark:bg-foreground/5 border border-border dark:border-border rounded-xl p-4 text-center text-foreground/80 dark:text-foreground/70 animate-fade-up opacity-0 animation-delay-300">
                                 <p className="font-medium">{error}</p>
                             </div>
                         )}
@@ -654,7 +654,7 @@ export default function MemoryDashboardPage() {
                                         Content
                                     </label>
                                     <textarea
-                                        className="w-full mt-1 p-3 text-sm bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-500"
+                                        className="w-full mt-1 p-3 text-sm bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 resize-none text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-500"
                                         rows={4}
                                         defaultValue={editingMemory.content}
                                         id="edit-content"
@@ -665,7 +665,7 @@ export default function MemoryDashboardPage() {
                                         Sector
                                     </label>
                                     <select
-                                        className="w-full mt-1 p-3 text-sm bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-zinc-900 dark:text-zinc-50"
+                                        className="w-full mt-1 p-3 text-sm bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 text-zinc-900 dark:text-zinc-50"
                                         defaultValue={editingMemory.sector}
                                         id="edit-sector"
                                     >

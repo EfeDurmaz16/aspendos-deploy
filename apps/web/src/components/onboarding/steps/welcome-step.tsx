@@ -32,12 +32,12 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', damping: 15, stiffness: 200, delay: 0.1 }}
             >
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent border border-emerald-500/20">
-                    <Sparkles className="h-12 w-12 text-emerald-400" />
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-foreground/10 via-foreground/5 to-transparent border border-foreground/10">
+                    <Sparkles className="h-12 w-12 text-foreground/80" />
                 </div>
                 {/* Animated ring */}
                 <motion.div
-                    className="absolute inset-0 rounded-3xl border-2 border-emerald-500/30"
+                    className="absolute inset-0 rounded-3xl border-2 border-foreground/15"
                     initial={{ scale: 1, opacity: 0.5 }}
                     animate={{ scale: 1.3, opacity: 0 }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
@@ -90,19 +90,16 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                     icon={<Download className="h-5 w-5" />}
                     label="Import"
                     description="Bring your history"
-                    color="#2563EB"
                 />
                 <FeatureHighlight
                     icon={<Bell className="h-5 w-5" />}
                     label="PAC"
                     description="AI reaches out"
-                    color="#D97706"
                 />
                 <FeatureHighlight
                     icon={<Users className="h-5 w-5" />}
                     label="Council"
                     description="4 AIs at once"
-                    color="#7C3AED"
                 />
             </motion.div>
 
@@ -117,9 +114,9 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                     onClick={onNext}
                     className={cn(
                         'flex w-full items-center justify-center gap-2 rounded-xl py-4',
-                        'bg-emerald-500 text-white font-semibold',
-                        'transition-all hover:bg-emerald-600 active:scale-[0.98]',
-                        'shadow-lg shadow-emerald-500/25'
+                        'bg-foreground text-background font-semibold',
+                        'transition-all hover:bg-foreground/90 active:scale-[0.98]',
+                        'shadow-lg shadow-foreground/10'
                     )}
                 >
                     <Rocket className="h-5 w-5" />
@@ -141,19 +138,16 @@ function FeatureHighlight({
     icon,
     label,
     description,
-    color,
 }: {
     icon: React.ReactNode;
     label: string;
     description: string;
-    color: string;
 }) {
     return (
         <div
             className="rounded-xl border border-border bg-foreground/[0.02] p-3 text-center transition-colors hover:bg-foreground/[0.04]"
-            style={{ borderColor: `${color}20` }}
         >
-            <div className="mb-1 flex justify-center" style={{ color }}>
+            <div className="mb-1 flex justify-center text-foreground">
                 {icon}
             </div>
             <div className="text-xs font-medium text-foreground">{label}</div>

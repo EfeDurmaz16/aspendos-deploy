@@ -45,10 +45,10 @@ const personaIcons: Record<string, typeof Brain> = {
 };
 
 const personaColors: Record<string, string> = {
-    SCHOLAR: '#3b82f6',
-    CREATIVE: '#f59e0b',
-    PRACTICAL: '#10b981',
-    DEVILS_ADVOCATE: '#ef4444',
+    SCHOLAR: '#3f3f46',
+    CREATIVE: '#52525b',
+    PRACTICAL: '#71717a',
+    DEVILS_ADVOCATE: '#a1a1aa',
 };
 
 export default function CouncilHistoryPage() {
@@ -158,7 +158,7 @@ export default function CouncilHistoryPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search council sessions..."
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-muted/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/50"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-muted/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/30"
                     />
                 </div>
             </div>
@@ -195,8 +195,8 @@ export default function CouncilHistoryPage() {
                                 onClick={() => handleExpand(session.id)}
                                 className={cn(
                                     'w-full text-left rounded-xl border border-border p-4 transition-all',
-                                    'hover:border-violet-500/30 hover:bg-muted/50',
-                                    expandedId === session.id && 'border-violet-500/50 bg-muted/50'
+                                    'hover:border-foreground/20 hover:bg-muted/50',
+                                    expandedId === session.id && 'border-foreground/30 bg-muted/50'
                                 )}
                             >
                                 {/* Session Header */}
@@ -223,10 +223,10 @@ export default function CouncilHistoryPage() {
                                                 className={cn(
                                                     'text-xs px-2 py-0.5 rounded-full',
                                                     session.status === 'COMPLETED'
-                                                        ? 'bg-emerald-500/10 text-emerald-500'
+                                                        ? 'bg-foreground/10 text-foreground'
                                                         : session.status === 'FAILED'
-                                                          ? 'bg-red-500/10 text-red-500'
-                                                          : 'bg-amber-500/10 text-amber-500'
+                                                          ? 'bg-foreground/10 text-foreground/70'
+                                                          : 'bg-foreground/10 text-muted-foreground'
                                                 )}
                                             >
                                                 {session.status.toLowerCase()}

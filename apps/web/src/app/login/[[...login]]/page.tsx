@@ -165,7 +165,7 @@ export default function LoginPage() {
                         <div
                             role="alert"
                             aria-live="assertive"
-                            className="mb-4 flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 p-3 rounded-lg border border-rose-200 dark:border-rose-900"
+                            className="mb-4 flex items-center gap-2 text-sm text-foreground dark:text-foreground/70 bg-muted dark:bg-muted/30 p-3 rounded-lg border border-border dark:border-border"
                         >
                             <Warning className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
                             <span>{error}</span>
@@ -252,7 +252,7 @@ export default function LoginPage() {
                                     <Input
                                         id="email"
                                         placeholder="your.email@example.com"
-                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-foreground/10 focus:border-foreground"
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -287,7 +287,7 @@ export default function LoginPage() {
                                     <Input
                                         id="password"
                                         placeholder="••••••••"
-                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-foreground/10 focus:border-foreground"
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -340,7 +340,7 @@ export default function LoginPage() {
                         Don&apos;t have an account?{' '}
                         <Link
                             href="/signup"
-                            className="font-medium text-zinc-900 dark:text-zinc-50 hover:underline underline-offset-4 decoration-emerald-500/50"
+                            className="font-medium text-zinc-900 dark:text-zinc-50 hover:underline underline-offset-4 decoration-foreground/50"
                         >
                             Sign up
                         </Link>

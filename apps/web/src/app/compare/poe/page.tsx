@@ -25,7 +25,7 @@ const poeData: CompetitorData = {
         'Like Poe, Yula offers multi-model access. Unlike Poe, Yula has persistent memory, proactive AI, and history import from other platforms.',
     description:
         'Poe by Quora is a multi-model AI platform that gives users access to various AI models and custom bots.',
-    logoColor: 'bg-purple-500',
+    logoColor: 'bg-zinc-700',
     strengths: [
         'Access to multiple AI models (GPT-4, Claude, Gemini)',
         'Custom bot creation and sharing',

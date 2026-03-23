@@ -432,13 +432,13 @@ function HeroPreview() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-card/80">
                 <div className="flex items-center gap-2">
                     <div className="flex gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/30" />
-                        <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/30" />
-                        <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/30" />
+                        <div className="w-3 h-3 rounded-full bg-foreground/10 border border-foreground/15" />
+                        <div className="w-3 h-3 rounded-full bg-foreground/10 border border-foreground/15" />
+                        <div className="w-3 h-3 rounded-full bg-foreground/10 border border-foreground/15" />
                     </div>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-foreground" />
                     <span>Live Demo</span>
                 </div>
                 <div className="w-16" />

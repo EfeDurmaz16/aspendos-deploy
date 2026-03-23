@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/use-auth';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 // Color palette for charts
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const COLORS = ['#18181b', '#3f3f46', '#52525b', '#71717a', '#a1a1aa', '#d4d4d8'];
 
 interface UsageData {
     date: string;
@@ -364,7 +364,7 @@ export default function AnalyticsPage() {
                                     <ul className="space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
                                         {scorecard.recommendations.map((item) => (
                                             <li key={item} className="flex items-start gap-2">
-                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-foreground" />
                                                 <span>{item}</span>
                                             </li>
                                         ))}
@@ -434,12 +434,12 @@ export default function AnalyticsPage() {
                                                 >
                                                     <stop
                                                         offset="5%"
-                                                        stopColor="#10b981"
+                                                        stopColor="#71717a"
                                                         stopOpacity={0.3}
                                                     />
                                                     <stop
                                                         offset="95%"
-                                                        stopColor="#10b981"
+                                                        stopColor="#71717a"
                                                         stopOpacity={0}
                                                     />
                                                 </linearGradient>
@@ -470,7 +470,7 @@ export default function AnalyticsPage() {
                                             <Area
                                                 type="monotone"
                                                 dataKey="totalTokens"
-                                                stroke="#10b981"
+                                                stroke="#71717a"
                                                 strokeWidth={2}
                                                 fillOpacity={1}
                                                 fill="url(#colorTokens)"
@@ -519,12 +519,12 @@ export default function AnalyticsPage() {
                                                 />
                                                 <Bar
                                                     dataKey="userMessages"
-                                                    fill="#3b82f6"
+                                                    fill="#a1a1aa"
                                                     stackId="a"
                                                 />
                                                 <Bar
                                                     dataKey="assistantMessages"
-                                                    fill="#10b981"
+                                                    fill="#52525b"
                                                     stackId="a"
                                                 />
                                             </BarChart>

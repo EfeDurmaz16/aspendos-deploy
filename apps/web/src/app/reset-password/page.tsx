@@ -44,10 +44,10 @@ function ResetPasswordContent() {
 
     const passwordStrength = useMemo(() => {
         const passed = Object.values(passwordChecks).filter(Boolean).length;
-        if (passed <= 1) return { label: 'Weak', color: 'text-rose-500', bg: 'bg-rose-500' };
-        if (passed <= 2) return { label: 'Fair', color: 'text-amber-500', bg: 'bg-amber-500' };
-        if (passed <= 3) return { label: 'Good', color: 'text-yellow-500', bg: 'bg-yellow-500' };
-        return { label: 'Strong', color: 'text-emerald-500', bg: 'bg-emerald-500' };
+        if (passed <= 1) return { label: 'Weak', color: 'text-foreground/40', bg: 'bg-foreground/40' };
+        if (passed <= 2) return { label: 'Fair', color: 'text-foreground/55', bg: 'bg-foreground/55' };
+        if (passed <= 3) return { label: 'Good', color: 'text-foreground/70', bg: 'bg-foreground/70' };
+        return { label: 'Strong', color: 'text-foreground', bg: 'bg-foreground' };
     }, [passwordChecks]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -87,8 +87,8 @@ function ResetPasswordContent() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center space-y-4"
             >
-                <div className="mx-auto w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
-                    <Warning className="h-8 w-8 text-rose-600 dark:text-rose-400" />
+                <div className="mx-auto w-16 h-16 rounded-full bg-muted dark:bg-muted/30 flex items-center justify-center">
+                    <Warning className="h-8 w-8 text-foreground dark:text-foreground/70" />
                 </div>
 
                 <div className="space-y-2">
@@ -124,7 +124,7 @@ function ResetPasswordContent() {
                         <div
                             role="alert"
                             aria-live="assertive"
-                            className="flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 p-3 rounded-lg border border-rose-200 dark:border-rose-900"
+                            className="flex items-center gap-2 text-sm text-foreground dark:text-foreground/70 bg-muted dark:bg-muted/30 p-3 rounded-lg border border-border dark:border-border"
                         >
                             <Warning className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
                             <span>{error}</span>
@@ -147,7 +147,7 @@ function ResetPasswordContent() {
                                 <Input
                                     id="password"
                                     placeholder="••••••••"
-                                    className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                    className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-foreground/10 focus:border-foreground"
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -218,7 +218,7 @@ function ResetPasswordContent() {
                                 <Input
                                     id="confirmPassword"
                                     placeholder="••••••••"
-                                    className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                    className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-foreground/10 focus:border-foreground"
                                     type="password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -232,7 +232,7 @@ function ResetPasswordContent() {
                                 </div>
                             </div>
                             {confirmPassword && password !== confirmPassword && (
-                                <p className="text-xs text-rose-500">Passwords do not match</p>
+                                <p className="text-xs text-foreground">Passwords do not match</p>
                             )}
                         </div>
 
@@ -256,8 +256,8 @@ function ResetPasswordContent() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-center space-y-4"
                 >
-                    <div className="mx-auto w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                        <KeyRound className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                    <div className="mx-auto w-16 h-16 rounded-full bg-muted dark:bg-muted/30 flex items-center justify-center">
+                        <KeyRound className="h-8 w-8 text-foreground dark:text-foreground/80" />
                     </div>
 
                     <div className="space-y-2">
@@ -270,7 +270,7 @@ function ResetPasswordContent() {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-lg border border-emerald-200 dark:border-emerald-900">
+                    <div className="flex items-center gap-2 text-sm text-foreground dark:text-foreground/80 bg-muted dark:bg-muted/30 p-3 rounded-lg border border-border dark:border-border">
                         <CheckCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
                         <span>Your account is now secure.</span>
                     </div>
@@ -290,7 +290,7 @@ function PasswordCheck({ passed, label }: { passed: boolean; label: string }) {
             className={cn(
                 'flex items-center gap-1',
                 passed
-                    ? 'text-emerald-600 dark:text-emerald-400'
+                    ? 'text-foreground dark:text-foreground/80'
                     : 'text-zinc-400 dark:text-zinc-600'
             )}
         >

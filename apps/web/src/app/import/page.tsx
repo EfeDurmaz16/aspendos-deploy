@@ -280,7 +280,7 @@ export default function ImportPage() {
     // Celebrate on import complete
     React.useEffect(() => {
         if (step !== 'complete') return;
-        const colors = ['#2563EB', '#10B981', '#7C3AED', '#F59E0B'];
+        const colors = ['#18181b', '#3f3f46', '#71717a', '#a1a1aa'];
         const end = Date.now() + 1500;
         (function frame() {
             confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors });
@@ -434,7 +434,7 @@ export default function ImportPage() {
                                 />
 
                                 {error && (
-                                    <div className="mt-4 flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 p-3 rounded-lg border border-rose-200 dark:border-rose-900">
+                                    <div className="mt-4 flex items-center gap-2 text-sm text-foreground dark:text-foreground/70 bg-muted dark:bg-muted/30 p-3 rounded-lg border border-border dark:border-border">
                                         <AlertCircle className="w-4 h-4" />
                                         <span>{error}</span>
                                     </div>
@@ -471,8 +471,8 @@ export default function ImportPage() {
                             <CardContent className="space-y-6">
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded bg-emerald-500/10 flex items-center justify-center">
-                                            <span className="text-xs font-bold text-emerald-600">
+                                        <div className="w-6 h-6 rounded bg-foreground/10 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-foreground">
                                                 G
                                             </span>
                                         </div>
@@ -496,8 +496,8 @@ export default function ImportPage() {
 
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded bg-orange-500/10 flex items-center justify-center">
-                                            <span className="text-xs font-bold text-orange-600">
+                                        <div className="w-6 h-6 rounded bg-foreground/10 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-foreground">
                                                 C
                                             </span>
                                         </div>
@@ -515,8 +515,8 @@ export default function ImportPage() {
 
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center">
-                                            <span className="text-xs font-bold text-blue-600">
+                                        <div className="w-6 h-6 rounded bg-foreground/10 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-foreground">
                                                 G
                                             </span>
                                         </div>
@@ -534,8 +534,8 @@ export default function ImportPage() {
 
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center">
-                                            <span className="text-xs font-bold text-purple-600">
+                                        <div className="w-6 h-6 rounded bg-foreground/10 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-foreground">
                                                 P
                                             </span>
                                         </div>
@@ -631,8 +631,8 @@ export default function ImportPage() {
                         <Card className="bg-white dark:bg-zinc-900">
                             <CardContent className="py-16">
                                 <div className="flex flex-col items-center justify-center">
-                                    <div className="w-24 h-24 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-8">
-                                        <CheckCircle2 className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
+                                    <div className="w-24 h-24 rounded-full bg-muted dark:bg-muted/30 flex items-center justify-center mb-8">
+                                        <CheckCircle2 className="w-12 h-12 text-foreground dark:text-foreground/80" />
                                     </div>
 
                                     <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">

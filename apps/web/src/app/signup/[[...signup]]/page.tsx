@@ -182,7 +182,7 @@ export default function SignupPage() {
                             role="alert"
                             aria-live="assertive"
                             id="signup-error"
-                            className="mb-4 flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 p-3 rounded-lg border border-rose-200 dark:border-rose-900"
+                            className="mb-4 flex items-center gap-2 text-sm text-foreground dark:text-foreground/70 bg-muted dark:bg-muted/30 p-3 rounded-lg border border-border dark:border-border"
                         >
                             <Warning className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
                             <span>{error}</span>
@@ -193,7 +193,7 @@ export default function SignupPage() {
                         <div
                             role="status"
                             aria-live="polite"
-                            className="mb-4 flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-lg border border-emerald-200 dark:border-emerald-900"
+                            className="mb-4 flex items-center gap-2 text-sm text-foreground dark:text-foreground/80 bg-muted dark:bg-muted/30 p-3 rounded-lg border border-border dark:border-border"
                         >
                             <CheckCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
                             <span>Account created! Redirecting...</span>
@@ -281,7 +281,7 @@ export default function SignupPage() {
                                         <Input
                                             id="firstName"
                                             placeholder="Max"
-                                            className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                            className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-foreground/10 focus:border-foreground"
                                             type="text"
                                             value={firstName}
                                             onChange={(e) => setFirstName(e.target.value)}
@@ -304,7 +304,7 @@ export default function SignupPage() {
                                     <Input
                                         id="lastName"
                                         placeholder="Robinson"
-                                        className="bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                        className="bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-foreground/10 focus:border-foreground"
                                         type="text"
                                         value={lastName}
                                         onChange={(e) => setLastName(e.target.value)}
@@ -326,7 +326,7 @@ export default function SignupPage() {
                                     <Input
                                         id="signupEmail"
                                         placeholder="your.email@example.com"
-                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-foreground/10 focus:border-foreground"
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -353,7 +353,7 @@ export default function SignupPage() {
                                     <Input
                                         id="signupPassword"
                                         placeholder="••••••••"
-                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-foreground/10 focus:border-foreground"
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -386,7 +386,7 @@ export default function SignupPage() {
                                     <Input
                                         id="confirmPassword"
                                         placeholder="••••••••"
-                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                        className="peer ps-9 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus:ring-foreground/10 focus:border-foreground"
                                         type="password"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
@@ -459,7 +459,7 @@ export default function SignupPage() {
                         Already have an account?{' '}
                         <Link
                             href="/login"
-                            className="font-medium text-zinc-900 dark:text-zinc-50 hover:underline underline-offset-4 decoration-emerald-500/50"
+                            className="font-medium text-zinc-900 dark:text-zinc-50 hover:underline underline-offset-4 decoration-foreground/50"
                         >
                             Sign in
                         </Link>

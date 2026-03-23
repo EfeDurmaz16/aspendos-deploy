@@ -58,8 +58,8 @@ export default function YulaPage() {
                     <div className="flex items-center gap-4">
                         {/* Logo */}
                         <div className="flex items-center gap-2">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10">
-                                <Sparkle className="h-5 w-5 text-violet-400" weight="fill" />
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground/10">
+                                <Sparkle className="h-5 w-5 text-muted-foreground" weight="fill" />
                             </div>
                             <span className="text-lg font-semibold text-white">Yula</span>
                         </div>
@@ -127,9 +127,9 @@ export default function YulaPage() {
                                     className="max-w-xl text-center"
                                 >
                                     <div className="mb-6 flex justify-center">
-                                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/10">
+                                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-foreground/10">
                                             <Sparkle
-                                                className="h-8 w-8 text-violet-400"
+                                                className="h-8 w-8 text-muted-foreground"
                                                 weight="fill"
                                             />
                                         </div>
@@ -148,14 +148,14 @@ export default function YulaPage() {
                                             {
                                                 icon: Lightning,
                                                 label: 'Quick Task',
-                                                color: '#f59e0b',
+                                                color: '#71717a',
                                             },
-                                            { icon: Users, label: 'Ask Council', color: '#3b82f6' },
-                                            { icon: Brain, label: 'Remember', color: '#ec4899' },
+                                            { icon: Users, label: 'Ask Council', color: '#52525b' },
+                                            { icon: Brain, label: 'Remember', color: '#a1a1aa' },
                                             {
                                                 icon: ChatCircle,
                                                 label: 'New Chat',
-                                                color: '#10b981',
+                                                color: '#3f3f46',
                                             },
                                         ].map(({ icon: Icon, label, color }) => (
                                             <button
@@ -232,7 +232,7 @@ export default function YulaPage() {
                             <div className="flex h-full flex-col">
                                 <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
                                     <div className="flex items-center gap-2">
-                                        <Brain className="h-4 w-4 text-pink-400" weight="fill" />
+                                        <Brain className="h-4 w-4 text-muted-foreground" weight="fill" />
                                         <span className="text-sm font-medium text-zinc-300">
                                             Memory
                                         </span>

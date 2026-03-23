@@ -5,9 +5,6 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-// Feature accent color: Electric Violet
-const ACCENT_COLOR = '#7C3AED';
-
 interface CouncilDemoStepProps {
     onNext: () => void;
     onPrev: () => void;
@@ -21,7 +18,6 @@ const PERSONAS = [
         name: 'Logic',
         icon: <Brain className="h-5 w-5" />,
         model: 'Claude',
-        color: '#3B82F6',
         trait: 'Analytical',
         response: 'Based on the data patterns, I recommend...',
     },
@@ -30,7 +26,6 @@ const PERSONAS = [
         name: 'Creative',
         icon: <Palette className="h-5 w-5" />,
         model: 'GPT-4',
-        color: '#EC4899',
         trait: 'Innovative',
         response: 'What if we approached this differently...',
     },
@@ -39,7 +34,6 @@ const PERSONAS = [
         name: 'Prudent',
         icon: <Shield className="h-5 w-5" />,
         model: 'Gemini',
-        color: '#10B981',
         trait: 'Cautious',
         response: 'We should consider the risks of...',
     },
@@ -48,7 +42,6 @@ const PERSONAS = [
         name: 'Swift',
         icon: <Zap className="h-5 w-5" />,
         model: 'Groq',
-        color: '#F59E0B',
         trait: 'Fast',
         response: 'The quick answer is...',
     },
@@ -88,10 +81,9 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
         >
             {/* Header with accent */}
             <div
-                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: `${ACCENT_COLOR}20` }}
+                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-foreground/10"
             >
-                <Users className="h-8 w-8" style={{ color: ACCENT_COLOR }} />
+                <Users className="h-8 w-8 text-foreground" />
             </div>
 
             <h2 className="mb-2 text-2xl font-bold text-foreground">The AI Council</h2>
@@ -134,12 +126,7 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
                         >
                             <div className="flex items-center gap-2 mb-2">
                                 <div
-                                    className="h-5 w-5 rounded-full flex items-center justify-center text-white"
-                                    style={{
-                                        backgroundColor: PERSONAS.find(
-                                            (p) => p.id === selectedPersona
-                                        )?.color,
-                                    }}
+                                    className="h-5 w-5 rounded-full flex items-center justify-center bg-foreground text-background"
                                 >
                                     {PERSONAS.find((p) => p.id === selectedPersona)?.icon}
                                 </div>
@@ -159,21 +146,21 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
             {/* Variable reward stats */}
             <div className="mb-6 w-full max-w-md flex items-center justify-center gap-6 text-center">
                 <div>
-                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>
+                    <div className="text-2xl font-bold text-foreground">
                         4
                     </div>
                     <div className="text-xs text-muted-foreground">Minds</div>
                 </div>
                 <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>
+                    <div className="text-2xl font-bold text-foreground">
                         1
                     </div>
                     <div className="text-xs text-muted-foreground">Question</div>
                 </div>
                 <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>
+                    <div className="text-2xl font-bold text-foreground">
                         &#x221e;
                     </div>
                     <div className="text-xs text-muted-foreground">Surprises</div>
@@ -203,9 +190,8 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
                         onClick={onNext}
                         className={cn(
                             'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
-                            'text-white transition-colors hover:opacity-90'
+                            'bg-foreground text-background transition-colors hover:bg-foreground/90'
                         )}
-                        style={{ backgroundColor: ACCENT_COLOR }}
                     >
                         Next
                         <ArrowRight className="h-4 w-4" />
@@ -251,8 +237,7 @@ function PersonaCard({
             <div className={cn('transition-opacity', !isActive && 'opacity-0')}>
                 <div className="flex items-center gap-2 mb-1">
                     <div
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-white"
-                        style={{ backgroundColor: persona.color }}
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background"
                     >
                         {persona.icon}
                     </div>

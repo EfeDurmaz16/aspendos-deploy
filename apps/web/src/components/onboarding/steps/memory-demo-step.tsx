@@ -14,9 +14,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-// Feature accent color: Pink/Rose
-const ACCENT_COLOR = '#EC4899';
-
 interface MemoryDemoStepProps {
     onNext: () => void;
     onPrev: () => void;
@@ -24,27 +21,27 @@ interface MemoryDemoStepProps {
 }
 
 const MODELS = [
-    { name: 'Auto', icon: <Zap className="h-3.5 w-3.5" />, color: '#10B981' },
-    { name: 'Smart', icon: <Brain className="h-3.5 w-3.5" />, color: '#7C3AED' },
-    { name: 'Fast', icon: <Zap className="h-3.5 w-3.5" />, color: '#2563EB' },
-    { name: 'Creative', icon: <Layers className="h-3.5 w-3.5" />, color: '#D97706' },
+    { name: 'Auto', icon: <Zap className="h-3.5 w-3.5" /> },
+    { name: 'Smart', icon: <Brain className="h-3.5 w-3.5" /> },
+    { name: 'Fast', icon: <Zap className="h-3.5 w-3.5" /> },
+    { name: 'Creative', icon: <Layers className="h-3.5 w-3.5" /> },
 ];
 
 const MEMORY_CARDS = [
     {
         label: 'Preference',
         text: 'Prefers TypeScript with strict mode',
-        icon: <Target className="h-5 w-5" style={{ color: ACCENT_COLOR }} />,
+        icon: <Target className="h-5 w-5 text-foreground" />,
     },
     {
         label: 'Context',
         text: 'Working on a Next.js 15 project',
-        icon: <FolderOpen className="h-5 w-5" style={{ color: ACCENT_COLOR }} />,
+        icon: <FolderOpen className="h-5 w-5 text-foreground" />,
     },
     {
         label: 'History',
         text: 'Discussed auth patterns last week',
-        icon: <MessageCircle className="h-5 w-5" style={{ color: ACCENT_COLOR }} />,
+        icon: <MessageCircle className="h-5 w-5 text-foreground" />,
     },
 ];
 
@@ -69,14 +66,12 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
         >
             {/* Header with accent */}
             <div
-                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl relative"
-                style={{ backgroundColor: `${ACCENT_COLOR}20` }}
+                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl relative bg-foreground/10"
             >
-                <Database className="h-8 w-8" style={{ color: ACCENT_COLOR }} />
+                <Database className="h-8 w-8 text-foreground" />
                 {/* Pulse ring */}
                 <motion.div
-                    className="absolute inset-0 rounded-2xl border-2"
-                    style={{ borderColor: `${ACCENT_COLOR}40` }}
+                    className="absolute inset-0 rounded-2xl border-2 border-foreground/20"
                     initial={{ scale: 1, opacity: 0.5 }}
                     animate={{ scale: 1.3, opacity: 0 }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
@@ -96,8 +91,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 <div className="rounded-xl border border-border bg-foreground/[0.02] overflow-hidden">
                     {/* Model tabs */}
                     <div
-                        className="flex items-center gap-1 px-3 py-2"
-                        style={{ backgroundColor: `${ACCENT_COLOR}08` }}
+                        className="flex items-center gap-1 px-3 py-2 bg-foreground/[0.03]"
                     >
                         <span className="text-xs text-muted-foreground mr-2">Model:</span>
                         {MODELS.map((model, i) => (
@@ -105,16 +99,8 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                                 key={model.name}
                                 className={cn(
                                     'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
-                                    i === activeModel ? 'text-foreground' : 'text-muted-foreground'
+                                    i === activeModel ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground'
                                 )}
-                                style={
-                                    i === activeModel
-                                        ? {
-                                              backgroundColor: `${model.color}30`,
-                                              color: model.color,
-                                          }
-                                        : undefined
-                                }
                                 animate={i === activeModel ? { scale: [1, 1.05, 1] } : {}}
                                 transition={{ duration: 0.3 }}
                             >
@@ -128,16 +114,14 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                     <div className="p-3 space-y-2">
                         <div className="flex items-center gap-2 mb-2">
                             <div
-                                className="h-1.5 w-1.5 rounded-full"
-                                style={{ backgroundColor: ACCENT_COLOR }}
+                                className="h-1.5 w-1.5 rounded-full bg-foreground"
                             />
                             <span className="text-xs text-muted-foreground">
                                 Memory active across{' '}
                                 <AnimatePresence mode="wait">
                                     <motion.span
                                         key={activeModel}
-                                        className="font-medium"
-                                        style={{ color: MODELS[activeModel].color }}
+                                        className="font-medium text-foreground"
                                         initial={{ opacity: 0, y: 4 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -4 }}
@@ -166,12 +150,10 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                                 </div>
                                 {/* Persistent indicator */}
                                 <div
-                                    className="flex h-5 w-5 items-center justify-center rounded-full"
-                                    style={{ backgroundColor: `${ACCENT_COLOR}20` }}
+                                    className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground/10"
                                 >
                                     <div
-                                        className="h-2 w-2 rounded-full"
-                                        style={{ backgroundColor: ACCENT_COLOR }}
+                                        className="h-2 w-2 rounded-full bg-foreground"
                                     />
                                 </div>
                             </motion.div>
@@ -183,7 +165,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
             {/* Investment growth visualization */}
             <div className="mb-6 w-full max-w-md">
                 <div className="flex items-start gap-3">
-                    <StepIndicator number={1} color={ACCENT_COLOR} />
+                    <StepIndicator number={1} />
                     <div>
                         <div className="text-sm font-medium text-foreground">
                             Day 1: Yula learns your basics
@@ -195,7 +177,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 </div>
                 <div className="ml-4 h-6 border-l border-dashed border-border" />
                 <div className="flex items-start gap-3">
-                    <StepIndicator number={2} color={ACCENT_COLOR} />
+                    <StepIndicator number={2} />
                     <div>
                         <div className="text-sm font-medium text-foreground">
                             Week 1: Yula knows your style
@@ -207,7 +189,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 </div>
                 <div className="ml-4 h-6 border-l border-dashed border-border" />
                 <div className="flex items-start gap-3">
-                    <StepIndicator number={3} color={ACCENT_COLOR} />
+                    <StepIndicator number={3} />
                     <div>
                         <div className="text-sm font-medium text-foreground">
                             Month 1: Yula knows you
@@ -242,9 +224,8 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                         onClick={onNext}
                         className={cn(
                             'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
-                            'text-white transition-colors hover:opacity-90'
+                            'bg-foreground text-background transition-colors hover:bg-foreground/90'
                         )}
-                        style={{ backgroundColor: ACCENT_COLOR }}
                     >
                         Next
                         <ArrowRight className="h-4 w-4" />
@@ -255,11 +236,10 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
     );
 }
 
-function StepIndicator({ number, color }: { number: number; color: string }) {
+function StepIndicator({ number }: { number: number }) {
     return (
         <div
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-            style={{ backgroundColor: color }}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-foreground text-background"
         >
             {number}
         </div>

@@ -25,7 +25,7 @@ const claudeData: CompetitorData = {
         'Yula gives you Claude plus 12+ other AI models, persistent memory across all of them, and the ability to import your Claude history.',
     description:
         'Claude by Anthropic is known for its safety-focused approach, long context windows, and excellent writing capabilities.',
-    logoColor: 'bg-orange-500',
+    logoColor: 'bg-zinc-600',
     strengths: [
         'Excellent at nuanced, long-form writing',
         'Industry-leading 200K context window',

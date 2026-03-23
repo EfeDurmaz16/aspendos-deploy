@@ -68,9 +68,9 @@ function VerifyEmailContent() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center space-y-4"
             >
-                <div className="mx-auto w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <div className="mx-auto w-16 h-16 rounded-full bg-muted dark:bg-muted/30 flex items-center justify-center">
                     <CheckCircle
-                        className="h-8 w-8 text-emerald-600 dark:text-emerald-400"
+                        className="h-8 w-8 text-foreground dark:text-foreground/80"
                         weight="fill"
                     />
                 </div>
@@ -85,7 +85,7 @@ function VerifyEmailContent() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-lg border border-emerald-200 dark:border-emerald-900">
+                <div className="flex items-center gap-2 text-sm text-foreground dark:text-foreground/80 bg-muted dark:bg-muted/30 p-3 rounded-lg border border-border dark:border-border">
                     <CheckCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
                     <span>Your account is now fully activated.</span>
                 </div>
@@ -100,8 +100,8 @@ function VerifyEmailContent() {
     return (
         <>
             <div className="text-center space-y-4">
-                <div className="mx-auto w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                <div className="mx-auto w-16 h-16 rounded-full bg-muted dark:bg-muted/30 flex items-center justify-center">
+                    <Mail className="h-8 w-8 text-foreground dark:text-foreground/80" />
                 </div>
 
                 <div className="space-y-2">
@@ -123,7 +123,7 @@ function VerifyEmailContent() {
                 <div
                     role="alert"
                     aria-live="assertive"
-                    className="flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 p-3 rounded-lg border border-rose-200 dark:border-rose-900"
+                    className="flex items-center gap-2 text-sm text-foreground dark:text-foreground/70 bg-muted dark:bg-muted/30 p-3 rounded-lg border border-border dark:border-border"
                 >
                     <Warning className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
                     <span>{error}</span>
@@ -132,7 +132,7 @@ function VerifyEmailContent() {
 
             <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 space-y-3 border border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50 text-xs font-medium text-blue-600 dark:text-blue-400">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted dark:bg-muted/50 text-xs font-medium text-foreground dark:text-foreground/80">
                         1
                     </div>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -140,7 +140,7 @@ function VerifyEmailContent() {
                     </p>
                 </div>
                 <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50 text-xs font-medium text-blue-600 dark:text-blue-400">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted dark:bg-muted/50 text-xs font-medium text-foreground dark:text-foreground/80">
                         2
                     </div>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -148,7 +148,7 @@ function VerifyEmailContent() {
                     </p>
                 </div>
                 <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50 text-xs font-medium text-blue-600 dark:text-blue-400">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted dark:bg-muted/50 text-xs font-medium text-foreground dark:text-foreground/80">
                         3
                     </div>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">

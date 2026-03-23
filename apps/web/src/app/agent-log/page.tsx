@@ -105,9 +105,9 @@ export default function AgentLogPage() {
             <h1 className="text-2xl font-bold mb-6">Agent Activity</h1>
 
             {error && (
-                <Card className="mb-6 border-red-500/30 bg-red-500/5">
+                <Card className="mb-6 border-foreground/20 bg-foreground/5">
                     <CardContent className="p-4" role="alert">
-                        <p className="text-sm text-red-400">{error}</p>
+                        <p className="text-sm text-foreground/70">{error}</p>
                     </CardContent>
                 </Card>
             )}
@@ -120,7 +120,7 @@ export default function AgentLogPage() {
                     </h2>
                     <div className="space-y-3">
                         {approvals.map((approval) => (
-                            <Card key={approval.id} className="border-amber-500/30 bg-amber-500/5">
+                            <Card key={approval.id} className="border-foreground/20 bg-foreground/5">
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between">
                                         <div>
@@ -201,7 +201,7 @@ export default function AgentLogPage() {
                                                 )}
                                         </div>
                                         {action.guardWarnings.length > 0 && (
-                                            <p className="text-xs text-amber-500 mt-0.5">
+                                            <p className="text-xs text-muted-foreground mt-0.5">
                                                 {action.guardWarnings[0]}
                                             </p>
                                         )}

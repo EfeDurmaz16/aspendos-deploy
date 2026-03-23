@@ -25,7 +25,7 @@ const geminiData: CompetitorData = {
         'Yula gives you Gemini plus 12+ other AI models, persistent memory across all of them, and proactive AI that messages you first.',
     description:
         'Google Gemini is an AI assistant integrated into Google Workspace, offering multimodal capabilities and Google Search integration.',
-    logoColor: 'bg-blue-500',
+    logoColor: 'bg-zinc-700',
     strengths: [
         'Deep Google Workspace integration (Docs, Gmail, Drive)',
         'Excellent multimodal capabilities (images, video)',

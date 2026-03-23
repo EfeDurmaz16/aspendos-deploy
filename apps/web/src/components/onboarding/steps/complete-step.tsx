@@ -22,7 +22,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
         const duration = 2000;
         const end = Date.now() + duration;
 
-        const colors = ['#10B981', '#2563EB', '#D97706', '#7C3AED'];
+        const colors = ['#737373', '#525252', '#a3a3a3', '#404040'];
 
         (function frame() {
             confetti({
@@ -61,8 +61,8 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', damping: 10, stiffness: 200, delay: 0.2 }}
             >
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500/20 via-violet-500/10 to-amber-500/20 border border-border">
-                    <PartyPopper className="h-12 w-12 text-emerald-400" />
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-foreground/5 to-foreground/10 border border-border">
+                    <PartyPopper className="h-12 w-12 text-foreground/80" />
                 </div>
                 {/* Sparkle effects */}
                 <motion.div
@@ -71,7 +71,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.5 }}
                 >
-                    <Sparkles className="h-6 w-6 text-amber-400" />
+                    <Sparkles className="h-6 w-6 text-muted-foreground" />
                 </motion.div>
                 <motion.div
                     className="absolute -bottom-1 -left-1"
@@ -79,7 +79,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.6 }}
                 >
-                    <Sparkles className="h-4 w-4 text-violet-400" />
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
                 </motion.div>
             </motion.div>
 
@@ -105,17 +105,17 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
 
             {/* Ready to go */}
             <motion.div
-                className="mb-8 w-full max-w-md rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4"
+                className="mb-8 w-full max-w-md rounded-xl border border-foreground/15 bg-foreground/5 p-4"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
             >
                 <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20">
-                        <Sparkles className="h-6 w-6 text-emerald-400" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-foreground/10">
+                        <Sparkles className="h-6 w-6 text-foreground/80" />
                     </div>
                     <div className="text-left">
-                        <div className="text-sm font-semibold text-emerald-400">Tour Complete</div>
+                        <div className="text-sm font-semibold text-foreground">Tour Complete</div>
                         <div className="text-xs text-muted-foreground">
                             You're ready to explore Yula
                         </div>
@@ -133,12 +133,10 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                 <QuickTip
                     icon={<MessageSquare className="h-4 w-4" />}
                     text="Start a chat to experience Yula's memory"
-                    color="#2563EB"
                 />
                 <QuickTip
                     icon={<Sparkles className="h-4 w-4" />}
                     text="Try Council mode for multi-perspective answers"
-                    color="#7C3AED"
                 />
             </motion.div>
 
@@ -153,9 +151,9 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                     onClick={onComplete}
                     className={cn(
                         'flex w-full items-center justify-center gap-2 rounded-xl py-4',
-                        'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold',
-                        'transition-all hover:from-emerald-600 hover:to-emerald-700 active:scale-[0.98]',
-                        'shadow-lg shadow-emerald-500/25'
+                        'bg-foreground text-background font-semibold',
+                        'transition-all hover:bg-foreground/90 active:scale-[0.98]',
+                        'shadow-lg shadow-foreground/10'
                     )}
                 >
                     <MessageSquare className="h-5 w-5" />
@@ -173,12 +171,11 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
     );
 }
 
-function QuickTip({ icon, text, color }: { icon: React.ReactNode; text: string; color: string }) {
+function QuickTip({ icon, text }: { icon: React.ReactNode; text: string }) {
     return (
         <div className="flex items-center gap-3 rounded-lg bg-foreground/5 px-4 py-3">
             <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
-                style={{ backgroundColor: `${color}20`, color }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground/10 text-foreground"
             >
                 {icon}
             </div>

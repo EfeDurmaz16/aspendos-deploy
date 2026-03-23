@@ -25,7 +25,7 @@ const perplexityData: CompetitorData = {
         'Yula offers deep conversational AI with persistent memory, while Perplexity focuses on quick search answers. Get the best of both worlds.',
     description:
         'Perplexity is an AI-powered search engine that provides concise answers with citations from web sources.',
-    logoColor: 'bg-teal-500',
+    logoColor: 'bg-zinc-600',
     strengths: [
         'Excellent for quick research with citations',
         'Real-time web search integration',

@@ -110,9 +110,9 @@ export default function MessagingSettingsPage() {
             </p>
 
             {error && (
-                <Card className="mb-6 border-red-500/30 bg-red-500/5">
+                <Card className="mb-6 border-foreground/20 bg-foreground/5">
                     <CardContent className="p-4" role="alert">
-                        <p className="text-sm text-red-400">{error}</p>
+                        <p className="text-sm text-foreground/70">{error}</p>
                     </CardContent>
                 </Card>
             )}
@@ -126,7 +126,7 @@ export default function MessagingSettingsPage() {
                     return (
                         <Card
                             key={platform.id}
-                            className={isConnected ? 'border-emerald-500/30 bg-emerald-500/5' : ''}
+                            className={isConnected ? 'border-foreground/20 bg-foreground/5' : ''}
                         >
                             <CardContent className="p-4">
                                 <div className="flex items-start justify-between">
