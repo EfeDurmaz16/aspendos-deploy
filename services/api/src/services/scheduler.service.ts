@@ -395,3 +395,110 @@ export function formatScheduledTime(date: Date): string {
         });
     }
 }
+
+// ============================================
+// CRON SCHEDULING (RecurringSchedule)
+// ============================================
+
+/**
+ * Parse a simple cron expression and calculate the next run time.
+ * Supports standard 5-field cron: minute hour day-of-month month day-of-week
+ */
+export function getNextCronRun(cronExpression: string, fromDate: Date = new Date()): Date | null {
+    try {
+        const parts = cronExpression.trim().split(/\s+/);
+        if (parts.length !== 5) return null;
+
+        const [minuteSpec, hourSpec, _daySpec, _monthSpec, dowSpec] = parts;
+        const maxSearch = 7 * 24 * 60;
+        const candidate = new Date(fromDate);
+        candidate.setSeconds(0, 0);
+        candidate.setMinutes(candidate.getMinutes() + 1);
+
+        for (let i = 0; i < maxSearch; i++) {
+            const minute = candidate.getMinutes();
+            const hour = candidate.getHours();
+            const dow = candidate.getDay();
+
+            if (
+                matchesCronField(minuteSpec, minute) &&
+                matchesCronField(hourSpec, hour) &&
+                matchesCronField(dowSpec, dow)
+            ) {
+                return candidate;
+            }
+            candidate.setMinutes(candidate.getMinutes() + 1);
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+function matchesCronField(spec: string, value: number): boolean {
+    if (spec === '*') return true;
+    if (spec.startsWith('*/')) {
+        const step = parseInt(spec.slice(2), 10);
+        return !isNaN(step) && step > 0 && value % step === 0;
+    }
+    if (spec.includes('-')) {
+        const [start, end] = spec.split('-').map(Number);
+        return !isNaN(start) && !isNaN(end) && value >= start && value <= end;
+    }
+    if (spec.includes(',')) {
+        return spec.split(',').map(Number).includes(value);
+    }
+    return parseInt(spec, 10) === value;
+}
+
+export async function createRecurringSchedule(params: {
+    userId: string;
+    reminderId?: string;
+    cronExpression: string;
+    naturalLanguage: string;
+    timezone?: string;
+    maxOccurrences?: number;
+}) {
+    const nextRun = getNextCronRun(params.cronExpression);
+    return prisma.recurringSchedule.create({
+        data: {
+            userId: params.userId,
+            reminderId: params.reminderId,
+            cronExpression: params.cronExpression,
+            naturalLanguage: params.naturalLanguage,
+            timezone: params.timezone || 'UTC',
+            maxOccurrences: params.maxOccurrences,
+            nextRunAt: nextRun,
+        },
+    });
+}
+
+export async function getDueRecurringSchedules() {
+    return prisma.recurringSchedule.findMany({
+        where: {
+            isActive: true,
+            nextRunAt: { lte: new Date() },
+        },
+        orderBy: { nextRunAt: 'asc' },
+        take: 50,
+    });
+}
+
+export async function advanceRecurringSchedule(scheduleId: string) {
+    const schedule = await prisma.recurringSchedule.findUnique({ where: { id: scheduleId } });
+    if (!schedule) return;
+
+    const nextRun = getNextCronRun(schedule.cronExpression);
+    const shouldDeactivate =
+        schedule.maxOccurrences != null && schedule.occurrenceCount + 1 >= schedule.maxOccurrences;
+
+    await prisma.recurringSchedule.update({
+        where: { id: scheduleId },
+        data: {
+            occurrenceCount: { increment: 1 },
+            lastRunAt: new Date(),
+            nextRunAt: shouldDeactivate ? null : nextRun,
+            isActive: !shouldDeactivate,
+        },
+    });
+}
