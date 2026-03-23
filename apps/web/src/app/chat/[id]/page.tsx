@@ -424,12 +424,18 @@ export default function ChatPage() {
                                 ))
                             )}
                             {error && (
-                                <div className="text-center py-4 text-red-500 text-sm bg-red-50 dark:bg-red-900/10 rounded-lg mx-auto max-w-md">
+                                <div
+                                    role="alert"
+                                    className="text-center py-4 text-red-400 text-sm bg-red-500/10 rounded-lg mx-auto max-w-md"
+                                >
                                     {error}
                                 </div>
                             )}
                             {streamError && (
-                                <div className="text-center py-4 text-red-500 text-sm bg-red-50 dark:bg-red-900/10 rounded-lg mx-auto max-w-md">
+                                <div
+                                    role="alert"
+                                    className="text-center py-4 text-red-400 text-sm bg-red-500/10 rounded-lg mx-auto max-w-md"
+                                >
                                     {streamError}
                                 </div>
                             )}

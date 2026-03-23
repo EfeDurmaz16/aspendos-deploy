@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface AgentAction {
@@ -39,8 +39,10 @@ export default function AgentLogPage() {
     const [actions, setActions] = useState<AgentAction[]>([]);
     const [approvals, setApprovals] = useState<PendingApproval[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchData = useCallback(async () => {
+        setError(null);
         try {
             const [actionsRes, approvalsRes] = await Promise.all([
                 fetch('/api/v1/traces/recent', { credentials: 'include' }),
@@ -55,8 +57,9 @@ export default function AgentLogPage() {
                 const data = await approvalsRes.json();
                 setApprovals(data.approvals || []);
             }
-        } catch (error) {
-            console.error('Failed to fetch agent data:', error);
+        } catch (err) {
+            console.error('Failed to fetch agent data:', err);
+            setError('Failed to load agent data. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -94,8 +97,16 @@ export default function AgentLogPage() {
     }
 
     return (
-        <div className="container mx-auto max-w-4xl px-4 py-8">
+        <main className="container mx-auto max-w-4xl px-4 py-8">
             <h1 className="text-2xl font-bold mb-6">Agent Activity</h1>
+
+            {error && (
+                <Card className="mb-6 border-red-500/30 bg-red-500/5">
+                    <CardContent className="p-4" role="alert">
+                        <p className="text-sm text-red-400">{error}</p>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Pending Approvals */}
             {approvals.length > 0 && (
@@ -201,7 +212,7 @@ export default function AgentLogPage() {
                     </div>
                 )}
             </section>
-        </div>
+        </main>
     );
 }
 

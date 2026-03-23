@@ -32,7 +32,7 @@ export function Tool({ name, state, children, className }: ToolProps) {
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 aria-expanded={isOpen}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-white/5 transition-colors focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-1 focus-visible:ring-offset-black rounded-t-lg"
+                className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-white/5 transition-colors focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none rounded-t-lg"
             >
                 <div className="flex items-center gap-2">
                     <ToolStatusDot state={state} />
@@ -61,7 +61,7 @@ export function ToolInput({ data, className }: { data: unknown; className?: stri
     if (!data) return null;
     return (
         <div className={cn('mt-2', className)}>
-            <div className="text-xs text-neutral-500 mb-1">Input</div>
+            <div className="text-xs text-neutral-400 mb-1">Input</div>
             <pre className="text-xs bg-white/5 rounded p-2 overflow-x-auto text-neutral-300">
                 {typeof data === 'string' ? data : JSON.stringify(data, null, 2)}
             </pre>
@@ -73,7 +73,7 @@ export function ToolOutput({ data, className }: { data: unknown; className?: str
     if (!data) return null;
     return (
         <div className={cn('mt-2', className)}>
-            <div className="text-xs text-neutral-500 mb-1">Output</div>
+            <div className="text-xs text-neutral-400 mb-1">Output</div>
             <pre className="text-xs bg-white/5 rounded p-2 overflow-x-auto text-neutral-300">
                 {typeof data === 'string' ? data : JSON.stringify(data, null, 2)}
             </pre>
@@ -94,7 +94,7 @@ function ToolStatusDot({ state }: { state: string }) {
               : state === 'approval-requested'
                 ? 'bg-orange-500'
                 : state.includes('streaming')
-                  ? 'bg-blue-500 animate-pulse'
+                  ? 'bg-blue-500 motion-safe:animate-pulse'
                   : 'bg-neutral-500';
 
     return <div className={cn('w-2 h-2 rounded-full', color)} aria-hidden="true" />;

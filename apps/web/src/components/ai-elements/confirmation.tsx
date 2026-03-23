@@ -44,6 +44,7 @@ export function Confirmation({
 }: ConfirmationProps) {
     return (
         <div
+            role={state === 'approval-requested' ? 'alert' : undefined}
             className={cn(
                 'border rounded-lg p-4 my-2',
                 state === 'approval-requested'
@@ -91,9 +92,9 @@ function ConfirmationRequest({
 }) {
     return (
         <>
-            <div className="flex items-center gap-2 mb-2" role="status">
+            <div className="flex items-center gap-2 mb-2">
                 <div
-                    className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"
+                    className="w-2 h-2 rounded-full bg-orange-500 motion-safe:animate-pulse"
                     aria-hidden="true"
                 />
                 <span className="text-sm font-medium text-orange-300">Approval Required</span>

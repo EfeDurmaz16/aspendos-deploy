@@ -21,15 +21,18 @@ export function Suggestion({ text, onClick, icon, className }: SuggestionProps) 
         <button
             type="button"
             onClick={onClick}
+            disabled={!onClick}
             className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm',
-                'rounded-full border border-white/10 bg-white/5',
+                'inline-flex items-center gap-1.5 px-3 min-h-[44px] text-sm',
+                'rounded-full border border-white/15 bg-white/5',
                 'hover:bg-white/10 hover:border-white/20 transition-colors',
+                'focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
                 'text-neutral-300',
                 className
             )}
         >
-            {icon}
+            {icon && <span aria-hidden="true">{icon}</span>}
             {text}
         </button>
     );
@@ -42,10 +45,13 @@ interface SuggestionGroupProps {
 
 export function SuggestionGroup({ suggestions, className }: SuggestionGroupProps) {
     return (
-        <div className={cn('flex flex-wrap gap-2', className)}>
+        <fieldset
+            className={cn('flex flex-wrap gap-2 border-0 p-0 m-0', className)}
+            aria-label="Suggestions"
+        >
             {suggestions.map((s) => (
                 <Suggestion key={s.text} {...s} />
             ))}
-        </div>
+        </fieldset>
     );
 }
