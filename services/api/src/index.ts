@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { auth } from './lib/auth';
 import { validateEnv } from './lib/env';
 import { AppError } from './lib/errors';
@@ -28,6 +28,7 @@ import adminAuditRoutes from './routes/admin-audit';
 import adminBackupsRoutes from './routes/admin-backups';
 import analyticsRoutes from './routes/analytics';
 import apiKeysRoutes from './routes/api-keys';
+import approvalRoutes from './routes/approvals';
 import billingRoutes from './routes/billing';
 // Routes
 import chatRoutes from './routes/chat';
@@ -41,6 +42,7 @@ import gamificationRoutes from './routes/gamification';
 import healthRoutes from './routes/health';
 import importRoutes from './routes/import';
 import memoryRoutes from './routes/memory';
+import messagingRoutes from './routes/messaging';
 import miscRoutes from './routes/misc';
 import modelsRoutes from './routes/models';
 import notificationsRoutes from './routes/notifications';
@@ -50,6 +52,7 @@ import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
 import securityRoutes from './routes/security';
 import sessionRoutes from './routes/sessions';
+import skillRoutes from './routes/skills';
 import statusRoutes from './routes/status';
 import systemRoutes from './routes/system';
 import tracesRoutes from './routes/traces';
@@ -282,10 +285,7 @@ app.use('*', async (c, next) => {
     const path = c.req.path;
     const CSRF_EXEMPT_PATHS = new Set(['/api/billing/webhook', '/health']);
     const CSRF_EXEMPT_PREFIXES = ['/api/auth/', '/api/scheduler/webhook', '/api/cron'];
-    if (
-        CSRF_EXEMPT_PATHS.has(path) ||
-        CSRF_EXEMPT_PREFIXES.some((p) => path.startsWith(p))
-    ) {
+    if (CSRF_EXEMPT_PATHS.has(path) || CSRF_EXEMPT_PREFIXES.some((p) => path.startsWith(p))) {
         return next();
     }
 
@@ -419,7 +419,6 @@ app.get('/metrics', async (c) => {
     });
 });
 
-
 // Better Auth routes
 app.on(['POST', 'GET'], '/api/auth/*', (c) => {
     return auth.handler(c.req.raw);
@@ -495,6 +494,9 @@ app.route('/api/misc', miscRoutes);
 app.route('/api/models', modelsRoutes);
 app.route('/api/traces', tracesRoutes);
 app.route('/api/admin', adminAuditRoutes);
+app.route('/api/approvals', approvalRoutes);
+app.route('/api/skills', skillRoutes);
+app.route('/api/messaging', messagingRoutes);
 
 // Start server with MCP initialization
 const port = parseInt(process.env.PORT || '8080', 10);
@@ -508,6 +510,14 @@ async function initialize() {
     } catch (error) {
         console.warn('[MCP] Failed to initialize MCP clients:', error);
         // Continue without MCP - it's optional
+    }
+
+    // Seed system skills (non-blocking)
+    try {
+        const { seedSystemSkills } = await import('./services/skill.service');
+        await seedSystemSkills();
+    } catch (error) {
+        console.warn('[Skills] Failed to seed system skills:', error);
     }
 
     console.log(`✅ Yula API Server running on port ${port}`);
