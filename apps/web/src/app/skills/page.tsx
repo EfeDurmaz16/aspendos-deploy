@@ -2,10 +2,6 @@
 
 /**
  * Skills Management Page
- *
- * Displays available skills (system + custom) with:
- * - Category filters
- * - Skill cards with usage stats
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -30,9 +26,11 @@ const CATEGORIES = ['all', 'productivity', 'research', 'creative', 'coding', 'pe
 export default function SkillsPage() {
     const [skills, setSkills] = useState<Skill[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
     const fetchSkills = useCallback(async () => {
+        setError(null);
         try {
             const params = selectedCategory !== 'all' ? `?category=${selectedCategory}` : '';
             const res = await fetch(`/api/v1/skills${params}`, { credentials: 'include' });
@@ -40,8 +38,9 @@ export default function SkillsPage() {
                 const data = await res.json();
                 setSkills(data.skills || []);
             }
-        } catch (error) {
-            console.error('Failed to fetch skills:', error);
+        } catch (err) {
+            console.error('Failed to fetch skills:', err);
+            setError('Failed to load skills. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -53,30 +52,46 @@ export default function SkillsPage() {
 
     if (loading) {
         return (
-            <div className="container mx-auto max-w-4xl px-4 py-8 space-y-4">
+            <main
+                className="container mx-auto max-w-4xl px-4 py-8 space-y-4"
+                aria-busy="true"
+                aria-label="Loading skills"
+            >
                 <Skeleton className="h-8 w-32" />
                 <div className="flex gap-2">
                     {Array.from({ length: 6 }).map((_, i) => (
-                        <Skeleton key={`skel-${i}`} className="h-8 w-20 rounded-full" />
+                        <Skeleton
+                            key={`skel-cat-${CATEGORIES[i] || i}`}
+                            className="h-8 w-20 rounded-full"
+                        />
                     ))}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                     {Array.from({ length: 4 }).map((_, i) => (
-                        <Skeleton key={`card-${i}`} className="h-32 w-full rounded-xl" />
+                        <Skeleton key={`skel-card-${i}`} className="h-32 w-full rounded-xl" />
                     ))}
                 </div>
-            </div>
+            </main>
         );
     }
 
     return (
-        <div className="container mx-auto max-w-4xl px-4 py-8">
+        <main className="container mx-auto max-w-4xl px-4 py-8">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">Skills</h1>
                 <span className="text-sm text-muted-foreground">{skills.length} available</span>
             </div>
 
+            {error && (
+                <Card className="mb-6 border-red-500/30 bg-red-500/5">
+                    <CardContent className="p-4" role="alert">
+                        <p className="text-sm text-red-400">{error}</p>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Category Filter */}
+            <h2 className="sr-only">Filter by category</h2>
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
                 {CATEGORIES.map((cat) => (
                     <Button
@@ -93,40 +108,43 @@ export default function SkillsPage() {
             </div>
 
             {/* Skills Grid */}
-            {skills.length === 0 ? (
-                <Card>
-                    <CardContent className="p-8 text-center text-muted-foreground">
-                        No skills found in this category.
-                    </CardContent>
-                </Card>
-            ) : (
-                <div className="grid gap-4 sm:grid-cols-2">
-                    {skills.map((skill) => (
-                        <Card key={skill.id}>
-                            <CardContent className="p-4">
-                                <div className="flex items-start justify-between mb-2">
-                                    <h3 className="font-medium">{skill.name}</h3>
-                                    {skill.isSystem && <Badge variant="primary">System</Badge>}
-                                </div>
-                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                    {skill.description}
-                                </p>
-                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                    <span>
-                                        <strong>{skill.usageCount}</strong> uses
-                                    </span>
-                                    <span>
-                                        <strong>{Math.round(skill.successRate * 100)}%</strong>{' '}
-                                        success
-                                    </span>
-                                    <span>v{skill.version}</span>
-                                    <Badge variant="tertiary">{skill.category}</Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            )}
-        </div>
+            <h2 className="sr-only">Available skills</h2>
+            <div aria-live="polite">
+                {skills.length === 0 ? (
+                    <Card>
+                        <CardContent className="p-8 text-center text-muted-foreground">
+                            No skills found in this category.
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {skills.map((skill) => (
+                            <Card key={skill.id}>
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <h3 className="font-medium">{skill.name}</h3>
+                                        {skill.isSystem && <Badge variant="primary">System</Badge>}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                        {skill.description}
+                                    </p>
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                        <span>
+                                            <strong>{skill.usageCount}</strong> uses
+                                        </span>
+                                        <span>
+                                            <strong>{Math.round(skill.successRate * 100)}%</strong>{' '}
+                                            success
+                                        </span>
+                                        <span>v{skill.version}</span>
+                                        <Badge variant="tertiary">{skill.category}</Badge>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </main>
     );
 }

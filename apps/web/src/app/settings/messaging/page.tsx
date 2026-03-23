@@ -2,8 +2,6 @@
 
 /**
  * Messaging Platform Settings
- *
- * Manage platform connections for multi-channel delivery.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -54,16 +52,19 @@ const PLATFORMS = [
 export default function MessagingSettingsPage() {
     const [connections, setConnections] = useState<PlatformConnection[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchConnections = useCallback(async () => {
+        setError(null);
         try {
             const res = await fetch('/api/v1/messaging/connections', { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 setConnections(data.connections || []);
             }
-        } catch (error) {
-            console.error('Failed to fetch connections:', error);
+        } catch (err) {
+            console.error('Failed to fetch connections:', err);
+            setError('Failed to load platform connections.');
         } finally {
             setLoading(false);
         }
@@ -86,24 +87,37 @@ export default function MessagingSettingsPage() {
 
     if (loading) {
         return (
-            <div className="container mx-auto max-w-2xl px-4 py-8 space-y-4">
+            <main
+                className="container mx-auto max-w-2xl px-4 py-8 space-y-4"
+                aria-busy="true"
+                aria-label="Loading messaging settings"
+            >
                 <Skeleton className="h-8 w-48" />
                 <Skeleton className="h-4 w-64" />
-                {Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton key={`skel-${i}`} className="h-24 w-full rounded-xl" />
+                {PLATFORMS.map((p) => (
+                    <Skeleton key={`skel-${p.id}`} className="h-24 w-full rounded-xl" />
                 ))}
-            </div>
+            </main>
         );
     }
 
     return (
-        <div className="container mx-auto max-w-2xl px-4 py-8">
+        <main className="container mx-auto max-w-2xl px-4 py-8">
             <h1 className="text-2xl font-bold mb-2">Messaging Platforms</h1>
             <p className="text-muted-foreground mb-6">
                 Connect platforms to receive PAC reminders, approval requests, and chat with YULA
                 from anywhere.
             </p>
 
+            {error && (
+                <Card className="mb-6 border-red-500/30 bg-red-500/5">
+                    <CardContent className="p-4" role="alert">
+                        <p className="text-sm text-red-400">{error}</p>
+                    </CardContent>
+                </Card>
+            )}
+
+            <h2 className="sr-only">Available platforms</h2>
             <div className="space-y-4">
                 {PLATFORMS.map((platform) => {
                     const connection = getConnection(platform.id);
@@ -158,6 +172,10 @@ export default function MessagingSettingsPage() {
                                                     rel="noopener noreferrer"
                                                 >
                                                     Connect
+                                                    <span className="sr-only">
+                                                        {' '}
+                                                        (opens in new tab)
+                                                    </span>
                                                 </a>
                                             </Button>
                                         ) : (
@@ -173,7 +191,7 @@ export default function MessagingSettingsPage() {
 
             <Card className="mt-8">
                 <CardContent className="p-4">
-                    <h3 className="font-medium mb-2">How it works</h3>
+                    <h2 className="font-medium mb-2">How it works</h2>
                     <ol className="text-sm text-muted-foreground space-y-1.5 list-decimal list-inside">
                         <li>Click Connect on your preferred platform</li>
                         <li>Follow the setup instructions to link your account</li>
@@ -182,6 +200,6 @@ export default function MessagingSettingsPage() {
                     </ol>
                 </CardContent>
             </Card>
-        </div>
+        </main>
     );
 }

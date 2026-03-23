@@ -87,12 +87,16 @@ export default function AgentLogPage() {
 
     if (loading) {
         return (
-            <div className="container mx-auto max-w-4xl px-4 py-8 space-y-4">
+            <main
+                className="container mx-auto max-w-4xl px-4 py-8 space-y-4"
+                aria-busy="true"
+                aria-label="Loading agent activity"
+            >
                 <Skeleton className="h-8 w-48" />
                 <Skeleton className="h-24 w-full" />
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
-            </div>
+            </main>
         );
     }
 
@@ -164,7 +168,7 @@ export default function AgentLogPage() {
             )}
 
             {/* Action Timeline */}
-            <section>
+            <section aria-live="polite">
                 <h2 className="text-lg font-semibold mb-3">Recent Actions</h2>
                 {actions.length === 0 ? (
                     <Card>

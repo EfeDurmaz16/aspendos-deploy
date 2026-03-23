@@ -25,6 +25,7 @@ interface ToolProps {
 
 export function Tool({ name, state, children, className }: ToolProps) {
     const [isOpen, setIsOpen] = useState(state !== 'output-available');
+    const contentId = `tool-content-${name.replace(/\W/g, '-')}`;
 
     return (
         <div className={cn('border border-white/10 rounded-lg overflow-hidden my-2', className)}>
@@ -32,6 +33,7 @@ export function Tool({ name, state, children, className }: ToolProps) {
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 aria-expanded={isOpen}
+                aria-controls={contentId}
                 className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-white/5 transition-colors focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none rounded-t-lg"
             >
                 <div className="flex items-center gap-2">
@@ -40,7 +42,11 @@ export function Tool({ name, state, children, className }: ToolProps) {
                 </div>
                 <ToolStatusBadge state={state} />
             </button>
-            {isOpen && <div className="px-3 pb-3 border-t border-white/5">{children}</div>}
+            {isOpen && (
+                <div id={contentId} className="px-3 pb-3 border-t border-white/5">
+                    {children}
+                </div>
+            )}
         </div>
     );
 }
