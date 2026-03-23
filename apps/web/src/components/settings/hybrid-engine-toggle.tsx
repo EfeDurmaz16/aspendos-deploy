@@ -26,14 +26,14 @@ const modeConfig: Record<
         description: 'Fast responses for daily tasks',
         icon: Lightning,
         color: '#f59e0b',
-        bgColor: 'bg-amber-500/10',
+        bgColor: 'bg-foreground/10',
     },
     deep: {
         label: 'Deep Thought',
         description: 'Complex planning & analysis',
         icon: Brain,
         color: '#8b5cf6',
-        bgColor: 'bg-violet-500/10',
+        bgColor: 'bg-foreground/10',
     },
 };
 
@@ -165,7 +165,7 @@ export function EngineSettingsPanel({ className }: { className?: string }) {
     return (
         <div className={cn('rounded-xl border border-white/10 bg-zinc-900/80 p-4', className)}>
             <div className="mb-4 flex items-center gap-2">
-                <Gauge className="h-5 w-5 text-violet-400" weight="fill" />
+                <Gauge className="h-5 w-5 text-muted-foreground" weight="fill" />
                 <h3 className="font-semibold text-white">Hybrid Engine</h3>
             </div>
 

@@ -41,7 +41,7 @@ export function Reasoning({
     return (
         <div
             className={cn(
-                'rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-950/20',
+                'rounded-lg border border-border bg-muted/50',
                 'overflow-hidden transition-all duration-200',
                 className
             )}
@@ -63,7 +63,7 @@ export function ReasoningTrigger({ isOpen, onToggle, isStreaming }: ReasoningTri
             onClick={onToggle}
             className={cn(
                 'w-full justify-start gap-2 px-3 py-2 h-auto',
-                'text-amber-700 dark:text-amber-400 hover:bg-amber-100/50 dark:hover:bg-amber-900/30',
+                'text-muted-foreground hover:bg-muted/80',
                 'rounded-none border-none'
             )}
         >
@@ -82,7 +82,7 @@ export function ReasoningContent({ children, isOpen }: ReasoningContentProps) {
     if (!isOpen) return null;
 
     return (
-        <div className="px-3 pb-3 pt-1 text-sm text-amber-900/80 dark:text-amber-200/80">
+        <div className="px-3 pb-3 pt-1 text-sm text-foreground/80">
             <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1">
                 {children}
             </div>
@@ -116,7 +116,7 @@ export function ChainOfThought({
                         className={cn(
                             'flex items-start gap-2 p-2 rounded-md text-sm',
                             'transition-all duration-200',
-                            isActive && 'bg-amber-100/70 dark:bg-amber-900/40',
+                            isActive && 'bg-muted',
                             isComplete && 'text-muted-foreground',
                             !isActive && !isComplete && 'text-muted-foreground/60'
                         )}
@@ -124,8 +124,8 @@ export function ChainOfThought({
                         <span
                             className={cn(
                                 'flex-shrink-0 size-5 rounded-full flex items-center justify-center text-xs font-medium',
-                                isActive && 'bg-amber-500 text-white',
-                                isComplete && 'bg-emerald-500 text-white',
+                                isActive && 'bg-foreground text-background',
+                                isComplete && 'bg-foreground/70 text-background',
                                 !isActive && !isComplete && 'bg-muted text-muted-foreground'
                             )}
                         >
@@ -133,7 +133,7 @@ export function ChainOfThought({
                         </span>
                         <span className="flex-1">{step}</span>
                         {isActive && isStreaming && (
-                            <CircleNotch size={16} className="animate-spin text-amber-500" />
+                            <CircleNotch size={16} className="animate-spin text-muted-foreground" />
                         )}
                     </div>
                 );
