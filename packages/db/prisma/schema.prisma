@@ -44,6 +44,7 @@ model User {
   agentActionLogs          AgentActionLog[]
   agentApprovals           AgentApproval[]
   toolAllowlists           ToolAllowlist[]
+  platformConnections      PlatformConnection[]
 
   emailVerified Boolean   @default(false)
   image         String?
@@ -858,4 +859,74 @@ enum ApprovalStatus {
   APPROVED
   REJECTED
   EXPIRED
+}
+
+// ============================================
+// SKILLS SYSTEM (inspired by OpenClaw + Hermes Agent)
+// ============================================
+
+/// A reusable skill with tool config, guard policy, and execution tracking.
+model Skill {
+  id           String   @id @default(cuid())
+  name         String
+  description  String   @db.Text
+  systemPrompt String   @db.Text
+  toolConfig   Json     // Which tools this skill can use
+  guardPolicy  Json     // Custom guard rules for this skill
+  category     String   // productivity | research | creative | coding | personal
+  isSystem     Boolean  @default(false)
+  isPublic     Boolean  @default(false)
+  createdBy    String?  // userId, null for system skills
+  usageCount   Int      @default(0)
+  successRate  Float    @default(0)
+  version      Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  executions SkillExecution[]
+
+  @@index([category])
+  @@index([createdBy])
+  @@map("skill")
+}
+
+/// Tracks individual skill executions for learning loop analytics.
+model SkillExecution {
+  id         String   @id @default(cuid())
+  skillId    String
+  userId     String
+  chatId     String?
+  input      String   @db.Text
+  output     String?  @db.Text
+  success    Boolean  @default(true)
+  feedback   Int?     // 1-5 rating
+  durationMs Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@index([skillId, userId])
+  @@index([createdAt])
+  @@map("skill_execution")
+}
+
+// ============================================
+// MESSAGING GATEWAY
+// ============================================
+
+/// Links a user to a messaging platform for multi-channel delivery.
+model PlatformConnection {
+  id             String   @id @default(cuid())
+  userId         String
+  platform       String   // telegram | whatsapp | slack | discord
+  platformUserId String
+  metadata       Json?    // Platform-specific config
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([platform, platformUserId])
+  @@index([userId])
+  @@map("platform_connection")
 }
