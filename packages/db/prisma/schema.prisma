@@ -45,6 +45,7 @@ model User {
   agentApprovals           AgentApproval[]
   toolAllowlists           ToolAllowlist[]
   platformConnections      PlatformConnection[]
+  recurringSchedules       RecurringSchedule[]
 
   emailVerified Boolean   @default(false)
   image         String?
@@ -601,14 +602,45 @@ model PACSettings {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  telegramEnabled Boolean @default(false)
+  whatsappEnabled Boolean @default(false)
+  slackEnabled    Boolean @default(false)
+  discordEnabled  Boolean @default(false)
+
   @@map("pac_settings")
 }
 
+model RecurringSchedule {
+  id              String   @id @default(cuid())
+  userId          String
+  reminderId      String?
+  cronExpression  String
+  naturalLanguage String
+  timezone        String   @default("UTC")
+  maxOccurrences  Int?
+  occurrenceCount Int      @default(0)
+  isActive        Boolean  @default(true)
+  nextRunAt       DateTime?
+  lastRunAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([nextRunAt])
+  @@map("recurring_schedule")
+}
+
 enum ReminderType {
-  EXPLICIT // User explicitly asked to be reminded
-  IMPLICIT // AI detected a commitment
-  FOLLOWUP // AI proactively following up on a topic
-  SCHEDULED // Time-based scheduled reminder
+  EXPLICIT       // User explicitly asked to be reminded
+  IMPLICIT       // AI detected a commitment
+  FOLLOWUP       // AI proactively following up on a topic
+  SCHEDULED      // Time-based scheduled reminder
+  CONTEXT_AWARE  // Agent noticed relevant external event
+  SKILL_SUGGEST  // Suggest skill creation from detected pattern
+  MEMORY_DIGEST  // Periodic memory summary
+  RECURRING      // Cron-based recurring reminder
 }
 
 enum ReminderStatus {
