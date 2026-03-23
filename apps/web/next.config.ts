@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
     },
 
     // Prisma 7 + pg adapter must be external (not bundled by Turbopack)
-    serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg'],
+    serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg', '@opentelemetry/api'],
 
     // Experimental features
     experimental: {
