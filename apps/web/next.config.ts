@@ -20,6 +20,9 @@ const nextConfig: NextConfig = {
         formats: ['image/avif', 'image/webp'],
     },
 
+    // Prisma 7 + pg adapter must be external (not bundled by Turbopack)
+    serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg'],
+
     // Experimental features
     experimental: {
         clientTraceMetadata: ['baggage', 'sentry-trace'],
