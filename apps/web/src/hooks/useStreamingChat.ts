@@ -22,6 +22,15 @@ export interface MemoryDecision {
     reasoning: string;
 }
 
+export interface ToolCallPart {
+    id: string;
+    name: string;
+    args: Record<string, unknown>;
+    state: string;
+    output?: unknown;
+    approval?: { approved: boolean };
+}
+
 export interface ChatMessage {
     id: string;
     role: 'user' | 'assistant';
@@ -31,6 +40,7 @@ export interface ChatMessage {
     error?: string;
     decision?: MemoryDecision;
     memoriesUsed?: MemoryUsed[];
+    toolCalls?: ToolCallPart[];
     metadata?: {
         model?: string;
         tokensIn?: number;
@@ -99,12 +109,25 @@ export function useStreamingChat(chatId: string) {
     const {
         messages: aiMessages,
         sendMessage: aiSendMessage,
+        addToolApprovalResponse,
         stop,
         status,
         error,
     } = useChat({
         id: actualChatId,
         transport,
+        // Auto-resubmit after tool approvals are responded to
+        sendAutomaticallyWhen: ({ messages: msgs }) => {
+            const lastMsg = msgs.at(-1);
+            return (
+                lastMsg?.parts?.some(
+                    (part: any) =>
+                        'state' in part &&
+                        part.state === 'approval-responded' &&
+                        part.approval?.approved === true
+                ) ?? false
+            );
+        },
         onError: (err: Error) => {
             console.error('[useStreamingChat] Error:', err);
         },
@@ -113,14 +136,32 @@ export function useStreamingChat(chatId: string) {
     // Determine streaming state from status
     const isStreaming = status === 'streaming' || status === 'submitted';
 
-    // Convert AI SDK messages to our format
+    // Convert AI SDK messages to our format (preserving tool parts)
     const messages: ChatMessage[] = aiMessages.map((msg) => {
-        // Extract text content from message parts
         let textContent = '';
+        const toolCalls: Array<{
+            id: string;
+            name: string;
+            args: Record<string, unknown>;
+            state: string;
+            output?: unknown;
+            approval?: { approved: boolean };
+        }> = [];
+
         if (msg.parts) {
             for (const part of msg.parts) {
                 if (part.type === 'text') {
                     textContent += part.text;
+                } else if ('toolName' in part) {
+                    const p = part as any;
+                    toolCalls.push({
+                        id: p.toolCallId || p.id || '',
+                        name: p.toolName || '',
+                        args: p.args || {},
+                        state: p.state || 'input-available',
+                        output: p.output,
+                        approval: p.approval,
+                    });
                 }
             }
         }
@@ -136,6 +177,7 @@ export function useStreamingChat(chatId: string) {
                 msg === aiMessages[aiMessages.length - 1],
             decision: msg.role === 'assistant' ? currentDecision || undefined : undefined,
             memoriesUsed: msg.role === 'assistant' ? currentMemories : undefined,
+            toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
         };
     });
 
@@ -241,6 +283,14 @@ export function useStreamingChat(chatId: string) {
         [messages, sendMessage]
     );
 
+    // Tool approval handler for needsApproval tools
+    const handleToolApproval = useCallback(
+        (toolCallId: string, approved: boolean, reason?: string) => {
+            addToolApprovalResponse({ id: toolCallId, approved, reason });
+        },
+        [addToolApprovalResponse]
+    );
+
     return {
         // State
         messages,
@@ -259,6 +309,7 @@ export function useStreamingChat(chatId: string) {
         clearMessages,
         loadMessages,
         retryLastMessage,
+        handleToolApproval,
 
         // Input state (manually managed in v5.0)
         input,
