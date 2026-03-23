@@ -90,7 +90,11 @@ export default function AgentLogPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                <div
+                    className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"
+                    role="status"
+                    aria-label="Loading"
+                />
             </div>
         );
     }
@@ -131,21 +135,21 @@ export default function AgentLogPage() {
                                         <button
                                             type="button"
                                             onClick={() => handleApprove(approval.id)}
-                                            className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 rounded-md transition-colors"
+                                            className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-green-400"
                                         >
                                             Approve
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleApprove(approval.id, true)}
-                                            className="px-3 py-1.5 text-sm bg-green-600/50 hover:bg-green-600/70 rounded-md transition-colors"
+                                            className="px-3 py-1.5 text-sm bg-green-600/50 hover:bg-green-600/70 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-green-400"
                                         >
                                             Always Allow
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleReject(approval.id)}
-                                            className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+                                            className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-red-400"
                                         >
                                             Reject
                                         </button>
@@ -171,7 +175,9 @@ export default function AgentLogPage() {
                             >
                                 <div
                                     className={`w-2 h-2 rounded-full ${getDecisionColor(action.guardDecision)}`}
+                                    aria-hidden="true"
                                 />
+                                <span className="sr-only">{action.guardDecision || 'allow'}</span>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm font-medium">

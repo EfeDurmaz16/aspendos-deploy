@@ -90,8 +90,11 @@ function ConfirmationRequest({
 }) {
     return (
         <>
-            <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+            <div className="flex items-center gap-2 mb-2" role="status">
+                <div
+                    className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"
+                    aria-hidden="true"
+                />
                 <span className="text-sm font-medium text-orange-300">Approval Required</span>
             </div>
             <p className="text-sm text-neutral-300 mb-1">
@@ -114,7 +117,7 @@ function ConfirmationRequest({
 function ConfirmationAccepted({ toolName }: { toolName: string }) {
     return (
         <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
+            <div className="w-2 h-2 rounded-full bg-green-500" aria-hidden="true" />
             <span className="text-sm text-green-400">
                 <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs">
                     {formatToolName(toolName)}
@@ -128,7 +131,7 @@ function ConfirmationAccepted({ toolName }: { toolName: string }) {
 function ConfirmationRejected({ toolName }: { toolName: string }) {
     return (
         <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-red-500" />
+            <div className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true" />
             <span className="text-sm text-red-400">
                 <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs">
                     {formatToolName(toolName)}
@@ -151,14 +154,14 @@ export function ConfirmationActions({
             <button
                 type="button"
                 onClick={onApprove}
-                className="px-4 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+                className="px-4 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-1 focus-visible:ring-offset-black"
             >
                 Approve
             </button>
             <button
                 type="button"
                 onClick={() => onDeny?.()}
-                className="px-4 py-1.5 text-sm bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-md transition-colors"
+                className="px-4 py-1.5 text-sm bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1 focus-visible:ring-offset-black"
             >
                 Deny
             </button>

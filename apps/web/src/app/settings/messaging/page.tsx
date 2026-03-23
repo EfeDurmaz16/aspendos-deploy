@@ -90,7 +90,11 @@ export default function MessagingSettingsPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                <div
+                    className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"
+                    role="status"
+                    aria-label="Loading"
+                />
             </div>
         );
     }
@@ -119,7 +123,13 @@ export default function MessagingSettingsPage() {
                         >
                             <div className="flex items-start justify-between">
                                 <div className="flex items-start gap-3">
-                                    <span className="text-2xl">{platform.icon}</span>
+                                    <span
+                                        className="text-2xl"
+                                        role="img"
+                                        aria-label={platform.name}
+                                    >
+                                        {platform.icon}
+                                    </span>
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <h3 className="font-medium">{platform.name}</h3>

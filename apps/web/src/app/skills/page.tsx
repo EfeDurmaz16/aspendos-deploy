@@ -52,7 +52,11 @@ export default function SkillsPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                <div
+                    className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"
+                    role="status"
+                    aria-label="Loading"
+                />
             </div>
         );
     }
@@ -71,7 +75,8 @@ export default function SkillsPage() {
                         key={cat}
                         type="button"
                         onClick={() => setSelectedCategory(cat)}
-                        className={`px-3 py-1.5 text-sm rounded-full transition-colors whitespace-nowrap ${
+                        aria-pressed={selectedCategory === cat}
+                        className={`px-3 py-1.5 text-sm rounded-full transition-colors whitespace-nowrap focus-visible:ring-2 focus-visible:ring-white/30 ${
                             selectedCategory === cat
                                 ? 'bg-white text-black'
                                 : 'bg-white/10 text-neutral-300 hover:bg-white/20'

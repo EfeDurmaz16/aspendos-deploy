@@ -31,7 +31,8 @@ export function Tool({ name, state, children, className }: ToolProps) {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-white/5 transition-colors"
+                aria-expanded={isOpen}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-white/5 transition-colors focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-1 focus-visible:ring-offset-black rounded-t-lg"
             >
                 <div className="flex items-center gap-2">
                     <ToolStatusDot state={state} />
@@ -96,7 +97,7 @@ function ToolStatusDot({ state }: { state: string }) {
                   ? 'bg-blue-500 animate-pulse'
                   : 'bg-neutral-500';
 
-    return <div className={cn('w-2 h-2 rounded-full', color)} />;
+    return <div className={cn('w-2 h-2 rounded-full', color)} aria-hidden="true" />;
 }
 
 function ToolStatusBadge({ state }: { state: string }) {
