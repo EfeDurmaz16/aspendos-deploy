@@ -4,7 +4,13 @@
  * Uses OpenMemory for cognitive memory retrieval.
  */
 
-import { generateText, streamText } from 'ai';
+import {
+    convertToModelMessages,
+    createUIMessageStream,
+    createUIMessageStreamResponse,
+    generateText,
+    streamText,
+} from 'ai';
 import { Hono } from 'hono';
 import {
     getModel,
@@ -592,6 +598,181 @@ app.post(
         }
     }
 );
+
+// ============================================
+// AI SDK v6 NATIVE STREAMING ENDPOINT
+// ============================================
+// This endpoint speaks the AI SDK UI Message Stream protocol natively.
+// It accepts UIMessage[] from DefaultChatTransport and returns a
+// structured SSE stream with tool call parts, approval events, etc.
+//
+// The old /message endpoint is kept for backwards compatibility.
+
+app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const chatId = (c.get('validatedParams') as { id: string }).id;
+
+    // Parse AI SDK transport body: { id, messages, trigger, messageId }
+    const body = await c.req.json();
+    const uiMessages = body.messages || [];
+
+    // Extract the last user message text for memory/moderation
+    const lastUserMsg = [...uiMessages].reverse().find((m: any) => m.role === 'user');
+    const content =
+        lastUserMsg?.content || lastUserMsg?.parts?.find((p: any) => p.type === 'text')?.text || '';
+
+    if (!content) {
+        return c.json({ error: 'No message content' }, 400);
+    }
+
+    // Get user tier
+    const user = c.get('user');
+    const userTier: UserTier =
+        ((user as unknown as Record<string, unknown>)?.tier as UserTier) || 'FREE';
+
+    // Verify chat exists
+    const chat = await chatService.getChat(chatId, userId);
+    if (!chat) {
+        return c.json({ error: { code: 'CHAT_NOT_FOUND', message: 'Chat not found' } }, 404);
+    }
+
+    // Content moderation
+    const moderation = moderateContent(content);
+    if (moderation.action === 'block') {
+        return c.json({ error: 'Message blocked by content safety policy' }, 400);
+    }
+
+    // Save user message to DB
+    await chatService.createMessage({
+        chatId,
+        userId,
+        role: 'user',
+        content,
+    });
+
+    // Model selection
+    const modelId = body.model_id || chat.modelPreference || 'groq/llama-3.1-70b-versatile';
+    const smartModelId = getSmartModelId(modelId, content);
+    const { model: resolvedModel, actualModelId } = getModelWithFallback(smartModelId);
+
+    // Memory decision
+    const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
+    const memoryAgent = getMemoryAgent();
+    const decision = await memoryAgent.decideMemoryUsage(userId, content);
+    const useSupermemoryWrapper =
+        (memoryBackend === 'supermemory' || memoryBackend === 'dual') && decision.useMemory;
+
+    // Memory retrieval (only if not using SuperMemory wrapper)
+    let memoriesUsed: { content: string; sector: string; confidence: number }[] = [];
+    if (decision.useMemory && !useSupermemoryWrapper) {
+        try {
+            const memories = await openMemory.searchMemories(content, userId, { limit: 5 });
+            memoriesUsed = memories.map((m) => ({
+                content: m.content,
+                sector: m.sector || 'semantic',
+                confidence: m.salience || 0.8,
+            }));
+        } catch {
+            // Continue without memory
+        }
+    }
+
+    // Build system prompt
+    const systemPrompt = buildSystemPrompt(decision, memoriesUsed, false, {
+        skipMemoryInjection: useSupermemoryWrapper,
+    });
+
+    // Wrap model with SuperMemory if enabled
+    let streamModel = resolvedModel;
+    if (useSupermemoryWrapper) {
+        try {
+            const { withSupermemory } = await import('@supermemory/tools/ai-sdk');
+            streamModel = withSupermemory(resolvedModel, {
+                apiKey: process.env.SUPERMEMORY_API_KEY!,
+                containerTags: [`user_${userId}`],
+            });
+        } catch {
+            // Fall back to base model
+        }
+    }
+
+    // Get tools (with SuperMemory tools when enabled)
+    const tools = useSupermemoryWrapper
+        ? await getToolsForTierWithSupermemory(userTier, userId)
+        : getToolsForTier(userTier, userId);
+
+    // Merge MCP tools
+    let allTools = { ...tools };
+    if (isMCPInitialized()) {
+        try {
+            const mcpTools = await getMCPTools();
+            allTools = { ...tools, ...mcpTools };
+        } catch {
+            // Continue without MCP
+        }
+    }
+
+    // Convert UI messages to model messages for streamText
+    const modelMessages = convertToModelMessages(uiMessages);
+
+    // Stream with UI Message Stream protocol
+    const stream = createUIMessageStream({
+        execute: ({ writer }) => {
+            const result = streamText({
+                model: streamModel,
+                system: systemPrompt,
+                messages: modelMessages,
+                tools: allTools,
+                maxSteps: 5,
+                temperature: 0.7,
+                onFinish: async ({ text, usage }) => {
+                    try {
+                        await chatService.createMessage({
+                            chatId,
+                            userId,
+                            role: 'assistant',
+                            content: text,
+                            modelUsed: actualModelId,
+                            tokensIn: usage?.inputTokens,
+                            tokensOut: usage?.outputTokens,
+                        });
+                        await billingService.recordChatUsage(userId);
+                        if (usage?.inputTokens || usage?.outputTokens) {
+                            await billingService.recordTokenUsage(
+                                userId,
+                                usage.inputTokens || 0,
+                                usage.outputTokens || 0,
+                                actualModelId
+                            );
+                        }
+                    } catch (err) {
+                        log.error('onFinish save/billing failed', {
+                            metadata: { chatId, error: String(err) },
+                        });
+                    }
+
+                    // Auto-extract memories (fire-and-forget)
+                    if (userTier === 'PRO' || userTier === 'ULTRA') {
+                        if (useSupermemoryWrapper) {
+                            smFeatures
+                                .processConversation(chatId, userId, [
+                                    { role: 'user', content },
+                                    { role: 'assistant', content: text },
+                                ])
+                                .catch(() => {});
+                        } else {
+                            extractMemoriesFromExchange(userId, content, text).catch(() => {});
+                        }
+                    }
+                },
+            });
+
+            writer.merge(result.toUIMessageStream());
+        },
+    });
+
+    return createUIMessageStreamResponse({ stream });
+});
 
 // POST /api/chat/:id/multi - Multi-model comparison (ULTRA only)
 app.post(

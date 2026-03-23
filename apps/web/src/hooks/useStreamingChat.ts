@@ -97,7 +97,7 @@ export function useStreamingChat(chatId: string) {
     const transport = useMemo(
         () =>
             new DefaultChatTransport({
-                api: `${API_BASE}/api/chat/${actualChatId}/message`,
+                api: `${API_BASE}/api/chat/${actualChatId}/stream`,
                 headers: {
                     'Content-Type': 'application/json',
                 },
