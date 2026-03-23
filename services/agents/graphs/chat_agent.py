@@ -1,6 +1,6 @@
 """
 Aspendos Chat Agent Graph
-LangGraph-based agent with tool calling and multi-provider support.
+LangGraph-based agent with tool calling, guard chain, and budget management.
 """
 from typing import Annotated, Sequence, TypedDict, Literal
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
@@ -10,14 +10,21 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from providers.llm import get_llm
 from tools import BUILTIN_TOOLS, mcp_registry
+from core.guards import create_default_guard_chain, GuardContext, DecisionType
 
 
 class AgentState(TypedDict):
-    """State for the chat agent."""
+    """State for the chat agent with governance budget fields."""
     messages: Annotated[Sequence[BaseMessage], "The conversation messages"]
     model_id: str
     user_id: str
     chat_id: str
+    # Governance: iteration and cost budgets (from Hermes Agent pattern)
+    iteration_budget: int       # Max tool calls allowed (default: 25)
+    iterations_used: int        # Current tool call count
+    cost_budget_usd: float      # Max cost in USD
+    cost_used_usd: float        # Current accumulated cost
+    guard_warnings: list[str]   # Accumulated guard warnings
 
 
 def create_chat_agent(
@@ -56,37 +63,91 @@ def create_chat_agent(
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
     
+    # Guard chain for tool execution governance
+    guard_chain = create_default_guard_chain(
+        max_iterations=25,
+        max_cost_usd=5.0,
+    )
+
     def should_continue(state: AgentState) -> Literal["tools", "end"]:
         """Determine if we should continue to tools or end."""
         last_message = state["messages"][-1]
-        
+
+        # Check iteration budget
+        iterations_used = state.get("iterations_used", 0)
+        iteration_budget = state.get("iteration_budget", 25)
+        if iterations_used >= iteration_budget:
+            return "end"
+
         # If the LLM made a tool call, route to tools node
         if hasattr(last_message, "tool_calls") and last_message.tool_calls:
             return "tools"
-        
+
         # Otherwise, end the conversation turn
         return "end"
-    
+
+    async def guard_check(state: AgentState) -> dict:
+        """Evaluate guard chain before tool execution."""
+        last_message = state["messages"][-1]
+        iterations_used = state.get("iterations_used", 0)
+        warnings = list(state.get("guard_warnings", []))
+
+        if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
+            return {"iterations_used": iterations_used}
+
+        for tool_call in last_message.tool_calls:
+            context = GuardContext(
+                tool_name=tool_call.get("name", ""),
+                tool_args=tool_call.get("args", {}),
+                user_id=state.get("user_id", ""),
+                session_id=state.get("chat_id", ""),
+                tool_call_count=iterations_used,
+            )
+            result = await guard_chain.evaluate(context)
+
+            if result.decision.type == DecisionType.BLOCK:
+                # Add a message explaining the block
+                block_msg = ToolMessage(
+                    content=f"[BLOCKED] {result.decision.reason}",
+                    tool_call_id=tool_call.get("id", ""),
+                )
+                return {
+                    "messages": [block_msg],
+                    "iterations_used": iterations_used + 1,
+                    "guard_warnings": warnings + result.warnings,
+                }
+
+            warnings.extend(result.warnings)
+
+        return {
+            "iterations_used": iterations_used + 1,
+            "guard_warnings": warnings,
+        }
+
     # Build the graph
     workflow = StateGraph(AgentState)
-    
+
     # Add nodes
     workflow.add_node("agent", call_model)
+    workflow.add_node("guard_check", guard_check)
     workflow.add_node("tools", ToolNode(tools))
-    
+
     # Set entry point
     workflow.set_entry_point("agent")
-    
-    # Add conditional edges
+
+    # Add conditional edges: agent → should_continue → [guard_check | end]
     workflow.add_conditional_edges(
         "agent",
         should_continue,
         {
-            "tools": "tools",
+            "tools": "guard_check",
             "end": END,
         }
     )
-    
+
+    # Guard check always goes to tools (unless it blocked, then back to agent)
+    workflow.add_edge("guard_check", "tools")
+
     # Tools always go back to agent
     workflow.add_edge("tools", "agent")
     
@@ -138,6 +199,11 @@ async def run_agent(
         "model_id": model_id,
         "user_id": user_id,
         "chat_id": chat_id,
+        "iteration_budget": 25,
+        "iterations_used": 0,
+        "cost_budget_usd": 5.0,
+        "cost_used_usd": 0.0,
+        "guard_warnings": [],
     }
     
     # Invoke agent
@@ -188,6 +254,11 @@ async def stream_agent(
         "model_id": model_id,
         "user_id": user_id,
         "chat_id": chat_id,
+        "iteration_budget": 25,
+        "iterations_used": 0,
+        "cost_budget_usd": 5.0,
+        "cost_used_usd": 0.0,
+        "guard_warnings": [],
     }
     
     # Stream events
