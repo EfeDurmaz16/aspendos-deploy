@@ -1,7 +1,7 @@
 'use client';
 
+import { Crown as CrownIcon, Medal as MedalIcon } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { CrownIcon, MedalIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LevelBadge } from './level-badge';
 

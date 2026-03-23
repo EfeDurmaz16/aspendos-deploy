@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
+import { ArrowClockwise as RefreshCw } from '@phosphor-icons/react';
 import { usePWA } from '@/hooks/use-pwa';
 
 /**

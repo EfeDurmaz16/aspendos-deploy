@@ -1,7 +1,16 @@
 'use client';
 
+import {
+    ArrowRight,
+    Robot as Bot,
+    Check,
+    DownloadSimple as Download,
+    FileJs as FileJson,
+    ChatCircle as MessageSquare,
+    Sparkle as Sparkles,
+    MaskHappy as Theater,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Bot, Check, Download, FileJson, MessageSquare, Sparkles, Theater } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Feature accent color: Electric Blue
@@ -32,8 +41,8 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
 
             <h2 className="mb-2 text-2xl font-bold text-foreground">Your History, Your Power</h2>
             <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
-                Every conversation you've had makes Yula smarter. Import your history
-                and never start from zero again.
+                Every conversation you've had makes Yula smarter. Import your history and never
+                start from zero again.
             </p>
 
             {/* Demo visualization */}
@@ -43,7 +52,11 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
                     <div className="mb-4 flex items-center justify-center gap-4">
                         <SourceBadge name="ChatGPT" icon={<Bot className="h-5 w-5" />} />
                         <ArrowRight className="h-4 w-4 text-muted-foreground/70" />
-                        <SourceBadge name="Yula" icon={<Sparkles className="h-5 w-5" />} highlighted />
+                        <SourceBadge
+                            name="Yula"
+                            icon={<Sparkles className="h-5 w-5" />}
+                            highlighted
+                        />
                         <ArrowRight className="h-4 w-4 text-muted-foreground/70" />
                         <SourceBadge name="Claude" icon={<Theater className="h-5 w-5" />} />
                     </div>

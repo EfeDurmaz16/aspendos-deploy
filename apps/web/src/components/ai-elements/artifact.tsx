@@ -1,6 +1,6 @@
 'use client';
 
-import { type LucideIcon, XIcon } from 'lucide-react';
+import { type Icon, X } from '@phosphor-icons/react';
 import type { ComponentProps, HTMLAttributes } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -46,7 +46,7 @@ export const ArtifactClose = ({
         variant={variant}
         {...props}
     >
-        {children ?? <XIcon className="size-4" />}
+        {children ?? <X size={16} />}
         <span className="sr-only">Close</span>
     </Button>
 );
@@ -72,7 +72,7 @@ export const ArtifactActions = ({ className, ...props }: ArtifactActionsProps) =
 export type ArtifactActionProps = ComponentProps<typeof Button> & {
     tooltip?: string;
     label?: string;
-    icon?: LucideIcon;
+    icon?: Icon;
 };
 
 export const ArtifactAction = ({
@@ -93,7 +93,7 @@ export const ArtifactAction = ({
             variant={variant}
             {...props}
         >
-            {Icon ? <Icon className="size-4" /> : children}
+            {Icon ? <Icon size={16} /> : children}
             <span className="sr-only">{label || tooltip}</span>
         </Button>
     );

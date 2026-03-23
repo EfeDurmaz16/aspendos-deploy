@@ -1,6 +1,6 @@
 'use client';
 
-import { Brain, Copy, Edit, Eye, Trash2 } from 'lucide-react';
+import { Brain, Copy, PencilSimple as Edit, Eye, Trash as Trash2 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import {
     ContextMenu,

@@ -1,7 +1,7 @@
 'use client';
 
+import { CaretRight, Check, Circle } from '@phosphor-icons/react';
 import * as ContextMenuPrimitive from '@radix-ui/react-context-menu';
-import { Check, ChevronRight, Circle } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -34,7 +34,7 @@ const ContextMenuSubTrigger = React.forwardRef<
         {...props}
     >
         {children}
-        <ChevronRight className="ml-auto h-4 w-4" />
+        <CaretRight size={16} className="ml-auto" />
     </ContextMenuPrimitive.SubTrigger>
 ));
 ContextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName;
@@ -104,7 +104,7 @@ const ContextMenuCheckboxItem = React.forwardRef<
     >
         <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
             <ContextMenuPrimitive.ItemIndicator>
-                <Check className="h-4 w-4" />
+                <Check size={16} />
             </ContextMenuPrimitive.ItemIndicator>
         </span>
         {children}
@@ -176,18 +176,18 @@ ContextMenuShortcut.displayName = 'ContextMenuShortcut';
 
 export {
     ContextMenu,
-    ContextMenuTrigger,
-    ContextMenuContent,
-    ContextMenuItem,
     ContextMenuCheckboxItem,
-    ContextMenuRadioItem,
+    ContextMenuContent,
+    ContextMenuGroup,
+    ContextMenuItem,
     ContextMenuLabel,
+    ContextMenuPortal,
+    ContextMenuRadioGroup,
+    ContextMenuRadioItem,
     ContextMenuSeparator,
     ContextMenuShortcut,
-    ContextMenuGroup,
-    ContextMenuPortal,
     ContextMenuSub,
     ContextMenuSubContent,
     ContextMenuSubTrigger,
-    ContextMenuRadioGroup,
+    ContextMenuTrigger,
 };

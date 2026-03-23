@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Clock, Edit2, X } from 'lucide-react';
+import { Check, Clock, PencilSimple as Edit2, X } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 interface ScheduledTask {

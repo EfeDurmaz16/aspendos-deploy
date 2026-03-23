@@ -1,7 +1,11 @@
 'use client';
 
+import {
+    CheckCircle as CheckCircle2Icon,
+    Lock as LockIcon,
+    Trophy as TrophyIcon,
+} from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2Icon, LockIcon, TrophyIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Achievement category colors

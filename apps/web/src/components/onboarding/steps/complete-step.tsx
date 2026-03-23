@@ -1,8 +1,13 @@
 'use client';
 
+import {
+    ArrowRight,
+    ChatCircle as MessageSquare,
+    Confetti as PartyPopper,
+    Sparkle as Sparkles,
+} from '@phosphor-icons/react';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
-import { ArrowRight, MessageSquare, PartyPopper, Sparkles } from 'lucide-react';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -110,10 +115,10 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                         <Sparkles className="h-6 w-6 text-emerald-400" />
                     </div>
                     <div className="text-left">
-                        <div className="text-sm font-semibold text-emerald-400">
-                            Tour Complete
+                        <div className="text-sm font-semibold text-emerald-400">Tour Complete</div>
+                        <div className="text-xs text-muted-foreground">
+                            You're ready to explore Yula
                         </div>
-                        <div className="text-xs text-muted-foreground">You're ready to explore Yula</div>
                     </div>
                 </div>
             </motion.div>

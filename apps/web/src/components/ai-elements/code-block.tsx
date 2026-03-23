@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckIcon, CopyIcon } from 'lucide-react';
+import { Check, Copy } from '@phosphor-icons/react';
 import {
     type ComponentProps,
     createContext,
@@ -160,7 +160,7 @@ export const CodeBlockCopyButton = ({
         }
     };
 
-    const Icon = isCopied ? CheckIcon : CopyIcon;
+    const Icon = isCopied ? Check : Copy;
 
     return (
         <Button

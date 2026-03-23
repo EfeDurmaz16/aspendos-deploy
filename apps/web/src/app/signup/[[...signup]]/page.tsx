@@ -1,8 +1,16 @@
 'use client';
 
-import { CheckCircle, Lock, Warning } from '@phosphor-icons/react';
+import {
+    At as AtSignIcon,
+    CheckCircle,
+    CaretLeft as ChevronLeftIcon,
+    CircleNotch as Loader2,
+    Lock,
+    User as UserIcon,
+    Warning,
+    X,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { AtSignIcon, ChevronLeftIcon, Loader2, UserIcon, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -63,7 +71,8 @@ export default function SignupPage() {
                     onError: (ctx) => {
                         const status = (ctx.error as { status?: number }).status ?? 0;
                         if (status >= 500) {
-                            const msg = 'Service temporarily unavailable. Please try again in a moment.';
+                            const msg =
+                                'Service temporarily unavailable. Please try again in a moment.';
                             toast.error(msg);
                             setError(msg);
                         } else {
@@ -111,9 +120,7 @@ export default function SignupPage() {
                     <div className="size-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
                         <span className="text-sm font-bold text-white dark:text-zinc-900">Y</span>
                     </div>
-                    <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                        Yula
-                    </p>
+                    <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Yula</p>
                 </div>
                 <div className="z-10 mt-auto">
                     <blockquote className="space-y-2">
@@ -153,7 +160,9 @@ export default function SignupPage() {
                 <div className="mx-auto space-y-4 sm:w-sm w-full max-w-md">
                     <div className="flex items-center gap-2 lg:hidden mb-8">
                         <div className="size-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
-                            <span className="text-sm font-bold text-white dark:text-zinc-900">Y</span>
+                            <span className="text-sm font-bold text-white dark:text-zinc-900">
+                                Y
+                            </span>
                         </div>
                         <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                             Yula

@@ -1,6 +1,13 @@
 'use client';
 
-import { Copy, Edit, Forward, RefreshCw, Reply, Trash2 } from 'lucide-react';
+import {
+    Copy,
+    PencilSimple as Edit,
+    ShareFat as Forward,
+    ArrowClockwise as RefreshCw,
+    ArrowBendUpLeft as Reply,
+    Trash as Trash2,
+} from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import {
     ContextMenu,

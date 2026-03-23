@@ -1,7 +1,14 @@
 'use client';
 
+import {
+    ArrowRight,
+    Bell,
+    DownloadSimple as Download,
+    Rocket,
+    Sparkle as Sparkles,
+    Users,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Bell, Download, Rocket, Sparkles, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface WelcomeStepProps {
@@ -146,7 +153,9 @@ function FeatureHighlight({
             className="rounded-xl border border-border bg-foreground/[0.02] p-3 text-center transition-colors hover:bg-foreground/[0.04]"
             style={{ borderColor: `${color}20` }}
         >
-            <div className="mb-1 flex justify-center" style={{ color }}>{icon}</div>
+            <div className="mb-1 flex justify-center" style={{ color }}>
+                {icon}
+            </div>
             <div className="text-xs font-medium text-foreground">{label}</div>
             <div className="text-xs text-muted-foreground">{description}</div>
         </div>

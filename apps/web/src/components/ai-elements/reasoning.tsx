@@ -1,6 +1,6 @@
 'use client';
 
-import { Brain, ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { Brain, CaretDown, CaretRight, CircleNotch } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -67,16 +67,12 @@ export function ReasoningTrigger({ isOpen, onToggle, isStreaming }: ReasoningTri
                 'rounded-none border-none'
             )}
         >
-            {isStreaming ? (
-                <Loader2 className="size-4 animate-spin" />
-            ) : (
-                <Brain className="size-4" />
-            )}
+            {isStreaming ? <CircleNotch size={16} className="animate-spin" /> : <Brain size={16} />}
             <span className="text-sm font-medium">{isStreaming ? 'Thinking...' : 'Reasoning'}</span>
             {isOpen ? (
-                <ChevronDown className="size-4 ml-auto" />
+                <CaretDown size={16} className="ml-auto" />
             ) : (
-                <ChevronRight className="size-4 ml-auto" />
+                <CaretRight size={16} className="ml-auto" />
             )}
         </Button>
     );
@@ -137,7 +133,7 @@ export function ChainOfThought({
                         </span>
                         <span className="flex-1">{step}</span>
                         {isActive && isStreaming && (
-                            <Loader2 className="size-4 animate-spin text-amber-500" />
+                            <CircleNotch size={16} className="animate-spin text-amber-500" />
                         )}
                     </div>
                 );

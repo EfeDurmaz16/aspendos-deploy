@@ -1,6 +1,11 @@
 'use client';
 
-import { Cloud, CloudOff, Loader2, RefreshCw } from 'lucide-react';
+import {
+    Cloud,
+    CloudSlash as CloudOff,
+    CircleNotch as Loader2,
+    ArrowClockwise as RefreshCw,
+} from '@phosphor-icons/react';
 import { useSync } from '@/hooks/use-sync';
 
 interface SyncStatusProps {

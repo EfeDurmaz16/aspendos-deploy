@@ -1,8 +1,13 @@
 'use client';
 
-import { CheckCircle, Warning } from '@phosphor-icons/react';
+import {
+    CheckCircle,
+    CircleNotch as Loader2,
+    Envelope as Mail,
+    ArrowClockwise as RefreshCw,
+    Warning,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Loader2, Mail, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';

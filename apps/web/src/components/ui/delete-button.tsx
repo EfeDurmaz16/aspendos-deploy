@@ -1,7 +1,7 @@
 'use client';
 
+import { Check, Trash, X } from '@phosphor-icons/react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
-import { Check, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
@@ -132,7 +132,7 @@ export function NativeDelete({
                                     {isExpanded ? (
                                         <Check className={iconSizeVariants[size]} />
                                     ) : (
-                                        <Trash2 className={iconSizeVariants[size]} />
+                                        <Trash className={iconSizeVariants[size]} />
                                     )}
                                 </motion.span>
                             )}

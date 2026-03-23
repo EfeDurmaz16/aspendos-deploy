@@ -1,5 +1,9 @@
+import {
+    ArrowCounterClockwise as RotateCcw,
+    MagnifyingGlass as Search,
+    X,
+} from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { RotateCcw, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import { GlassButton } from '@/components/ui/glass-button';
 import { GlassCard } from '@/components/ui/glass-card';

@@ -1,7 +1,7 @@
 'use client';
 
+import { X } from '@phosphor-icons/react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -53,7 +53,7 @@ const DialogContent = React.forwardRef<
         >
             {children}
             <DialogPrimitive.Close className="absolute right-4 top-4 rounded-[6px] p-1 opacity-70 ring-offset-background transition-all duration-200 hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-                <X className="h-4 w-4" />
+                <X size={16} />
                 <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
         </DialogPrimitive.Content>
@@ -103,13 +103,13 @@ DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {
     Dialog,
-    DialogPortal,
-    DialogOverlay,
-    DialogTrigger,
     DialogClose,
     DialogContent,
-    DialogHeader,
-    DialogFooter,
-    DialogTitle,
     DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogOverlay,
+    DialogPortal,
+    DialogTitle,
+    DialogTrigger,
 };

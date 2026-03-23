@@ -1,8 +1,9 @@
 'use client';
 
-import { ArrowCounterClockwise, PaperPlaneRight, Users, X } from '@phosphor-icons/react';
+import { ArrowCounterClockwise, ArrowUp, Scales, X } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { CouncilPersona } from '@/stores/yula-store';
 import { CouncilDeliberation } from './council-deliberation';
@@ -68,49 +69,41 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
     return (
         <div
             className={cn(
-                'flex h-full flex-col overflow-hidden rounded-2xl',
-                'border border-border bg-background/95 backdrop-blur-xl',
-                'shadow-2xl shadow-black/10 dark:shadow-black/30',
+                'flex h-full flex-col overflow-hidden rounded-lg',
+                'border border-border bg-background',
                 className
             )}
         >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <div className="flex items-center justify-between border-b border-border px-5 py-3">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
-                        <Users className="h-5 w-5 text-violet-500" weight="fill" />
-                    </div>
+                    <Scales size={18} className="text-foreground" weight="regular" />
                     <div>
-                        <h2 className="font-semibold text-foreground">The Council</h2>
-                        <p className="text-xs text-muted-foreground">Multi-perspective decision making</p>
+                        <h2 className="text-[14px] font-semibold text-foreground">The Council</h2>
+                        <p className="text-[11px] text-muted-foreground">
+                            Multi-perspective deliberation
+                        </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                     {isActive && (
-                        <button
-                            onClick={handleReset}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                            title="Reset"
-                        >
-                            <ArrowCounterClockwise className="h-4 w-4" />
-                        </button>
+                        <Button variant="ghost" size="icon-sm" onClick={handleReset} title="Reset">
+                            <ArrowCounterClockwise size={16} />
+                        </Button>
                     )}
                     {onClose && (
-                        <button
-                            onClick={onClose}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                            <X className="h-4 w-4" />
-                        </button>
+                        <Button variant="ghost" size="icon-sm" onClick={onClose}>
+                            <X size={16} />
+                        </Button>
                     )}
                 </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-5">
                 <AnimatePresence mode="wait">
                     {!isActive ? (
-                        // Welcome state
+                        /* Welcome state - clean, typographic */
                         <motion.div
                             key="welcome"
                             initial={{ opacity: 0 }}
@@ -118,7 +111,7 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                             exit={{ opacity: 0 }}
                             className="flex h-full flex-col items-center justify-center text-center"
                         >
-                            <div className="mb-8 flex flex-wrap justify-center gap-3">
+                            <div className="mb-6 flex flex-wrap justify-center gap-2">
                                 {(
                                     [
                                         'logic',
@@ -129,37 +122,39 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                                 ).map((persona, i) => (
                                     <motion.div
                                         key={persona}
-                                        initial={{ opacity: 0, y: 20 }}
+                                        initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.1 }}
+                                        transition={{ delay: i * 0.08 }}
                                     >
                                         <CouncilPersonaCard persona={persona} isCompact />
                                     </motion.div>
                                 ))}
                             </div>
-                            <h3 className="mb-2 text-xl font-semibold text-foreground">
+                            <h3 className="mb-2 text-lg font-semibold tracking-tight text-foreground">
                                 Summon The Council
                             </h3>
-                            <p className="max-w-md text-sm text-muted-foreground">
+                            <p className="max-w-sm text-[13px] leading-relaxed text-muted-foreground">
                                 Present a question or decision, and four distinct perspectives will
                                 deliberate before reaching a consensus.
                             </p>
                         </motion.div>
                     ) : verdict ? (
-                        // Verdict state
+                        /* Verdict state */
                         <motion.div
                             key="verdict"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="space-y-6"
+                            className="space-y-4"
                         >
                             {/* Original question */}
-                            <div className="rounded-lg border border-border bg-muted/50 p-4">
-                                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            <div className="rounded-md border border-border bg-muted/50 px-4 py-3">
+                                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                                     Your Question
                                 </p>
-                                <p className="mt-1 text-sm text-foreground/80">{submittedQuestion}</p>
+                                <p className="mt-1 text-[13px] text-foreground/80">
+                                    {submittedQuestion}
+                                </p>
                             </div>
 
                             {/* Verdict */}
@@ -170,20 +165,22 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                             />
                         </motion.div>
                     ) : (
-                        // Deliberating state
+                        /* Deliberating state */
                         <motion.div
                             key="deliberating"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="space-y-6"
+                            className="space-y-4"
                         >
                             {/* Original question */}
-                            <div className="rounded-lg border border-border bg-muted/50 p-4">
-                                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            <div className="rounded-md border border-border bg-muted/50 px-4 py-3">
+                                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                                     Deliberating On
                                 </p>
-                                <p className="mt-1 text-sm text-foreground/80">{submittedQuestion}</p>
+                                <p className="mt-1 text-[13px] text-foreground/80">
+                                    {submittedQuestion}
+                                </p>
                             </div>
 
                             {/* Deliberation progress */}
@@ -195,7 +192,7 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                             )}
 
                             {/* Persona cards */}
-                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            <div className="grid gap-3 md:grid-cols-2">
                                 {(
                                     [
                                         'logic',
@@ -226,29 +223,29 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Ask the Council for guidance on a decision..."
+                            placeholder="Ask the Council for guidance..."
                             rows={2}
                             className={cn(
-                                'w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 pr-12',
-                                'text-sm text-foreground placeholder:text-muted-foreground',
-                                'focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/20'
+                                'w-full resize-none rounded-lg border border-border bg-muted/50 px-4 py-3 pr-12',
+                                'text-[13px] text-foreground placeholder:text-muted-foreground',
+                                'focus:border-foreground/20 focus:outline-none focus:ring-1 focus:ring-foreground/10'
                             )}
                         />
                         <button
                             onClick={handleSubmit}
                             disabled={!question.trim()}
                             className={cn(
-                                'absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-lg',
-                                'transition-all duration-200',
+                                'absolute bottom-3 right-3 flex h-7 w-7 items-center justify-center rounded-md',
+                                'transition-all duration-150',
                                 question.trim()
-                                    ? 'bg-violet-500 text-foreground hover:bg-violet-600'
+                                    ? 'bg-foreground text-background hover:bg-foreground/90'
                                     : 'bg-muted text-muted-foreground'
                             )}
                         >
-                            <PaperPlaneRight className="h-4 w-4" weight="fill" />
+                            <ArrowUp size={14} weight="bold" />
                         </button>
                     </div>
-                    <p className="mt-2 text-center text-xs text-muted-foreground/60">
+                    <p className="mt-1.5 text-center text-[11px] text-muted-foreground/60">
                         Press Enter to summon the Council
                     </p>
                 </div>

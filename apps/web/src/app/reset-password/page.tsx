@@ -1,8 +1,16 @@
 'use client';
 
-import { CheckCircle, Lock, Warning } from '@phosphor-icons/react';
+import {
+    Check,
+    CheckCircle,
+    CaretLeft as ChevronLeftIcon,
+    Key as KeyRound,
+    CircleNotch as Loader2,
+    Lock,
+    Warning,
+    X,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeftIcon, KeyRound, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';

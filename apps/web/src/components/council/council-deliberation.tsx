@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleNotch, Sparkle } from '@phosphor-icons/react';
+import { Check } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { CouncilPersona } from '@/stores/yula-store';
@@ -16,29 +16,26 @@ export function CouncilDeliberation({
     completedPersonas,
 }: CouncilDeliberationProps) {
     const allPersonas: CouncilPersona[] = ['logic', 'creative', 'prudent', 'devils-advocate'];
+    const progress = (completedPersonas.length / allPersonas.length) * 100;
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn(
-                'rounded-xl border border-white/10 bg-zinc-900/80 backdrop-blur-xl',
-                'shadow-xl shadow-black/20 p-6'
-            )}
+            className={cn('rounded-lg border border-border bg-card p-5')}
         >
             {/* Header */}
-            <div className="mb-6 flex items-center justify-center gap-2">
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
-                >
-                    <Sparkle className="h-5 w-5 text-violet-400" weight="fill" />
-                </motion.div>
-                <h3 className="text-lg font-semibold text-white">Council Deliberating</h3>
+            <div className="mb-5 flex items-center justify-between">
+                <h3 className="text-[13px] font-medium tracking-wide text-foreground">
+                    Council Deliberating
+                </h3>
+                <span className="text-[11px] tabular-nums text-muted-foreground">
+                    {completedPersonas.length}/{allPersonas.length}
+                </span>
             </div>
 
-            {/* Persona Status Grid */}
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {/* Persona Status Row */}
+            <div className="flex items-center gap-6">
                 {allPersonas.map((persona) => {
                     const definition = personaDefinitions[persona];
                     const isComplete = completedPersonas.includes(persona);
@@ -49,102 +46,91 @@ export function CouncilDeliberation({
                     return (
                         <motion.div
                             key={persona}
-                            initial={{ opacity: 0.5 }}
+                            initial={{ opacity: 0.4 }}
                             animate={{
-                                opacity: isComplete || isActive ? 1 : 0.5,
-                                scale: isActive ? 1.02 : 1,
+                                opacity: isComplete || isActive ? 1 : 0.4,
                             }}
-                            className={cn(
-                                'flex flex-col items-center gap-2 rounded-lg p-4',
-                                'border transition-all duration-300',
-                                isComplete
-                                    ? 'border-white/20 bg-white/5'
-                                    : isActive
-                                      ? 'border-white/10 bg-white/[0.02]'
-                                      : 'border-white/5 bg-transparent'
-                            )}
+                            className="flex flex-col items-center gap-2"
                         >
-                            {/* Status indicator */}
+                            {/* Circular indicator */}
                             <div className="relative">
                                 <div
                                     className={cn(
-                                        'flex h-12 w-12 items-center justify-center rounded-xl',
-                                        isComplete ? '' : 'animate-pulse'
+                                        'flex h-8 w-8 items-center justify-center rounded-full border transition-colors duration-300',
+                                        isComplete
+                                            ? 'border-foreground/20 bg-foreground/5'
+                                            : isActive
+                                              ? 'border-border bg-transparent'
+                                              : 'border-border/50 bg-transparent'
                                     )}
-                                    style={{ backgroundColor: `${definition.color}20` }}
                                 >
-                                    {isActive && !isComplete ? (
+                                    {isComplete ? (
                                         <motion.div
-                                            animate={{ rotate: 360 }}
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
                                             transition={{
-                                                repeat: Infinity,
-                                                duration: 1,
-                                                ease: 'linear',
+                                                type: 'spring',
+                                                stiffness: 500,
+                                                damping: 30,
                                             }}
                                         >
-                                            <CircleNotch
-                                                className="h-6 w-6"
-                                                color={definition.color}
+                                            <Check
+                                                size={14}
+                                                className="text-foreground"
+                                                weight="bold"
                                             />
                                         </motion.div>
+                                    ) : isActive ? (
+                                        <ThinkingDots />
                                     ) : (
-                                        <span
-                                            className="text-lg font-bold"
-                                            style={{ color: definition.color }}
-                                        >
+                                        <span className="text-[11px] font-medium text-muted-foreground">
                                             {definition.name[0]}
                                         </span>
                                     )}
                                 </div>
 
-                                {/* Completion check */}
-                                {isComplete && (
+                                {/* Subtle persona tint ring when active */}
+                                {isActive && (
                                     <motion.div
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500"
-                                    >
-                                        <span className="text-xs text-white">✓</span>
-                                    </motion.div>
+                                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                                        transition={{
+                                            repeat: Infinity,
+                                            duration: 2,
+                                            ease: 'easeInOut',
+                                        }}
+                                        className="absolute inset-0 rounded-full"
+                                        style={{
+                                            boxShadow: `0 0 0 1px ${definition.cssVar}`,
+                                            opacity: 0.3,
+                                        }}
+                                    />
                                 )}
                             </div>
 
                             {/* Label */}
-                            <div className="text-center">
-                                <p
-                                    className="text-sm font-medium"
-                                    style={{
-                                        color:
-                                            isComplete || isActive ? definition.color : '#71717a',
-                                    }}
-                                >
-                                    {definition.name}
-                                </p>
-                                <p className="text-xs text-zinc-500">
-                                    {isComplete ? 'Complete' : isActive ? 'Thinking...' : 'Waiting'}
-                                </p>
-                            </div>
+                            <span
+                                className={cn(
+                                    'text-[11px] transition-colors duration-300',
+                                    isComplete || isActive
+                                        ? 'text-foreground/70'
+                                        : 'text-muted-foreground/50'
+                                )}
+                            >
+                                {definition.name}
+                            </span>
                         </motion.div>
                     );
                 })}
             </div>
 
-            {/* Progress bar */}
-            <div className="mt-6">
-                <div className="mb-2 flex items-center justify-between text-xs text-zinc-500">
-                    <span>Deliberation Progress</span>
-                    <span>
-                        {Math.round((completedPersonas.length / allPersonas.length) * 100)}%
-                    </span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+            {/* Progress bar - clean horizontal, monochrome */}
+            <div className="mt-5">
+                <div className="h-px w-full bg-border">
                     <motion.div
                         initial={{ width: 0 }}
-                        animate={{
-                            width: `${(completedPersonas.length / allPersonas.length) * 100}%`,
-                        }}
+                        animate={{ width: `${progress}%` }}
                         transition={{ duration: 0.5, ease: 'easeOut' }}
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 via-amber-500 via-emerald-500 to-red-500"
+                        className="h-full bg-foreground/30"
                     />
                 </div>
             </div>
@@ -152,24 +138,24 @@ export function CouncilDeliberation({
     );
 }
 
-// Simple thinking dots animation
-export function ThinkingDots({ color = '#a78bfa' }: { color?: string }) {
+// Simple thinking dots animation - monochrome
+export function ThinkingDots() {
     return (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
             {[0, 1, 2].map((i) => (
                 <motion.div
                     key={i}
                     animate={{
-                        y: [0, -4, 0],
-                        opacity: [0.5, 1, 0.5],
+                        y: [0, -2, 0],
+                        opacity: [0.3, 0.8, 0.3],
                     }}
                     transition={{
                         repeat: Infinity,
                         duration: 0.8,
                         delay: i * 0.15,
+                        ease: 'easeInOut',
                     }}
-                    className="h-1.5 w-1.5 rounded-full"
-                    style={{ backgroundColor: color }}
+                    className="h-1 w-1 rounded-full bg-muted-foreground"
                 />
             ))}
         </div>

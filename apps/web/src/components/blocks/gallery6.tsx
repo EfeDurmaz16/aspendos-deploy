@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowSquareOut as ArrowUpRight } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';

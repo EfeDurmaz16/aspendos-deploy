@@ -1,8 +1,14 @@
 'use client';
 
-import { CheckCircle, Warning } from '@phosphor-icons/react';
+import {
+    At as AtSignIcon,
+    CheckCircle,
+    CaretLeft as ChevronLeftIcon,
+    CircleNotch as Loader2,
+    Envelope as Mail,
+    Warning,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { AtSignIcon, ChevronLeftIcon, Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';

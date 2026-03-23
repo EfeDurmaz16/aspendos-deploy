@@ -1,6 +1,12 @@
 'use client';
 
-import { Edit, MessageSquare, Pin, PinOff, Trash2 } from 'lucide-react';
+import {
+    PencilSimple as Edit,
+    ChatCircle as MessageSquare,
+    PushPin as Pin,
+    PushPinSlash as PinOff,
+    Trash as Trash2,
+} from '@phosphor-icons/react';
 import {
     ContextMenu,
     ContextMenuContent,

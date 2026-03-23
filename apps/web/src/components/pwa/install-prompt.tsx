@@ -1,6 +1,6 @@
 'use client';
 
-import { Download, X } from 'lucide-react';
+import { DownloadSimple as Download, X } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { usePWA } from '@/hooks/use-pwa';
 

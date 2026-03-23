@@ -1,8 +1,14 @@
 'use client';
 
-import { Lock, Warning } from '@phosphor-icons/react';
+import {
+    At as AtSignIcon,
+    CaretLeft as ChevronLeftIcon,
+    Key,
+    CircleNotch as Loader2,
+    Lock,
+    Warning,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { AtSignIcon, ChevronLeftIcon, Key, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -98,9 +104,7 @@ export default function LoginPage() {
                     <div className="size-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
                         <span className="text-sm font-bold text-white dark:text-zinc-900">Y</span>
                     </div>
-                    <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                        Yula
-                    </p>
+                    <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Yula</p>
                 </div>
                 <div className="z-10 mt-auto">
                     <blockquote className="space-y-2">
@@ -140,7 +144,9 @@ export default function LoginPage() {
                 <div className="mx-auto space-y-4 sm:w-sm w-full max-w-md">
                     <div className="flex items-center gap-2 lg:hidden mb-8">
                         <div className="size-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
-                            <span className="text-sm font-bold text-white dark:text-zinc-900">Y</span>
+                            <span className="text-sm font-bold text-white dark:text-zinc-900">
+                                Y
+                            </span>
                         </div>
                         <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                             Yula

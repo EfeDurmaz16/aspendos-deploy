@@ -32,110 +32,92 @@ export function CouncilPersonaCard({
     if (isCompact) {
         return (
             <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className={cn(
-                    'flex items-center gap-2 rounded-lg px-3 py-2',
-                    'border border-white/5 bg-white/[0.02]'
+                    'flex items-center gap-2 rounded-md px-3 py-1.5',
+                    'border border-border bg-muted/50'
                 )}
             >
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded-md"
-                    style={{ backgroundColor: `${definition.color}20` }}
-                >
-                    <Icon className="h-3.5 w-3.5" color={definition.color} weight="fill" />
-                </div>
-                <span className="text-sm font-medium text-zinc-300">{definition.name}</span>
+                <Icon size={14} className="text-muted-foreground" weight="regular" />
+                <span className="text-[13px] font-medium text-foreground/80">
+                    {definition.name}
+                </span>
             </motion.div>
         );
     }
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className={cn(
-                'relative overflow-hidden rounded-xl',
-                'border border-white/10 bg-zinc-900/80 backdrop-blur-xl',
-                'shadow-xl shadow-black/20'
-            )}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className={cn('relative overflow-hidden rounded-lg', 'border border-border bg-card')}
+            style={{ borderLeftWidth: '2px', borderLeftColor: definition.cssVar }}
         >
             {/* Header */}
-            <div
-                className="flex items-center gap-3 border-b border-white/5 p-4"
-                style={{ backgroundColor: `${definition.color}10` }}
-            >
+            <div className="flex items-center gap-3 px-4 py-3">
                 <motion.div
-                    animate={isThinking ? { rotate: [0, 10, -10, 0] } : {}}
-                    transition={{ repeat: isThinking ? Infinity : 0, duration: 2 }}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${definition.color}20` }}
+                    animate={isThinking ? { opacity: [0.5, 1, 0.5] } : {}}
+                    transition={{
+                        repeat: isThinking ? Infinity : 0,
+                        duration: 2,
+                        ease: 'easeInOut',
+                    }}
                 >
-                    <Icon className="h-5 w-5" color={definition.color} weight="fill" />
+                    <Icon size={18} className="text-muted-foreground" weight="regular" />
                 </motion.div>
-                <div>
-                    <h3 className="font-semibold text-white">{definition.name}</h3>
-                    <p className="text-xs text-zinc-400">{definition.role}</p>
+                <div className="min-w-0 flex-1">
+                    <h3 className="text-[13px] font-semibold text-foreground">{definition.name}</h3>
+                    <p className="text-[11px] text-muted-foreground">{definition.role}</p>
                 </div>
                 {thought && (
-                    <div className="ml-auto flex items-center gap-1">
-                        <div
-                            className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: definition.color }}
-                        />
-                        <span className="text-xs text-zinc-500">
-                            {Math.round(thought.confidence * 100)}% confident
-                        </span>
-                    </div>
+                    <span className="text-[11px] tabular-nums text-muted-foreground">
+                        {Math.round(thought.confidence * 100)}%
+                    </span>
                 )}
             </div>
 
             {/* Content */}
-            <div className="p-4">
+            <div className="px-4 pb-4">
                 {isThinking && !thought ? (
-                    <ThinkingAnimation color={definition.color} text={definition.thinkingStyle} />
+                    <ThinkingAnimation text={definition.thinkingStyle} />
                 ) : thought ? (
                     <motion.p
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="text-sm leading-relaxed text-zinc-300"
+                        className="text-[13px] leading-relaxed text-foreground/80"
                     >
                         {thought.thought}
                     </motion.p>
                 ) : (
-                    <p className="text-sm text-zinc-500">{definition.description}</p>
+                    <p className="text-[13px] text-muted-foreground">{definition.description}</p>
                 )}
             </div>
         </motion.div>
     );
 }
 
-// Thinking animation component
-function ThinkingAnimation({ color, text }: { color: string; text: string }) {
+// Thinking animation component - monochrome pulsing dots
+function ThinkingAnimation({ text }: { text: string }) {
     return (
-        <div className="space-y-3">
-            <div className="flex items-center gap-2">
-                <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ repeat: Infinity, duration: 1, delay: 0 }}
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: color }}
-                />
-                <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ repeat: Infinity, duration: 1, delay: 0.2 }}
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: color }}
-                />
-                <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ repeat: Infinity, duration: 1, delay: 0.4 }}
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: color }}
-                />
+        <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+                {[0, 1, 2].map((i) => (
+                    <motion.div
+                        key={i}
+                        animate={{ opacity: [0.2, 0.6, 0.2] }}
+                        transition={{
+                            repeat: Infinity,
+                            duration: 1.2,
+                            delay: i * 0.2,
+                            ease: 'easeInOut',
+                        }}
+                        className="h-1 w-1 rounded-full bg-muted-foreground"
+                    />
+                ))}
             </div>
-            <p className="text-xs italic text-zinc-500">{text}</p>
+            <p className="text-[11px] italic text-muted-foreground">{text}</p>
         </div>
     );
 }
@@ -151,25 +133,23 @@ export function PersonaIndicator({
     const definition = personaDefinitions[persona];
     const Icon = personaIcons[persona];
 
-    const sizeClasses = {
-        sm: 'h-5 w-5',
-        md: 'h-7 w-7',
-        lg: 'h-9 w-9',
+    const sizeMap = {
+        sm: { container: 'h-5 w-5', icon: 12 },
+        md: { container: 'h-7 w-7', icon: 16 },
+        lg: { container: 'h-9 w-9', icon: 20 },
     };
 
-    const iconSizes = {
-        sm: 'h-3 w-3',
-        md: 'h-4 w-4',
-        lg: 'h-5 w-5',
-    };
+    const s = sizeMap[size];
 
     return (
         <div
-            className={cn('flex items-center justify-center rounded-lg', sizeClasses[size])}
-            style={{ backgroundColor: `${definition.color}20` }}
+            className={cn('flex items-center justify-center rounded-md bg-muted', s.container)}
+            style={{
+                borderLeft: `2px solid ${definition.cssVar}`,
+            }}
             title={definition.name}
         >
-            <Icon className={iconSizes[size]} color={definition.color} weight="fill" />
+            <Icon size={s.icon} className="text-muted-foreground" weight="regular" />
         </div>
     );
 }

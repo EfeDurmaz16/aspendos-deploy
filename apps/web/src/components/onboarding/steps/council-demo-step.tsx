@@ -1,7 +1,7 @@
 'use client';
 
+import { ArrowRight, Brain, Palette, Shield, Users, Lightning as Zap } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Brain, Palette, Shield, Users, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -96,8 +96,8 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
 
             <h2 className="mb-2 text-2xl font-bold text-foreground">The AI Council</h2>
             <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
-                Why trust one AI when you can hear from four? Every question sparks
-                a unique debate — you'll never get the same answer twice.
+                Why trust one AI when you can hear from four? Every question sparks a unique debate
+                — you'll never get the same answer twice.
             </p>
 
             {/* Demo visualization */}
@@ -159,17 +159,23 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
             {/* Variable reward stats */}
             <div className="mb-6 w-full max-w-md flex items-center justify-center gap-6 text-center">
                 <div>
-                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>4</div>
+                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>
+                        4
+                    </div>
                     <div className="text-xs text-muted-foreground">Minds</div>
                 </div>
                 <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>1</div>
+                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>
+                        1
+                    </div>
                     <div className="text-xs text-muted-foreground">Question</div>
                 </div>
                 <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>&#x221e;</div>
+                    <div className="text-2xl font-bold" style={{ color: ACCENT_COLOR }}>
+                        &#x221e;
+                    </div>
                     <div className="text-xs text-muted-foreground">Surprises</div>
                 </div>
             </div>

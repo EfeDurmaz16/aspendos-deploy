@@ -1,1 +1,1 @@
-export { ChatInterface } from './ChatInterface';
+export { IconRail } from '@/components/layout/icon-rail';

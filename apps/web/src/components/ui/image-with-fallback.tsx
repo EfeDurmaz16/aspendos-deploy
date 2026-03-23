@@ -1,4 +1,4 @@
-import { Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon } from '@phosphor-icons/react';
 import { type ImgHTMLAttributes, useState } from 'react';
 import { cn } from '@/lib/utils';
 

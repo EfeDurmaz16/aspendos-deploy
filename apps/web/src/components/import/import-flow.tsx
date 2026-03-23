@@ -1,16 +1,16 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
 import {
-    AlertCircle,
+    Warning as AlertCircle,
     ArrowLeft,
     ArrowRight,
-    CheckCircle2,
-    Download,
+    CheckCircle as CheckCircle2,
+    DownloadSimple as Download,
     Eye,
-    Loader2,
-    Upload,
-} from 'lucide-react';
+    CircleNotch as Loader2,
+    UploadSimple as Upload,
+} from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Keyboard, X } from 'lucide-react';
+import { Keyboard, X } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

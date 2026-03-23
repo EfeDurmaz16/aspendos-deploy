@@ -1,7 +1,13 @@
 'use client';
 
+import {
+    ArrowRight,
+    Bell,
+    Calendar,
+    Lightbulb,
+    ChatCircle as MessageCircle,
+} from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Bell, Calendar, Lightbulb, MessageCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -75,8 +81,8 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
 
             <h2 className="mb-2 text-2xl font-bold text-foreground">AI That Reaches Out First</h2>
             <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
-                Other AIs wait for you to ask. Yula reaches out when it matters —
-                reminders, follow-ups, and ideas, right on time.
+                Other AIs wait for you to ask. Yula reaches out when it matters — reminders,
+                follow-ups, and ideas, right on time.
             </p>
 
             {/* Demo notification card */}
@@ -127,14 +133,18 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                         <div className="text-sm font-medium text-foreground">
                             Just chat naturally
                         </div>
-                        <div className="text-xs text-muted-foreground">"I need to call mom tomorrow"</div>
+                        <div className="text-xs text-muted-foreground">
+                            "I need to call mom tomorrow"
+                        </div>
                     </div>
                 </div>
                 <div className="ml-4 h-6 border-l border-dashed border-border" />
                 <div className="flex items-start gap-3">
                     <StepIndicator number={2} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">Yula picks up on it</div>
+                        <div className="text-sm font-medium text-foreground">
+                            Yula picks up on it
+                        </div>
                         <div className="text-xs text-muted-foreground">
                             Detects commitments, deadlines, and follow-ups automatically
                         </div>
@@ -144,7 +154,9 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 <div className="flex items-start gap-3">
                     <StepIndicator number={3} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">You get pulled back in</div>
+                        <div className="text-sm font-medium text-foreground">
+                            You get pulled back in
+                        </div>
                         <div className="text-xs text-muted-foreground">
                             A timely nudge brings you back — no effort needed
                         </div>
@@ -200,7 +212,9 @@ function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFIC
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                     <div className="text-sm font-medium text-foreground">{notification.title}</div>
-                    <div className="text-xs text-muted-foreground shrink-0">{notification.time}</div>
+                    <div className="text-xs text-muted-foreground shrink-0">
+                        {notification.time}
+                    </div>
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
                     {notification.message}

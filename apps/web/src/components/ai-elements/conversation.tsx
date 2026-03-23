@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDownIcon } from 'lucide-react';
+import { CaretDown } from '@phosphor-icons/react';
 import type { ComponentProps } from 'react';
 import { useCallback } from 'react';
 import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
@@ -83,7 +83,7 @@ export const ConversationScrollButton = ({
                 variant="outline"
                 {...props}
             >
-                <ArrowDownIcon className="size-4" />
+                <CaretDown size={16} />
             </Button>
         )
     );

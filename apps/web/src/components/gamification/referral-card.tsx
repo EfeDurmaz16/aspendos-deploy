@@ -1,7 +1,14 @@
 'use client';
 
+import {
+    Check as CheckIcon,
+    Copy as CopyIcon,
+    Gift as GiftIcon,
+    ShareFat as ShareIcon,
+    Sparkle as SparklesIcon,
+    Users as UsersIcon,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { CheckIcon, CopyIcon, GiftIcon, ShareIcon, SparklesIcon, UsersIcon } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 

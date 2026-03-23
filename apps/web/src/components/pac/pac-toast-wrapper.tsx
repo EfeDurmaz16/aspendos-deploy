@@ -1,11 +1,11 @@
 'use client';
 
+import { Bell, Check, Clock, X } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Check, Clock, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { usePAC } from '@/components/pac-timeline/use-pac';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 /**
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
  * Uses the usePAC hook which polls every 30s for new reminders.
  */
 export function PACToastWrapper() {
-    const router = useRouter();
+    const _router = useRouter();
     const { pendingItems, urgentItems, approve, dismiss, snoozeFor, getRelativeTime } = usePAC();
     const [dismissedLocally, setDismissedLocally] = useState<Set<string>>(new Set());
 
@@ -39,18 +39,14 @@ export function PACToastWrapper() {
                             exit={{ opacity: 0, x: 20, scale: 0.95 }}
                             className={cn(
                                 'rounded-xl border bg-background p-4 shadow-lg',
-                                isOverdue
-                                    ? 'border-red-500/30'
-                                    : 'border-amber-500/30'
+                                isOverdue ? 'border-red-500/30' : 'border-amber-500/30'
                             )}
                         >
                             <div className="flex items-start gap-3">
                                 <div
                                     className={cn(
                                         'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                                        isOverdue
-                                            ? 'bg-red-500/10'
-                                            : 'bg-amber-500/10'
+                                        isOverdue ? 'bg-red-500/10' : 'bg-amber-500/10'
                                     )}
                                 >
                                     <Bell
@@ -66,10 +62,12 @@ export function PACToastWrapper() {
                                         {item.title}
                                     </p>
                                     {item.scheduledFor && (
-                                        <p className={cn(
-                                            'text-xs mt-0.5 flex items-center gap-1',
-                                            isOverdue ? 'text-red-500' : 'text-muted-foreground'
-                                        )}>
+                                        <p
+                                            className={cn(
+                                                'text-xs mt-0.5 flex items-center gap-1',
+                                                isOverdue ? 'text-red-500' : 'text-muted-foreground'
+                                            )}
+                                        >
                                             <Clock className="w-3 h-3" />
                                             {getRelativeTime(item.scheduledFor)}
                                         </p>

@@ -1,6 +1,6 @@
 'use client';
 
-import { WifiOff } from 'lucide-react';
+import { WifiSlash as WifiOff } from '@phosphor-icons/react';
 import { usePWA } from '@/hooks/use-pwa';
 
 /**

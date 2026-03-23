@@ -1,20 +1,20 @@
 'use client';
 
-import confetti from 'canvas-confetti';
-import { motion } from 'framer-motion';
 import {
-    AlertCircle,
+    Warning as AlertCircle,
     ArrowLeft,
     ArrowRight,
-    CheckCircle2,
-    Download,
+    CheckCircle as CheckCircle2,
+    DownloadSimple as Download,
     Eye,
-    History,
-    Loader2,
-    Search,
-    Sparkles,
-    Upload,
-} from 'lucide-react';
+    ClockCounterClockwise as History,
+    CircleNotch as Loader2,
+    MagnifyingGlass as Search,
+    Sparkle as Sparkles,
+    UploadSimple as Upload,
+} from '@phosphor-icons/react';
+import confetti from 'canvas-confetti';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import * as React from 'react';
 import {
@@ -56,7 +56,12 @@ type ImportPreviewEntity = {
 };
 
 function normalizePreviewSource(source: string): ParsedConversation['source'] {
-    if (source === 'CHATGPT' || source === 'CLAUDE' || source === 'GEMINI' || source === 'PERPLEXITY') {
+    if (
+        source === 'CHATGPT' ||
+        source === 'CLAUDE' ||
+        source === 'GEMINI' ||
+        source === 'PERPLEXITY'
+    ) {
         return source;
     }
     return 'CHATGPT';
@@ -99,7 +104,9 @@ export default function ImportPage() {
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
                         body: JSON.stringify({
-                            ...(uploadedFile.source !== 'UNKNOWN' ? { source: uploadedFile.source } : {}),
+                            ...(uploadedFile.source !== 'UNKNOWN'
+                                ? { source: uploadedFile.source }
+                                : {}),
                             fileName: uploadedFile.file.name,
                             fileSize: uploadedFile.file.size,
                             content,
@@ -107,7 +114,9 @@ export default function ImportPage() {
                     });
 
                     if (!response.ok) {
-                        const errData = await response.json().catch(() => ({})) as { error?: string };
+                        const errData = (await response.json().catch(() => ({}))) as {
+                            error?: string;
+                        };
                         throw new Error(errData.error || `Import failed (${response.status})`);
                     }
 
@@ -209,7 +218,10 @@ export default function ImportPage() {
                 });
 
                 if (!res.ok) {
-                    const errData = await res.json().catch(() => ({})) as { error?: string; upgradeRequired?: boolean };
+                    const errData = (await res.json().catch(() => ({}))) as {
+                        error?: string;
+                        upgradeRequired?: boolean;
+                    };
                     if (errData.upgradeRequired) {
                         throw new Error('Import limit reached on your plan. Please upgrade.');
                     }

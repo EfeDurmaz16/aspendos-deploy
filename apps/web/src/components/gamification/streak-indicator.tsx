@@ -1,7 +1,11 @@
 'use client';
 
+import {
+    Calendar as CalendarIcon,
+    Flame as FlameIcon,
+    Snowflake as SnowflakeIcon,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { CalendarIcon, FlameIcon, SnowflakeIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Streak milestones with rewards
@@ -38,7 +42,7 @@ export function StreakIndicator({
 }: StreakIndicatorProps) {
     const isActive = currentStreak > 0;
     const isAtRisk = lastActiveDate
-        ? new Date().getTime() - new Date(lastActiveDate).getTime() > 20 * 60 * 60 * 1000
+        ? Date.now() - new Date(lastActiveDate).getTime() > 20 * 60 * 60 * 1000
         : false;
 
     const nextMilestone = STREAK_MILESTONES.find((m) => m.days > currentStreak);

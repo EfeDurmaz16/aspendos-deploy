@@ -11,13 +11,14 @@ import {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 // Persona definitions matching backend
+// Colors use CSS custom properties for persona tints (defined in globals.css)
+// The tints are intentionally very subtle - used only for thin borders and faint bg tints
 export const personaDefinitions: Record<
     CouncilPersona,
     {
         name: string;
         role: string;
-        color: string;
-        bgColor: string;
+        cssVar: string;
         icon: string;
         description: string;
         thinkingStyle: string;
@@ -27,8 +28,7 @@ export const personaDefinitions: Record<
     logic: {
         name: 'Scholar',
         role: 'The Analyst',
-        color: '#3b82f6', // Blue
-        bgColor: 'bg-blue-500/10',
+        cssVar: 'var(--persona-scholar)',
         icon: 'brain',
         description: 'Evaluates decisions through data, facts, and rational analysis',
         thinkingStyle: 'Analyzing data patterns and logical outcomes...',
@@ -37,8 +37,7 @@ export const personaDefinitions: Record<
     creative: {
         name: 'Creative',
         role: 'The Innovator',
-        color: '#f59e0b', // Amber
-        bgColor: 'bg-amber-500/10',
+        cssVar: 'var(--persona-creative)',
         icon: 'lightbulb',
         description: 'Explores unconventional solutions and creative possibilities',
         thinkingStyle: 'Exploring creative alternatives and possibilities...',
@@ -47,8 +46,7 @@ export const personaDefinitions: Record<
     prudent: {
         name: 'Prudent',
         role: 'The Guardian',
-        color: '#10b981', // Emerald
-        bgColor: 'bg-emerald-500/10',
+        cssVar: 'var(--persona-prudent)',
         icon: 'shield',
         description: 'Considers risks, long-term consequences, and safety',
         thinkingStyle: 'Assessing risks and long-term implications...',
@@ -57,8 +55,7 @@ export const personaDefinitions: Record<
     'devils-advocate': {
         name: "Devil's Advocate",
         role: 'The Challenger',
-        color: '#ef4444', // Red
-        bgColor: 'bg-red-500/10',
+        cssVar: 'var(--persona-advocate)',
         icon: 'warning',
         description: "Challenges assumptions and plays devil's advocate",
         thinkingStyle: 'Questioning assumptions and identifying blind spots...',
@@ -200,7 +197,9 @@ export function useCouncil() {
                                     persona: frontendPersona,
                                     thought: thoughts[frontendPersona] || data.content,
                                     confidence:
-                                        typeof data.confidence === 'number' ? data.confidence : 0.75,
+                                        typeof data.confidence === 'number'
+                                            ? data.confidence
+                                            : 0.75,
                                     timestamp: new Date(),
                                 };
                                 addCouncilThought(councilThought);

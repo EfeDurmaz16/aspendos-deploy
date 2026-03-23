@@ -13,12 +13,13 @@ export function CouncilChatSheet({ isOpen, onClose }: CouncilChatSheetProps) {
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Backdrop */}
+                    {/* Backdrop - subtle */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm"
                         onClick={onClose}
                     />
                     {/* Sheet */}
@@ -30,7 +31,7 @@ export function CouncilChatSheet({ isOpen, onClose }: CouncilChatSheetProps) {
                         className="fixed right-0 top-0 z-50 h-full w-full max-w-lg"
                     >
                         <CouncilChat
-                            className="h-full rounded-none rounded-l-2xl"
+                            className="h-full rounded-none border-l border-border"
                             onClose={onClose}
                         />
                     </motion.div>

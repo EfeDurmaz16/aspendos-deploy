@@ -1,18 +1,18 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import {
     Bell,
-    BellOff,
+    BellSlash as BellOff,
     Check,
     Clock,
-    Loader2,
-    Mail,
-    MessageSquare,
+    CircleNotch as Loader2,
+    Envelope as Mail,
+    ChatCircle as MessageSquare,
     Moon,
-    Smartphone,
-    Sparkles,
-} from 'lucide-react';
+    DeviceMobile as Smartphone,
+    Sparkle as Sparkles,
+} from '@phosphor-icons/react';
+import { motion } from 'framer-motion';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

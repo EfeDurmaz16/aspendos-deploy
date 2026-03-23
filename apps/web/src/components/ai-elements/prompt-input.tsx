@@ -1,16 +1,16 @@
 'use client';
 
-import type { ChatStatus, FileUIPart } from 'ai';
 import {
-    CornerDownLeftIcon,
-    ImageIcon,
-    Loader2Icon,
-    MicIcon,
-    PaperclipIcon,
-    PlusIcon,
-    SquareIcon,
-    XIcon,
-} from 'lucide-react';
+    ArrowElbowDownLeft,
+    CircleNotch,
+    Image,
+    Microphone,
+    Paperclip,
+    Plus,
+    Square,
+    X,
+} from '@phosphor-icons/react';
+import type { ChatStatus, FileUIPart } from 'ai';
 import { nanoid } from 'nanoid';
 import {
     type ChangeEvent,
@@ -299,7 +299,7 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
                                 />
                             ) : (
                                 <div className="flex size-5 items-center justify-center text-muted-foreground">
-                                    <PaperclipIcon className="size-3" />
+                                    <Paperclip size={12} />
                                 </div>
                             )}
                         </div>
@@ -313,7 +313,7 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
                             type="button"
                             variant="ghost"
                         >
-                            <XIcon />
+                            <X size={10} />
                             <span className="sr-only">Remove</span>
                         </Button>
                     </div>
@@ -394,7 +394,7 @@ export const PromptInputActionAddAttachments = ({
                 attachments.openFileDialog();
             }}
         >
-            <ImageIcon className="mr-2 size-4" /> {label}
+            <Image size={16} className="mr-2" /> {label}
         </DropdownMenuItem>
     );
 };
@@ -686,7 +686,7 @@ export const PromptInput = ({
         // Convert blob URLs to data URLs asynchronously
         Promise.all(
             files.map(async ({ id: _id, ...item }) => {
-                if (item.url && item.url.startsWith('blob:')) {
+                if (item.url?.startsWith('blob:')) {
                     const dataUrl = await convertBlobUrlToDataUrl(item.url);
                     // If conversion failed, keep the original blob URL
                     return {
@@ -922,7 +922,7 @@ export const PromptInputActionMenuTrigger = ({
 }: PromptInputActionMenuTriggerProps) => (
     <DropdownMenuTrigger asChild>
         <PromptInputButton className={className} {...props}>
-            {children ?? <PlusIcon className="size-4" />}
+            {children ?? <Plus size={16} />}
         </PromptInputButton>
     </DropdownMenuTrigger>
 );
@@ -956,14 +956,14 @@ export const PromptInputSubmit = ({
     children,
     ...props
 }: PromptInputSubmitProps) => {
-    let Icon = <CornerDownLeftIcon className="size-4" />;
+    let Icon = <ArrowElbowDownLeft size={16} />;
 
     if (status === 'submitted') {
-        Icon = <Loader2Icon className="size-4 animate-spin" />;
+        Icon = <CircleNotch size={16} className="animate-spin" />;
     } else if (status === 'streaming') {
-        Icon = <SquareIcon className="size-4" />;
+        Icon = <Square size={16} />;
     } else if (status === 'error') {
-        Icon = <XIcon className="size-4" />;
+        Icon = <X size={16} />;
     }
 
     return (
@@ -1125,7 +1125,7 @@ export const PromptInputSpeechButton = ({
             onClick={toggleListening}
             {...props}
         >
-            <MicIcon className="size-4" />
+            <Microphone size={16} />
         </PromptInputButton>
     );
 };

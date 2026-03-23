@@ -1,6 +1,13 @@
 'use client';
 
-import { AlertCircle, Check, Download, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import {
+    Warning as AlertCircle,
+    Check,
+    DownloadSimple as Download,
+    CircleNotch as Loader2,
+    Sparkle as Sparkles,
+    Trash as Trash2,
+} from '@phosphor-icons/react';
 import { useLocalAI } from '@/hooks/use-local-ai';
 import type { ModelId } from '@/lib/offline/local-ai';
 

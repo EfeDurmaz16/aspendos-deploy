@@ -1,7 +1,16 @@
 'use client';
 
+import {
+    ArrowRight,
+    Brain,
+    Database,
+    FolderOpen,
+    Stack as Layers,
+    ChatCircle as MessageCircle,
+    Target,
+    Lightning as Zap,
+} from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Brain, Database, FolderOpen, Layers, MessageCircle, Target, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -74,10 +83,12 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 />
             </div>
 
-            <h2 className="mb-2 text-2xl font-bold text-foreground">The More You Use, The Smarter It Gets</h2>
+            <h2 className="mb-2 text-2xl font-bold text-foreground">
+                The More You Use, The Smarter It Gets
+            </h2>
             <p className="mb-6 text-center text-sm text-muted-foreground max-w-sm">
-                Every conversation teaches Yula something new about you. Your preferences,
-                context, and style — growing smarter with every message.
+                Every conversation teaches Yula something new about you. Your preferences, context,
+                and style — growing smarter with every message.
             </p>
 
             {/* Model switcher demo */}
@@ -94,13 +105,14 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                                 key={model.name}
                                 className={cn(
                                     'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
-                                    i === activeModel
-                                        ? 'text-foreground'
-                                        : 'text-muted-foreground'
+                                    i === activeModel ? 'text-foreground' : 'text-muted-foreground'
                                 )}
                                 style={
                                     i === activeModel
-                                        ? { backgroundColor: `${model.color}30`, color: model.color }
+                                        ? {
+                                              backgroundColor: `${model.color}30`,
+                                              color: model.color,
+                                          }
                                         : undefined
                                 }
                                 animate={i === activeModel ? { scale: [1, 1.05, 1] } : {}}
@@ -173,7 +185,9 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 <div className="flex items-start gap-3">
                     <StepIndicator number={1} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">Day 1: Yula learns your basics</div>
+                        <div className="text-sm font-medium text-foreground">
+                            Day 1: Yula learns your basics
+                        </div>
                         <div className="text-xs text-muted-foreground">
                             Language, tone, common topics
                         </div>
@@ -183,7 +197,9 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 <div className="flex items-start gap-3">
                     <StepIndicator number={2} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">Week 1: Yula knows your style</div>
+                        <div className="text-sm font-medium text-foreground">
+                            Week 1: Yula knows your style
+                        </div>
                         <div className="text-xs text-muted-foreground">
                             Preferences, projects, and patterns emerge
                         </div>
@@ -193,7 +209,9 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 <div className="flex items-start gap-3">
                     <StepIndicator number={3} color={ACCENT_COLOR} />
                     <div>
-                        <div className="text-sm font-medium text-foreground">Month 1: Yula knows you</div>
+                        <div className="text-sm font-medium text-foreground">
+                            Month 1: Yula knows you
+                        </div>
                         <div className="text-xs text-muted-foreground">
                             Irreplaceable context — switching means starting over
                         </div>
