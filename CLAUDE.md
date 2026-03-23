@@ -45,7 +45,7 @@ aspendos/
 | Agent Governance | Guard chain, approvals, trust scoring (AGIT/SARDIS/FIDES) |
 | Billing | Polar |
 | Auth | Better Auth |
-| Messaging | Telegram Bot (multi-platform gateway) |
+| Messaging | Vercel Chat SDK (Slack, Telegram, Discord, WhatsApp) |
 | Deployment | Railway, Vercel |
 
 ### Key Patterns
@@ -59,7 +59,7 @@ aspendos/
 - **Agent Governance**: Guard chain (ToolLoop, DangerousCommand, BlastRadius, RateLimit, Policy) → Action log → Human-in-the-loop approvals → Tool trust scoring (FIDES). Adapted from AGIT/SARDIS/FIDES.
 - **Skills**: 7 system skills + custom user skills with execution tracking and learning loop
 - **PAC Notifications**: Proactive AI Callbacks for scheduled reminders
-- **Messaging Gateway**: Abstract gateway with Telegram bot adapter, webhook-based
+- **Messaging**: Vercel Chat SDK handles all platforms (Slack, Telegram, Discord, WhatsApp) with streaming, thread subscriptions, and cross-platform cards. Bot in `services/api/src/bot/`.
 - **Tiered Access**: Free/Pro/Enterprise with rate limiting
 - **Model Registry**: Multi-provider routing (Groq for speed, Anthropic for complex tasks)
 
