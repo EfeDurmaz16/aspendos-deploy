@@ -8,6 +8,7 @@
 import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { DiscordGateway } from '../messaging/discord';
+import { EmailGateway } from '../messaging/email';
 import { getGateway, registerGateway } from '../messaging/gateway';
 import { SlackGateway } from '../messaging/slack';
 import { TelegramGateway } from '../messaging/telegram';
@@ -23,6 +24,7 @@ registerGateway(new TelegramGateway());
 registerGateway(new WhatsAppGateway());
 registerGateway(new SlackGateway());
 registerGateway(new DiscordGateway());
+registerGateway(new EmailGateway());
 
 // ============================================
 // PLATFORM CONNECTIONS (authenticated)
