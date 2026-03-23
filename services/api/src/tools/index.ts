@@ -246,6 +246,30 @@ export const currentTimeTool = tool({
     },
 });
 
+/**
+ * Forget a memory (requires user approval — destructive operation)
+ */
+export function createMemoryForgetTool(userId: string) {
+    return tool({
+        description:
+            'Forget/delete a memory. This is a destructive operation that requires user approval before executing.',
+        inputSchema: z.object({
+            memoryContent: z.string().describe('Content of the memory to forget'),
+            reason: z.string().describe('Why this memory should be forgotten'),
+        }),
+        needsApproval: true,
+        execute: async ({ memoryContent, reason }) => {
+            try {
+                await openMemory.supermemory.forgetMemory(userId, { memoryContent, reason });
+                return { success: true, message: 'Memory forgotten' };
+            } catch (error) {
+                console.error('[Tool: memory_forget] Error:', error);
+                return { success: false, error: 'Failed to forget memory' };
+            }
+        },
+    });
+}
+
 // ============================================
 // TOOL SETS BY TIER
 // ============================================
@@ -285,17 +309,15 @@ export function getToolsForTier(tier: UserTier, userId: string) {
         current_time: currentTimeTool,
     };
 
-    // PRO tier adds memory writing
+    // PRO tier adds memory writing + forget (with approval)
     if (tier === 'PRO' || tier === 'ULTRA') {
         return {
             ...baseTools,
             memory_add: createMemoryAddTool(userId),
             memory_reinforce: createMemoryReinforceTool(userId),
+            memory_forget: createMemoryForgetTool(userId),
         };
     }
-
-    // ULTRA tier could add more tools in the future
-    // e.g., web_search, code_execution, etc.
 
     return baseTools;
 }

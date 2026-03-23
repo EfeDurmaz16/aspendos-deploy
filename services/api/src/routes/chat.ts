@@ -4,7 +4,7 @@
  * Uses OpenMemory for cognitive memory retrieval.
  */
 
-import { generateText, stepCountIs, streamText } from 'ai';
+import { generateText, streamText } from 'ai';
 import { Hono } from 'hono';
 import {
     getModel,
@@ -426,7 +426,7 @@ app.post(
                     system: systemPrompt,
                     messages: history,
                     tools: allTools,
-                    stopWhen: stepCountIs(5), // Allow up to 5 tool calls
+                    maxSteps: 5, // Allow up to 5 tool call rounds
                     temperature: 0.7,
                     onFinish: async ({ text, usage }) => {
                         const requestId = c.get('requestId') || 'unknown';
@@ -553,7 +553,7 @@ app.post(
                 system: systemPrompt,
                 messages: history,
                 tools: allTools,
-                stopWhen: stepCountIs(5),
+                maxSteps: 5,
                 temperature: 0.7,
             });
 
