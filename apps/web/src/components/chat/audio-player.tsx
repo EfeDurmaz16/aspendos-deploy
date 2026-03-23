@@ -179,7 +179,7 @@ export function AudioPlayer({ text, className }: AudioPlayerProps) {
                             <span
                                 className={cn(
                                     'text-sm font-medium',
-                                    selectedVoice === voice.id && 'text-emerald-500'
+                                    selectedVoice === voice.id && 'text-foreground'
                                 )}
                             >
                                 {voice.name}
@@ -190,7 +190,7 @@ export function AudioPlayer({ text, className }: AudioPlayerProps) {
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            {error && <span className="text-xs text-red-500">{error}</span>}
+            {error && <span className="text-xs text-foreground/60">{error}</span>}
         </div>
     );
 }

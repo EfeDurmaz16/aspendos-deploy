@@ -78,7 +78,7 @@ function MessageActions({
             >
                 {copied ? (
                     <Check
-                        className="w-3.5 h-3.5 text-emerald-500"
+                        className="w-3.5 h-3.5 text-foreground"
                         weight="bold"
                         aria-hidden="true"
                     />
@@ -100,8 +100,8 @@ function MessageActions({
                     onClick={() => handleFeedback('up')}
                     className={`p-1.5 rounded-lg transition-all ${
                         feedback === 'up'
-                            ? 'text-emerald-500 bg-emerald-500/15 ring-1 ring-emerald-500/30'
-                            : 'text-muted-foreground hover:text-emerald-600 hover:bg-muted'
+                            ? 'text-foreground bg-foreground/10 ring-1 ring-foreground/20'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                     aria-label="Mark as good response"
                     aria-pressed={feedback === 'up'}
@@ -116,8 +116,8 @@ function MessageActions({
                     onClick={() => handleFeedback('down')}
                     className={`p-1.5 rounded-lg transition-all ${
                         feedback === 'down'
-                            ? 'text-rose-500 bg-rose-500/15 ring-1 ring-rose-500/30'
-                            : 'text-muted-foreground hover:text-rose-600 hover:bg-muted'
+                            ? 'text-foreground bg-foreground/10 ring-1 ring-foreground/20'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                     aria-label="Mark as bad response"
                     aria-pressed={feedback === 'down'}
@@ -144,10 +144,10 @@ const SECTOR_ICONS: Record<string, React.ElementType> = {
 
 const SECTOR_COLORS: Record<string, string> = {
     episodic: 'text-zinc-500',
-    semantic: 'text-emerald-500',
-    procedural: 'text-amber-500',
-    emotional: 'text-rose-500',
-    reflective: 'text-amber-400',
+    semantic: 'text-foreground',
+    procedural: 'text-muted-foreground',
+    emotional: 'text-foreground',
+    reflective: 'text-muted-foreground',
 };
 
 // ============================================
@@ -194,7 +194,7 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
                                     <span className="uppercase tracking-wide font-medium text-foreground">
                                         {memory.sector}
                                     </span>
-                                    <span className="ml-auto font-mono text-xs font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                    <span className="ml-auto font-mono text-xs font-semibold text-foreground bg-foreground/10 px-1.5 py-0.5 rounded">
                                         {Math.round(memory.confidence * 100)}%
                                     </span>
                                 </div>
@@ -233,7 +233,7 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
                 <Sparkle className="w-3.5 h-3.5 text-primary" weight="fill" />
                 <span>AI Decision: {decision.queryType.replace('_', ' ')}</span>
                 {decision.useMemory && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded text-[10px] uppercase">
+                    <span className="ml-1 px-1.5 py-0.5 bg-foreground/10 text-foreground rounded text-[10px] uppercase">
                         Memory
                     </span>
                 )}
@@ -313,7 +313,7 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
             >
                 {/* Error display */}
                 {message.error && (
-                    <div className="flex items-center gap-2 text-red-500 dark:text-red-400 mb-2">
+                    <div className="flex items-center gap-2 text-foreground/60 mb-2">
                         <svg
                             className="w-4 h-4"
                             fill="none"
@@ -368,7 +368,7 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
                                 </span>
                             )}
                         {message.metadata.costUsd !== undefined && message.metadata.costUsd > 0 && (
-                            <span className="font-semibold text-emerald-600">
+                            <span className="font-semibold text-foreground">
                                 ${message.metadata.costUsd.toFixed(5)}
                             </span>
                         )}

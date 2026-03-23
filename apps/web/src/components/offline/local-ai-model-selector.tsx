@@ -34,7 +34,7 @@ export function LocalAIModelSelector() {
         return (
             <div className="rounded-lg border border-border bg-card p-4">
                 <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div>
                         <h3 className="font-medium text-foreground">WebGPU Not Available</h3>
                         <p className="text-sm text-muted-foreground mt-1">

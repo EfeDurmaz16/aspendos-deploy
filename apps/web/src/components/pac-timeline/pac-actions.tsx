@@ -29,21 +29,21 @@ export function PACActions({
             <div className="flex items-center gap-1">
                 <button
                     onClick={onApprove}
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-400 transition-colors hover:bg-emerald-500/20"
+                    className="flex h-6 w-6 items-center justify-center rounded-md bg-foreground/10 text-foreground/70 transition-colors hover:bg-foreground/20"
                     title="Approve"
                 >
                     <Check className="h-3.5 w-3.5" weight="bold" />
                 </button>
                 <button
                     onClick={onSnooze1Hour}
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-500/10 text-amber-400 transition-colors hover:bg-amber-500/20"
+                    className="flex h-6 w-6 items-center justify-center rounded-md bg-foreground/10 text-muted-foreground transition-colors hover:bg-foreground/15"
                     title="Snooze 1 hour"
                 >
                     <Clock className="h-3.5 w-3.5" />
                 </button>
                 <button
                     onClick={onDismiss}
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-red-500/10 text-red-400 transition-colors hover:bg-red-500/20"
+                    className="flex h-6 w-6 items-center justify-center rounded-md bg-foreground/10 text-foreground/50 transition-colors hover:bg-foreground/15"
                     title="Dismiss"
                 >
                     <X className="h-3.5 w-3.5" weight="bold" />
@@ -59,8 +59,8 @@ export function PACActions({
                 onClick={onApprove}
                 className={cn(
                     'flex items-center gap-1.5 rounded-lg px-3 py-1.5',
-                    'bg-emerald-500/10 text-emerald-400 transition-colors',
-                    'hover:bg-emerald-500/20'
+                    'bg-foreground/10 text-foreground/70 transition-colors',
+                    'hover:bg-foreground/20'
                 )}
             >
                 <Check className="h-3.5 w-3.5" weight="bold" />
@@ -73,8 +73,8 @@ export function PACActions({
                     onClick={() => setShowSnoozeOptions(!showSnoozeOptions)}
                     className={cn(
                         'flex items-center gap-1.5 rounded-lg px-3 py-1.5',
-                        'bg-amber-500/10 text-amber-400 transition-colors',
-                        'hover:bg-amber-500/20'
+                        'bg-foreground/10 text-muted-foreground transition-colors',
+                        'hover:bg-foreground/15'
                     )}
                 >
                     <Clock className="h-3.5 w-3.5" />
@@ -137,7 +137,7 @@ export function PACActions({
                 className={cn(
                     'flex h-7 w-7 items-center justify-center rounded-lg',
                     'bg-white/5 text-zinc-500 transition-colors',
-                    'hover:bg-red-500/10 hover:text-red-400'
+                    'hover:bg-foreground/10 hover:text-foreground/50'
                 )}
                 title="Dismiss"
             >
@@ -156,8 +156,8 @@ export function ApproveButton({ onClick }: { onClick: () => void }) {
             onClick={onClick}
             className={cn(
                 'flex h-8 w-8 items-center justify-center rounded-full',
-                'bg-emerald-500/20 text-emerald-400 transition-colors',
-                'hover:bg-emerald-500/30'
+                'bg-foreground/15 text-foreground/70 transition-colors',
+                'hover:bg-foreground/25'
             )}
         >
             <Check className="h-4 w-4" weight="bold" />
@@ -173,8 +173,8 @@ export function DismissButton({ onClick }: { onClick: () => void }) {
             onClick={onClick}
             className={cn(
                 'flex h-8 w-8 items-center justify-center rounded-full',
-                'bg-red-500/20 text-red-400 transition-colors',
-                'hover:bg-red-500/30'
+                'bg-foreground/15 text-foreground/50 transition-colors',
+                'hover:bg-foreground/25'
             )}
         >
             <X className="h-4 w-4" weight="bold" />
@@ -190,8 +190,8 @@ export function SnoozeButton({ onClick }: { onClick: () => void }) {
             onClick={onClick}
             className={cn(
                 'flex h-8 w-8 items-center justify-center rounded-full',
-                'bg-amber-500/20 text-amber-400 transition-colors',
-                'hover:bg-amber-500/30'
+                'bg-foreground/15 text-muted-foreground transition-colors',
+                'hover:bg-foreground/25'
             )}
         >
             <Clock className="h-4 w-4" />

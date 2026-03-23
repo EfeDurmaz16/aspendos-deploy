@@ -94,13 +94,13 @@ export function ToolOutput({ data, className }: { data: unknown; className?: str
 function ToolStatusDot({ state }: { state: string }) {
     const color =
         state === 'output-available'
-            ? 'bg-green-500'
+            ? 'bg-foreground/70'
             : state === 'output-error' || state === 'output-denied'
-              ? 'bg-red-500'
+              ? 'bg-foreground/50'
               : state === 'approval-requested'
-                ? 'bg-orange-500'
+                ? 'bg-foreground/60'
                 : state.includes('streaming')
-                  ? 'bg-blue-500 motion-safe:animate-pulse'
+                  ? 'bg-foreground/40 motion-safe:animate-pulse'
                   : 'bg-neutral-500';
 
     return <div className={cn('w-2 h-2 rounded-full', color)} aria-hidden="true" />;
@@ -108,13 +108,13 @@ function ToolStatusDot({ state }: { state: string }) {
 
 function ToolStatusBadge({ state }: { state: string }) {
     const labels: Record<string, { text: string; color: string }> = {
-        'input-streaming': { text: 'Running...', color: 'text-blue-400' },
-        'input-available': { text: 'Processing', color: 'text-yellow-400' },
-        'output-available': { text: 'Done', color: 'text-green-400' },
-        'output-error': { text: 'Error', color: 'text-red-400' },
-        'output-denied': { text: 'Denied', color: 'text-red-400' },
-        'approval-requested': { text: 'Approval needed', color: 'text-orange-400' },
-        'approval-responded': { text: 'Approved', color: 'text-green-400' },
+        'input-streaming': { text: 'Running...', color: 'text-foreground/60' },
+        'input-available': { text: 'Processing', color: 'text-foreground/60' },
+        'output-available': { text: 'Done', color: 'text-foreground/80' },
+        'output-error': { text: 'Error', color: 'text-foreground/50' },
+        'output-denied': { text: 'Denied', color: 'text-foreground/50' },
+        'approval-requested': { text: 'Approval needed', color: 'text-foreground/60' },
+        'approval-responded': { text: 'Approved', color: 'text-foreground/80' },
     };
 
     const label = labels[state] || { text: state, color: 'text-neutral-400' };

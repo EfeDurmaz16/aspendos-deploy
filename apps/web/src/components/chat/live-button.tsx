@@ -40,7 +40,7 @@ export function LiveButton({ className }: LiveButtonProps) {
                 className={cn(
                     'h-8 w-8 transition-all rounded-lg',
                     isActive
-                        ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20'
+                        ? 'bg-foreground hover:bg-foreground/90 text-background shadow-lg shadow-foreground/20'
                         : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                     isConnecting && 'opacity-70 cursor-wait'
                 )}
@@ -59,8 +59,8 @@ export function LiveButton({ className }: LiveButtonProps) {
             {isActive && isConnected && (
                 <div className="absolute top-1/2 left-full ml-3 -translate-y-1/2 flex items-center gap-2 bg-background border border-border px-3 py-1.5 rounded-full shadow-lg pointer-events-none whitespace-nowrap z-50 animate-in fade-in slide-in-from-left-2">
                     <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-foreground/40 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-foreground"></span>
                     </span>
                     <span className="text-xs font-medium">Live</span>
                     {/* Add a fake waveform or visualizer here if desired */}

@@ -507,7 +507,7 @@ function ModelRow({
                     <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium text-foreground">{model.name}</span>
                         {isSearchModel && (
-                            <span className="text-xs px-2 py-0.5 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-300">
+                            <span className="text-xs px-2 py-0.5 bg-foreground/10 border border-foreground/20 rounded-full text-foreground/70">
                                 Search
                             </span>
                         )}
@@ -520,7 +520,7 @@ function ModelRow({
             <button
                 onClick={onToggle}
                 className={`relative w-11 h-6 rounded-full transition-all duration-300 flex-shrink-0 ml-4 ${
-                    isEnabled ? 'bg-green-500/40' : 'bg-muted'
+                    isEnabled ? 'bg-foreground/40' : 'bg-muted'
                 }`}
             >
                 <span

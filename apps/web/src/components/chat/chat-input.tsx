@@ -51,7 +51,7 @@ function ToolButton({ icon, label }: { icon: React.ReactNode; label: string }) {
 function SimpleModelSelector() {
     return (
         <button className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[13px] font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-            <div className="w-4 h-4 rounded-sm bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-[10px] font-bold">
+            <div className="w-4 h-4 rounded-sm bg-foreground/15 text-foreground flex items-center justify-center text-[10px] font-bold">
                 4
             </div>
             GPT-4o

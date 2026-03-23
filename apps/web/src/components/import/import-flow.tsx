@@ -312,7 +312,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                                 />
 
                                 {error && (
-                                    <div className="mt-4 flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 p-3 rounded-lg border border-rose-200 dark:border-rose-900">
+                                    <div className="mt-4 flex items-center gap-2 text-sm text-foreground/70 bg-foreground/5 p-3 rounded-lg border border-border">
                                         <AlertCircle className="w-4 h-4" />
                                         <span>{error}</span>
                                     </div>
@@ -417,8 +417,8 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
                                 animate={{ opacity: 1, scale: 1 }}
                                 className="flex flex-col items-center justify-center py-12"
                             >
-                                <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-6">
-                                    <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+                                <div className="w-20 h-20 rounded-full bg-foreground/10 flex items-center justify-center mb-6">
+                                    <CheckCircle2 className="w-10 h-10 text-foreground" />
                                 </div>
 
                                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">

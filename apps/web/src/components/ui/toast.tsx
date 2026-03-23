@@ -74,11 +74,11 @@ const toastVariants = cva(
         variants: {
             variant: {
                 success:
-                    'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200',
-                error: 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-200',
+                    'border-border bg-foreground/5 text-foreground',
+                error: 'border-border bg-foreground/5 text-foreground',
                 warning:
-                    'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200',
-                info: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-200',
+                    'border-border bg-foreground/5 text-muted-foreground',
+                info: 'border-border bg-foreground/5 text-foreground',
             },
         },
         defaultVariants: {

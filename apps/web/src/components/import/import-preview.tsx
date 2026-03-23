@@ -241,11 +241,11 @@ function ConversationItem({
 }: ConversationItemProps) {
     const sourceColors = {
         CHATGPT:
-            'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50',
-        CLAUDE: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900/50',
-        GEMINI: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50',
+            'bg-foreground/10 text-foreground border-border',
+        CLAUDE: 'bg-foreground/10 text-foreground border-border',
+        GEMINI: 'bg-foreground/10 text-foreground border-border',
         PERPLEXITY:
-            'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900/50',
+            'bg-foreground/10 text-foreground border-border',
     };
 
     return (

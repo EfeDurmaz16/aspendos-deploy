@@ -39,7 +39,7 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
             >
                 <button
                     onClick={onToggleCollapse}
-                    className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 transition-colors hover:bg-violet-500/20"
+                    className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-muted-foreground/10 text-muted-foreground transition-colors hover:bg-muted-foreground/20"
                 >
                     <CaretRight className="h-5 w-5" />
                 </button>
@@ -50,7 +50,7 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
                         <span
                             className={cn(
                                 'absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white',
-                                hasUrgentItems ? 'bg-red-500' : 'bg-violet-500'
+                                hasUrgentItems ? 'bg-foreground' : 'bg-muted-foreground'
                             )}
                         >
                             {pendingCount}
@@ -72,11 +72,11 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
                 <div className="flex items-center gap-3">
-                    <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10">
-                        <Lightning className="h-4 w-4 text-violet-400" weight="fill" />
+                    <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-muted-foreground/10">
+                        <Lightning className="h-4 w-4 text-muted-foreground" weight="fill" />
                         {hasUrgentItems && (
-                            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-red-500">
-                                <span className="absolute inset-0 animate-ping rounded-full bg-red-500 opacity-75" />
+                            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-foreground">
+                                <span className="absolute inset-0 animate-ping rounded-full bg-foreground opacity-75" />
                             </span>
                         )}
                     </div>
@@ -99,8 +99,8 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
             {urgentItems.length > 0 && (
                 <div className="border-b border-white/5 px-4 py-3">
                     <div className="mb-2 flex items-center gap-2">
-                        <Bell className="h-3.5 w-3.5 text-red-400" weight="fill" />
-                        <span className="text-xs font-medium uppercase tracking-wider text-red-400">
+                        <Bell className="h-3.5 w-3.5 text-foreground/60" weight="fill" />
+                        <span className="text-xs font-medium uppercase tracking-wider text-foreground/60">
                             Urgent
                         </span>
                     </div>
@@ -163,7 +163,7 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
                                 className="flex flex-col items-center justify-center py-12 text-center"
                             >
                                 <CheckCircle
-                                    className="mb-3 h-10 w-10 text-emerald-400"
+                                    className="mb-3 h-10 w-10 text-foreground/70"
                                     weight="fill"
                                 />
                                 <p className="text-sm font-medium text-zinc-300">All caught up!</p>

@@ -78,7 +78,7 @@ export function StreakIndicator({
                 <motion.div
                     className={cn(
                         'relative flex items-center justify-center',
-                        isActive ? 'text-orange-500' : 'text-muted-foreground'
+                        isActive ? 'text-foreground' : 'text-muted-foreground'
                     )}
                     animate={isActive ? { scale: [1, 1.1, 1] } : {}}
                     transition={{ repeat: Infinity, duration: 2 }}
@@ -86,7 +86,7 @@ export function StreakIndicator({
                     <FlameIcon className={sizes.icon} />
                     {isAtRisk && (
                         <motion.div
-                            className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500"
+                            className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-foreground"
                             animate={{ scale: [1, 1.3, 1] }}
                             transition={{ repeat: Infinity, duration: 0.8 }}
                         />
@@ -97,7 +97,7 @@ export function StreakIndicator({
                     className={cn(
                         'font-bold',
                         sizes.text,
-                        isActive ? 'text-orange-500' : 'text-muted-foreground'
+                        isActive ? 'text-foreground' : 'text-muted-foreground'
                     )}
                 >
                     {currentStreak}
@@ -113,7 +113,7 @@ export function StreakIndicator({
                         {Array.from({ length: streakFreezes - freezesUsed }).map((_, i) => (
                             <SnowflakeIcon
                                 key={i}
-                                className="w-4 h-4 text-cyan-400"
+                                className="w-4 h-4 text-foreground/60"
                                 aria-label="Streak Freeze Available"
                             />
                         ))}
@@ -134,7 +134,7 @@ export function StreakIndicator({
                     {nextMilestone && (
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">Next Milestone</span>
-                            <span className="font-medium text-amber-500">
+                            <span className="font-medium text-muted-foreground">
                                 {daysToMilestone} day{daysToMilestone !== 1 ? 's' : ''} to{' '}
                                 {nextMilestone.reward}
                             </span>
@@ -146,7 +146,7 @@ export function StreakIndicator({
                         <div className="mt-2">
                             <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                                 <motion.div
-                                    className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600"
+                                    className="h-full rounded-full bg-gradient-to-r from-foreground/60 to-foreground/80"
                                     initial={{ width: 0 }}
                                     animate={{
                                         width: `${
@@ -237,9 +237,9 @@ export function StreakCalendar({
                             className={cn(
                                 'aspect-square rounded-md flex items-center justify-center text-xs',
                                 isActive
-                                    ? 'bg-orange-500 text-white font-medium'
+                                    ? 'bg-foreground text-background font-medium'
                                     : 'bg-muted/50 text-muted-foreground',
-                                isToday && !isActive && 'ring-2 ring-violet-500'
+                                isToday && !isActive && 'ring-2 ring-ring'
                             )}
                             whileHover={{ scale: 1.1 }}
                         >
@@ -273,9 +273,9 @@ export function StreakMilestoneList({ currentStreak, className }: StreakMileston
                         className={cn(
                             'flex items-center justify-between p-3 rounded-lg border',
                             isAchieved
-                                ? 'bg-orange-500/10 border-orange-500/30'
+                                ? 'bg-foreground/10 border-foreground/20'
                                 : isCurrent
-                                  ? 'bg-violet-500/10 border-violet-500/30'
+                                  ? 'bg-muted-foreground/10 border-muted-foreground/20'
                                   : 'bg-muted/50 border-border opacity-60'
                         )}
                     >
@@ -284,7 +284,7 @@ export function StreakMilestoneList({ currentStreak, className }: StreakMileston
                                 className={cn(
                                     'w-8 h-8 rounded-full flex items-center justify-center',
                                     isAchieved
-                                        ? 'bg-orange-500 text-white'
+                                        ? 'bg-foreground text-background'
                                         : 'bg-muted text-muted-foreground'
                                 )}
                             >
@@ -294,7 +294,7 @@ export function StreakMilestoneList({ currentStreak, className }: StreakMileston
                                 <p
                                     className={cn(
                                         'font-medium',
-                                        isAchieved ? 'text-orange-500' : 'text-foreground'
+                                        isAchieved ? 'text-foreground' : 'text-foreground'
                                     )}
                                 >
                                     {milestone.reward}
@@ -307,7 +307,7 @@ export function StreakMilestoneList({ currentStreak, className }: StreakMileston
                         <span
                             className={cn(
                                 'text-sm font-medium',
-                                isAchieved ? 'text-orange-500' : 'text-muted-foreground'
+                                isAchieved ? 'text-foreground' : 'text-muted-foreground'
                             )}
                         >
                             +{milestone.xp} XP

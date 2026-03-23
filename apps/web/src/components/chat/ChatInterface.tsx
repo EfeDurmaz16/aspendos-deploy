@@ -56,11 +56,11 @@ function MessageBubble({ message }: { message: Message }) {
             <div
                 className={cn(
                     'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
-                    isUser ? 'bg-blue-500/20' : 'bg-zinc-800'
+                    isUser ? 'bg-foreground/15' : 'bg-zinc-800'
                 )}
             >
                 {isUser ? (
-                    <User className="h-4 w-4 text-blue-400" weight="fill" />
+                    <User className="h-4 w-4 text-foreground/70" weight="fill" />
                 ) : (
                     <Robot className="h-4 w-4 text-zinc-400" weight="fill" />
                 )}
@@ -70,7 +70,7 @@ function MessageBubble({ message }: { message: Message }) {
                     className={cn(
                         'inline-block px-4 py-2 rounded-2xl text-sm',
                         isUser
-                            ? 'bg-blue-500 text-white rounded-br-md'
+                            ? 'bg-foreground text-background rounded-br-md'
                             : 'bg-zinc-800 text-zinc-100 rounded-bl-md'
                     )}
                 >
@@ -96,7 +96,7 @@ function MessageBubble({ message }: { message: Message }) {
                             </span>
                         )}
                         {message.metadata.fallback && (
-                            <span className="flex items-center gap-1 text-amber-400">
+                            <span className="flex items-center gap-1 text-muted-foreground">
                                 <Warning className="h-3 w-3" />
                                 Fallback
                             </span>
@@ -195,7 +195,7 @@ function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
                         className={cn(
                             'w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800/50',
                             'px-4 py-3 pr-12 text-sm text-white placeholder:text-zinc-500',
-                            'focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20',
+                            'focus:outline-none focus:border-foreground/30 focus:ring-1 focus:ring-foreground/10',
                             'disabled:opacity-50 disabled:cursor-not-allowed',
                             'min-h-[48px] max-h-[200px]'
                         )}
@@ -220,7 +220,7 @@ function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
                 <Button
                     onClick={handleSubmit}
                     disabled={!input.trim() || isLoading || disabled}
-                    className="h-12 w-12 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-50"
+                    className="h-12 w-12 rounded-xl bg-foreground hover:bg-foreground/90 disabled:opacity-50"
                 >
                     {isLoading ? (
                         <Spinner className="h-5 w-5 animate-spin" />

@@ -28,20 +28,20 @@ const badgeVariants = cva(
                     'border border-secondary/30 bg-secondary/10 text-secondary-foreground hover:bg-secondary/20',
                 tertiary: 'border border-muted/30 bg-muted text-muted-foreground hover:bg-muted/80',
                 success:
-                    'border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-950/40',
+                    'border border-border bg-foreground/5 text-foreground hover:bg-foreground/10',
                 warning:
-                    'border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-950/40',
-                danger: 'border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-200 hover:bg-red-100 dark:hover:bg-red-950/40',
+                    'border border-border bg-foreground/5 text-muted-foreground hover:bg-foreground/10',
+                danger: 'border border-border bg-foreground/5 text-foreground hover:bg-foreground/10',
                 outline: 'border border-border text-foreground hover:bg-accent',
                 // YULA Feature variants - 3 Hooks
-                import: 'border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-950/40',
-                pac: 'border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-950/40',
+                import: 'border border-border bg-foreground/5 text-foreground hover:bg-foreground/10',
+                pac: 'border border-border bg-foreground/5 text-muted-foreground hover:bg-foreground/10',
                 council:
-                    'border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/20 text-violet-700 dark:text-violet-200 hover:bg-violet-100 dark:hover:bg-violet-950/40',
+                    'border border-border bg-muted-foreground/5 text-muted-foreground hover:bg-muted-foreground/10',
                 // Additional feature variants
                 personas:
-                    'border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-950/40',
-                memory: 'border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-950/40',
+                    'border border-border bg-foreground/5 text-foreground hover:bg-foreground/10',
+                memory: 'border border-border bg-foreground/5 text-foreground hover:bg-foreground/10',
             },
             shape: {
                 default: 'rounded-[4px]',

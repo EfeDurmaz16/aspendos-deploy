@@ -44,7 +44,7 @@ interface ComparisonPageProps {
 function FeatureCheck({ value }: { value: boolean | string }) {
     if (typeof value === 'boolean') {
         return value ? (
-            <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
+            <CheckCircle className="w-5 h-5 text-foreground" weight="fill" />
         ) : (
             <XIcon className="w-5 h-5 text-muted-foreground" />
         );

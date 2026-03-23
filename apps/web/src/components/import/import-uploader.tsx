@@ -200,26 +200,26 @@ export function ImportUploader({
             {/* Supported Sources */}
             <div className="flex items-center justify-center gap-4 py-2 flex-wrap">
                 <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                    <div className="w-6 h-6 rounded bg-emerald-500/10 flex items-center justify-center">
-                        <span className="text-xs font-bold text-emerald-600">G</span>
+                    <div className="w-6 h-6 rounded bg-foreground/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-foreground">G</span>
                     </div>
                     <span>ChatGPT</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                    <div className="w-6 h-6 rounded bg-orange-500/10 flex items-center justify-center">
-                        <span className="text-xs font-bold text-orange-600">C</span>
+                    <div className="w-6 h-6 rounded bg-foreground/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-foreground">C</span>
                     </div>
                     <span>Claude</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                    <div className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center">
-                        <span className="text-xs font-bold text-blue-600">G</span>
+                    <div className="w-6 h-6 rounded bg-foreground/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-foreground">G</span>
                     </div>
                     <span>Gemini</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                    <div className="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center">
-                        <span className="text-xs font-bold text-purple-600">P</span>
+                    <div className="w-6 h-6 rounded bg-foreground/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-foreground">P</span>
                     </div>
                     <span>Perplexity</span>
                 </div>
@@ -257,18 +257,18 @@ interface FileItemProps {
 
 function FileItem({ file, onRemove, isUploading }: FileItemProps) {
     const sourceColors = {
-        CHATGPT: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-        CLAUDE: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
-        GEMINI: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-        PERPLEXITY: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-        UNKNOWN: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400',
+        CHATGPT: 'bg-foreground/10 text-foreground',
+        CLAUDE: 'bg-foreground/10 text-foreground',
+        GEMINI: 'bg-foreground/10 text-foreground',
+        PERPLEXITY: 'bg-foreground/10 text-foreground',
+        UNKNOWN: 'bg-foreground/5 text-muted-foreground',
     };
 
     const statusIcons = {
         pending: null,
         validating: <Loader2 className="w-4 h-4 animate-spin text-feature-import" />,
-        valid: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
-        invalid: <AlertCircle className="w-4 h-4 text-rose-500" />,
+        valid: <CheckCircle2 className="w-4 h-4 text-foreground" />,
+        invalid: <AlertCircle className="w-4 h-4 text-foreground/60" />,
     };
 
     return (
@@ -279,7 +279,7 @@ function FileItem({ file, onRemove, isUploading }: FileItemProps) {
             className={cn(
                 'flex items-center gap-3 p-3 rounded-[8px] border bg-white dark:bg-zinc-900/50',
                 file.status === 'invalid'
-                    ? 'border-rose-200 dark:border-rose-900/50'
+                    ? 'border-border'
                     : 'border-zinc-200 dark:border-zinc-800'
             )}
         >
@@ -320,7 +320,7 @@ function FileItem({ file, onRemove, isUploading }: FileItemProps) {
                             </span>
                         </>
                     )}
-                    {file.error && <span className="text-xs text-rose-500">{file.error}</span>}
+                    {file.error && <span className="text-xs text-foreground/60">{file.error}</span>}
                 </div>
             </div>
 

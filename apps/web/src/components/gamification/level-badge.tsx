@@ -11,38 +11,38 @@ const LEVEL_CONFIG: Record<
     1: {
         name: 'Newcomer',
         icon: '🌱',
-        color: 'text-emerald-500',
-        gradient: 'from-emerald-400 to-emerald-600',
+        color: 'text-foreground/60',
+        gradient: 'from-foreground/30 to-foreground/50',
     },
     2: {
         name: 'Explorer',
         icon: '🧭',
-        color: 'text-blue-500',
-        gradient: 'from-blue-400 to-blue-600',
+        color: 'text-foreground/65',
+        gradient: 'from-foreground/35 to-foreground/55',
     },
     3: {
         name: 'Conversationalist',
         icon: '💬',
-        color: 'text-purple-500',
-        gradient: 'from-purple-400 to-purple-600',
+        color: 'text-foreground/70',
+        gradient: 'from-foreground/40 to-foreground/60',
     },
     4: {
         name: 'Power User',
         icon: '⚡',
-        color: 'text-amber-500',
-        gradient: 'from-amber-400 to-amber-600',
+        color: 'text-foreground/75',
+        gradient: 'from-foreground/45 to-foreground/65',
     },
     5: {
         name: 'Yula Master',
         icon: '👑',
-        color: 'text-yellow-500',
-        gradient: 'from-yellow-400 to-yellow-600',
+        color: 'text-foreground/80',
+        gradient: 'from-foreground/50 to-foreground/70',
     },
     6: {
         name: 'AI Whisperer',
         icon: '✨',
-        color: 'text-rose-500',
-        gradient: 'from-rose-400 via-pink-500 to-purple-600',
+        color: 'text-foreground/90',
+        gradient: 'from-foreground/55 to-foreground/80',
     },
 };
 
@@ -189,7 +189,7 @@ export function LevelUpAnimation({
                 </motion.div>
 
                 <motion.button
-                    className="px-6 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium"
+                    className="px-6 py-2 rounded-lg bg-gradient-to-r from-foreground/70 to-foreground/90 text-white font-medium"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.6 }}

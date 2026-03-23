@@ -44,9 +44,9 @@ const typeLabels: Record<OmnibarResult['type'], string> = {
 };
 
 const typeColors: Record<OmnibarResult['type'], string> = {
-    action: 'text-emerald-400',
-    memory: 'text-violet-400',
-    chat: 'text-sky-400',
+    action: 'text-foreground/70',
+    memory: 'text-foreground/70',
+    chat: 'text-foreground/70',
     setting: 'text-zinc-400',
 };
 

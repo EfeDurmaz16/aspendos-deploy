@@ -145,7 +145,7 @@ export function VoiceButton({ onTranscription, disabled = false, className }: Vo
                 className={cn(
                     'h-8 w-8 transition-all',
                     isRecording &&
-                        'bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-500',
+                        'bg-foreground/10 text-foreground hover:bg-foreground/20 hover:text-foreground',
                     className
                 )}
                 title={isRecording ? 'Stop recording' : 'Start voice input'}
@@ -160,12 +160,12 @@ export function VoiceButton({ onTranscription, disabled = false, className }: Vo
             </Button>
             {isRecording && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-foreground/40 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-foreground" />
                 </span>
             )}
             {error && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-red-500 bg-red-50 dark:bg-red-950/50 rounded whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-foreground bg-foreground/5 rounded whitespace-nowrap">
                     {error}
                 </div>
             )}

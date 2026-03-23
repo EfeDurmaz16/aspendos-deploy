@@ -97,7 +97,7 @@ export function PACNotification({
             className={cn(
                 'rounded-[12px] border bg-white dark:bg-zinc-900 p-4 shadow-sm',
                 priorityStyles[reminder.priority],
-                isOverdue && 'bg-rose-50/50 dark:bg-rose-950/20',
+                isOverdue && 'bg-foreground/5',
                 className
             )}
         >
@@ -106,13 +106,13 @@ export function PACNotification({
                 <div
                     className={cn(
                         'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
-                        isOverdue ? 'bg-rose-100 dark:bg-rose-900/30' : 'bg-feature-pac/10'
+                        isOverdue ? 'bg-foreground/10' : 'bg-feature-pac/10'
                     )}
                 >
                     <Bell
                         className={cn(
                             'w-5 h-5',
-                            isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-feature-pac'
+                            isOverdue ? 'text-foreground/70' : 'text-feature-pac'
                         )}
                     />
                 </div>
@@ -124,7 +124,7 @@ export function PACNotification({
                                 'text-xs font-medium px-1.5 py-0.5 rounded',
                                 reminder.type === 'EXPLICIT'
                                     ? 'bg-feature-pac/10 text-feature-pac'
-                                    : 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400'
+                                    : 'bg-muted-foreground/10 text-muted-foreground'
                             )}
                         >
                             {reminder.type === 'EXPLICIT' ? 'Reminder' : 'Detected'}
@@ -145,7 +145,7 @@ export function PACNotification({
                             className={cn(
                                 'flex items-center gap-1',
                                 isOverdue
-                                    ? 'text-rose-600 dark:text-rose-400'
+                                    ? 'text-foreground/70'
                                     : 'text-zinc-500 dark:text-zinc-400'
                             )}
                         >

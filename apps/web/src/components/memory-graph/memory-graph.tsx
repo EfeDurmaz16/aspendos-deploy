@@ -24,7 +24,7 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
     ssr: false,
     loading: () => (
         <div className="flex h-full items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
         </div>
     ),
 });
@@ -208,7 +208,7 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
             {/* Header Controls */}
             <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-white/5 bg-zinc-900/80 px-4 py-2 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-violet-400" weight="fill" />
+                    <Brain className="h-4 w-4 text-muted-foreground" weight="fill" />
                     <span className="text-sm font-medium text-zinc-300">Memory Graph</span>
                     <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-zinc-400">
                         {data.nodes.length} nodes
@@ -223,7 +223,7 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search..."
-                            className="h-7 w-32 rounded-md border border-white/10 bg-white/5 pl-7 pr-2 text-xs text-white placeholder:text-zinc-500 focus:border-violet-500/50 focus:outline-none"
+                            className="h-7 w-32 rounded-md border border-white/10 bg-white/5 pl-7 pr-2 text-xs text-white placeholder:text-zinc-500 focus:border-ring focus:outline-none"
                         />
                     </div>
 
@@ -277,7 +277,7 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
                             animate={{ rotate: 360 }}
                             transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
                         >
-                            <Brain className="h-8 w-8 text-violet-400" weight="fill" />
+                            <Brain className="h-8 w-8 text-muted-foreground" weight="fill" />
                         </motion.div>
                     </div>
                 ) : (

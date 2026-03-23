@@ -50,7 +50,7 @@ export function PACItemCard({
                     'group flex items-center gap-3 rounded-lg p-2',
                     'border border-white/5 bg-white/[0.02] transition-colors',
                     'hover:border-white/10 hover:bg-white/[0.04]',
-                    isUrgent && 'border-red-500/20 bg-red-500/5'
+                    isUrgent && 'border-foreground/20 bg-foreground/5'
                 )}
             >
                 <div
@@ -88,20 +88,20 @@ export function PACItemCard({
                 'relative overflow-hidden rounded-xl',
                 'border border-white/10 bg-zinc-900/80 backdrop-blur-sm',
                 'transition-all duration-200',
-                isUrgent && 'border-red-500/30 ring-1 ring-red-500/20',
+                isUrgent && 'border-foreground/20 ring-1 ring-foreground/10',
                 isSnoozed && 'opacity-60'
             )}
         >
             {/* Urgent indicator */}
             {isUrgent && (
-                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-red-500 via-red-400 to-red-500" />
+                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-foreground/50 via-foreground/30 to-foreground/50" />
             )}
 
             {/* Snoozed indicator */}
             {isSnoozed && (
-                <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5">
-                    <Clock className="h-3 w-3 text-amber-400" />
-                    <span className="text-[10px] text-amber-400">Snoozed</span>
+                <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-foreground/10 px-2 py-0.5">
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Snoozed</span>
                 </div>
             )}
 

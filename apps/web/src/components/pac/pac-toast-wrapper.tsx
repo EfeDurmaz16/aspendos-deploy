@@ -39,20 +39,20 @@ export function PACToastWrapper() {
                             exit={{ opacity: 0, x: 20, scale: 0.95 }}
                             className={cn(
                                 'rounded-xl border bg-background p-4 shadow-lg',
-                                isOverdue ? 'border-red-500/30' : 'border-amber-500/30'
+                                isOverdue ? 'border-foreground/20' : 'border-foreground/15'
                             )}
                         >
                             <div className="flex items-start gap-3">
                                 <div
                                     className={cn(
                                         'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                                        isOverdue ? 'bg-red-500/10' : 'bg-amber-500/10'
+                                        isOverdue ? 'bg-foreground/10' : 'bg-foreground/5'
                                     )}
                                 >
                                     <Bell
                                         className={cn(
                                             'w-4 h-4',
-                                            isOverdue ? 'text-red-500' : 'text-amber-500'
+                                            isOverdue ? 'text-foreground' : 'text-muted-foreground'
                                         )}
                                     />
                                 </div>
@@ -65,7 +65,7 @@ export function PACToastWrapper() {
                                         <p
                                             className={cn(
                                                 'text-xs mt-0.5 flex items-center gap-1',
-                                                isOverdue ? 'text-red-500' : 'text-muted-foreground'
+                                                isOverdue ? 'text-foreground' : 'text-muted-foreground'
                                             )}
                                         >
                                             <Clock className="w-3 h-3" />

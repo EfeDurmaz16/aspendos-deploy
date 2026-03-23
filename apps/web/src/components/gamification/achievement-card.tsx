@@ -11,34 +11,34 @@ import { cn } from '@/lib/utils';
 // Achievement category colors
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
     onboarding: {
-        bg: 'bg-blue-500/10',
-        border: 'border-blue-500/30',
-        text: 'text-blue-500',
+        bg: 'bg-foreground/10',
+        border: 'border-foreground/20',
+        text: 'text-foreground',
     },
     engagement: {
-        bg: 'bg-green-500/10',
-        border: 'border-green-500/30',
-        text: 'text-green-500',
+        bg: 'bg-foreground/10',
+        border: 'border-foreground/20',
+        text: 'text-foreground',
     },
     streaks: {
-        bg: 'bg-orange-500/10',
-        border: 'border-orange-500/30',
-        text: 'text-orange-500',
+        bg: 'bg-foreground/10',
+        border: 'border-foreground/20',
+        text: 'text-foreground',
     },
     mastery: {
-        bg: 'bg-purple-500/10',
-        border: 'border-purple-500/30',
-        text: 'text-purple-500',
+        bg: 'bg-muted-foreground/10',
+        border: 'border-muted-foreground/20',
+        text: 'text-muted-foreground',
     },
     social: {
-        bg: 'bg-pink-500/10',
-        border: 'border-pink-500/30',
-        text: 'text-pink-500',
+        bg: 'bg-foreground/10',
+        border: 'border-foreground/20',
+        text: 'text-foreground',
     },
     secret: {
-        bg: 'bg-amber-500/10',
-        border: 'border-amber-500/30',
-        text: 'text-amber-500',
+        bg: 'bg-foreground/10',
+        border: 'border-foreground/20',
+        text: 'text-muted-foreground',
     },
 };
 
@@ -72,7 +72,7 @@ export function AchievementCard({ achievement, onClick, className }: Achievement
         <motion.button
             className={cn(
                 'relative w-full p-4 rounded-xl border text-left transition-all',
-                'hover:shadow-md focus:outline-none focus:ring-2 focus:ring-violet-500/50',
+                'hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring',
                 achievement.unlocked
                     ? cn(colors.bg, colors.border)
                     : 'bg-muted/50 border-border opacity-60',
@@ -128,7 +128,7 @@ export function AchievementCard({ achievement, onClick, className }: Achievement
                         <div className="mt-2">
                             <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                                 <motion.div
-                                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-600"
+                                    className="h-full rounded-full bg-gradient-to-r from-foreground/70 to-foreground/90"
                                     initial={{ width: 0 }}
                                     animate={{ width: `${progressPercent}%` }}
                                 />
@@ -218,7 +218,7 @@ export function AchievementUnlockAnimation({
                     onClick={(e) => e.stopPropagation()}
                 >
                     <motion.div
-                        className="flex items-center gap-2 text-amber-500"
+                        className="flex items-center gap-2 text-muted-foreground"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -263,7 +263,7 @@ export function AchievementUnlockAnimation({
                     </motion.div>
 
                     <motion.button
-                        className="mt-2 px-6 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium"
+                        className="mt-2 px-6 py-2 rounded-lg bg-gradient-to-r from-foreground/70 to-foreground/90 text-white font-medium"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.5 }}

@@ -147,7 +147,7 @@ export function MemoryImporter() {
                             className={cn(
                                 'border-2 border-dashed rounded-lg p-6 text-center transition-colors',
                                 dragActive
-                                    ? 'border-blue-500 bg-blue-500/10'
+                                    ? 'border-foreground bg-foreground/10'
                                     : 'border-zinc-700 hover:border-zinc-600',
                                 status !== 'idle' &&
                                     status !== 'error' &&
@@ -178,17 +178,17 @@ export function MemoryImporter() {
                                 </>
                             ) : status === 'parsing' ? (
                                 <div className="flex items-center justify-center gap-3">
-                                    <Spinner className="h-5 w-5 animate-spin text-blue-500" />
+                                    <Spinner className="h-5 w-5 animate-spin text-foreground" />
                                     <span className="text-sm">Parsing file...</span>
                                 </div>
                             ) : status === 'importing' ? (
                                 <div className="flex items-center justify-center gap-3">
-                                    <Spinner className="h-5 w-5 animate-spin text-blue-500" />
+                                    <Spinner className="h-5 w-5 animate-spin text-foreground" />
                                     <span className="text-sm">Importing memories...</span>
                                 </div>
                             ) : status === 'success' && result ? (
                                 <div className="space-y-3">
-                                    <div className="flex items-center justify-center gap-2 text-emerald-500">
+                                    <div className="flex items-center justify-center gap-2 text-foreground">
                                         <Check className="h-5 w-5" weight="bold" />
                                         <span className="font-medium">Import Complete!</span>
                                     </div>
@@ -196,11 +196,11 @@ export function MemoryImporter() {
                                         <p>Format: {result.format.toUpperCase()}</p>
                                         <p>Conversations: {result.conversationCount}</p>
                                         <p>Messages: {result.messageCount}</p>
-                                        <p className="text-emerald-400">
+                                        <p className="text-foreground/70">
                                             Successfully imported: {result.success}
                                         </p>
                                         {result.failed > 0 && (
-                                            <p className="text-amber-400">
+                                            <p className="text-muted-foreground">
                                                 Failed: {result.failed}
                                             </p>
                                         )}
@@ -213,7 +213,7 @@ export function MemoryImporter() {
                         </div>
 
                         {error && (
-                            <div className="mt-3 flex items-center gap-2 text-sm text-red-400">
+                            <div className="mt-3 flex items-center gap-2 text-sm text-foreground/60">
                                 <Warning className="h-4 w-4" />
                                 <span>{error}</span>
                             </div>

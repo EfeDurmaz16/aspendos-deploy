@@ -30,9 +30,9 @@ interface ModelSelectorProps {
 }
 
 const PROVIDER_COLORS: Record<string, string> = {
-    openai: 'text-emerald-500',
-    anthropic: 'text-amber-500',
-    google: 'text-blue-500',
+    openai: 'text-foreground',
+    anthropic: 'text-foreground',
+    google: 'text-foreground',
 };
 
 const TIER_ICONS: Record<string, React.ElementType> = {
@@ -128,9 +128,9 @@ export function ModelSelector({
                                             className={cn(
                                                 'w-3.5 h-3.5',
                                                 model.tier === 'ULTRA'
-                                                    ? 'text-amber-500'
+                                                    ? 'text-foreground'
                                                     : model.tier === 'PRO'
-                                                      ? 'text-emerald-500'
+                                                      ? 'text-foreground/70'
                                                       : 'text-zinc-400'
                                             )}
                                         />
@@ -142,9 +142,9 @@ export function ModelSelector({
                                                 className={cn(
                                                     'text-[10px] px-1.5 py-0.5 rounded uppercase font-medium',
                                                     model.tier === 'ULTRA'
-                                                        ? 'bg-amber-500/10 text-amber-500'
+                                                        ? 'bg-foreground/10 text-foreground'
                                                         : model.tier === 'PRO'
-                                                          ? 'bg-emerald-500/10 text-emerald-500'
+                                                          ? 'bg-foreground/10 text-foreground/70'
                                                           : 'bg-zinc-500/10 text-zinc-500'
                                                 )}
                                             >
@@ -152,7 +152,7 @@ export function ModelSelector({
                                             </span>
                                         )}
                                         {isSelected && (
-                                            <Check className="w-4 h-4 text-emerald-500" />
+                                            <Check className="w-4 h-4 text-foreground" />
                                         )}
                                     </div>
                                 </DropdownMenuItem>

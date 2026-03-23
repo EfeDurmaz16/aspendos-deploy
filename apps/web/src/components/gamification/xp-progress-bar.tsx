@@ -45,7 +45,7 @@ export function XPProgressBar({
                     </div>
                     <div className="text-xs text-muted-foreground">
                         {isMaxLevel ? (
-                            <span className="text-amber-500 font-medium">Max Level!</span>
+                            <span className="text-muted-foreground font-medium">Max Level!</span>
                         ) : (
                             <>
                                 {currentXP.toLocaleString()} / {nextLevelXP.toLocaleString()} XP
@@ -60,8 +60,8 @@ export function XPProgressBar({
                     className={cn(
                         'h-full rounded-full',
                         isMaxLevel
-                            ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500'
-                            : 'bg-gradient-to-r from-violet-500 to-purple-600'
+                            ? 'bg-gradient-to-r from-foreground/60 via-foreground/40 to-foreground/60'
+                            : 'bg-gradient-to-r from-foreground/70 to-foreground/90'
                     )}
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
@@ -94,7 +94,7 @@ export function XPGainAnimation({ amount, action, onComplete }: XPGainAnimationP
             transition={{ duration: 0.3 }}
             onAnimationComplete={onComplete}
         >
-            <div className="bg-gradient-to-r from-violet-500 to-purple-600 text-white px-4 py-2 rounded-lg shadow-lg">
+            <div className="bg-gradient-to-r from-foreground/70 to-foreground/90 text-white px-4 py-2 rounded-lg shadow-lg">
                 <div className="flex items-center gap-2">
                     <motion.span
                         className="text-lg font-bold"

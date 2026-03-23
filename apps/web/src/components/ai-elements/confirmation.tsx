@@ -48,10 +48,10 @@ export function Confirmation({
             className={cn(
                 'border rounded-lg p-4 my-2',
                 state === 'approval-requested'
-                    ? 'border-orange-500/30 bg-orange-500/5'
+                    ? 'border-foreground/20 bg-foreground/5'
                     : approved
-                      ? 'border-green-500/30 bg-green-500/5'
-                      : 'border-red-500/30 bg-red-500/5',
+                      ? 'border-foreground/20 bg-foreground/5'
+                      : 'border-foreground/15 bg-foreground/5',
                 className
             )}
         >
@@ -94,10 +94,10 @@ function ConfirmationRequest({
         <>
             <div className="flex items-center gap-2 mb-2">
                 <div
-                    className="w-2 h-2 rounded-full bg-orange-500 motion-safe:animate-pulse"
+                    className="w-2 h-2 rounded-full bg-foreground/60 motion-safe:animate-pulse"
                     aria-hidden="true"
                 />
-                <span className="text-sm font-medium text-orange-300">Approval Required</span>
+                <span className="text-sm font-medium text-foreground/70">Approval Required</span>
             </div>
             <p className="text-sm text-neutral-300 mb-1">
                 <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs">
@@ -119,8 +119,8 @@ function ConfirmationRequest({
 function ConfirmationAccepted({ toolName }: { toolName: string }) {
     return (
         <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500" aria-hidden="true" />
-            <span className="text-sm text-green-400">
+            <div className="w-2 h-2 rounded-full bg-foreground/70" aria-hidden="true" />
+            <span className="text-sm text-foreground/70">
                 <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs">
                     {formatToolName(toolName)}
                 </code>{' '}
@@ -133,8 +133,8 @@ function ConfirmationAccepted({ toolName }: { toolName: string }) {
 function ConfirmationRejected({ toolName }: { toolName: string }) {
     return (
         <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true" />
-            <span className="text-sm text-red-400">
+            <div className="w-2 h-2 rounded-full bg-foreground/50" aria-hidden="true" />
+            <span className="text-sm text-foreground/50">
                 <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs">
                     {formatToolName(toolName)}
                 </code>{' '}

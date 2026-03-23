@@ -52,7 +52,7 @@ export function Leaderboard({ entries, currentUserRank, className }: Leaderboard
                 <div className="mt-4 pt-4 border-t border-border">
                     <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                         <span>Your rank:</span>
-                        <span className="font-bold text-violet-500">#{currentUserRank}</span>
+                        <span className="font-bold text-foreground">#{currentUserRank}</span>
                     </div>
                 </div>
             )}
@@ -70,9 +70,9 @@ function PodiumCard({ entry, position }: PodiumCardProps) {
         1: {
             height: 'h-32',
             bgColor: 'from-amber-400 to-amber-600',
-            borderColor: 'border-amber-500/50',
+            borderColor: 'border-foreground/40',
             icon: CrownIcon,
-            iconColor: 'text-amber-400',
+            iconColor: 'text-foreground/70',
         },
         2: {
             height: 'h-24',
@@ -84,9 +84,9 @@ function PodiumCard({ entry, position }: PodiumCardProps) {
         3: {
             height: 'h-20',
             bgColor: 'from-amber-600 to-amber-800',
-            borderColor: 'border-amber-700/50',
+            borderColor: 'border-foreground/30',
             icon: MedalIcon,
-            iconColor: 'text-amber-600',
+            iconColor: 'text-foreground/50',
         },
     };
 
@@ -109,7 +109,7 @@ function PodiumCard({ entry, position }: PodiumCardProps) {
                     className={cn(
                         'w-14 h-14 rounded-full border-2 overflow-hidden bg-muted',
                         config.borderColor,
-                        entry.isCurrentUser && 'ring-2 ring-violet-500'
+                        entry.isCurrentUser && 'ring-2 ring-ring'
                     )}
                 >
                     {entry.image ? (
@@ -138,7 +138,7 @@ function PodiumCard({ entry, position }: PodiumCardProps) {
             <p
                 className={cn(
                     'text-sm font-medium truncate max-w-[80px] text-center',
-                    entry.isCurrentUser && 'text-violet-500'
+                    entry.isCurrentUser && 'text-foreground'
                 )}
             >
                 {entry.name}
@@ -172,7 +172,7 @@ function LeaderboardRow({ entry, index }: LeaderboardRowProps) {
             className={cn(
                 'flex items-center gap-3 p-3 rounded-lg border',
                 entry.isCurrentUser
-                    ? 'bg-violet-500/10 border-violet-500/30'
+                    ? 'bg-foreground/10 border-foreground/20'
                     : 'bg-background/50 border-border'
             )}
             initial={{ opacity: 0, x: -20 }}
@@ -184,7 +184,7 @@ function LeaderboardRow({ entry, index }: LeaderboardRowProps) {
                 <span
                     className={cn(
                         'font-bold',
-                        entry.isCurrentUser ? 'text-violet-500' : 'text-muted-foreground'
+                        entry.isCurrentUser ? 'text-foreground' : 'text-muted-foreground'
                     )}
                 >
                     {entry.rank}
@@ -195,7 +195,7 @@ function LeaderboardRow({ entry, index }: LeaderboardRowProps) {
             <div
                 className={cn(
                     'w-10 h-10 rounded-full overflow-hidden bg-muted flex-shrink-0',
-                    entry.isCurrentUser && 'ring-2 ring-violet-500'
+                    entry.isCurrentUser && 'ring-2 ring-ring'
                 )}
             >
                 {entry.image ? (
@@ -213,7 +213,7 @@ function LeaderboardRow({ entry, index }: LeaderboardRowProps) {
 
             {/* Name & Level */}
             <div className="flex-1 min-w-0">
-                <p className={cn('font-medium truncate', entry.isCurrentUser && 'text-violet-500')}>
+                <p className={cn('font-medium truncate', entry.isCurrentUser && 'text-foreground')}>
                     {entry.name}
                     {entry.isCurrentUser && (
                         <span className="text-xs ml-1 text-muted-foreground">(You)</span>

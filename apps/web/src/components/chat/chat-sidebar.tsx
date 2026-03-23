@@ -222,7 +222,7 @@ export function ChatSidebar({
                                                 </span>
                                                 {chat.isPinned && (
                                                     <Star
-                                                        className="size-3 text-amber-500"
+                                                        className="size-3 text-muted-foreground"
                                                         weight="fill"
                                                     />
                                                 )}

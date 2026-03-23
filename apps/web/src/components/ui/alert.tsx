@@ -15,17 +15,17 @@ const alertVariants = cva(
     {
         variants: {
             variant: {
-                info: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-200',
+                info: 'border-border bg-foreground/5 text-foreground',
                 success:
-                    'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200',
+                    'border-border bg-foreground/5 text-foreground',
                 warning:
-                    'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200',
-                error: 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-200',
+                    'border-border bg-foreground/5 text-muted-foreground',
+                error: 'border-border bg-foreground/5 text-foreground',
                 // YULA Feature alerts
-                import: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-200',
-                pac: 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200',
+                import: 'border-border bg-foreground/5 text-foreground',
+                pac: 'border-border bg-foreground/5 text-muted-foreground',
                 council:
-                    'border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/20 text-violet-900 dark:text-violet-200',
+                    'border-border bg-muted-foreground/5 text-muted-foreground',
             },
         },
         defaultVariants: {

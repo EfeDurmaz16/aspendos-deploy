@@ -117,7 +117,7 @@ export function Omnibar() {
                                             }}
                                         >
                                             <Sparkle
-                                                className="h-4 w-4 text-violet-400"
+                                                className="h-4 w-4 text-muted-foreground"
                                                 weight="fill"
                                             />
                                         </motion.div>

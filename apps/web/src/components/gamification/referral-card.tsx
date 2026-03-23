@@ -61,14 +61,14 @@ export function ReferralCard({
     return (
         <div
             className={cn(
-                'p-6 rounded-xl border bg-gradient-to-br from-pink-500/5 to-violet-500/5 border-pink-500/20',
+                'p-6 rounded-xl border bg-gradient-to-br from-foreground/5 to-muted-foreground/5 border-foreground/15',
                 className
             )}
         >
             {/* Header */}
             <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
-                    <GiftIcon className="w-5 h-5 text-pink-500" />
+                <div className="w-10 h-10 rounded-lg bg-foreground/10 flex items-center justify-center">
+                    <GiftIcon className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
                     <h3 className="font-semibold text-foreground">Invite Friends</h3>
@@ -92,7 +92,7 @@ export function ReferralCard({
                         <SparklesIcon className="w-4 h-4" />
                         <span className="text-xs">Pro Days Earned</span>
                     </div>
-                    <p className="text-2xl font-bold text-pink-500">{proDaysEarned}</p>
+                    <p className="text-2xl font-bold text-foreground">{proDaysEarned}</p>
                 </div>
             </div>
 
@@ -109,7 +109,7 @@ export function ReferralCard({
                         className={cn(
                             'flex-shrink-0 p-2 rounded-lg border transition-colors',
                             copied
-                                ? 'bg-green-500/10 border-green-500/30 text-green-500'
+                                ? 'bg-foreground/10 border-foreground/20 text-foreground'
                                 : 'bg-background hover:bg-muted'
                         )}
                         onClick={handleCopy}
@@ -126,7 +126,7 @@ export function ReferralCard({
 
             {/* Share Button */}
             <motion.button
-                className="w-full py-2.5 rounded-lg bg-gradient-to-r from-pink-500 to-violet-500 text-white font-medium flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-lg bg-gradient-to-r from-foreground to-foreground/80 text-white font-medium flex items-center justify-center gap-2"
                 onClick={handleShare}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -138,8 +138,8 @@ export function ReferralCard({
             {/* Rewards explanation */}
             <div className="mt-4 pt-4 border-t border-border/50">
                 <p className="text-xs text-muted-foreground text-center">
-                    You get <span className="text-pink-500 font-medium">7 days</span> of Pro when
-                    friends sign up, and <span className="text-pink-500 font-medium">30 days</span>{' '}
+                    You get <span className="text-foreground font-medium">7 days</span> of Pro when
+                    friends sign up, and <span className="text-foreground font-medium">30 days</span>{' '}
                     when they upgrade to Pro!
                 </p>
             </div>
@@ -183,8 +183,8 @@ export function ReferralInput({
                     maxLength={8}
                     className={cn(
                         'flex-1 px-3 py-2 rounded-lg border bg-background text-sm font-mono uppercase',
-                        'focus:outline-none focus:ring-2 focus:ring-violet-500/50',
-                        error && 'border-red-500'
+                        'focus:outline-none focus:ring-2 focus:ring-ring',
+                        error && 'border-border'
                     )}
                 />
                 <motion.button
@@ -192,7 +192,7 @@ export function ReferralInput({
                     disabled={isLoading || !code.trim()}
                     className={cn(
                         'px-4 py-2 rounded-lg font-medium text-sm',
-                        'bg-violet-500 text-white',
+                        'bg-foreground text-background',
                         'disabled:opacity-50 disabled:cursor-not-allowed'
                     )}
                     whileHover={{ scale: 1.02 }}
@@ -201,7 +201,7 @@ export function ReferralInput({
                     {isLoading ? 'Applying...' : 'Apply'}
                 </motion.button>
             </div>
-            {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-xs text-foreground/60 mt-1">{error}</p>}
         </form>
     );
 }
@@ -219,9 +219,9 @@ interface ReferralProgressProps {
 
 export function ReferralProgress({ referrals, className }: ReferralProgressProps) {
     const statusColors = {
-        pending: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30',
-        active: 'bg-green-500/10 text-green-500 border-green-500/30',
-        converted: 'bg-pink-500/10 text-pink-500 border-pink-500/30',
+        pending: 'bg-foreground/5 text-muted-foreground border-foreground/15',
+        active: 'bg-foreground/10 text-foreground border-foreground/20',
+        converted: 'bg-foreground/10 text-foreground border-foreground/20',
     };
 
     const statusLabels = {

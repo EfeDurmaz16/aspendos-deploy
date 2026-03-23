@@ -20,20 +20,20 @@ export const pacTypeStyles: Record<
     { color: string; bgColor: string; icon: string; label: string }
 > = {
     reminder: {
-        color: '#3b82f6',
-        bgColor: 'bg-blue-500/10',
+        color: '#a3a3a3',
+        bgColor: 'bg-foreground/10',
         icon: 'bell',
         label: 'Reminder',
     },
     suggestion: {
-        color: '#f59e0b',
-        bgColor: 'bg-amber-500/10',
+        color: '#a3a3a3',
+        bgColor: 'bg-foreground/10',
         icon: 'lightbulb',
         label: 'Suggestion',
     },
     alert: {
-        color: '#ef4444',
-        bgColor: 'bg-red-500/10',
+        color: '#737373',
+        bgColor: 'bg-foreground/10',
         icon: 'warning',
         label: 'Alert',
     },

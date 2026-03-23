@@ -22,10 +22,10 @@ import { cn } from '@/lib/utils';
 // ============================================
 
 const typeStyles: Record<PACItemType, { icon: typeof Bell; color: string; bgColor: string }> = {
-    reminder: { icon: Bell, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
-    suggestion: { icon: Lightbulb, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
-    alert: { icon: Warning, color: 'text-red-400', bgColor: 'bg-red-500/10' },
-    insight: { icon: Brain, color: 'text-amber-300', bgColor: 'bg-amber-400/10' },
+    reminder: { icon: Bell, color: 'text-foreground/70', bgColor: 'bg-foreground/10' },
+    suggestion: { icon: Lightbulb, color: 'text-foreground/70', bgColor: 'bg-foreground/10' },
+    alert: { icon: Warning, color: 'text-foreground/60', bgColor: 'bg-foreground/10' },
+    insight: { icon: Brain, color: 'text-foreground/60', bgColor: 'bg-foreground/10' },
 };
 
 // ============================================
@@ -65,7 +65,7 @@ function PACItemCard({ item, onDismiss, onSnooze, onAct }: PACItemCardProps) {
                             variant="ghost"
                             size="sm"
                             onClick={() => onAct(item.id)}
-                            className="h-6 px-2 text-xs text-emerald-400 hover:text-emerald-300"
+                            className="h-6 px-2 text-xs text-foreground/70 hover:text-foreground"
                         >
                             <Check className="h-3 w-3 mr-1" />
                             Done
@@ -171,7 +171,7 @@ export function PACNotifications({
                 <div className="relative">
                     <Bell className="h-5 w-5 text-zinc-400" />
                     {pendingItems.length > 0 && (
-                        <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-blue-500 text-[10px] font-bold text-white flex items-center justify-center">
+                        <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-foreground text-[10px] font-bold text-background flex items-center justify-center">
                             {pendingItems.length}
                         </span>
                     )}
@@ -197,10 +197,10 @@ export function PACNotifications({
                         ) : (
                             <CaretRight className="h-4 w-4" />
                         )}
-                        <Bell className="h-4 w-4 text-blue-400" weight="fill" />
+                        <Bell className="h-4 w-4 text-foreground/70" weight="fill" />
                         <span>PAC Stream</span>
                         {pendingItems.length > 0 && (
-                            <span className="ml-auto px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs">
+                            <span className="ml-auto px-1.5 py-0.5 rounded-full bg-foreground/10 text-foreground/70 text-xs">
                                 {pendingItems.length}
                             </span>
                         )}
@@ -213,7 +213,7 @@ export function PACNotifications({
                     </button>
                 </div>
                 {urgentCount > 0 && (
-                    <p className="text-xs text-red-400 mt-1">
+                    <p className="text-xs text-foreground/60 mt-1">
                         {urgentCount} urgent notification{urgentCount > 1 ? 's' : ''}
                     </p>
                 )}

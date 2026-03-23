@@ -46,7 +46,7 @@ export function SyncStatus({ authToken, compact = false }: SyncStatusProps) {
                     <CloudOff className="h-3 w-3" />
                 )}
                 {pendingCount > 0 && (
-                    <span className="bg-amber-500 text-amber-950 text-[10px] px-1 rounded">
+                    <span className="bg-foreground text-background text-[10px] px-1 rounded">
                         {pendingCount}
                     </span>
                 )}
@@ -59,9 +59,9 @@ export function SyncStatus({ authToken, compact = false }: SyncStatusProps) {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     {isOnline ? (
-                        <Cloud className="h-5 w-5 text-green-500" />
+                        <Cloud className="h-5 w-5 text-foreground/70" />
                     ) : (
-                        <CloudOff className="h-5 w-5 text-amber-500" />
+                        <CloudOff className="h-5 w-5 text-muted-foreground" />
                     )}
                     <span className="font-medium text-foreground">
                         {isOnline ? 'Online' : 'Offline'}
@@ -83,8 +83,8 @@ export function SyncStatus({ authToken, compact = false }: SyncStatusProps) {
             </div>
 
             {pendingCount > 0 && (
-                <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
-                    <span className="bg-amber-500/20 px-2 py-0.5 rounded">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="bg-foreground/15 px-2 py-0.5 rounded">
                         {pendingCount} pending
                     </span>
                     <span className="text-muted-foreground">Will sync when online</span>

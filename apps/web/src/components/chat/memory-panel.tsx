@@ -124,7 +124,7 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                     {/* Memory List */}
                     <div>
                         <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5">
-                            <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <div className="size-1.5 rounded-full bg-foreground animate-pulse" />
                             Active Context
                         </h3>
                         <div className="space-y-2">
@@ -172,9 +172,9 @@ function MemoryCard({ memory }: { memory: Memory }) {
     const relevanceScore = memory.metrics?.relevance ?? memory.confidence ?? 0;
     const relevanceColor =
         relevanceScore > 0.7
-            ? 'text-emerald-500'
+            ? 'text-foreground'
             : relevanceScore > 0.4
-              ? 'text-amber-500'
+              ? 'text-muted-foreground'
               : 'text-muted-foreground';
 
     return (

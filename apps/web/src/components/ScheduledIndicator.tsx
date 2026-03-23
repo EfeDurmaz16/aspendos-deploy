@@ -133,7 +133,7 @@ export function ScheduledIndicator({
                     <button
                         onClick={handleCancel}
                         disabled={isLoading}
-                        className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-foreground transition-colors"
                         title="Cancel"
                     >
                         <X className="w-4 h-4" />
@@ -205,7 +205,7 @@ export function ScheduledToast({ task, onDismiss, onCancel }: ScheduledToastProp
                     {onCancel && (
                         <button
                             onClick={handleCancel}
-                            className="text-xs text-zinc-500 hover:text-red-500 transition-colors"
+                            className="text-xs text-zinc-500 hover:text-foreground transition-colors"
                         >
                             Cancel
                         </button>
