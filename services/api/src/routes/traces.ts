@@ -91,4 +91,52 @@ tracesRoutes.get('/:traceId', (c) => {
     return c.json(trace);
 });
 
+// ============================================
+// AGENT ACTION LOG TRACES (for /agent-log dashboard)
+// ============================================
+
+// GET /traces/recent - Get recent agent actions for the logged-in user
+tracesRoutes.get('/recent', async (c) => {
+    const userId = c.get('userId') as string | null;
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    try {
+        const { getRecentActions } = await import('../services/action-log.service');
+        const actions = await getRecentActions(userId, { limit: 50 });
+        return c.json({ actions });
+    } catch {
+        return c.json({ actions: [] });
+    }
+});
+
+// GET /traces/session/:sessionId - Get session summary
+tracesRoutes.get('/session/:sessionId', async (c) => {
+    const userId = c.get('userId') as string | null;
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const sessionId = c.req.param('sessionId');
+    try {
+        const { getSessionSummary } = await import('../services/causal-trace.service');
+        const summary = await getSessionSummary(userId, sessionId);
+        return c.json(summary);
+    } catch {
+        return c.json({ error: 'Session not found' }, 404);
+    }
+});
+
+// GET /traces/causal/:actionId - Get causal chain for an action
+tracesRoutes.get('/causal/:actionId', async (c) => {
+    const userId = c.get('userId') as string | null;
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const actionId = c.req.param('actionId');
+    try {
+        const { getCausalChain } = await import('../services/causal-trace.service');
+        const chain = await getCausalChain(actionId);
+        return c.json(chain);
+    } catch {
+        return c.json({ error: 'Action not found' }, 404);
+    }
+});
+
 export default tracesRoutes;
