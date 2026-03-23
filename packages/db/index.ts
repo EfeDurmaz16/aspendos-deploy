@@ -1,3 +1,4 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 /**
@@ -25,13 +26,13 @@ import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+
 export const prisma =
     globalForPrisma.prisma ||
     new PrismaClient({
-        log: process.env.NODE_ENV === 'production'
-            ? ['error', 'warn']
-            : ['query', 'error', 'warn'],
-        datasourceUrl: process.env.DATABASE_URL,
+        adapter,
+        log: process.env.NODE_ENV === 'production' ? ['error', 'warn'] : ['query', 'error', 'warn'],
     });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
@@ -39,7 +40,8 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 // Log connection pool configuration on startup
 {
     const dbUrl = process.env.DATABASE_URL || '';
-    const params = new URL(dbUrl.startsWith('postgresql') ? dbUrl : 'postgresql://x@x/x').searchParams;
+    const params = new URL(dbUrl.startsWith('postgresql') ? dbUrl : 'postgresql://x@x/x')
+        .searchParams;
     const poolConfig = {
         connection_limit: params.get('connection_limit') || 'default',
         pool_timeout: params.get('pool_timeout') || 'default',
@@ -57,7 +59,7 @@ const CONNECT_BASE_DELAY_MS = 500;
 const CONNECT_MAX_DELAY_MS = 10_000;
 
 function connectDelay(attempt: number): number {
-    const exponential = CONNECT_BASE_DELAY_MS * Math.pow(2, attempt);
+    const exponential = CONNECT_BASE_DELAY_MS * 2 ** attempt;
     const jitter = Math.random() * exponential * 0.3;
     return Math.min(exponential + jitter, CONNECT_MAX_DELAY_MS);
 }

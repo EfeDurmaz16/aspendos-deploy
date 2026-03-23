@@ -12,7 +12,7 @@
  */
 
 import { prisma } from '@aspendos/db';
-import { SuperMemory } from 'supermemory';
+import { Supermemory as SuperMemory } from 'supermemory';
 import { breakers } from '../lib/circuit-breaker';
 import { queueFallbackWrite, searchFallback } from '../lib/memory-fallback';
 import type { MemoryResult, MemoryStats } from './openmemory.service';

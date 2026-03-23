@@ -11,11 +11,17 @@
  */
 
 import { prisma } from '@aspendos/db';
-import { Memory as OpenMemoryClient } from 'openmemory-js';
 import { breakers } from './circuit-breaker';
 
-// Re-use the shared OpenMemory client for sync operations
-const mem = new OpenMemoryClient();
+// Lazy-initialize to avoid blocking module import (openmemory-js has side effects)
+let _mem: any = null;
+async function getMem() {
+    if (!_mem) {
+        const { Memory } = await import('openmemory-js');
+        _mem = new Memory();
+    }
+    return _mem;
+}
 
 /**
  * Interface for the memory client used during sync.
@@ -119,7 +125,7 @@ export async function queueFallbackWrite(
  * Routes to SuperMemory or OpenMemory based on MEMORY_BACKEND env var.
  */
 export async function syncPendingMemories(client?: MemoryClient): Promise<SyncResult> {
-    const memClient = client || mem;
+    const memClient = client || (await getMem());
     const result: SyncResult = { synced: 0, failed: 0, errors: [] };
 
     const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';

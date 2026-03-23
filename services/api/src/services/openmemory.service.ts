@@ -5,13 +5,19 @@
  * Provides cognitive memory with HMD sectors, decay, and explainable traces.
  */
 
-import { Memory } from 'openmemory-js';
 import { prisma } from '@aspendos/db';
 import { breakers } from '../lib/circuit-breaker';
 import { queueFallbackWrite, searchFallback } from '../lib/memory-fallback';
 
-// Initialize OpenMemory client
-const mem = new Memory();
+// Lazy-initialize OpenMemory client (dynamic import avoids blocking module load)
+let _mem: any = null;
+async function getMem() {
+    if (!_mem) {
+        const { Memory } = await import('openmemory-js');
+        _mem = new Memory();
+    }
+    return _mem;
+}
 
 /**
  * Graceful degradation wrapper for Qdrant operations.
@@ -33,7 +39,11 @@ async function withQdrantFallback<T>(fn: () => Promise<T>, fallback: T): Promise
 // TYPES (matching OpenMemory response format)
 // ============================================
 
-import { q } from 'openmemory-js/dist/core/db';
+// Lazy import to avoid blocking module load
+async function getQ() {
+    const { q } = await import('openmemory-js/dist/core/db');
+    return q;
+}
 
 /**
  * Apply recency boost to search results.
@@ -97,7 +107,7 @@ export async function addMemory(
     try {
         const result = await breakers.qdrant.execute(
             async () =>
-                await mem.add(content, {
+                await (await getMem()).add(content, {
                     user_id: userId,
                     tags: options?.tags,
                     metadata: {
@@ -206,7 +216,7 @@ export async function searchMemories(
     try {
         const results = await breakers.qdrant.execute(
             async () =>
-                await mem.search(query, {
+                await (await getMem()).search(query, {
                     user_id: userId,
                     limit: options?.limit || 5,
                 })
@@ -248,7 +258,9 @@ export async function searchMemories(
                 });
 
                 // Merge with Qdrant results, deduplicating by content similarity
-                const existingContents = new Set(mapped.map((m: { content: string }) => m.content.slice(0, 100)));
+                const existingContents = new Set(
+                    mapped.map((m: { content: string }) => m.content.slice(0, 100))
+                );
                 for (const pg of pgImports) {
                     if (!existingContents.has(pg.content.slice(0, 100))) {
                         mapped.push({
@@ -309,7 +321,7 @@ export async function listMemories(
 ): Promise<MemoryResult[]> {
     const results = await withQdrantFallback(
         async () =>
-            await mem.search('', {
+            await (await getMem()).search('', {
                 user_id: userId,
                 limit: options?.limit || 50,
             }),
@@ -339,6 +351,7 @@ export async function updateMemory(
         metadata?: Record<string, unknown>;
     }
 ): Promise<void> {
+    const q = await getQ();
     const memData = await q.get_mem.get(id);
     if (!memData) throw new Error('Memory not found');
     const nextContent = content ?? memData.memory;
@@ -354,7 +367,7 @@ export async function updateMemory(
     const tagsStr = options?.tags ? options.tags.join(',') : memData.tags;
 
     if (options?.sector) {
-        await q.upd_mem_with_sector.run(
+        await (await getQ()).upd_mem_with_sector.run(
             nextContent,
             options.sector,
             tagsStr,
@@ -363,7 +376,7 @@ export async function updateMemory(
             id
         );
     } else {
-        await q.upd_mem.run(nextContent, tagsStr, newMeta, Date.now(), id);
+        await (await getQ()).upd_mem.run(nextContent, tagsStr, newMeta, Date.now(), id);
     }
 }
 
@@ -372,7 +385,7 @@ export async function updateMemory(
  */
 export async function deleteMemory(id: string): Promise<void> {
     try {
-        await q.del_mem.run(id);
+        await (await getQ()).del_mem.run(id);
         // Also clean up vectors to prevent orphans
         // Note: SDK doesn't expose vector delete easily without id, but DB handles cascade usually?
         // Checking openmemory schema: no foreign keys defined in SQLite/PG usually for vectors in early versions?
@@ -389,7 +402,7 @@ export async function deleteMemory(id: string): Promise<void> {
  * Reinforce a memory (increases salience)
  */
 export async function reinforceMemory(id: string): Promise<void> {
-    await mem.reinforce(id);
+    await (await getMem()).reinforce(id);
 }
 
 /**
@@ -419,6 +432,7 @@ export async function getMemoryStats(userId: string): Promise<MemoryStats> {
  */
 export async function verifyMemoryOwnership(memoryId: string, userId: string): Promise<boolean> {
     try {
+        const q = await getQ();
         const memData = await q.get_mem.get(memoryId);
         if (!memData) return false;
         const meta = memData.meta ? JSON.parse(memData.meta) : {};
@@ -432,6 +446,6 @@ export async function verifyMemoryOwnership(memoryId: string, userId: string): P
 /**
  * Get OpenMemory client for direct access
  */
-export function getMemoryClient(): Memory {
-    return mem;
+export async function getMemoryClient() {
+    return getMem();
 }
