@@ -5,8 +5,8 @@ import type { NextConfig } from 'next';
 // Enable in production by uncommenting the withSerwist wrapper below
 
 const nextConfig: NextConfig = {
-    // Enable standalone output for Docker deployments
-    output: 'standalone',
+    // Standalone disabled — Vercel doesn't need it, and it adds ~10min to builds
+    // Re-enable only for Docker deployments: output: 'standalone',
 
     // Strict mode for React
     reactStrictMode: true,
