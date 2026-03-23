@@ -504,20 +504,35 @@ const port = parseInt(process.env.PORT || '8080', 10);
 async function initialize() {
     console.log('🚀 Yula API Server starting...');
 
-    // Initialize MCP clients (optional, non-blocking)
+    // Initialize MCP clients (optional, with 5s timeout to prevent hanging)
     try {
-        await initializeMCPClients();
+        await Promise.race([
+            initializeMCPClients(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('MCP init timeout')), 5000)
+            ),
+        ]);
     } catch (error) {
-        console.warn('[MCP] Failed to initialize MCP clients:', error);
-        // Continue without MCP - it's optional
+        console.warn(
+            '[MCP] MCP clients unavailable:',
+            error instanceof Error ? error.message : error
+        );
     }
 
-    // Seed system skills (non-blocking)
+    // Seed system skills (non-blocking, with timeout)
     try {
         const { seedSystemSkills } = await import('./services/skill.service');
-        await seedSystemSkills();
+        await Promise.race([
+            seedSystemSkills(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Skills seed timeout')), 5000)
+            ),
+        ]);
     } catch (error) {
-        console.warn('[Skills] Failed to seed system skills:', error);
+        console.warn(
+            '[Skills] Skills seeding skipped:',
+            error instanceof Error ? error.message : error
+        );
     }
 
     console.log(`✅ Yula API Server running on port ${port}`);
