@@ -1,14 +1,12 @@
 /**
- * Messaging Gateway - Abstract Interface
+ * Messaging Gateway — Thin Wrapper
  *
- * Provides a unified interface for multi-platform messaging.
- * Each platform adapter implements this interface for
- * consistent send/receive behavior across Telegram, WhatsApp, Slack, etc.
+ * The actual messaging is handled by Vercel Chat SDK (see src/bot/).
+ * This file provides the sendToUser() helper for PAC delivery service
+ * to send notifications through the Chat SDK bot.
  */
 
-// ============================================
-// TYPES
-// ============================================
+import { bot } from '../bot';
 
 export interface MessageContent {
     text: string;
@@ -19,8 +17,8 @@ export interface MessageContent {
 
 export interface MessageAction {
     label: string;
-    action: string; // "approve" | "reject" | "snooze" | "dismiss"
-    value?: string; // Action payload (e.g., approval ID)
+    action: string;
+    value?: string;
 }
 
 export interface DeliveryResult {
@@ -30,69 +28,30 @@ export interface DeliveryResult {
     platform: string;
 }
 
-export interface InboundMessage {
-    platform: string;
-    platformUserId: string;
-    text: string;
-    messageId: string;
-    timestamp: Date;
-    metadata?: Record<string, unknown>;
-}
-
-// ============================================
-// ABSTRACT GATEWAY
-// ============================================
-
-export interface MessagingGateway {
-    /** Platform identifier (e.g., "telegram", "whatsapp", "slack") */
-    platform: string;
-
-    /** Send a message to a user via their platform connection */
-    sendMessage(platformUserId: string, content: MessageContent): Promise<DeliveryResult>;
-
-    /** Send an approval request with action buttons */
-    sendApprovalRequest(
-        platformUserId: string,
-        approvalId: string,
-        reason: string,
-        toolName: string
-    ): Promise<DeliveryResult>;
-
-    /** Parse a platform-specific webhook event into a normalized InboundMessage */
-    parseInboundMessage(rawEvent: unknown): InboundMessage | null;
-}
-
-// ============================================
-// GATEWAY REGISTRY
-// ============================================
-
-const gateways = new Map<string, MessagingGateway>();
-
-export function registerGateway(gateway: MessagingGateway): void {
-    gateways.set(gateway.platform, gateway);
-}
-
-export function getGateway(platform: string): MessagingGateway | undefined {
-    return gateways.get(platform);
-}
-
-export function getAllGateways(): MessagingGateway[] {
-    return Array.from(gateways.values());
-}
-
 /**
- * Send a message to a user on their preferred platform.
- * Tries the specified platform first, then falls back to others.
+ * Send a message to a user on a specific platform via Chat SDK.
+ * Used by PAC delivery service for notifications and approval requests.
  */
 export async function sendToUser(
     platformUserId: string,
     platform: string,
     content: MessageContent
 ): Promise<DeliveryResult> {
-    const gateway = getGateway(platform);
-    if (!gateway) {
-        return { success: false, error: `No gateway for platform: ${platform}`, platform };
-    }
+    try {
+        const adapter = (bot as any).adapters?.[platform];
+        if (!adapter) {
+            return { success: false, error: `No adapter for platform: ${platform}`, platform };
+        }
 
-    return gateway.sendMessage(platformUserId, content);
+        // Use Chat SDK's adapter to send
+        await adapter.sendMessage(platformUserId, { text: content.text });
+
+        return { success: true, platform };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            platform,
+        };
+    }
 }

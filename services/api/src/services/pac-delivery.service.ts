@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@aspendos/db';
-import { getGateway, type MessageContent } from '../messaging/gateway';
+import { type MessageContent, sendToUser } from '../messaging/gateway';
 
 export interface DeliveryOptions {
     userId: string;
@@ -90,25 +90,11 @@ async function deliverToPlatform(
     platform: string,
     platformUserId: string,
     content: MessageContent,
-    options: DeliveryOptions,
+    _options: DeliveryOptions,
     report: DeliveryReport
 ): Promise<void> {
-    const gateway = getGateway(platform);
-    if (!gateway) {
-        report.channels.push({ platform, success: false, error: 'Gateway not available' });
-        return;
-    }
-
     try {
-        const result =
-            options.type === 'approval_request' && options.approvalId && options.toolName
-                ? await gateway.sendApprovalRequest(
-                      platformUserId,
-                      options.approvalId,
-                      options.content,
-                      options.toolName
-                  )
-                : await gateway.sendMessage(platformUserId, content);
+        const result = await sendToUser(platformUserId, platform, content);
         report.channels.push({ platform, success: result.success, error: result.error });
     } catch (error) {
         report.channels.push({
