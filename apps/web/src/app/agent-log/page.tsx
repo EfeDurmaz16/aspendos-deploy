@@ -7,10 +7,13 @@
  * - Recent agent actions timeline
  * - Pending approval requests
  * - Session summaries
- * - Causal trace visualization
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface AgentAction {
     id: string;
@@ -64,37 +67,28 @@ export default function AgentLogPage() {
     }, [fetchData]);
 
     const handleApprove = async (approvalId: string, alwaysAllow = false) => {
-        try {
-            const url = alwaysAllow
-                ? `/api/v1/approvals/${approvalId}/approve?always_allow=true`
-                : `/api/v1/approvals/${approvalId}/approve`;
-            await fetch(url, { method: 'POST', credentials: 'include' });
-            fetchData();
-        } catch (error) {
-            console.error('Approval failed:', error);
-        }
+        const url = alwaysAllow
+            ? `/api/v1/approvals/${approvalId}/approve?always_allow=true`
+            : `/api/v1/approvals/${approvalId}/approve`;
+        await fetch(url, { method: 'POST', credentials: 'include' }).catch(() => {});
+        fetchData();
     };
 
     const handleReject = async (approvalId: string) => {
-        try {
-            await fetch(`/api/v1/approvals/${approvalId}/reject`, {
-                method: 'POST',
-                credentials: 'include',
-            });
-            fetchData();
-        } catch (error) {
-            console.error('Rejection failed:', error);
-        }
+        await fetch(`/api/v1/approvals/${approvalId}/reject`, {
+            method: 'POST',
+            credentials: 'include',
+        }).catch(() => {});
+        fetchData();
     };
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div
-                    className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"
-                    role="status"
-                    aria-label="Loading"
-                />
+            <div className="container mx-auto max-w-4xl px-4 py-8 space-y-4">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
             </div>
         );
     }
@@ -111,51 +105,48 @@ export default function AgentLogPage() {
                     </h2>
                     <div className="space-y-3">
                         {approvals.map((approval) => (
-                            <div
-                                key={approval.id}
-                                className="border border-yellow-500/30 bg-yellow-500/5 rounded-lg p-4"
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <p className="font-medium">
-                                            Tool:{' '}
-                                            <code className="text-sm bg-white/10 px-1.5 py-0.5 rounded">
-                                                {approval.toolName}
-                                            </code>
-                                        </p>
-                                        <p className="text-sm text-neutral-400 mt-1">
-                                            {approval.reason}
-                                        </p>
-                                        <p className="text-xs text-neutral-500 mt-1">
-                                            Expires:{' '}
-                                            {new Date(approval.expiresAt).toLocaleTimeString()}
-                                        </p>
+                            <Card key={approval.id} className="border-amber-500/30 bg-amber-500/5">
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <p className="font-medium">
+                                                Tool:{' '}
+                                                <Badge variant="outline">{approval.toolName}</Badge>
+                                            </p>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                {approval.reason}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Expires:{' '}
+                                                {new Date(approval.expiresAt).toLocaleTimeString()}
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-2 ml-4">
+                                            <Button
+                                                size="sm"
+                                                variant="primary"
+                                                onClick={() => handleApprove(approval.id)}
+                                            >
+                                                Approve
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                onClick={() => handleApprove(approval.id, true)}
+                                            >
+                                                Always Allow
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="danger"
+                                                onClick={() => handleReject(approval.id)}
+                                            >
+                                                Reject
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <div className="flex gap-2 ml-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleApprove(approval.id)}
-                                            className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-green-400"
-                                        >
-                                            Approve
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleApprove(approval.id, true)}
-                                            className="px-3 py-1.5 text-sm bg-green-600/50 hover:bg-green-600/70 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-green-400"
-                                        >
-                                            Always Allow
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleReject(approval.id)}
-                                            className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-red-400"
-                                        >
-                                            Reject
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                                </CardContent>
+                            </Card>
                         ))}
                     </div>
                 </section>
@@ -165,44 +156,47 @@ export default function AgentLogPage() {
             <section>
                 <h2 className="text-lg font-semibold mb-3">Recent Actions</h2>
                 {actions.length === 0 ? (
-                    <p className="text-neutral-500">No agent actions recorded yet.</p>
+                    <Card>
+                        <CardContent className="p-8 text-center text-muted-foreground">
+                            No agent actions recorded yet.
+                        </CardContent>
+                    </Card>
                 ) : (
                     <div className="space-y-2">
                         {actions.map((action) => (
-                            <div
-                                key={action.id}
-                                className="flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                            >
-                                <div
-                                    className={`w-2 h-2 rounded-full ${getDecisionColor(action.guardDecision)}`}
-                                    aria-hidden="true"
-                                />
-                                <span className="sr-only">{action.guardDecision || 'allow'}</span>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium">
-                                            {action.toolName || action.actionType}
-                                        </span>
-                                        {action.guardDecision &&
-                                            action.guardDecision !== 'allow' && (
-                                                <span
-                                                    className={`text-xs px-1.5 py-0.5 rounded ${getDecisionBadge(action.guardDecision)}`}
-                                                >
-                                                    {action.guardDecision}
-                                                </span>
-                                            )}
+                            <Card key={action.id} className="hover:shadow-lg transition-shadow">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <span className="sr-only">
+                                        {action.guardDecision || 'allow'}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-medium">
+                                                {action.toolName || action.actionType}
+                                            </span>
+                                            {action.guardDecision &&
+                                                action.guardDecision !== 'allow' && (
+                                                    <Badge
+                                                        variant={getDecisionVariant(
+                                                            action.guardDecision
+                                                        )}
+                                                    >
+                                                        {action.guardDecision}
+                                                    </Badge>
+                                                )}
+                                        </div>
+                                        {action.guardWarnings.length > 0 && (
+                                            <p className="text-xs text-amber-500 mt-0.5">
+                                                {action.guardWarnings[0]}
+                                            </p>
+                                        )}
                                     </div>
-                                    {action.guardWarnings.length > 0 && (
-                                        <p className="text-xs text-yellow-400 mt-0.5">
-                                            {action.guardWarnings[0]}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="text-right text-xs text-neutral-500">
-                                    <div>{action.latencyMs}ms</div>
-                                    <div>{new Date(action.createdAt).toLocaleTimeString()}</div>
-                                </div>
-                            </div>
+                                    <div className="text-right text-xs text-muted-foreground">
+                                        <div>{action.latencyMs}ms</div>
+                                        <div>{new Date(action.createdAt).toLocaleTimeString()}</div>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         ))}
                     </div>
                 )}
@@ -211,30 +205,14 @@ export default function AgentLogPage() {
     );
 }
 
-function getDecisionColor(decision: string | null): string {
-    switch (decision) {
-        case 'allow':
-            return 'bg-green-500';
-        case 'warn':
-            return 'bg-yellow-500';
-        case 'block':
-            return 'bg-red-500';
-        case 'require_approval':
-            return 'bg-orange-500';
-        default:
-            return 'bg-neutral-500';
-    }
-}
-
-function getDecisionBadge(decision: string): string {
+function getDecisionVariant(decision: string): 'warning' | 'danger' | 'outline' {
     switch (decision) {
         case 'warn':
-            return 'bg-yellow-500/20 text-yellow-400';
+            return 'warning';
         case 'block':
-            return 'bg-red-500/20 text-red-400';
         case 'require_approval':
-            return 'bg-orange-500/20 text-orange-400';
+            return 'danger';
         default:
-            return 'bg-neutral-500/20 text-neutral-400';
+            return 'outline';
     }
 }

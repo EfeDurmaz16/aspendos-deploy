@@ -14,6 +14,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 // ============================================
@@ -151,20 +152,12 @@ export function ConfirmationActions({
 }) {
     return (
         <div className="flex gap-2 mt-3">
-            <button
-                type="button"
-                onClick={onApprove}
-                className="px-4 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-1 focus-visible:ring-offset-black"
-            >
+            <Button size="sm" variant="primary" onClick={onApprove}>
                 Approve
-            </button>
-            <button
-                type="button"
-                onClick={() => onDeny?.()}
-                className="px-4 py-1.5 text-sm bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1 focus-visible:ring-offset-black"
-            >
+            </Button>
+            <Button size="sm" variant="danger" onClick={() => onDeny?.()}>
                 Deny
-            </button>
+            </Button>
         </div>
     );
 }

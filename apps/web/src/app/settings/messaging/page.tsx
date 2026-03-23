@@ -3,13 +3,14 @@
 /**
  * Messaging Platform Settings
  *
- * Manage platform connections for multi-channel delivery:
- * - Telegram, WhatsApp, Slack, Discord
- * - Connection status and linking
- * - Notification preferences per platform
+ * Manage platform connections for multi-channel delivery.
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PlatformConnection {
     id: string;
@@ -73,15 +74,11 @@ export default function MessagingSettingsPage() {
     }, [fetchConnections]);
 
     const handleDisconnect = async (connectionId: string) => {
-        try {
-            await fetch(`/api/v1/messaging/connections/${connectionId}`, {
-                method: 'DELETE',
-                credentials: 'include',
-            });
-            fetchConnections();
-        } catch (error) {
-            console.error('Failed to disconnect:', error);
-        }
+        await fetch(`/api/v1/messaging/connections/${connectionId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        }).catch(() => {});
+        fetchConnections();
     };
 
     const getConnection = (platform: string) =>
@@ -89,12 +86,12 @@ export default function MessagingSettingsPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <div
-                    className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"
-                    role="status"
-                    aria-label="Loading"
-                />
+            <div className="container mx-auto max-w-2xl px-4 py-8 space-y-4">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64" />
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={`skel-${i}`} className="h-24 w-full rounded-xl" />
+                ))}
             </div>
         );
     }
@@ -102,7 +99,7 @@ export default function MessagingSettingsPage() {
     return (
         <div className="container mx-auto max-w-2xl px-4 py-8">
             <h1 className="text-2xl font-bold mb-2">Messaging Platforms</h1>
-            <p className="text-neutral-400 mb-6">
+            <p className="text-muted-foreground mb-6">
                 Connect platforms to receive PAC reminders, approval requests, and chat with YULA
                 from anywhere.
             </p>
@@ -113,81 +110,78 @@ export default function MessagingSettingsPage() {
                     const isConnected = !!connection;
 
                     return (
-                        <div
+                        <Card
                             key={platform.id}
-                            className={`border rounded-lg p-4 transition-colors ${
-                                isConnected
-                                    ? 'border-green-500/30 bg-green-500/5'
-                                    : 'border-white/10 hover:border-white/20'
-                            }`}
+                            className={isConnected ? 'border-emerald-500/30 bg-emerald-500/5' : ''}
                         >
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-start gap-3">
-                                    <span
-                                        className="text-2xl"
-                                        role="img"
-                                        aria-label={platform.name}
-                                    >
-                                        {platform.icon}
-                                    </span>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-medium">{platform.name}</h3>
+                            <CardContent className="p-4">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-start gap-3">
+                                        <span
+                                            className="text-2xl"
+                                            role="img"
+                                            aria-label={platform.name}
+                                        >
+                                            {platform.icon}
+                                        </span>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-medium">{platform.name}</h3>
+                                                {isConnected && (
+                                                    <Badge variant="success">Connected</Badge>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-muted-foreground mt-0.5">
+                                                {platform.description}
+                                            </p>
                                             {isConnected && (
-                                                <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400">
-                                                    Connected
-                                                </span>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    ID: {connection.platformUserId}
+                                                </p>
                                             )}
                                         </div>
-                                        <p className="text-sm text-neutral-400 mt-0.5">
-                                            {platform.description}
-                                        </p>
-                                        {isConnected && (
-                                            <p className="text-xs text-neutral-500 mt-1">
-                                                ID: {connection.platformUserId}
-                                            </p>
+                                    </div>
+                                    <div>
+                                        {isConnected ? (
+                                            <Button
+                                                size="sm"
+                                                variant="danger"
+                                                onClick={() => handleDisconnect(connection.id)}
+                                            >
+                                                Disconnect
+                                            </Button>
+                                        ) : platform.setupUrl ? (
+                                            <Button size="sm" variant="secondary" asChild>
+                                                <a
+                                                    href={platform.setupUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Connect
+                                                </a>
+                                            </Button>
+                                        ) : (
+                                            <Badge variant="tertiary">Coming Soon</Badge>
                                         )}
                                     </div>
                                 </div>
-                                <div>
-                                    {isConnected ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDisconnect(connection.id)}
-                                            className="px-3 py-1.5 text-sm bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-md transition-colors"
-                                        >
-                                            Disconnect
-                                        </button>
-                                    ) : platform.setupUrl ? (
-                                        <a
-                                            href={platform.setupUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="px-3 py-1.5 text-sm bg-white/10 hover:bg-white/20 rounded-md transition-colors inline-block"
-                                        >
-                                            Connect
-                                        </a>
-                                    ) : (
-                                        <span className="px-3 py-1.5 text-sm text-neutral-500">
-                                            Coming Soon
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                            </CardContent>
+                        </Card>
                     );
                 })}
             </div>
 
-            <div className="mt-8 p-4 rounded-lg bg-white/5 border border-white/10">
-                <h3 className="font-medium mb-2">How it works</h3>
-                <ol className="text-sm text-neutral-400 space-y-1.5 list-decimal list-inside">
-                    <li>Click Connect on your preferred platform</li>
-                    <li>Follow the setup instructions to link your account</li>
-                    <li>Start receiving PAC reminders and approval requests</li>
-                    <li>Reply directly from the platform to interact with YULA</li>
-                </ol>
-            </div>
+            <Card className="mt-8">
+                <CardContent className="p-4">
+                    <h3 className="font-medium mb-2">How it works</h3>
+                    <ol className="text-sm text-muted-foreground space-y-1.5 list-decimal list-inside">
+                        <li>Click Connect on your preferred platform</li>
+                        <li>Follow the setup instructions to link your account</li>
+                        <li>Start receiving PAC reminders and approval requests</li>
+                        <li>Reply directly from the platform to interact with YULA</li>
+                    </ol>
+                </CardContent>
+            </Card>
         </div>
     );
 }
