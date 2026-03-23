@@ -1,11 +1,19 @@
 'use client';
 
-import { Brain, CircleNotch, GlobeIcon, PlusCircle, SidebarSimple, UsersThree } from '@phosphor-icons/react';
+import {
+    Brain,
+    CircleNotch,
+    GlobeIcon,
+    PlusCircle,
+    SidebarSimple,
+    UsersThree,
+} from '@phosphor-icons/react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 // Streamdown Plugins
 import remarkMath from 'remark-math';
+import { Confirmation } from '@/components/ai-elements/confirmation';
 // AI Elements Imports
 import {
     Conversation,
@@ -38,20 +46,21 @@ import {
     PromptInputTools,
 } from '@/components/ai-elements/prompt-input';
 import { Reasoning } from '@/components/ai-elements/reasoning';
+import { Tool, ToolInput, ToolOutput } from '@/components/ai-elements/tool';
 import { AddModelsModal } from '@/components/chat/add-models-modal';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { ContextMenuMessage } from '@/components/chat/context-menu-message';
 import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
 import { LiveButton } from '@/components/chat/live-button';
-import { type YulaMode, resolveMode } from '@/components/chat/model-picker';
+import { resolveMode, type YulaMode } from '@/components/chat/model-picker';
 import { VoiceButton } from '@/components/chat/voice-button';
 import { CouncilChatSheet } from '@/components/council/council-chat-sheet';
 import { SpotlightOverlay } from '@/components/onboarding/spotlight-overlay';
 import { PACToastWrapper } from '@/components/pac/pac-toast-wrapper';
-import { useOnboardingStore } from '@/lib/stores/onboarding-store';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { type ChatMessage, type MemoryDecision, useStreamingChat } from '@/hooks/useStreamingChat';
+import { useOnboardingStore } from '@/lib/stores/onboarding-store';
 import { cn } from '@/lib/utils';
 import 'katex/dist/katex.min.css'; // Ensure katex CSS is imported for math rendering
 
@@ -110,8 +119,19 @@ export default function ChatPage() {
         );
     };
 
-    const { messages, isStreaming, sendMessage, error: streamError } = useStreamingChat(chatId);
-    const { hasCompleted, hasSkipped, isActive: onboardingActive, startOnboarding: startTour } = useOnboardingStore();
+    const {
+        messages,
+        isStreaming,
+        sendMessage,
+        handleToolApproval,
+        error: streamError,
+    } = useStreamingChat(chatId);
+    const {
+        hasCompleted,
+        hasSkipped,
+        isActive: onboardingActive,
+        startOnboarding: startTour,
+    } = useOnboardingStore();
 
     // First-visit detection: show spotlight overlay if user hasn't completed or skipped onboarding
     useEffect(() => {
@@ -124,7 +144,7 @@ export default function ChatPage() {
     useEffect(() => {
         // Chat stores internal model IDs - no need to sync to mode
         // Mode is user-facing only and defaults to 'auto'
-    }, [chat?.modelPreference]);
+    }, []);
 
     // Load chat and messages
     useEffect(() => {
@@ -211,12 +231,9 @@ export default function ChatPage() {
         }
     }, [router]);
 
-    const handleModeChange = useCallback(
-        (newMode: YulaMode) => {
-            setMode(newMode);
-        },
-        []
-    );
+    const handleModeChange = useCallback((newMode: YulaMode) => {
+        setMode(newMode);
+    }, []);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -269,11 +286,10 @@ export default function ChatPage() {
         <div className="h-screen bg-background overflow-hidden font-sans flex">
             {/* Sidebar backdrop (mobile only) */}
             {sidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black/40 z-30 md:hidden"
+                <button
+                    type="button"
+                    className="fixed inset-0 bg-black/40 z-30 md:hidden border-0 cursor-default"
                     onClick={() => setSidebarOpen(false)}
-                    onKeyDown={() => {}}
-                    role="button"
                     tabIndex={-1}
                 />
             )}
@@ -368,6 +384,41 @@ export default function ChatPage() {
                                                     {msg.content}
                                                 </MessageResponse>
                                             </MessageContent>
+                                            {/* Tool call rendering with approval UI */}
+                                            {msg.toolCalls?.map((tc) =>
+                                                tc.state === 'approval-requested' ? (
+                                                    <Confirmation
+                                                        key={tc.id}
+                                                        toolName={tc.name}
+                                                        args={tc.args}
+                                                        state="approval-requested"
+                                                        onApprove={() =>
+                                                            handleToolApproval(tc.id, true)
+                                                        }
+                                                        onDeny={() =>
+                                                            handleToolApproval(tc.id, false)
+                                                        }
+                                                    />
+                                                ) : tc.state === 'approval-responded' ? (
+                                                    <Confirmation
+                                                        key={tc.id}
+                                                        toolName={tc.name}
+                                                        state="approval-responded"
+                                                        approved={tc.approval?.approved}
+                                                    />
+                                                ) : (
+                                                    <Tool
+                                                        key={tc.id}
+                                                        name={tc.name}
+                                                        state={tc.state}
+                                                    >
+                                                        <ToolInput data={tc.args} />
+                                                        {tc.output && (
+                                                            <ToolOutput data={tc.output} />
+                                                        )}
+                                                    </Tool>
+                                                )
+                                            )}
                                         </Message>
                                     </ContextMenuMessage>
                                 ))
@@ -428,18 +479,36 @@ export default function ChatPage() {
                                     <span className="text-xs">Council</span>
                                 </PromptInputButton>
                                 {/* Mode Selector */}
-                                <PromptInputSelect value={mode} onValueChange={(v) => handleModeChange(v as YulaMode)}>
+                                <PromptInputSelect
+                                    value={mode}
+                                    onValueChange={(v) => handleModeChange(v as YulaMode)}
+                                >
                                     <PromptInputSelectTrigger>
                                         <PromptInputSelectValue placeholder="Auto" />
                                     </PromptInputSelectTrigger>
                                     <PromptInputSelectContent>
-                                        <PromptInputSelectItem value="auto">Auto</PromptInputSelectItem>
-                                        <PromptInputSelectItem value="smart">Smart</PromptInputSelectItem>
-                                        <PromptInputSelectItem value="fast">Fast</PromptInputSelectItem>
-                                        <PromptInputSelectItem value="creative">Creative</PromptInputSelectItem>
+                                        <PromptInputSelectItem value="auto">
+                                            Auto
+                                        </PromptInputSelectItem>
+                                        <PromptInputSelectItem value="smart">
+                                            Smart
+                                        </PromptInputSelectItem>
+                                        <PromptInputSelectItem value="fast">
+                                            Fast
+                                        </PromptInputSelectItem>
+                                        <PromptInputSelectItem value="creative">
+                                            Creative
+                                        </PromptInputSelectItem>
                                     </PromptInputSelectContent>
                                 </PromptInputSelect>
-                                <VoiceButton onTranscription={(text) => sendMessage(text, resolveMode(mode) ? { model: resolveMode(mode)! } : {})} />
+                                <VoiceButton
+                                    onTranscription={(text) =>
+                                        sendMessage(
+                                            text,
+                                            resolveMode(mode) ? { model: resolveMode(mode)! } : {}
+                                        )
+                                    }
+                                />
                             </PromptInputTools>
                             <PromptInputSubmit status={isStreaming ? 'streaming' : undefined} />
                         </PromptInputFooter>
