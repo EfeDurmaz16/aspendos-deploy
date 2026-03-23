@@ -41,6 +41,9 @@ model User {
   pacSettings              PACSettings?
   councilSessions          CouncilSession[]
   gamificationProfile      GamificationProfile?
+  agentActionLogs          AgentActionLog[]
+  agentApprovals           AgentApproval[]
+  toolAllowlists           ToolAllowlist[]
 
   emailVerified Boolean   @default(false)
   image         String?
@@ -776,4 +779,83 @@ model ProcessedWebhookEvent {
 
   @@index([createdAt])
   @@map("processed_webhook_event")
+}
+
+// ============================================
+// AGENT GOVERNANCE (adapted from AGIT + SARDIS + FIDES)
+// ============================================
+
+/// Persistent log of every agent action for observability and causal tracing.
+/// Conceptually equivalent to AGIT's hash-chained commits.
+model AgentActionLog {
+  id             String   @id @default(cuid())
+  userId         String
+  sessionId      String
+  chatId         String?
+  actionType     String   // "tool_call" | "llm_response" | "memory_write" | "approval_request"
+  toolName       String?
+  toolArgs       Json?
+  toolResult     Json?
+  guardDecision  String?  // "allow" | "warn" | "block" | "require_approval"
+  guardWarnings  String[]
+  parentActionId String?  // Causal chain: links to the action that triggered this one
+  blastRadius    Json?    // BlastRadiusReport from guard evaluation
+  latencyMs      Int      @default(0)
+  modelUsed      String?
+  tokenCost      Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sessionId])
+  @@index([createdAt])
+  @@index([parentActionId])
+  @@map("agent_action_log")
+}
+
+/// Human-in-the-loop approval for sensitive agent operations.
+/// Adapted from AGIT's approval.rs and SARDIS's approval_repository.py.
+model AgentApproval {
+  id          String         @id @default(cuid())
+  userId      String
+  sessionId   String
+  agentId     String?
+  toolName    String
+  toolArgs    Json
+  reason      String         @db.Text
+  blastRadius Json?          // BlastRadiusReport
+  status      ApprovalStatus @default(PENDING)
+  decidedBy   String?        // userId of approver
+  decidedAt   DateTime?
+  expiresAt   DateTime       // TTL: 5 min default (from AGIT pattern)
+  createdAt   DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("agent_approval")
+}
+
+/// Per-session or permanent tool allowlists for user convenience.
+/// When a user approves a tool, they can "always allow" to skip future approvals.
+model ToolAllowlist {
+  id        String   @id @default(cuid())
+  userId    String
+  toolName  String
+  scope     String   @default("session") // "session" | "permanent"
+  sessionId String?  // null for permanent scope
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, toolName, scope])
+  @@map("tool_allowlist")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
 }
