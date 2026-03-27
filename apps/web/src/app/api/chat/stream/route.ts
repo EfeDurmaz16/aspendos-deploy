@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { prisma } from '@aspendos/db';
 import type { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
@@ -33,11 +34,15 @@ function createSSEEncoder() {
 
     return {
         encode: (chunk: StreamChunk): Uint8Array => {
-            const data = `data: ${JSON.stringify(chunk)}\n\n`;
+            const data = `data: ${JSON.stringify(chunk)}
+
+`;
             return encoder.encode(data);
         },
         done: (): Uint8Array => {
-            return encoder.encode('data: [DONE]\n\n');
+            return encoder.encode('data: [DONE]
+
+');
         },
     };
 }
@@ -242,7 +247,11 @@ export async function POST(req: NextRequest) {
                     if (decision.type === 'direct_reply' || decision.type === 'rag_search') {
                         // Build messages with context
                         const systemPrompt = memoryContext
-                            ? `You are Aspendos, a helpful AI assistant with persistent memory. You have context from previous conversations:\n\n${memoryContext}\n\nUse this context naturally when relevant.`
+                            ? `You are Aspendos, a helpful AI assistant with persistent memory. You have context from previous conversations:
+
+${memoryContext}
+
+Use this context naturally when relevant.`
                             : 'You are Aspendos, a helpful AI assistant with persistent memory across conversations.';
 
                         let selectedModel = (decision as { model: string }).model || 'gpt-4o-mini';
@@ -302,7 +311,9 @@ export async function POST(req: NextRequest) {
                             params: Record<string, unknown>;
                             reason: string;
                         };
-                        fullContent = `[Tool call requested: ${toolDecision.tool}]\n\nThis feature is being implemented. Tool: ${toolDecision.tool}, Params: ${JSON.stringify(toolDecision.params)}`;
+                        fullContent = `[Tool call requested: ${toolDecision.tool}]
+
+This feature is being implemented. Tool: ${toolDecision.tool}, Params: ${JSON.stringify(toolDecision.params)}`;
                         usedModel = 'system';
 
                         controller.enqueue(
@@ -338,12 +349,16 @@ export async function POST(req: NextRequest) {
                             });
 
                             if (pacResponse.ok) {
-                                fullContent = `I've scheduled a reminder for you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.\n\nYou'll be notified when it's time.`;
+                                fullContent = `I've scheduled a reminder for you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.
+
+You'll be notified when it's time.`;
                             } else {
                                 fullContent = `I tried to schedule a reminder for "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}, but the scheduling service returned an error. Please try setting the reminder manually.`;
                             }
                         } catch {
-                            fullContent = `I'll remind you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.\n\nNote: The reminder service is temporarily unavailable. Please set a manual reminder as backup.`;
+                            fullContent = `I'll remind you: "${scheduleDecision.schedule.action}" at ${scheduleDecision.schedule.time}.
+
+Note: The reminder service is temporarily unavailable. Please set a manual reminder as backup.`;
                         }
 
                         usedModel = 'system';
@@ -362,7 +377,7 @@ export async function POST(req: NextRequest) {
 
                     // Store message and update billing (async)
                     // Approximate token count: ~3.5 chars/token for English, ~2 for code/multilingual
-                    const charsPerToken = /[\u0080-\uffff]/.test(message) ? 2 : 3.5;
+                    const charsPerToken = /[-￿]/.test(message) ? 2 : 3.5;
                     const tokensIn = Math.ceil(message.length / charsPerToken);
                     const tokensOut = Math.ceil(fullContent.length / charsPerToken);
 
@@ -412,7 +427,8 @@ export async function POST(req: NextRequest) {
                     // Fire-and-forget: don't block response on embedding
                     void (async () => {
                         try {
-                            const exchangeText = `User: ${message}\nAssistant: ${fullContent.slice(0, 500)}`;
+                            const exchangeText = `User: ${message}
+Assistant: ${fullContent.slice(0, 500)}`;
                             const exchangeEmbedding = await createEmbedding(exchangeText);
 
                             await storeConversationEmbedding({

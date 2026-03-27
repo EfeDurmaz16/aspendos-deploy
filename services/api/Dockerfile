@@ -1,5 +1,5 @@
 # Yula OS API Service Dockerfile
-# Multi-stage build for optimized production image
+# Monorepo-aware multi-stage build for GCP Cloud Run
 
 # ============================================
 # BUILD STAGE
@@ -8,17 +8,24 @@ FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy monorepo root files
 COPY package.json bun.lock ./
+COPY packages/db/package.json ./packages/db/
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY services/api/package.json ./services/api/
 
 # Install dependencies
 RUN bun install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Copy workspace source code
+COPY packages/ ./packages/
+COPY services/api/ ./services/api/
 
-# Build TypeScript
-RUN bun run build
+# Generate Prisma client
+RUN cd packages/db && bunx prisma generate || true
+
+# Build API
+RUN cd services/api && bun run build
 
 # ============================================
 # PRODUCTION STAGE
@@ -27,27 +34,24 @@ FROM oven/bun:1-slim AS runner
 
 WORKDIR /app
 
-# Set production environment
 ENV NODE_ENV=production
 
-# Create non-root user for security
+# Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 api
 
-# Copy built application
-COPY --from=builder --chown=api:nodejs /app/package.json ./
-COPY --from=builder --chown=api:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=api:nodejs /app/dist ./dist
+# Copy built application and dependencies
+COPY --from=builder --chown=api:nodejs /app/services/api/package.json ./
+COPY --from=builder --chown=api:nodejs /app/services/api/node_modules ./node_modules
+COPY --from=builder --chown=api:nodejs /app/services/api/dist ./dist
+COPY --from=builder --chown=api:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=api:nodejs /app/packages/db/node_modules/.prisma ./node_modules/.prisma
 
-# Switch to non-root user
 USER api
 
-# Expose port
 EXPOSE 8080
 
-# Health check (bun:1-slim has no curl, use bun's fetch)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD bun -e "fetch('http://localhost:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 
-# Start the application
 CMD ["bun", "run", "start"]

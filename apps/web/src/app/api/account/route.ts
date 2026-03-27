@@ -1,7 +1,9 @@
+export const dynamic = 'force-dynamic';
 import { prisma } from '@aspendos/db';
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { deleteUserMemories } from '@/lib/services/qdrant';
+
 
 /**
  * DELETE /api/account
@@ -30,7 +32,7 @@ export async function DELETE() {
 
     try {
         // Use a transaction to delete all user data atomically
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             // Delete user messages
             await tx.message.deleteMany({
                 where: { userId },

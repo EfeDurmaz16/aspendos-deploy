@@ -12,7 +12,6 @@ dist/
 out/
 
 # Environment
-.env
 .env.local
 .env.*.local
 
@@ -93,3 +92,8 @@ better-min-time.txt
 # Build artifacts
 apps/yula-video/build/
 klaros/build/
+
+.projects/*
+!.projects/state.json
+.env
+.vercel

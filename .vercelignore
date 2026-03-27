@@ -1,0 +1,13 @@
+.git
+.claude
+.worktrees
+services/agents
+services/mcp-servers
+services/model-router
+services/api/dist
+apps/mobile
+apps/yula-video
+klaros
+**/node_modules
+**/.turbo
+**/node_modules/.bun

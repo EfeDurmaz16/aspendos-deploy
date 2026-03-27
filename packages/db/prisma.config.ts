@@ -9,4 +9,9 @@ export default defineConfig({
             process.env.DATABASE_URL ??
             'postgresql://aspendos:aspendos_dev@localhost:5432/aspendos',
     },
+    studio: {
+        url:
+            process.env.DATABASE_URL ??
+            'postgresql://aspendos:aspendos_dev@localhost:5432/aspendos',
+    },
 });

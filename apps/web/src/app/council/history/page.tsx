@@ -247,10 +247,6 @@ export default function CouncilHistoryPage() {
                                                     )}
                                                     style={{
                                                         backgroundColor: personaColors[p],
-                                                        ringColor:
-                                                            session.selectedPersona === p
-                                                                ? personaColors[p]
-                                                                : undefined,
                                                     }}
                                                 />
                                             )

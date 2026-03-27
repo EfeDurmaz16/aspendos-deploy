@@ -570,6 +570,7 @@ async function initialize() {
 }
 
 // Don't start server when running tests
+console.log('[Boot] Module loaded, calling initialize...');
 if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
     initialize().catch(console.error);
 }

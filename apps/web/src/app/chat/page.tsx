@@ -244,7 +244,7 @@ function EmptyState({ onSubmit }: { onSubmit: (msg: PromptInputMessage) => void 
                     <button
                         type="button"
                         key={s.text}
-                        onClick={() => onSubmit({ text: s.text, attachments: [] })}
+                        onClick={() => onSubmit({ text: s.text, files: [] })}
                         className="group text-left px-4 py-3 rounded-xl border border-border hover:border-foreground/20 hover:bg-muted/40 transition-all duration-150"
                     >
                         <span className="text-[13px] font-medium text-foreground">{s.text}</span>

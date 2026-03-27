@@ -9,3 +9,4 @@
 /public/swe-worker-*.js.map
 
 .env.local
+.vercel

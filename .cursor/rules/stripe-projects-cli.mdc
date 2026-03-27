@@ -1,0 +1,64 @@
+---
+description: Use the Stripe Projects CLI end to end in this workspace
+alwaysApply: true
+---
+
+# Stripe Projects CLI
+
+This workspace is initialized for the Stripe project "yula-os".
+
+# Workflow
+0. Run `stripe projects llm-context` to get the LLM context for the project.
+1. Start with `stripe projects status` or `stripe projects show` to inspect the current project, linked providers, and named resources.
+2. Use `stripe projects catalog` or `stripe projects services` to browse available providers and services.
+3. Provision a resource with `stripe projects add <provider>/<service>`. Use `--name <resource>` to control the local resource name and `--config '<json>'` when the service requires configuration.
+4. Review credentials with `stripe projects env`. Values are redacted by default, and you can use `stripe projects env --sync` to write them to local files.
+
+## Optional notes
+* If necessary, you can also link a provider with `stripe projects link <provider>` directly. But `stripe projects add <provider>/<service>` will guide you through provider authentication when needed.
+
+# Working Agreement
+- Commands can be run from the project root or nested directories inside the project.
+- Do not hand-edit CLI-managed files under `.projects` or the generated `.env` output.
+- NEVER look at any files in the .projects directory. The CLI manages everything for you.
+- NEVER look at the .env file. The CLI manages everything for you.
+
+# Agent mode
+- You can use the `--json` flag when structured output will make follow-up steps easier.
+- Use `--no-interactive`, `--yes`, or `--accept-tos` to skip interactive prompts.
+
+# Full command reference
+- `stripe projects status` — view project, providers, and services
+- `stripe projects catalog [provider]` — browse available services (optionally for one provider)
+- `stripe projects add <provider>/<service>` — provision a service
+- `--name <resource>` — custom resource name (default: `provider/service`)
+- `--config '<json>'` — service configuration
+- `--provider-config '<json>'` — provider link configuration (e.g. region)
+- `stripe projects add @database` — browse services by category (interactive only)
+- `stripe projects remove <resource>` — remove a provisioned resource
+- `stripe projects rotate <resource>` — rotate credentials for a resource
+- `stripe projects upgrade <resource>` — change a resource's service tier
+- `stripe projects open <provider>` — open provider dashboard in browser
+- `stripe projects link <provider>` — link/re-link a provider
+- `stripe projects env` — list credentials (redacted)
+- `stripe projects env --sync` — fetch credentials and write them to `.env` files
+- `stripe projects llm-context` — get provider-specific LLM guidance
+- `stripe projects billing method` — view billing method
+- `stripe projects billing update` — update billing method
+
+# Billing
+If you need to deploy a paid services, you can use `stripe projects billing method` to view your billing method, or `stripe projects billing update` to update your billing method.
+
+# Deployment
+If you get asked to deploy your project, copy the following files to the remote host into the project root:
+* .env file
+* .projects/state.json
+* .projects/state.local.json
+
+Deploying a project might require to provision a provider that offers compute or hosting, and you may need to download their CLI.
+
+# Troubleshooting
+- If a command fails, run `stripe projects status --json` to understand the current state.
+- If a provider shows status `PENDING_AUTH` or `EXPIRED`, run `stripe projects link <provider>` to re-authenticate.
+- If credentials seem stale, run `stripe projects rotate <resource>` then `stripe projects env --sync`.
+

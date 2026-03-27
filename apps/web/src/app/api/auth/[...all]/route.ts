@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { toNextJsHandler } from 'better-auth/next-js';
 import { authInstance } from '@/lib/auth';
 
