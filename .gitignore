@@ -58,6 +58,9 @@ packages/db/prisma/*.db-journal
 
 
 *.md
+# Exceptions: design specs and ADRs are tracked
+!docs/superpowers/specs/*.md
+!docs/adr/*.md
 
 # Sensitive Data
 conversations.json
