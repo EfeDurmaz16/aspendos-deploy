@@ -2,6 +2,22 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **🚨 v3 stack pivot note (2026-04-07)**: This plan was authored against the original Postgres+Better Auth+LangGraph stack. ADR 0001 pivoted the tech stack to **Convex + WorkOS AuthKit + Vercel AI SDK v6 + Convex Workflow + Next.js 16 + Phosphor + Manrope**. The Phase A migration (`docs/superpowers/plans/2026-04-07-yula-v0-stack-migration.md`) MUST run before this Phase B plan. When executing Phase B tasks below, apply these substitutions:
+>
+> - `services/api/src/audit/agit.ts` (Postgres) → `services/api/src/audit/agit-convex.ts` (thin client over `convex/commits.ts`)
+> - `services/api/src/governance/fides.ts` → unchanged (FIDES is platform-agnostic)
+> - `services/api/src/orchestrator/step.ts` → still pre/post commit wrapper, but writes go to Convex via `agit-convex.ts`, not Postgres
+> - `services/api/src/auth/*` Better Auth → ALREADY DELETED in Phase A, use WorkOS `withAuth()` from `@workos-inc/authkit-nextjs`
+> - `services/agents/*` LangGraph (Python) → ALREADY DELETED in Phase A, all orchestration is Vercel AI SDK v6 `Agent` in `services/api/src/orchestrator/agent.ts`
+> - Inngest references → use Convex Workflow component primitives instead (`step.runMutation`, `step.runAction`, `step.waitForEvent`)
+> - LLM calls → multi-provider via `gateway('groq/llama-4-405b')`, `gateway('anthropic/claude-haiku-4.5')`, `gateway('anthropic/claude-sonnet-4.6')` etc.
+> - Hugeicons imports → `@phosphor-icons/react` (PascalCase, no `Icon` suffix)
+> - `next/font` → Manrope is already configured in `apps/web/app/layout.tsx`
+> - Next.js routing → `proxy.ts` not `middleware.ts`, `await params` everywhere
+> - Pricing → $25 / $60 / $180 (not $20 / $50 / $150) with BYOK option for Pro+ tier
+>
+> Tasks below should produce the same outcomes; only the implementation backend differs. Specific test/code blocks may need editor adjustments to match the new SDKs.
+
 **Goal:** Ship YULA v1 in 10 days — a trustworthy general AI agent on 8 messaging surfaces + Web command center, with the 5-class Reversibility Model (undoable / cancelable_window / compensatable / approval_only / irreversible_blocked) as the product spine. Every action FIDES-signed, AGIT-committed, class-badged, and surfaced to the user before execution.
 
 **Architecture:** Layered stack. Chat SDK bot router + Web AI route funnel into a single agent orchestrator. Every tool call passes through: (1) reversibility classification → (2) FIDES sign → (3) AGIT pre-commit → (4) execution → (5) AGIT post-commit. The tool registry declares a reversibility class + rollback strategy + human explanation per tool. Approval cards on every surface use a 4-color badge system. Web `/timeline` is the rewind + audit console. E2B is the sandbox layer, Steel.dev the browser, Anthropic Computer Use API the desktop driver.

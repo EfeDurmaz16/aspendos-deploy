@@ -1,9 +1,13 @@
 # YULA → Trustworthy General Agent (Manus Alternative)
 
-> Design spec — locked 2026-04-07, revised 2026-04-07 (v2 — scope narrowed, reversibility model elevated to first-class section per expert review)
+> Design spec — locked 2026-04-07
+> v1 (initial), v2 (Reversibility Model elevated, scope narrowed), **v3 (tech stack pivoted to Convex+WorkOS+AI SDK v6+Next 16, see ADR 0001)**
 > Status: **Approved for implementation planning**
 > Author: Efe Baran Durmaz + collaboration session
-> Decision context: brainstorming session 2026-04-07 (Patika A locked)
+> Decision context: brainstorming session 2026-04-07 (Patika A locked, full-scope v1, tech stack pivoted)
+> Companion: `docs/adr/0001-tech-stack-pivot-2026-04-07.md`
+> Phase A plan: `docs/superpowers/plans/2026-04-07-yula-v0-stack-migration.md`
+> Phase B plan: `docs/superpowers/plans/2026-04-07-yula-v1-manus-alternative.md`
 
 ## 1. Decision Summary
 
@@ -87,21 +91,27 @@ The product launches on **Slack + Web** (with Telegram as a fast-follow within 1
                                      │
        ┌───────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
        ▼           ▼          ▼          ▼          ▼          ▼          ▼
-  ┌─────────┐ ┌────────┐ ┌──────────┐ ┌─────┐ ┌──────┐ ┌────────────┐ ┌──────┐
-  │  FIDES  │ │  AGIT  │ │Reversib. │ │Mem. │ │Tools │ │Capabilities│ │Approv│
-  │  sign   │ │ commit │ │  Model   │ │SuPM │ │  MCP │ │   stack    │ │ HITL │
-  │  guards │ │ log    │ │  (§5)    │ │+ PG │ │skills│ │   (§6)     │ │ gates│
-  │         │ │ revert │ │ 5-class  │ │     │ │      │ │            │ │      │
-  └─────────┘ └────────┘ └──────────┘ └─────┘ └──────┘ └────────────┘ └──────┘
+  ┌─────────┐ ┌─────────┐ ┌──────────┐ ┌─────┐ ┌──────┐ ┌────────────┐ ┌──────┐
+  │  FIDES  │ │  AGIT   │ │Reversib. │ │Super│ │Tools │ │Capabilities│ │Approv│
+  │  sign   │ │on Convex│ │  Model   │ │Memory│ │  MCP │ │   stack    │ │ HITL │
+  │  guards │ │ commits │ │  (§5)    │ │ Pro │ │skills│ │   (§6)     │ │ gates│
+  │         │ │ table   │ │ 5-class  │ │     │ │      │ │            │ │      │
+  └─────────┘ └─────────┘ └──────────┘ └─────┘ └──────┘ └────────────┘ └──────┘
                                      │
-                ┌────────────────────┴───────────────────────┐
-                │  AI GATEWAY — Anthropic / OpenAI / Groq    │
-                └────────────────────────────────────────────┘
+                ┌────────────────────┴────────────────────────────┐
+                │  AI GATEWAY — Multi-provider routing            │
+                │  Groq Llama 4 (router) · Haiku 4.5 (routine) · │
+                │  Sonnet 4.6 (tools) · Opus/GPT-5/Gemini 2.5 Pro │
+                │  (council) · Sonnet 4.6 computer-use (desktop) │
+                └────────────────────┬────────────────────────────┘
                                      │
-                ┌────────────────────┴───────────────────────┐
-                │  PERSISTENCE — Postgres (Neon) + Stripe    │
-                │  Auth: Better Auth                         │
-                └────────────────────────────────────────────┘
+                ┌────────────────────┴────────────────────────────┐
+                │  CONVEX (TS-first DB, real-time, ACID, vector) │
+                │  + Convex Workflow component (durability)       │
+                │  + Convex Durable Agents component              │
+                │  Auth: WorkOS AuthKit                           │
+                │  Billing: Stripe (3-tier + BYOK)                │
+                └─────────────────────────────────────────────────┘
 ```
 
 **Three core invariants** enforced at the orchestrator:
@@ -278,6 +288,22 @@ Typical general agent task: 5 minutes, 3 LLM calls, 2 tool calls (1 browser, 1 f
 **Margin**: $20/mo user pulling 50 tasks/mo costs ~$3.50, gross margin ~82%.
 
 ## 7. Components (existing / wire / build)
+
+> **v3 tech stack pivot note**: components below were authored against the original Postgres+Better Auth+LangGraph stack. The new stack pivot (ADR 0001) replaces these foundations:
+>
+> | Old | New |
+> |---|---|
+> | Postgres + Prisma + Neon | **Convex** (`convex/schema.ts`, `users`/`commits`/`approvals`/`snapshots`/`subscriptions` tables) |
+> | Better Auth | **WorkOS AuthKit** (`@workos-inc/authkit-nextjs`, `authkitMiddleware` in `apps/web/proxy.ts`) |
+> | LangGraph (Python `services/agents/`) | **Vercel AI SDK v6 `Agent`** (`services/api/src/orchestrator/agent.ts`) |
+> | Custom durability + cron | **Convex Workflow** + **Convex Durable Agents** components |
+> | OpenMemory + Qdrant + `MEMORY_BACKEND` flag | **SuperMemory hosted Pro $19** only (single backend) |
+> | Single-provider LLM | **AI Gateway multi-provider routing** (Groq router → Haiku routine → Sonnet tools → Opus/GPT-5/Gemini council → Sonnet computer use) |
+> | Hugeicons | **Phosphor icons** (`@phosphor-icons/react`) |
+> | (no font lock) | **Manrope** via `next/font/google` |
+> | Next.js 15 | **Next.js 16.2** (Turbopack default, Cache Components, `proxy.ts`) |
+>
+> Phase A migration (`docs/superpowers/plans/2026-04-07-yula-v0-stack-migration.md`) executes these swaps in 5 days BEFORE Phase B v1 sprint begins. The component table below should be read with these substitutions applied — e.g., "AGIT TS SDK import + Postgres state" becomes "AGIT-on-Convex via `convex/commits.ts` mutation"; "Better Auth" rows become "WorkOS AuthKit"; etc.
 
 **Scope note**: v1 launches with 8 messaging surfaces + Web command center. Every surface gets interactive approval cards with the 5-class badge system. Matrix and Email are stretch goals for the sprint buffer days.
 
@@ -578,8 +604,6 @@ If forced to pin numbers for internal sanity checks (not external commitments):
 
 Do **not** chase these numbers at the cost of product integrity. If engagement data says the taxonomy is confusing, we fix the taxonomy before we chase signups.
 
-## 11. Risks and mitigations
-
 ## 12. Risks and mitigations
 
 | Risk | Likelihood | Impact | Mitigation |
@@ -668,15 +692,40 @@ Do **not** chase these numbers at the cost of product integrity. If engagement d
 
 ## 15. References
 
-- Strategic context: brainstorming session 2026-04-07
-- Memory: `~/.claude/projects/-Users-efebarandurmaz-Desktop-aspendos-deploy/memory/project_strategic_direction.md`
-- Supporting projects: `~/.claude/projects/-Users-efebarandurmaz-Desktop-aspendos-deploy/memory/reference_supporting_projects.md`
+### Decisions and plans
+- ADR 0001 (tech stack pivot): `docs/adr/0001-tech-stack-pivot-2026-04-07.md`
+- Phase A migration plan: `docs/superpowers/plans/2026-04-07-yula-v0-stack-migration.md`
+- Phase B v1 sprint plan: `docs/superpowers/plans/2026-04-07-yula-v1-manus-alternative.md`
+
+### Memory (decisions persisted across conversations)
+- Strategic direction: `~/.claude/projects/-Users-efebarandurmaz-Desktop-aspendos-deploy/memory/project_strategic_direction.md`
+- Customer personas: `~/.claude/projects/-Users-efebarandurmaz-Desktop-aspendos-deploy/memory/project_customer_personas.md`
+- Supporting projects (FIDES/AGIT/OAPS/OSP/Switchboard): `~/.claude/projects/-Users-efebarandurmaz-Desktop-aspendos-deploy/memory/reference_supporting_projects.md`
+
+### External — competitive landscape
 - Manus + E2B architecture: https://e2b.dev/blog/how-manus-uses-e2b-to-provide-agents-with-virtual-computers
-- E2B pricing: https://e2b.dev/pricing
-- Vercel Sandbox: https://vercel.com/docs/vercel-sandbox/pricing
-- Steel.dev pricing: https://docs.steel.dev/overview/pricinglimits
-- Anthropic Computer Use: https://platform.claude.com/docs/en/build-with-claude/computer-use
-- Computer use reference impl: https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo
 - Manus AI Meta acquisition: https://blogs.lse.ac.uk/businessreview/2026/02/02/metas-2-billion-purchase-of-manus-raises-concerns-over-ai-valuations/
 - Genspark vs Manus: https://skywork.ai/skypage/en/genspark-vs-manus-ai-agent-comparison/2036648242546577408
 - Manus user problems: https://www.lindy.ai/blog/manus-ai-review
+
+### External — capabilities stack
+- E2B pricing: https://e2b.dev/pricing
+- Steel.dev pricing: https://docs.steel.dev/overview/pricinglimits
+- Anthropic Computer Use: https://platform.claude.com/docs/en/build-with-claude/computer-use
+- Computer use reference impl: https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo
+
+### External — new stack (v3 pivot)
+- Convex pricing: https://www.convex.dev/pricing
+- Convex self-host: https://news.convex.dev/self-hosting/
+- Convex Workflow + Durable Agents: https://www.convex.dev/components/durable-agents
+- WorkOS pricing: https://workos.com/pricing
+- WorkOS AuthKit Next.js: https://workos.com/docs/authkit/nextjs
+- Vercel AI SDK v6 Agent: https://ai-sdk.dev/docs/agents/loop-control
+- Vercel AI Gateway: https://vercel.com/docs/ai-gateway
+- Anthropic prompt caching: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+- Groq pricing: https://groq.com/pricing
+- Next.js 16 release: https://nextjs.org/blog/next-16
+- Next.js 16 upgrade: https://nextjs.org/docs/app/guides/upgrading/version-16
+- Phosphor icons: https://phosphoricons.com/
+- SuperMemory GitHub (MIT): https://github.com/supermemoryai/supermemory
+- SuperMemory pricing: https://supermemory.ai/pricing
