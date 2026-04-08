@@ -35,17 +35,14 @@ ${memories.map((m) => `- [${m.sector || 'semantic'}] ${m.content}`).join('\n')}`
             }
 
             // Get user profile from SuperMemory if available
-            const backend = process.env.MEMORY_BACKEND || 'openmemory';
-            if (backend === 'supermemory' || backend === 'dual') {
-                try {
-                    const profile = await memoryRouter.supermemory.getUserProfile(userId, query);
-                    if (profile.static.length > 0 || profile.dynamic.length > 0) {
-                        prompt += `\n\n## User Profile
+            try {
+                const profile = await memoryRouter.supermemory.getUserProfile(userId, query);
+                if (profile.static.length > 0 || profile.dynamic.length > 0) {
+                    prompt += `\n\n## User Profile
 ${[...profile.static, ...profile.dynamic].join('\n')}`;
-                    }
-                } catch {
-                    // Profile not available
                 }
+            } catch {
+                // Profile not available
             }
         } catch {
             // Memory not available, continue without context

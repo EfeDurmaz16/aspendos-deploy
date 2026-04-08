@@ -1,11 +1,4 @@
-import { describe, expect, test, vi } from 'vitest';
-
-// Mock openmemory-js to prevent it from starting a server on port 8080
-vi.mock('openmemory-js', () => ({
-    Memory: vi.fn(function () {
-        return { add: vi.fn().mockResolvedValue({ id: 'mock-id' }) };
-    }),
-}));
+import { describe, expect, test } from 'vitest';
 
 import app from '../index';
 

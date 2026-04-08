@@ -17,20 +17,8 @@ vi.mock('../../lib/auth', () => ({
     },
 }));
 
-vi.mock('openmemory-js', () => ({
-    Memory: vi.fn(function () {
-        return {
-            add: vi.fn().mockResolvedValue({ id: 'mock-id' }),
-            search: vi.fn().mockResolvedValue([]),
-            get: vi.fn().mockResolvedValue(null),
-            update: vi.fn().mockResolvedValue(undefined),
-            delete: vi.fn().mockResolvedValue(undefined),
-            clear: vi.fn().mockResolvedValue(undefined),
-        };
-    }),
-}));
-
 import { auth } from '../../lib/auth';
+
 const mockAuth = auth as any;
 
 // Council route uses prisma from ../../lib/prisma which re-exports from @aspendos/db
@@ -45,7 +33,9 @@ vi.mock('@aspendos/db', () => ({
     },
 }));
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
 const mockPrisma = prisma as any;
 
 vi.mock('../../services/council.service', () => ({
@@ -86,6 +76,7 @@ vi.mock('../../services/council.service', () => ({
 }));
 
 import * as councilService from '../../services/council.service';
+
 const mockService = councilService as any;
 
 vi.mock('../../services/billing.service', () => ({
@@ -94,6 +85,7 @@ vi.mock('../../services/billing.service', () => ({
 }));
 
 import * as billingService from '../../services/billing.service';
+
 const mockBilling = billingService as any;
 
 vi.mock('../../config/tiers', () => ({
@@ -101,6 +93,7 @@ vi.mock('../../config/tiers', () => ({
 }));
 
 import { getLimit } from '../../config/tiers';
+
 const mockGetLimit = getLimit as any;
 
 import councilRoutes from '../council';
@@ -513,7 +506,12 @@ describe('Council Routes', () => {
                     dominantPersona: 'SCHOLAR',
                     diversityScore: 85,
                     recommendation: 'You value diverse perspectives equally.',
-                    personaScores: { SCHOLAR: 33, CREATIVE: 27, PRACTICAL: 20, DEVILS_ADVOCATE: 20 },
+                    personaScores: {
+                        SCHOLAR: 33,
+                        CREATIVE: 27,
+                        PRACTICAL: 20,
+                        DEVILS_ADVOCATE: 20,
+                    },
                 },
             });
             const app = createTestApp();

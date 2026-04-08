@@ -11,11 +11,14 @@
  * - Conversation API for smart memory extraction with diffing
  */
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import { Supermemory as SuperMemory } from 'supermemory';
 import { breakers } from '../lib/circuit-breaker';
 import { queueFallbackWrite, searchFallback } from '../lib/memory-fallback';
-import type { MemoryResult, MemoryStats } from './openmemory.service';
+import type { MemoryResult, MemoryStats } from './memory-router.service';
 
 // ============================================
 // CLIENT INITIALIZATION

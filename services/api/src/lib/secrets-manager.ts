@@ -72,12 +72,6 @@ const SECRET_REGISTRY: SecretConfig[] = [
         description: 'Groq API key',
     },
     {
-        key: 'qdrant_api_key',
-        envVar: 'QDRANT_API_KEY',
-        required: false,
-        description: 'Qdrant vector store API key',
-    },
-    {
         key: 'polar_access_token',
         envVar: 'POLAR_ACCESS_TOKEN',
         required: false,
@@ -133,9 +127,7 @@ export function requireSecret(key: string, context?: string): string {
     const value = getSecret(key, context);
     if (!value) {
         const config = SECRET_REGISTRY.find((s) => s.key === key);
-        throw new Error(
-            `Required secret "${key}" (${config?.envVar || 'unknown'}) is not set`
-        );
+        throw new Error(`Required secret "${key}" (${config?.envVar || 'unknown'}) is not set`);
     }
     return value;
 }
@@ -181,8 +173,7 @@ export function getSecretsHealth(): SecretHealth[] {
 
         let needsRotation = false;
         if (config.rotationIntervalDays && rotationDate) {
-            const daysSinceRotation =
-                (Date.now() - rotationDate) / (1000 * 60 * 60 * 24);
+            const daysSinceRotation = (Date.now() - rotationDate) / (1000 * 60 * 60 * 24);
             needsRotation = daysSinceRotation > config.rotationIntervalDays;
         }
 

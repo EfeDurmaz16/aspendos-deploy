@@ -11,10 +11,7 @@ const requiredEnvVars = [
 
 const optionalEnvVars = [
     'SENTRY_DSN',
-    'QDRANT_URL',
-    'QDRANT_API_KEY',
     'SUPERMEMORY_API_KEY',
-    'MEMORY_BACKEND',
     'STRIPE_SECRET_KEY',
     'STRIPE_WEBHOOK_SECRET',
     'CRON_SECRET',

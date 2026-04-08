@@ -1,31 +1,25 @@
 /**
  * Memory Fallback Service
  *
- * Provides PostgreSQL-based fallback for memory operations when the vector
- * store (Qdrant or SuperMemory) is unavailable.
+ * Provides PostgreSQL-based fallback for memory operations when SuperMemory
+ * is unavailable.
  *
  * Flow:
- * 1. Vector store write fails -> queueFallbackWrite() stores in PostgreSQL with decayScore=0
- * 2. Periodic syncPendingMemories() picks up unsynced rows and writes them to the active backend
- * 3. Vector store search fails -> searchFallback() uses PostgreSQL ILIKE text search
+ * 1. SuperMemory write fails -> queueFallbackWrite() stores in PostgreSQL with decayScore=0
+ * 2. Periodic syncPendingMemories() picks up unsynced rows and writes them to SuperMemory
+ * 3. SuperMemory search fails -> searchFallback() uses PostgreSQL ILIKE text search
  */
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import { breakers } from './circuit-breaker';
 
-// Lazy-initialize to avoid blocking module import (openmemory-js has side effects)
-let _mem: any = null;
-async function getMem() {
-    if (!_mem) {
-        const { Memory } = await import('openmemory-js');
-        _mem = new Memory();
-    }
-    return _mem;
-}
-
 /**
- * Interface for the memory client used during sync.
- * Allows injection of a mock client in tests.
+ * Interface retained for test injection compatibility. In production the
+ * SuperMemory service is used directly; the `_client` argument to
+ * `syncPendingMemories` is ignored.
  */
 export interface MemoryClient {
     add(content: string, options: Record<string, unknown>): Promise<{ id: string }>;
@@ -119,27 +113,24 @@ export async function queueFallbackWrite(
 // ============================================
 
 /**
- * Sync memories that were written to PostgreSQL during vector store downtime
- * back to the active backend. Called periodically or on circuit recovery.
+ * Sync memories written to PostgreSQL during SuperMemory downtime back to
+ * SuperMemory. Called periodically or on circuit recovery.
  *
- * Routes to SuperMemory or OpenMemory based on MEMORY_BACKEND env var.
+ * The `_client` parameter is retained for test injection compatibility but is
+ * unused in production — sync delegates to the supermemory service directly.
  */
-export async function syncPendingMemories(client?: MemoryClient): Promise<SyncResult> {
-    const memClient = client || (await getMem());
+export async function syncPendingMemories(_client?: MemoryClient): Promise<SyncResult> {
     const result: SyncResult = { synced: 0, failed: 0, errors: [] };
 
-    const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
-    const isSupermemory = memoryBackend === 'supermemory' || memoryBackend === 'dual';
-    const breaker = isSupermemory ? breakers.supermemory : breakers.qdrant;
-    const backendLabel = isSupermemory ? 'SuperMemory' : 'Qdrant';
+    const breaker = breakers.supermemory;
 
-    // Do not attempt sync if the backend is still down
+    // Do not attempt sync if SuperMemory is still down
     if (breaker.getState().state === 'OPEN') {
-        console.warn(`[MemoryFallback] ${backendLabel} circuit still OPEN, skipping sync`);
+        console.warn('[MemoryFallback] SuperMemory circuit still OPEN, skipping sync');
         return result;
     }
 
-    // Find all unsynced memories (decayScore=0, source=qdrant_fallback or supermemory_fallback)
+    // Find all unsynced memories (decayScore=0, source in fallback sources)
     const pendingMemories = await prisma.memory.findMany({
         where: {
             source: { in: [FALLBACK_SOURCE, 'supermemory_fallback'] },
@@ -155,38 +146,23 @@ export async function syncPendingMemories(client?: MemoryClient): Promise<SyncRe
     }
 
     console.info(
-        `[MemoryFallback] Syncing ${pendingMemories.length} pending memories to ${backendLabel}`
+        `[MemoryFallback] Syncing ${pendingMemories.length} pending memories to SuperMemory`
     );
 
     for (const memory of pendingMemories) {
         try {
-            if (isSupermemory) {
-                // Sync to SuperMemory via service
-                const { addMemory } = await import('../services/supermemory.service');
-                await addMemory(memory.content, memory.userId, {
-                    sector: memory.sector,
-                    tags: memory.tags,
-                    metadata: { pgFallbackId: memory.id },
-                });
-            } else {
-                // Sync to Qdrant via OpenMemory SDK
-                await memClient.add(memory.content, {
-                    user_id: memory.userId,
-                    tags: memory.tags,
-                    metadata: {
-                        sector: memory.sector,
-                        pgFallbackId: memory.id,
-                    },
-                });
-            }
+            const { addMemory } = await import('../services/supermemory.service');
+            await addMemory(memory.content, memory.userId, {
+                sector: memory.sector,
+                tags: memory.tags,
+                metadata: { pgFallbackId: memory.id },
+            });
 
-            // Mark as synced
-            const syncedSource = isSupermemory ? 'supermemory_synced' : 'qdrant_synced';
             await prisma.memory.update({
                 where: { id: memory.id },
                 data: {
                     decayScore: 1.0,
-                    source: syncedSource,
+                    source: 'supermemory_synced',
                 },
             });
 
@@ -199,7 +175,7 @@ export async function syncPendingMemories(client?: MemoryClient): Promise<SyncRe
             // If circuit opens again during sync, stop early
             if (breaker.getState().state === 'OPEN') {
                 console.warn(
-                    `[MemoryFallback] ${backendLabel} circuit opened during sync, stopping batch`
+                    '[MemoryFallback] SuperMemory circuit opened during sync, stopping batch'
                 );
                 break;
             }
