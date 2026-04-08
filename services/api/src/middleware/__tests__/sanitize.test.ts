@@ -316,7 +316,7 @@ describe('Sanitize Middleware', () => {
 
         describe('Performance', () => {
             it('should handle input with many tags efficiently', () => {
-                const input = '<div>'.repeat(100) + 'Content' + '</div>'.repeat(100);
+                const input = `${'<div>'.repeat(100)}Content${'</div>'.repeat(100)}`;
                 const start = Date.now();
                 const result = sanitizeInput(input);
                 const duration = Date.now() - start;

@@ -40,7 +40,10 @@ function detectImportFormat(
                 return 'CHATGPT';
             }
             // Claude format: Array with chat_messages arrays
-            if ('chat_messages' in first && Array.isArray((first as Record<string, unknown>).chat_messages)) {
+            if (
+                'chat_messages' in first &&
+                Array.isArray((first as Record<string, unknown>).chat_messages)
+            ) {
                 return 'CLAUDE';
             }
             if ('uuid' in first && 'name' in first) {
@@ -128,117 +131,126 @@ app.use('*', requireAuth);
  * - fileSize: number
  * - content: parsed JSON from the export file
  */
-app.post('/jobs', enforceTierLimit('monthlyImports'), validateBody(createImportJobSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const validatedBody = c.get('validatedBody') as {
-        source?: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
-        fileName: string;
-        fileSize: number;
-        content: unknown;
-    };
+app.post(
+    '/jobs',
+    enforceTierLimit('monthlyImports'),
+    validateBody(createImportJobSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const validatedBody = c.get('validatedBody') as {
+            source?: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
+            fileName: string;
+            fileSize: number;
+            content: unknown;
+        };
 
-    const { source: rawSource, fileName, fileSize, content } = validatedBody;
+        const { source: rawSource, fileName, fileSize, content } = validatedBody;
 
-    // Auto-detect format from content structure (more reliable than filename-based detection)
-    const detectedFormat = detectImportFormat(content);
+        // Auto-detect format from content structure (more reliable than filename-based detection)
+        const detectedFormat = detectImportFormat(content);
 
-    // Prefer content-based detection over client-supplied source (filename guessing is unreliable)
-    let source: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
-    if (detectedFormat) {
-        source = detectedFormat;
-    } else if (rawSource && ['CHATGPT', 'CLAUDE', 'GEMINI', 'PERPLEXITY'].includes(rawSource)) {
-        source = rawSource;
-    } else {
-        return c.json(
-            {
-                error: 'Could not auto-detect format. Please specify source as CHATGPT, CLAUDE, GEMINI, or PERPLEXITY.',
-            },
-            400
-        );
-    }
-
-    // Limit import size to prevent OOM (100MB JSON max - ChatGPT exports can be 60MB+)
-    const MAX_IMPORT_SIZE = 100 * 1024 * 1024;
-    const contentSize = JSON.stringify(content).length;
-    if (contentSize > MAX_IMPORT_SIZE) {
-        return c.json({ error: 'Import file too large. Maximum 100MB.' }, 413);
-    }
-
-    try {
-        // Sanitize content before processing to prevent XSS/injection
-        const sanitizedContent = sanitizeImportContent(content);
-
-        // Create job
-        const job = await importService.createImportJob(
-            userId,
-            source,
-            fileName || 'unknown',
-            fileSize || 0
-        );
-
-        // Parse content based on source
-        let conversations: importService.ParsedConversation[];
-        try {
-            if (source === 'CHATGPT') {
-                conversations = importService.parseChatGPTExport(sanitizedContent);
-            } else if (source === 'CLAUDE') {
-                conversations = importService.parseClaudeExport(sanitizedContent);
-            } else if (source === 'GEMINI') {
-                conversations = importService.parseGeminiExport(sanitizedContent);
-            } else if (source === 'PERPLEXITY') {
-                conversations = importService.parsePerplexityExport(sanitizedContent);
-            } else {
-                return c.json({ error: 'Unsupported import source' }, 400);
-            }
-        } catch (_parseError) {
-            await importService.updateImportJobStatus(job.id, 'FAILED', 'Failed to parse file');
-            return c.json({ error: 'Failed to parse file format' }, 400);
-        }
-
-        if (conversations.length === 0) {
-            await importService.updateImportJobStatus(job.id, 'FAILED', 'No conversations found');
-            return c.json({ error: 'No conversations found in file' }, 400);
-        }
-
-        // Cap conversation count to prevent OOM on massive imports
-        const MAX_CONVERSATIONS = 10000;
-        if (conversations.length > MAX_CONVERSATIONS) {
-            conversations = conversations.slice(0, MAX_CONVERSATIONS);
-        }
-
-        // Store entities for preview
-        await importService.storeImportEntities(job.id, conversations);
-
-        // Return job with preview data
-        const jobWithEntities = await importService.getImportJob(job.id, userId);
-
-        return c.json(
-            {
-                job: {
-                    id: jobWithEntities!.id,
-                    source: jobWithEntities!.source,
-                    status: jobWithEntities!.status,
-                    totalItems: jobWithEntities!.totalItems,
-                    fileName: jobWithEntities!.fileName,
+        // Prefer content-based detection over client-supplied source (filename guessing is unreliable)
+        let source: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY';
+        if (detectedFormat) {
+            source = detectedFormat;
+        } else if (rawSource && ['CHATGPT', 'CLAUDE', 'GEMINI', 'PERPLEXITY'].includes(rawSource)) {
+            source = rawSource;
+        } else {
+            return c.json(
+                {
+                    error: 'Could not auto-detect format. Please specify source as CHATGPT, CLAUDE, GEMINI, or PERPLEXITY.',
                 },
-                preview: jobWithEntities!.entities.map((e) => ({
-                    id: e.id,
-                    externalId: e.externalId,
-                    title: e.title,
-                    messageCount: (e.content as { messages: unknown[] })?.messages?.length || 0,
-                    source: (e.content as { source: string })?.source,
-                    createdAt: (e.content as { createdAt: string })?.createdAt,
-                    updatedAt: (e.content as { updatedAt: string })?.updatedAt,
-                    selected: e.selected,
-                })),
-            },
-            201
-        );
-    } catch (error) {
-        console.error('Import job creation failed:', error);
-        return c.json({ error: 'Failed to create import job' }, 500);
+                400
+            );
+        }
+
+        // Limit import size to prevent OOM (100MB JSON max - ChatGPT exports can be 60MB+)
+        const MAX_IMPORT_SIZE = 100 * 1024 * 1024;
+        const contentSize = JSON.stringify(content).length;
+        if (contentSize > MAX_IMPORT_SIZE) {
+            return c.json({ error: 'Import file too large. Maximum 100MB.' }, 413);
+        }
+
+        try {
+            // Sanitize content before processing to prevent XSS/injection
+            const sanitizedContent = sanitizeImportContent(content);
+
+            // Create job
+            const job = await importService.createImportJob(
+                userId,
+                source,
+                fileName || 'unknown',
+                fileSize || 0
+            );
+
+            // Parse content based on source
+            let conversations: importService.ParsedConversation[];
+            try {
+                if (source === 'CHATGPT') {
+                    conversations = importService.parseChatGPTExport(sanitizedContent);
+                } else if (source === 'CLAUDE') {
+                    conversations = importService.parseClaudeExport(sanitizedContent);
+                } else if (source === 'GEMINI') {
+                    conversations = importService.parseGeminiExport(sanitizedContent);
+                } else if (source === 'PERPLEXITY') {
+                    conversations = importService.parsePerplexityExport(sanitizedContent);
+                } else {
+                    return c.json({ error: 'Unsupported import source' }, 400);
+                }
+            } catch (_parseError) {
+                await importService.updateImportJobStatus(job.id, 'FAILED', 'Failed to parse file');
+                return c.json({ error: 'Failed to parse file format' }, 400);
+            }
+
+            if (conversations.length === 0) {
+                await importService.updateImportJobStatus(
+                    job.id,
+                    'FAILED',
+                    'No conversations found'
+                );
+                return c.json({ error: 'No conversations found in file' }, 400);
+            }
+
+            // Cap conversation count to prevent OOM on massive imports
+            const MAX_CONVERSATIONS = 10000;
+            if (conversations.length > MAX_CONVERSATIONS) {
+                conversations = conversations.slice(0, MAX_CONVERSATIONS);
+            }
+
+            // Store entities for preview
+            await importService.storeImportEntities(job.id, conversations);
+
+            // Return job with preview data
+            const jobWithEntities = await importService.getImportJob(job.id, userId);
+
+            return c.json(
+                {
+                    job: {
+                        id: jobWithEntities!.id,
+                        source: jobWithEntities!.source,
+                        status: jobWithEntities!.status,
+                        totalItems: jobWithEntities!.totalItems,
+                        fileName: jobWithEntities!.fileName,
+                    },
+                    preview: jobWithEntities!.entities.map((e) => ({
+                        id: e.id,
+                        externalId: e.externalId,
+                        title: e.title,
+                        messageCount: (e.content as { messages: unknown[] })?.messages?.length || 0,
+                        source: (e.content as { source: string })?.source,
+                        createdAt: (e.content as { createdAt: string })?.createdAt,
+                        updatedAt: (e.content as { updatedAt: string })?.updatedAt,
+                        selected: e.selected,
+                    })),
+                },
+                201
+            );
+        } catch (error) {
+            console.error('Import job creation failed:', error);
+            return c.json({ error: 'Failed to create import job' }, 500);
+        }
     }
-});
+);
 
 /**
  * GET /api/import/jobs - List import jobs

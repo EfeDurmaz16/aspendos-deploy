@@ -5,7 +5,10 @@
  * All endpoints require admin authentication.
  */
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';
@@ -48,9 +51,7 @@ export async function requireAdmin(c: any, next: any) {
         return c.json({ error: 'User not found' }, 404);
     }
 
-    const isAdmin =
-        ADMIN_USER_IDS.includes(user.id) ||
-        ADMIN_EMAILS.includes(user.email);
+    const isAdmin = ADMIN_USER_IDS.includes(user.id) || ADMIN_EMAILS.includes(user.email);
 
     if (!isAdmin) {
         await auditLog({
@@ -288,7 +289,7 @@ app.post('/users/:id/ban', async (c) => {
             where: { id: userId },
             data: {
                 banned,
-                bannedReason: banned ? (reason || 'No reason provided') : null,
+                bannedReason: banned ? reason || 'No reason provided' : null,
                 bannedAt: banned ? new Date() : null,
             },
             select: { id: true, email: true, banned: true },

@@ -12,7 +12,13 @@ import { createJSONStorage, persist } from 'zustand/middleware';
  * States: welcome → import-demo → pac-demo → council-demo → complete
  */
 
-export type OnboardingStep = 'welcome' | 'import-demo' | 'memory-demo' | 'pac-demo' | 'council-demo' | 'complete';
+export type OnboardingStep =
+    | 'welcome'
+    | 'import-demo'
+    | 'memory-demo'
+    | 'pac-demo'
+    | 'council-demo'
+    | 'complete';
 
 export interface OnboardingStepConfig {
     id: OnboardingStep;

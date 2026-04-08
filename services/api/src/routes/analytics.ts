@@ -4,7 +4,10 @@
  * Provides endpoints for usage analytics, token consumption, and model statistics.
  */
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 

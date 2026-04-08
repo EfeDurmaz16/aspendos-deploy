@@ -36,7 +36,10 @@ vi.mock('../../services/council.service', () => ({
     },
 }));
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import { searchMemories } from '../../services/memory-router.service';
 import { parseTimeExpression } from '../../services/scheduler.service';
 import { breakers } from '../circuit-breaker';

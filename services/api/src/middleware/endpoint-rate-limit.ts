@@ -5,8 +5,9 @@
  * Uses Redis (Upstash) in production for multi-instance consistency.
  * Falls back to in-memory Map for development.
  */
-import type { Context, Next } from 'hono';
+
 import { Redis } from '@upstash/redis';
+import type { Context, Next } from 'hono';
 
 // Rate limit configuration per endpoint pattern
 const ENDPOINT_LIMITS: Record<string, { requestsPerMinute: number; requestsPerHour?: number }> = {
@@ -91,7 +92,10 @@ function createStore(): RateLimitStore {
             console.log('[RateLimit] Endpoint rate limiting using Redis store');
             return new RedisStore(redis);
         } catch (err) {
-            console.error('[RateLimit] Failed to initialize Redis, falling back to in-memory:', err);
+            console.error(
+                '[RateLimit] Failed to initialize Redis, falling back to in-memory:',
+                err
+            );
         }
     }
 

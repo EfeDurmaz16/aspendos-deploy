@@ -6,11 +6,9 @@ import {
     CaretDown,
     ChatCircleDots,
     Check,
-    Clock,
     CloudArrowUp,
     Lightning,
     Sparkle,
-    Users,
 } from '@phosphor-icons/react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import Link from 'next/link';
@@ -165,9 +163,7 @@ function HeroSection() {
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/60 bg-card/50"
                     >
                         <Sparkle size={14} weight="fill" className="text-pac" />
-                        <span className="text-xs text-muted-foreground">
-                            Your AI, reimagined
-                        </span>
+                        <span className="text-xs text-muted-foreground">Your AI, reimagined</span>
                     </motion.div>
 
                     {/* Headline */}
@@ -178,11 +174,9 @@ function HeroSection() {
                         className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight text-foreground"
                         style={{ textWrap: 'balance' as any }}
                     >
-                        One AI.{' '}
-                        <span className="text-muted-foreground">Every model.</span>
+                        One AI. <span className="text-muted-foreground">Every model.</span>
                         <br />
-                        <span className="text-muted-foreground">All your</span>{' '}
-                        history.
+                        <span className="text-muted-foreground">All your</span> history.
                     </motion.h1>
 
                     {/* Subtitle */}
@@ -192,8 +186,8 @@ function HeroSection() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed"
                     >
-                        Import your ChatGPT & Claude history. Get proactive reminders.
-                        Let multiple AIs debate your toughest decisions. All in one place.
+                        Import your ChatGPT & Claude history. Get proactive reminders. Let multiple
+                        AIs debate your toughest decisions. All in one place.
                     </motion.p>
 
                     {/* CTAs */}
@@ -289,10 +283,20 @@ function matchDemoResponse(input: string): { text: string; memoryCount: number }
     if (lower.includes('launch') || lower.includes('strategy') || lower.includes('plan')) {
         return DEMO_RESPONSES.launch;
     }
-    if (lower.includes('code') || lower.includes('component') || lower.includes('react') || lower.includes('debug')) {
+    if (
+        lower.includes('code') ||
+        lower.includes('component') ||
+        lower.includes('react') ||
+        lower.includes('debug')
+    ) {
         return DEMO_RESPONSES.code;
     }
-    if (lower.includes('write') || lower.includes('email') || lower.includes('draft') || lower.includes('essay')) {
+    if (
+        lower.includes('write') ||
+        lower.includes('email') ||
+        lower.includes('draft') ||
+        lower.includes('essay')
+    ) {
         return DEMO_RESPONSES.write;
     }
     return DEMO_RESPONSES.default;
@@ -323,7 +327,8 @@ function HeroPreview() {
             setStreamedText(text.slice(0, i));
             // Variable speed: faster for spaces, slower for punctuation
             const char = text[i];
-            const delay = char === ' ' ? 8 : char === '\n' ? 30 : char === '.' || char === ',' ? 40 : 15;
+            const delay =
+                char === ' ' ? 8 : char === '\n' ? 30 : char === '.' || char === ',' ? 40 : 15;
             await new Promise((r) => setTimeout(r, delay));
         }
 
@@ -352,10 +357,7 @@ function HeroPreview() {
         if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
         // Add user message
-        setMessages((prev) => [
-            ...prev,
-            { id: `u-${Date.now()}`, role: 'user', content: text },
-        ]);
+        setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text }]);
 
         // Get matching response and stream it
         const response = matchDemoResponse(text);
@@ -372,10 +374,7 @@ function HeroPreview() {
     const handleSuggestion = async (text: string) => {
         if (isStreaming) return;
         messageCountRef.current++;
-        setMessages((prev) => [
-            ...prev,
-            { id: `u-${Date.now()}`, role: 'user', content: text },
-        ]);
+        setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text }]);
         const response = matchDemoResponse(text);
         await simulateStream(response.text, response.memoryCount);
     };
@@ -403,7 +402,8 @@ function HeroPreview() {
                                 Like what you see?
                             </h3>
                             <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-                                Sign up free to unlock unlimited conversations, memory, and all AI models.
+                                Sign up free to unlock unlimited conversations, memory, and all AI
+                                models.
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                                 <Link
@@ -482,13 +482,19 @@ function HeroPreview() {
                             {msg.role === 'user' ? (
                                 <div className="flex justify-end">
                                     <div className="bg-muted rounded-2xl rounded-br-md px-4 py-3 max-w-[75%]">
-                                        <p className="text-sm text-foreground whitespace-pre-wrap">{msg.content}</p>
+                                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                                            {msg.content}
+                                        </p>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="flex gap-3">
                                     <div className="w-7 h-7 rounded-lg bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <Sparkle size={14} weight="fill" className="text-foreground/60" />
+                                        <Sparkle
+                                            size={14}
+                                            weight="fill"
+                                            className="text-foreground/60"
+                                        />
                                     </div>
                                     <div className="flex-1 max-w-[85%] space-y-2">
                                         <div className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
@@ -522,9 +528,18 @@ function HeroPreview() {
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-1.5 py-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                                        <div
+                                            className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce"
+                                            style={{ animationDelay: '0ms' }}
+                                        />
+                                        <div
+                                            className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce"
+                                            style={{ animationDelay: '150ms' }}
+                                        />
+                                        <div
+                                            className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce"
+                                            style={{ animationDelay: '300ms' }}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -595,7 +610,12 @@ function FeaturesSection() {
             title: 'Import Your History',
             description:
                 'Bring your conversations from ChatGPT and Claude. Your context, your memories, all in one place. Never start from zero again.',
-            details: ['ChatGPT export support', 'Claude export support', 'Preserves full context', 'Automatic categorization'],
+            details: [
+                'ChatGPT export support',
+                'Claude export support',
+                'Preserves full context',
+                'Automatic categorization',
+            ],
         },
         {
             key: 'pac' as const,
@@ -603,7 +623,12 @@ function FeaturesSection() {
             title: 'Proactive Reminders',
             description:
                 'Yula reads between the lines. It detects commitments, deadlines, and follow-ups from your conversations and reminds you before you forget.',
-            details: ['Smart commitment detection', 'Configurable schedules', 'Context-aware nudges', 'Never miss a follow-up'],
+            details: [
+                'Smart commitment detection',
+                'Configurable schedules',
+                'Context-aware nudges',
+                'Never miss a follow-up',
+            ],
         },
         {
             key: 'council' as const,
@@ -611,7 +636,12 @@ function FeaturesSection() {
             title: 'AI Council',
             description:
                 'Ask GPT-4, Claude, Gemini, and Llama the same question simultaneously. Compare perspectives. Make better decisions with multiple viewpoints.',
-            details: ['4 models in parallel', 'Side-by-side comparison', 'Consensus synthesis', 'Best answer selection'],
+            details: [
+                '4 models in parallel',
+                'Side-by-side comparison',
+                'Consensus synthesis',
+                'Best answer selection',
+            ],
         },
     ];
 
@@ -623,7 +653,10 @@ function FeaturesSection() {
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         Features
                     </span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3" style={{ textWrap: 'balance' as any }}>
+                    <h2
+                        className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3"
+                        style={{ textWrap: 'balance' as any }}
+                    >
                         Three features that change{' '}
                         <span className="text-muted-foreground">how you use AI</span>
                     </h2>
@@ -699,22 +732,26 @@ function HowItWorksSection() {
         {
             number: '01',
             title: 'Import',
-            description: 'Upload your ChatGPT or Claude export. Yula processes and indexes your entire conversation history.',
+            description:
+                'Upload your ChatGPT or Claude export. Yula processes and indexes your entire conversation history.',
         },
         {
             number: '02',
             title: 'Chat',
-            description: 'Talk naturally. Yula uses your history as context, so every response is personalized.',
+            description:
+                'Talk naturally. Yula uses your history as context, so every response is personalized.',
         },
         {
             number: '03',
             title: 'Get reminded',
-            description: 'PAC detects your commitments and sends proactive reminders before you forget.',
+            description:
+                'PAC detects your commitments and sends proactive reminders before you forget.',
         },
         {
             number: '04',
             title: 'Consult the Council',
-            description: 'For big decisions, ask multiple AI models at once and compare their perspectives.',
+            description:
+                'For big decisions, ask multiple AI models at once and compare their perspectives.',
         },
     ];
 
@@ -726,9 +763,11 @@ function HowItWorksSection() {
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         How it works
                     </span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3" style={{ textWrap: 'balance' as any }}>
-                        Four steps.{' '}
-                        <span className="text-muted-foreground">That&apos;s it.</span>
+                    <h2
+                        className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3"
+                        style={{ textWrap: 'balance' as any }}
+                    >
+                        Four steps. <span className="text-muted-foreground">That&apos;s it.</span>
                     </h2>
                 </div>
 
@@ -829,7 +868,10 @@ function PricingSection() {
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         Pricing
                     </span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3" style={{ textWrap: 'balance' as any }}>
+                    <h2
+                        className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3"
+                        style={{ textWrap: 'balance' as any }}
+                    >
                         Simple, transparent pricing
                     </h2>
                     <p className="text-sm text-muted-foreground mt-3">
@@ -860,8 +902,12 @@ function PricingSection() {
                             )}
 
                             <div className="mb-6">
-                                <h3 className="text-base font-semibold text-foreground">{plan.name}</h3>
-                                <p className="text-xs text-muted-foreground mt-1">{plan.description}</p>
+                                <h3 className="text-base font-semibold text-foreground">
+                                    {plan.name}
+                                </h3>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {plan.description}
+                                </p>
                             </div>
 
                             <div className="flex items-baseline gap-1 mb-6">
@@ -924,7 +970,7 @@ function FAQSection() {
         },
         {
             q: 'What is the Council feature?',
-            a: 'Council lets you ask a question to multiple AI models at the same time. You see each model\'s response side-by-side, helping you get diverse perspectives on complex decisions.',
+            a: "Council lets you ask a question to multiple AI models at the same time. You see each model's response side-by-side, helping you get diverse perspectives on complex decisions.",
         },
         {
             q: 'How does PAC (Proactive AI Callbacks) work?',
@@ -948,7 +994,10 @@ function FAQSection() {
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         FAQ
                     </span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3" style={{ textWrap: 'balance' as any }}>
+                    <h2
+                        className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3"
+                        style={{ textWrap: 'balance' as any }}
+                    >
                         Common questions
                     </h2>
                 </div>
@@ -956,10 +1005,7 @@ function FAQSection() {
                 {/* FAQ items */}
                 <div className="space-y-0">
                     {faqs.map((faq, idx) => (
-                        <div
-                            key={idx}
-                            className="border-b border-border/40"
-                        >
+                        <div key={idx} className="border-b border-border/40">
                             <button
                                 onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
                                 className="w-full flex items-center justify-between py-5 text-left group"
@@ -1006,12 +1052,15 @@ function CTASection() {
     return (
         <AnimatedSection className="py-24 md:py-32 px-6 border-t border-border/30">
             <div className="max-w-2xl mx-auto text-center">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground" style={{ textWrap: 'balance' as any }}>
+                <h2
+                    className="text-3xl md:text-4xl font-bold tracking-tight text-foreground"
+                    style={{ textWrap: 'balance' as any }}
+                >
                     Ready to try a smarter AI?
                 </h2>
                 <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
-                    Import your history. Get proactive reminders. Make better decisions with Council.
-                    Start free today.
+                    Import your history. Get proactive reminders. Make better decisions with
+                    Council. Start free today.
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-8">
                     <Link

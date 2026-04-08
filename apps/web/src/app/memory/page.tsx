@@ -148,8 +148,7 @@ function MemoryCard({
                 <div
                     className={cn(
                         'bg-white/50 dark:bg-zinc-900/50 backdrop-blur border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3 transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg hover:bg-white/70 dark:hover:bg-zinc-900/70',
-                        memory.isPinned &&
-                            'ring-2 ring-foreground/20 bg-muted/20 dark:bg-muted/10'
+                        memory.isPinned && 'ring-2 ring-foreground/20 bg-muted/20 dark:bg-muted/10'
                     )}
                 >
                     <div className="flex items-start justify-between gap-2">
@@ -285,7 +284,10 @@ function MemoryCard({
                     Mark as Not Helpful
                 </ContextMenuItem>
                 <ContextMenuSeparator />
-                <ContextMenuItem onClick={onDelete} className="text-foreground focus:text-foreground">
+                <ContextMenuItem
+                    onClick={onDelete}
+                    className="text-foreground focus:text-foreground"
+                >
                     <Trash className="mr-2 h-4 w-4" />
                     Archive Memory
                     <ContextMenuShortcut>⌫</ContextMenuShortcut>
@@ -541,13 +543,17 @@ export default function MemoryDashboardPage() {
                                 {SECTORS.map((sector) => (
                                     <Button
                                         key={sector.key}
-                                        variant={activeSector === sector.key ? 'primary' : 'secondary'}
+                                        variant={
+                                            activeSector === sector.key ? 'primary' : 'secondary'
+                                        }
                                         size="sm"
                                         onClick={() => handleSectorChange(sector.key)}
                                     >
                                         <sector.icon
                                             className="w-4 h-4 mr-1.5"
-                                            weight={activeSector === sector.key ? 'fill' : 'regular'}
+                                            weight={
+                                                activeSector === sector.key ? 'fill' : 'regular'
+                                            }
                                         />
                                         {sector.label}
                                     </Button>
@@ -609,7 +615,9 @@ export default function MemoryDashboardPage() {
                                             onEdit={() => setEditingMemory(memory)}
                                             onDelete={() => handleDelete(memory.id)}
                                             onPin={() => handlePin(memory)}
-                                            onFeedback={(helpful) => handleFeedback(memory.id, helpful)}
+                                            onFeedback={(helpful) =>
+                                                handleFeedback(memory.id, helpful)
+                                            }
                                         />
                                     </div>
                                 ))}

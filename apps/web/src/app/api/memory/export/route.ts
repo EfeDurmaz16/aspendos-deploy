@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { exportUserMemories } from '@/lib/memory/ingest';

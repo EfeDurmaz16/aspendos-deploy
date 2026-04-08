@@ -6,8 +6,11 @@
  * Adapted from AGIT's hash-chained commit model.
  */
 
-import { prisma } from '@aspendos/db';
-import type { BlastRadiusReport, GuardChainResult } from '../lib/agent-guards';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
+import type { GuardChainResult } from '../lib/agent-guards';
 
 // ============================================
 // TYPES

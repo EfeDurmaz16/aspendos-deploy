@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { verifyHmacSignature, verifyTimingSafe } from '../webhook-security';
 

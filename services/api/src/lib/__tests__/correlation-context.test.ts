@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { correlationIdMiddleware } from '../../middleware/correlation-id';
 import {
     correlationStorage,
     getContext,
@@ -10,7 +11,6 @@ import {
     runWithContext,
     setUserId,
 } from '../correlation-context';
-import { correlationIdMiddleware } from '../../middleware/correlation-id';
 
 // ─── Unit: correlation-context.ts ─────────────────────────────────────────────
 
@@ -63,7 +63,7 @@ describe('CorrelationContext', () => {
             await expect(
                 runWithContext({}, async () => {
                     throw new Error('boom');
-                }),
+                })
             ).rejects.toThrow('boom');
         });
     });
@@ -112,10 +112,10 @@ describe('CorrelationContext', () => {
                 results = await Promise.all([
                     Promise.resolve(getContext()?.correlationId),
                     new Promise<string | undefined>((resolve) =>
-                        setTimeout(() => resolve(getContext()?.correlationId), 5),
+                        setTimeout(() => resolve(getContext()?.correlationId), 5)
                     ),
                     new Promise<string | undefined>((resolve) =>
-                        setTimeout(() => resolve(getContext()?.correlationId), 10),
+                        setTimeout(() => resolve(getContext()?.correlationId), 10)
                     ),
                 ]);
             });
@@ -148,12 +148,9 @@ describe('CorrelationContext', () => {
             let parentUserId: string | undefined;
 
             await runWithContext({ correlationId: 'parent' }, async () => {
-                await runWithContext(
-                    { correlationId: 'child', userId: 'child-user' },
-                    async () => {
-                        expect(getContext()!.userId).toBe('child-user');
-                    },
-                );
+                await runWithContext({ correlationId: 'child', userId: 'child-user' }, async () => {
+                    expect(getContext()!.userId).toBe('child-user');
+                });
 
                 parentUserId = getContext()?.userId;
             });

@@ -66,7 +66,9 @@ export function CompareIndexPage({ competitors }: CompareIndexPageProps) {
                             >
                                 <CardHeader>
                                     <div className="flex items-center gap-3 mb-2">
-                                        <span className={`w-3 h-3 rounded-full ${competitor.color}`} />
+                                        <span
+                                            className={`w-3 h-3 rounded-full ${competitor.color}`}
+                                        />
                                         <CardTitle className="text-xl">
                                             Yula vs {competitor.name}
                                         </CardTitle>
@@ -84,7 +86,10 @@ export function CompareIndexPage({ competitors }: CompareIndexPageProps) {
                                             asChild
                                             className="group-hover:text-primary"
                                         >
-                                            <Link href={`/compare/${competitor.slug}`} className="gap-1">
+                                            <Link
+                                                href={`/compare/${competitor.slug}`}
+                                                className="gap-1"
+                                            >
                                                 Compare
                                                 <ArrowRight className="w-4 h-4" />
                                             </Link>

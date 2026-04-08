@@ -108,9 +108,7 @@ describe('Bot Detection', () => {
             });
 
             it('should detect CCBot', () => {
-                const result = isBotUserAgent(
-                    'CCBot/2.0 (https://commoncrawl.org/faq/)'
-                );
+                const result = isBotUserAgent('CCBot/2.0 (https://commoncrawl.org/faq/)');
                 expect(result.isBot).toBe(true);
                 expect(result.botType).toBe('ai-scraper:commoncrawl');
                 expect(result.isGoodBot).toBe(false);
@@ -153,9 +151,7 @@ describe('Bot Detection', () => {
             });
 
             it('should detect Selenium', () => {
-                const result = isBotUserAgent(
-                    'Mozilla/5.0 Selenium/4.0'
-                );
+                const result = isBotUserAgent('Mozilla/5.0 Selenium/4.0');
                 expect(result.isBot).toBe(true);
                 expect(result.botType).toBe('headless:selenium');
                 expect(result.isGoodBot).toBe(false);
@@ -656,7 +652,7 @@ describe('Bot Detection', () => {
 
     describe('edge cases', () => {
         it('should handle extremely long User-Agent strings', () => {
-            const longUA = 'Mozilla/5.0 ' + 'x'.repeat(10000);
+            const longUA = `Mozilla/5.0 ${'x'.repeat(10000)}`;
             const result = isBotUserAgent(longUA);
             // Should not crash, and should not falsely flag as bot
             expect(result.isBot).toBe(false);

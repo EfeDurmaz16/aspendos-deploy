@@ -139,8 +139,9 @@ export function ReferralCard({
             <div className="mt-4 pt-4 border-t border-border/50">
                 <p className="text-xs text-muted-foreground text-center">
                     You get <span className="text-foreground font-medium">7 days</span> of Pro when
-                    friends sign up, and <span className="text-foreground font-medium">30 days</span>{' '}
-                    when they upgrade to Pro!
+                    friends sign up, and{' '}
+                    <span className="text-foreground font-medium">30 days</span> when they upgrade
+                    to Pro!
                 </p>
             </div>
         </div>

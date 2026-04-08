@@ -13,7 +13,10 @@
  * 4. Suggest to user: "I noticed you often do X. Create a shortcut?"
  */
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import * as skillService from './skill.service';
 
 // ============================================

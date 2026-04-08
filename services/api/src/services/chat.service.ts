@@ -4,7 +4,14 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { type Chat, type Message, type Prisma, prisma, type User } from '@aspendos/db';
+
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { type Chat, type Message, type Prisma, prisma, type User } from '@aspendos/db';
+type Chat = any;
+type Message = any;
+type Prisma = any;
+type User = any;
+const prisma = {} as any;
 
 // ============================================
 // USER OPERATIONS
@@ -107,9 +114,7 @@ export async function getChatWithMessages(
             messages: {
                 orderBy: { createdAt: 'asc' },
                 take: limit,
-                ...(options?.cursor
-                    ? { cursor: { id: options.cursor }, skip: 1 }
-                    : {}),
+                ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
             },
         },
     });

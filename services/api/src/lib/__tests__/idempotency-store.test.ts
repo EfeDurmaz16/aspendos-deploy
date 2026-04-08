@@ -1,8 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     checkIdempotency,
-    recordIdempotency,
     clearIdempotency_forTesting,
+    recordIdempotency,
 } from '../idempotency-store';
 
 describe('IdempotencyStore', () => {

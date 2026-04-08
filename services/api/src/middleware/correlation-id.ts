@@ -17,9 +17,9 @@
 
 import type { Context, Next } from 'hono';
 import {
+    type CorrelationContext,
     runWithContext,
     setUserId as setCorrelationUserId,
-    type CorrelationContext,
 } from '../lib/correlation-context';
 
 /**

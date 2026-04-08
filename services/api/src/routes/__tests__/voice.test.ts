@@ -17,6 +17,7 @@ vi.mock('../../lib/auth', () => ({
 }));
 
 import { auth } from '../../lib/auth';
+
 const mockAuth = auth as any;
 
 // Mock billing service
@@ -26,6 +27,7 @@ vi.mock('../../services/billing.service', () => ({
 }));
 
 import { hasVoiceMinutes, recordVoiceUsage } from '../../services/billing.service';
+
 const mockHasVoiceMinutes = hasVoiceMinutes as any;
 const mockRecordVoiceUsage = recordVoiceUsage as any;
 
@@ -45,7 +47,6 @@ vi.mock('openai', () => {
     };
 });
 
-
 import voiceRoutes from '../voice';
 
 function createTestApp() {
@@ -53,7 +54,6 @@ function createTestApp() {
     app.route('/voice', voiceRoutes);
     return app;
 }
-
 
 describe('Voice Routes', () => {
     beforeEach(() => {
@@ -225,7 +225,9 @@ describe('Voice Routes', () => {
             expect(res.status).toBe(400);
             const body = await res.json();
             expect(body.error).toBe('Validation failed');
-            expect(body.details.some((d: any) => d.message.includes('Invalid voice parameter'))).toBe(true);
+            expect(
+                body.details.some((d: any) => d.message.includes('Invalid voice parameter'))
+            ).toBe(true);
         });
 
         it('should accept all valid voice parameters', async () => {

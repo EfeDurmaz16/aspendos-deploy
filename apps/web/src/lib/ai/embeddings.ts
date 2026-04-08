@@ -4,8 +4,7 @@
  * Text embeddings using Vercel AI Gateway.
  */
 
-import { gateway } from 'ai';
-import { embed, embedMany } from 'ai';
+import { embed, embedMany, gateway } from 'ai';
 
 // ============================================
 // EMBEDDING OPERATIONS

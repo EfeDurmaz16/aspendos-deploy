@@ -63,21 +63,33 @@ export default async function RootLayout({
                 <Script
                     id="organization-schema"
                     type="application/ld+json"
-                    strategy="afterInteractive" nonce={nonce}
+                    strategy="afterInteractive"
+                    nonce={nonce}
                 >
                     {serializeSchema(organizationSchema)}
                 </Script>
-                <Script id="website-schema" type="application/ld+json" strategy="afterInteractive" nonce={nonce}>
+                <Script
+                    id="website-schema"
+                    type="application/ld+json"
+                    strategy="afterInteractive"
+                    nonce={nonce}
+                >
                     {serializeSchema(websiteSchema)}
                 </Script>
                 <Script
                     id="software-app-schema"
                     type="application/ld+json"
-                    strategy="afterInteractive" nonce={nonce}
+                    strategy="afterInteractive"
+                    nonce={nonce}
                 >
                     {serializeSchema(softwareAppSchema)}
                 </Script>
-                <Script id="faq-schema" type="application/ld+json" strategy="afterInteractive" nonce={nonce}>
+                <Script
+                    id="faq-schema"
+                    type="application/ld+json"
+                    strategy="afterInteractive"
+                    nonce={nonce}
+                >
                     {serializeSchema(faqSchema)}
                 </Script>
             </head>

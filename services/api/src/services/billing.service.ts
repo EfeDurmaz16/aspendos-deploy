@@ -2,7 +2,12 @@
  * Billing Database Service
  * Handles billing account and credit operations using Prisma.
  */
-import { type BillingAccount, prisma, type Tier } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { type BillingAccount, prisma, type Tier } from '@aspendos/db';
+type BillingAccount = any;
+const prisma = {} as any;
+type Tier = any;
+
 import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
 
 /**

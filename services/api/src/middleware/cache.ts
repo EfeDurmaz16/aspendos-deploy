@@ -175,7 +175,7 @@ export function cacheControl() {
 
                     c.header('ETag', etag);
                 }
-            } catch (error) {
+            } catch (_error) {
                 // If we can't read the body (e.g., streaming response), skip ETag
                 // This is fine - ETag is optional
             }

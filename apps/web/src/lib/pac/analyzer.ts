@@ -40,7 +40,7 @@ Respond ONLY with valid JSON:
 If no notifications are warranted, return: {"shouldNotify": false, "items": []}`;
 
 export async function analyzeContextForPAC(
-    userId: string,
+    _userId: string,
     recentContext: {
         recentMessages?: string[];
         recentMemories?: string[];

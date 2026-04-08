@@ -82,7 +82,11 @@ describe('Workspace Routes', () => {
             expect(res.status).toBe(400);
             const body = await res.json();
             expect(body.error).toBe('Validation failed');
-            expect(body.details.some((d: any) => d.message.includes('required') || d.message.includes('Required'))).toBe(true);
+            expect(
+                body.details.some(
+                    (d: any) => d.message.includes('required') || d.message.includes('Required')
+                )
+            ).toBe(true);
         });
 
         it('should return 400 when name is empty string', async () => {
@@ -97,7 +101,12 @@ describe('Workspace Routes', () => {
             expect(res.status).toBe(400);
             const body = await res.json();
             expect(body.error).toBe('Validation failed');
-            expect(body.details.some((d: any) => d.message.includes('required') || d.message.includes('Workspace name'))).toBe(true);
+            expect(
+                body.details.some(
+                    (d: any) =>
+                        d.message.includes('required') || d.message.includes('Workspace name')
+                )
+            ).toBe(true);
         });
 
         it('should return 400 when name exceeds 100 characters', async () => {
@@ -465,9 +474,7 @@ describe('Workspace Routes', () => {
 
         it('should return 400 when trying to remove workspace owner', async () => {
             mockService.checkPermission.mockResolvedValue(true);
-            mockService.removeMember.mockRejectedValue(
-                new Error('Cannot remove workspace owner')
-            );
+            mockService.removeMember.mockRejectedValue(new Error('Cannot remove workspace owner'));
             const app = createTestApp();
 
             const res = await app.request('/workspace/ws-1/members/owner-user', {
@@ -518,9 +525,7 @@ describe('Workspace Routes', () => {
 
         it('should return 400 when trying to change owner role', async () => {
             mockService.checkPermission.mockResolvedValue(true);
-            mockService.updateMemberRole.mockRejectedValue(
-                new Error('Cannot change owner role')
-            );
+            mockService.updateMemberRole.mockRejectedValue(new Error('Cannot change owner role'));
             const app = createTestApp();
 
             const res = await app.request('/workspace/ws-1/members/owner-user', {

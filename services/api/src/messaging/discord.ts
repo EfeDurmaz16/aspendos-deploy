@@ -37,7 +37,7 @@ export class DiscordGateway implements MessagingGateway {
                 body.components = [
                     {
                         type: 1, // ACTION_ROW
-                        components: content.actions.map((action, i) => ({
+                        components: content.actions.map((action, _i) => ({
                             type: 2, // BUTTON
                             style:
                                 action.action === 'approve'

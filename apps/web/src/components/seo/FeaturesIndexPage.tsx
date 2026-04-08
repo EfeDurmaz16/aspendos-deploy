@@ -108,7 +108,10 @@ export function FeaturesIndexPage({ features }: FeaturesIndexPageProps) {
                                             asChild
                                             className="group-hover:text-primary -ml-2"
                                         >
-                                            <Link href={`/features/${feature.slug}`} className="gap-1">
+                                            <Link
+                                                href={`/features/${feature.slug}`}
+                                                className="gap-1"
+                                            >
                                                 Learn more
                                                 <ArrowRight className="w-4 h-4" />
                                             </Link>

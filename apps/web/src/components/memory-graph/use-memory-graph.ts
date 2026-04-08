@@ -48,7 +48,9 @@ function buildGraph(memories: MemoryApiItem[]): { nodes: MemoryNode[]; edges: Me
         }
 
         const label =
-            memory.content.length > 48 ? `${memory.content.slice(0, 48).trim()}...` : memory.content;
+            memory.content.length > 48
+                ? `${memory.content.slice(0, 48).trim()}...`
+                : memory.content;
         nodes.push({
             id: memory.id,
             label: label || 'Memory',
@@ -131,11 +133,7 @@ export function useMemoryGraph() {
         return () => {
             cancelled = true;
         };
-    }, [
-        setMemoryNodes,
-        setMemoryEdges,
-        setMemoryGraphLoading,
-    ]);
+    }, [setMemoryNodes, setMemoryEdges, setMemoryGraphLoading]);
 
     // Convert to graph format for react-force-graph
     const graphData = useMemo(() => {

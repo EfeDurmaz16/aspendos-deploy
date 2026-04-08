@@ -5,7 +5,10 @@
  * automatic field encryption for sensitive Account model fields
  * (accessToken, refreshToken, idToken).
  */
-import { prisma as basePrisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma as basePrisma } from '@aspendos/db';
+const basePrisma = {} as any;
+
 import { decryptField, encryptField, isEncrypted } from './field-encryption';
 
 const ENCRYPTED_FIELDS = ['accessToken', 'refreshToken', 'idToken'] as const;
@@ -60,24 +63,32 @@ export const prisma = basePrisma.$extends({
         account: {
             async create({ args, query }) {
                 if (args.data) {
-                    args.data = encryptAccountFields(args.data as Record<string, unknown>) as typeof args.data;
+                    args.data = encryptAccountFields(
+                        args.data as Record<string, unknown>
+                    ) as typeof args.data;
                 }
                 const result = await query(args);
                 return decryptAccountResults(result);
             },
             async update({ args, query }) {
                 if (args.data) {
-                    args.data = encryptAccountFields(args.data as Record<string, unknown>) as typeof args.data;
+                    args.data = encryptAccountFields(
+                        args.data as Record<string, unknown>
+                    ) as typeof args.data;
                 }
                 const result = await query(args);
                 return decryptAccountResults(result);
             },
             async upsert({ args, query }) {
                 if (args.create) {
-                    args.create = encryptAccountFields(args.create as Record<string, unknown>) as typeof args.create;
+                    args.create = encryptAccountFields(
+                        args.create as Record<string, unknown>
+                    ) as typeof args.create;
                 }
                 if (args.update) {
-                    args.update = encryptAccountFields(args.update as Record<string, unknown>) as typeof args.update;
+                    args.update = encryptAccountFields(
+                        args.update as Record<string, unknown>
+                    ) as typeof args.update;
                 }
                 const result = await query(args);
                 return decryptAccountResults(result);

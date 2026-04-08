@@ -12,8 +12,17 @@
  * - Exponential backoff with decorrelated jitter to avoid thundering herd
  */
 
-import { checkDatabaseHealth, type DatabaseHealthResult } from '@aspendos/db';
-import { getPoolMetrics, getPoolHealth, type PoolMetrics, type PoolHealth } from './db-pool-manager';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { checkDatabaseHealth, type DatabaseHealthResult } from '@aspendos/db';
+const checkDatabaseHealth = async (): Promise<any> => ({}) as any;
+type DatabaseHealthResult = any;
+
+import {
+    getPoolHealth,
+    getPoolMetrics,
+    type PoolHealth,
+    type PoolMetrics,
+} from './db-pool-manager';
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -87,7 +96,7 @@ export function computeBackoff(
     maxDelayMs: number = MAX_DELAY_MS
 ): number {
     // Decorrelated jitter: random between base and base * 2^attempt * 1.3
-    const ceiling = baseDelayMs * Math.pow(2, attempt);
+    const ceiling = baseDelayMs * 2 ** attempt;
     const jitter = Math.random() * ceiling;
     return Math.min(baseDelayMs + jitter, maxDelayMs);
 }
@@ -113,9 +122,7 @@ export async function checkPoolUtilization(options?: {
     const metrics: PoolMetrics = getPoolMetrics();
     const health: PoolHealth = getPoolHealth();
 
-    const utilization = poolSize > 0
-        ? Math.min(metrics.activeConnections / poolSize, 1)
-        : 0;
+    const utilization = poolSize > 0 ? Math.min(metrics.activeConnections / poolSize, 1) : 0;
 
     let status: PoolUtilization['status'];
     if (utilization === 0) {

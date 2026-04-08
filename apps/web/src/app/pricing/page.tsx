@@ -126,7 +126,7 @@ const PRICING_TIERS = [
 // Usage data is fetched from the billing API when user is authenticated
 const USAGE_UNAVAILABLE = false;
 
-function UsageBar({ current, limit, label }: { current: number; limit: number; label: string }) {
+function _UsageBar({ current, limit, label }: { current: number; limit: number; label: string }) {
     const percentage = Math.min((current / limit) * 100, 100);
     const isWarning = percentage > 75;
     return (
@@ -186,9 +186,7 @@ function PricingContent() {
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="font-semibold tracking-tight text-foreground">
-                            Yula
-                        </span>
+                        <span className="font-semibold tracking-tight text-foreground">Yula</span>
                     </Link>
                     <nav className="flex gap-4 items-center">
                         <ModeToggle />
@@ -486,8 +484,8 @@ function PricingContent() {
                         <AccordionItem value="item-4">
                             <AccordionTrigger>Do you offer a free trial?</AccordionTrigger>
                             <AccordionContent>
-                                Yes! Start with the Starter plan to explore Yula free for your
-                                first 100 chats. No credit card required.
+                                Yes! Start with the Starter plan to explore Yula free for your first
+                                100 chats. No credit card required.
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>

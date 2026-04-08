@@ -67,7 +67,7 @@ Object.defineProperty(window, 'ResizeObserver', {
 // Mock crypto.randomUUID
 Object.defineProperty(globalThis, 'crypto', {
     value: {
-        randomUUID: () => 'test-uuid-' + Math.random().toString(36).substring(7),
+        randomUUID: () => `test-uuid-${Math.random().toString(36).substring(7)}`,
     },
 });
 

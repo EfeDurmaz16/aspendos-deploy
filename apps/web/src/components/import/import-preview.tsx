@@ -240,12 +240,10 @@ function ConversationItem({
     disabled,
 }: ConversationItemProps) {
     const sourceColors = {
-        CHATGPT:
-            'bg-foreground/10 text-foreground border-border',
+        CHATGPT: 'bg-foreground/10 text-foreground border-border',
         CLAUDE: 'bg-foreground/10 text-foreground border-border',
         GEMINI: 'bg-foreground/10 text-foreground border-border',
-        PERPLEXITY:
-            'bg-foreground/10 text-foreground border-border',
+        PERPLEXITY: 'bg-foreground/10 text-foreground border-border',
     };
 
     return (

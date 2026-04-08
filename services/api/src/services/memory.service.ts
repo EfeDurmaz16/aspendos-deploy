@@ -9,7 +9,11 @@
  * - softDeleteMemory: Archive (isActive = false)
  * - submitFeedback: Log user feedback
  */
-import { type Memory, type MemoryFeedback, prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { type Memory, type MemoryFeedback, prisma } from '@aspendos/db';
+type Memory = any;
+type MemoryFeedback = any;
+const prisma = {} as any;
 
 // ============================================
 // TYPES

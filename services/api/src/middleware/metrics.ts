@@ -53,7 +53,7 @@ export function metricsMiddleware() {
         const contentLength = c.req.header('content-length');
         if (contentLength) {
             const size = parseInt(contentLength, 10);
-            if (!isNaN(size)) {
+            if (!Number.isNaN(size)) {
                 observeHistogram(
                     'http_request_size_bytes',
                     size,
@@ -90,7 +90,7 @@ export function metricsMiddleware() {
             const responseSize = c.res.headers.get('content-length');
             if (responseSize) {
                 const size = parseInt(responseSize, 10);
-                if (!isNaN(size)) {
+                if (!Number.isNaN(size)) {
                     observeHistogram(
                         'http_response_size_bytes',
                         size,

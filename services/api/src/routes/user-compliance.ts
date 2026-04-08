@@ -139,10 +139,7 @@ app.post('/cancel-deletion', requireAuth, async (c) => {
     const cancelled = await userDeletionService.cancelDeletion(userId, body.cancellationToken);
 
     if (!cancelled) {
-        return c.json(
-            { error: 'No pending deletion found or invalid cancellation token' },
-            404
-        );
+        return c.json({ error: 'No pending deletion found or invalid cancellation token' }, 404);
     }
 
     return c.json({

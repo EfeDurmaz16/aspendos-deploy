@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { createEmbedding } from '@/lib/ai';

@@ -47,4 +47,4 @@ const ResizableHandle = ({
     </Separator>
 );
 
-export { ResizablePanelGroup, Panel as ResizablePanel, ResizableHandle };
+export { Panel as ResizablePanel, ResizableHandle, ResizablePanelGroup };

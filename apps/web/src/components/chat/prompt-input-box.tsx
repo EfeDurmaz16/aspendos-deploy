@@ -28,7 +28,7 @@ export function PromptInputBox({ onSubmit, isGenerating, className }: PromptInpu
 
     useEffect(() => {
         adjustHeight();
-    }, [input]);
+    }, [adjustHeight]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {

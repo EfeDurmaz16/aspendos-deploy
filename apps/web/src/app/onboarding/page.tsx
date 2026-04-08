@@ -11,11 +11,7 @@ import {
     PacDemoStep,
     WelcomeStep,
 } from '@/components/onboarding/steps';
-import {
-    STEP_ORDER,
-    useOnboardingStore,
-    type OnboardingStep,
-} from '@/lib/stores/onboarding-store';
+import { type OnboardingStep, STEP_ORDER, useOnboardingStore } from '@/lib/stores/onboarding-store';
 import { cn } from '@/lib/utils';
 
 export default function OnboardingPage() {
@@ -73,9 +69,7 @@ export default function OnboardingPage() {
 
             <div className="max-w-lg w-full relative z-10">
                 <AnimatePresence mode="wait">
-                    <div key={currentStep}>
-                        {renderStep(currentStep)}
-                    </div>
+                    <div key={currentStep}>{renderStep(currentStep)}</div>
                 </AnimatePresence>
             </div>
 

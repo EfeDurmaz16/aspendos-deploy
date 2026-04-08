@@ -278,9 +278,7 @@ function FileItem({ file, onRemove, isUploading }: FileItemProps) {
             exit={{ opacity: 0, x: -10 }}
             className={cn(
                 'flex items-center gap-3 p-3 rounded-[8px] border bg-white dark:bg-zinc-900/50',
-                file.status === 'invalid'
-                    ? 'border-border'
-                    : 'border-zinc-200 dark:border-zinc-800'
+                file.status === 'invalid' ? 'border-border' : 'border-zinc-200 dark:border-zinc-800'
             )}
         >
             {/* File Icon */}

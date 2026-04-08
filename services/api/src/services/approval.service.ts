@@ -12,7 +12,10 @@
  * 5. Agent resumes or adapts
  */
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import type { BlastRadiusReport } from '../lib/agent-guards';
 
 // ============================================

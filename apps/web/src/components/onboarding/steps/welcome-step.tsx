@@ -144,12 +144,8 @@ function FeatureHighlight({
     description: string;
 }) {
     return (
-        <div
-            className="rounded-xl border border-border bg-foreground/[0.02] p-3 text-center transition-colors hover:bg-foreground/[0.04]"
-        >
-            <div className="mb-1 flex justify-center text-foreground">
-                {icon}
-            </div>
+        <div className="rounded-xl border border-border bg-foreground/[0.02] p-3 text-center transition-colors hover:bg-foreground/[0.04]">
+            <div className="mb-1 flex justify-center text-foreground">{icon}</div>
             <div className="text-xs font-medium text-foreground">{label}</div>
             <div className="text-xs text-muted-foreground">{description}</div>
         </div>

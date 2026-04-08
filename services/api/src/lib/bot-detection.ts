@@ -27,7 +27,12 @@ const BOT_PATTERNS: BotPattern[] = [
     { pattern: /DuckDuckBot/i, type: 'crawler:duckduckgo', isGoodBot: true, confidence: 90 },
     { pattern: /Baiduspider/i, type: 'crawler:baidu', isGoodBot: true, confidence: 90 },
     { pattern: /YandexBot/i, type: 'crawler:yandex', isGoodBot: true, confidence: 90 },
-    { pattern: /facebot|facebookexternalhit/i, type: 'crawler:facebook', isGoodBot: true, confidence: 85 },
+    {
+        pattern: /facebot|facebookexternalhit/i,
+        type: 'crawler:facebook',
+        isGoodBot: true,
+        confidence: 85,
+    },
     { pattern: /Twitterbot/i, type: 'crawler:twitter', isGoodBot: true, confidence: 85 },
     { pattern: /LinkedInBot/i, type: 'crawler:linkedin', isGoodBot: true, confidence: 85 },
     { pattern: /Applebot/i, type: 'crawler:apple', isGoodBot: true, confidence: 90 },
@@ -72,9 +77,7 @@ const BOT_PATTERNS: BotPattern[] = [
 ];
 
 /** Known good bots that are allowed on public endpoints */
-const GOOD_BOT_TYPES = new Set(
-    BOT_PATTERNS.filter((p) => p.isGoodBot).map((p) => p.type)
-);
+const GOOD_BOT_TYPES = new Set(BOT_PATTERNS.filter((p) => p.isGoodBot).map((p) => p.type));
 
 // ─── User-Agent Analysis ─────────────────────────────────────────────────────
 
@@ -160,7 +163,8 @@ export function analyzeRequestPattern(
 
     // ── High Request Velocity ────────────────────────────────────────────
     const timeWindowMs = sorted[sorted.length - 1].timestamp - sorted[0].timestamp;
-    const requestsPerSecond = timeWindowMs > 0 ? (sorted.length / timeWindowMs) * 1000 : sorted.length;
+    const requestsPerSecond =
+        timeWindowMs > 0 ? (sorted.length / timeWindowMs) * 1000 : sorted.length;
 
     // More than 10 requests per second is very suspicious
     if (requestsPerSecond > 10) {
@@ -223,7 +227,7 @@ export function analyzeRequestPattern(
 
         // If most requests hit different paths, check for sequential scanning
         if (uniquePaths.length >= sorted.length * 0.7) {
-            const sortedPaths = [...uniquePaths].sort();
+            const _sortedPaths = [...uniquePaths].sort();
 
             // Check if paths are alphabetically ordered in the request sequence
             const requestPaths = sorted.map((r) => r.path);
@@ -277,10 +281,13 @@ export function getBotScore(
     }
 
     // Pattern-based score (can boost UA score or stand alone)
-    if (patternResult && patternResult.isSuspicious) {
+    if (patternResult?.isSuspicious) {
         if (uaResult.isBot) {
             // Both signals: weighted combination
-            score = Math.min(100, Math.round(uaResult.confidence * 0.6 + patternResult.score * 0.4));
+            score = Math.min(
+                100,
+                Math.round(uaResult.confidence * 0.6 + patternResult.score * 0.4)
+            );
         } else {
             // Only pattern signal: use pattern score directly but cap lower
             // since UA looks legitimate
@@ -324,9 +331,7 @@ class BotDetectionTracker {
     }
 
     getRecentDetections(limit = 100): BotDetectionEvent[] {
-        return this.events
-            .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, limit);
+        return this.events.sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
     }
 
     getStats(): {

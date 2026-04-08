@@ -6,7 +6,11 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { type Prisma } from '@aspendos/db';
+
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { type Prisma } from '@aspendos/db';
+type Prisma = any;
+
 import { jobQueue } from '../lib/job-queue';
 import { prisma } from '../lib/prisma';
 import * as importParsers from './import-parsers';
@@ -273,7 +277,9 @@ export function parseClaudeExport(data: unknown): ParsedConversation[] {
         }
 
         // Use first user message as title fallback when name is empty
-        const fallbackTitle = messages.find((m) => m.role === 'user')?.content?.slice(0, 80) || 'Untitled Conversation';
+        const fallbackTitle =
+            messages.find((m) => m.role === 'user')?.content?.slice(0, 80) ||
+            'Untitled Conversation';
         conversations.push({
             externalId: conv.uuid || `claude-${randomUUID()}`,
             title: conv.name || fallbackTitle,

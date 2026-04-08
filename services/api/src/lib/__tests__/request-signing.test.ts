@@ -111,7 +111,7 @@ describe('request-signing', () => {
                 signature,
                 TEST_SECRET,
                 oldTimestamp,
-                customMaxAge,
+                customMaxAge
             );
 
             expect(valid).toBe(false);
@@ -126,7 +126,7 @@ describe('request-signing', () => {
                 signature,
                 TEST_SECRET,
                 recentTimestamp,
-                customMaxAge,
+                customMaxAge
             );
 
             expect(valid).toBe(true);
@@ -175,7 +175,7 @@ describe('request-signing', () => {
                 TEST_PAYLOAD,
                 headers['X-Signature'],
                 TEST_SECRET,
-                Number(headers['X-Timestamp']),
+                Number(headers['X-Timestamp'])
             );
 
             expect(valid).toBe(true);

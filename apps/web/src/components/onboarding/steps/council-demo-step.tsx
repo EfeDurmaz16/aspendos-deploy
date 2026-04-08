@@ -80,9 +80,7 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
             transition={{ duration: 0.3 }}
         >
             {/* Header with accent */}
-            <div
-                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-foreground/10"
-            >
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-foreground/10">
                 <Users className="h-8 w-8 text-foreground" />
             </div>
 
@@ -125,9 +123,7 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
                             transition={{ duration: 0.2 }}
                         >
                             <div className="flex items-center gap-2 mb-2">
-                                <div
-                                    className="h-5 w-5 rounded-full flex items-center justify-center bg-foreground text-background"
-                                >
+                                <div className="h-5 w-5 rounded-full flex items-center justify-center bg-foreground text-background">
                                     {PERSONAS.find((p) => p.id === selectedPersona)?.icon}
                                 </div>
                                 <span className="text-xs font-medium text-foreground">
@@ -146,23 +142,17 @@ export function CouncilDemoStep({ onNext, onPrev, onSkip }: CouncilDemoStepProps
             {/* Variable reward stats */}
             <div className="mb-6 w-full max-w-md flex items-center justify-center gap-6 text-center">
                 <div>
-                    <div className="text-2xl font-bold text-foreground">
-                        4
-                    </div>
+                    <div className="text-2xl font-bold text-foreground">4</div>
                     <div className="text-xs text-muted-foreground">Minds</div>
                 </div>
                 <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold text-foreground">
-                        1
-                    </div>
+                    <div className="text-2xl font-bold text-foreground">1</div>
                     <div className="text-xs text-muted-foreground">Question</div>
                 </div>
                 <div className="h-8 w-px bg-foreground/10" />
                 <div>
-                    <div className="text-2xl font-bold text-foreground">
-                        &#x221e;
-                    </div>
+                    <div className="text-2xl font-bold text-foreground">&#x221e;</div>
                     <div className="text-xs text-muted-foreground">Surprises</div>
                 </div>
             </div>
@@ -236,9 +226,7 @@ function PersonaCard({
 
             <div className={cn('transition-opacity', !isActive && 'opacity-0')}>
                 <div className="flex items-center gap-2 mb-1">
-                    <div
-                        className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background"
-                    >
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background">
                         {persona.icon}
                     </div>
                     <span className="text-sm font-medium text-foreground">{persona.name}</span>

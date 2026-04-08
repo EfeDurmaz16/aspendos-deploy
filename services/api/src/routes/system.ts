@@ -87,7 +87,6 @@ systemRoutes.get('/critical-readiness', async (c) => {
     return c.json(report, statusCode);
 });
 
-
 // GET /system/info - Runtime info (admin only)
 systemRoutes.get('/info', requireAdmin, (c) => {
     return c.json({

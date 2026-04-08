@@ -4,8 +4,7 @@
  * These are integration tests using vitest, not browser tests
  */
 
-import { Hono } from 'hono';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 // Import the app
 import app from '../../index';
 import { clearRateLimits_forTesting } from '../../middleware/endpoint-rate-limit';

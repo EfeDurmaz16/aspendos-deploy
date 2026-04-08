@@ -32,17 +32,20 @@ const MAX_HISTORY_PER_IP = 50;
 const HISTORY_WINDOW_MS = 5 * 60 * 1000;
 
 // Cleanup stale entries every 2 minutes
-setInterval(() => {
-    const cutoff = Date.now() - HISTORY_WINDOW_MS;
-    for (const [key, records] of requestHistory.entries()) {
-        const filtered = records.filter((r) => r.timestamp >= cutoff);
-        if (filtered.length === 0) {
-            requestHistory.delete(key);
-        } else {
-            requestHistory.set(key, filtered);
+setInterval(
+    () => {
+        const cutoff = Date.now() - HISTORY_WINDOW_MS;
+        for (const [key, records] of requestHistory.entries()) {
+            const filtered = records.filter((r) => r.timestamp >= cutoff);
+            if (filtered.length === 0) {
+                requestHistory.delete(key);
+            } else {
+                requestHistory.set(key, filtered);
+            }
         }
-    }
-}, 2 * 60 * 1000);
+    },
+    2 * 60 * 1000
+);
 
 // ─── Skip Paths ──────────────────────────────────────────────────────────────
 
@@ -153,7 +156,12 @@ export function botProtection() {
         }
 
         // Score is above threshold - check if it's a good bot on a public endpoint
-        if (uaResult.isBot && uaResult.botType && isGoodBot(uaResult.botType) && isPublicEndpoint(path)) {
+        if (
+            uaResult.isBot &&
+            uaResult.botType &&
+            isGoodBot(uaResult.botType) &&
+            isPublicEndpoint(path)
+        ) {
             // Allow good bots on public endpoints, but track
             const event: BotDetectionEvent = {
                 ip,

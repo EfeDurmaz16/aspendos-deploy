@@ -4,9 +4,7 @@ import {
     ArrowRight,
     Brain,
     Check,
-    Clock,
     Command,
-    Eye,
     Lightning,
     Shield,
     Sparkle,
@@ -465,7 +463,9 @@ export default function Pricing2Page() {
                             <div className="w-12 h-12 rounded-full bg-foreground/10 flex items-center justify-center mx-auto mb-4">
                                 <Shield className="w-6 h-6 text-foreground" weight="thin" />
                             </div>
-                            <h3 className="text-foreground font-medium mb-2">Your data, your rules</h3>
+                            <h3 className="text-foreground font-medium mb-2">
+                                Your data, your rules
+                            </h3>
                             <p className="text-muted-foreground text-sm">
                                 We never train on your data. Export or delete your memory anytime.
                             </p>
@@ -481,7 +481,9 @@ export default function Pricing2Page() {
                         <span className="font-mono text-xs text-foreground tracking-widest uppercase mb-4 block">
                             Compare Plans
                         </span>
-                        <h2 className="text-4xl font-serif text-foreground">Every feature, compared.</h2>
+                        <h2 className="text-4xl font-serif text-foreground">
+                            Every feature, compared.
+                        </h2>
                     </CinematicSection>
 
                     <div className="overflow-x-auto">

@@ -10,7 +10,6 @@ import { Hono } from 'hono';
 // import { prisma } from '@aspendos/db';
 const prisma = {} as any;
 
-import { auditLog as _auditLog } from '../lib/audit-log';
 import { createLogger } from '../lib/logger';
 import { requireAuth } from '../middleware/auth';
 

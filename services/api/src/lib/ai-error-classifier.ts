@@ -8,7 +8,11 @@
  * Classify AI provider errors into structured error codes.
  * Helps frontend show appropriate messaging and retry logic.
  */
-export function classifyAIError(message: string): { error: string; code: string; retryable: boolean } {
+export function classifyAIError(message: string): {
+    error: string;
+    code: string;
+    retryable: boolean;
+} {
     const lower = message.toLowerCase();
 
     if (lower.includes('rate limit') || lower.includes('429') || lower.includes('too many')) {

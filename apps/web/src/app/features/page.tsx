@@ -1,8 +1,5 @@
 import type { Metadata } from 'next';
-import {
-    FeaturesIndexPage,
-    type FeatureIndexData,
-} from '@/components/seo/FeaturesIndexPage';
+import { type FeatureIndexData, FeaturesIndexPage } from '@/components/seo/FeaturesIndexPage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(

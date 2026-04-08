@@ -5,7 +5,7 @@
  * All calls route through Vercel AI Gateway.
  */
 
-import { gateway, generateText, streamText, embed, embedMany } from 'ai';
+import { embed, embedMany, gateway, generateText, streamText } from 'ai';
 
 // ============================================
 // EMBEDDING MODEL

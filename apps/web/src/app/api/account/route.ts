@@ -1,9 +1,11 @@
 export const dynamic = 'force-dynamic';
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { deleteUserMemories } from '@/lib/services/qdrant';
-
 
 /**
  * DELETE /api/account

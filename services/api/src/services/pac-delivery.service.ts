@@ -5,7 +5,10 @@
  * Supports: in-app push, email, Telegram, WhatsApp, Slack, Discord.
  */
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import { type MessageContent, sendToUser } from '../messaging/gateway';
 
 export interface DeliveryOptions {

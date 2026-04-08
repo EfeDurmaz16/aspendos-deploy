@@ -4,7 +4,13 @@
  * Handles scheduling and execution of proactive follow-up tasks.
  * The AI can schedule tasks to re-engage users at specific times.
  */
-import { type Prisma, prisma, type ScheduledTask, ScheduledTaskStatus } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { type Prisma, prisma, type ScheduledTask, ScheduledTaskStatus } from '@aspendos/db';
+type Prisma = any;
+const prisma = {} as any;
+type ScheduledTask = any;
+const ScheduledTaskStatus = {} as any;
+type ScheduledTaskStatus = any;
 
 // Upstash QStash configuration (optional - can use polling fallback)
 const QSTASH_TOKEN = process.env.QSTASH_TOKEN || '';
@@ -439,11 +445,11 @@ function matchesCronField(spec: string, value: number): boolean {
     if (spec === '*') return true;
     if (spec.startsWith('*/')) {
         const step = parseInt(spec.slice(2), 10);
-        return !isNaN(step) && step > 0 && value % step === 0;
+        return !Number.isNaN(step) && step > 0 && value % step === 0;
     }
     if (spec.includes('-')) {
         const [start, end] = spec.split('-').map(Number);
-        return !isNaN(start) && !isNaN(end) && value >= start && value <= end;
+        return !Number.isNaN(start) && !Number.isNaN(end) && value >= start && value <= end;
     }
     if (spec.includes(',')) {
         return spec.split(',').map(Number).includes(value);

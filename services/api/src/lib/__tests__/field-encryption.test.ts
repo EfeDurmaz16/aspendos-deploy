@@ -51,7 +51,8 @@ describe('field-encryption', () => {
         });
 
         it('should handle emoji and multibyte characters', () => {
-            const plaintext = 'Hello from Tokyo: \u6771\u4EAC \uD83C\uDDEF\uD83C\uDDF5 \uD83C\uDF38';
+            const plaintext =
+                'Hello from Tokyo: \u6771\u4EAC \uD83C\uDDEF\uD83C\uDDF5 \uD83C\uDF38';
             const encrypted = encryptField(plaintext);
             expect(decryptField(encrypted)).toBe(plaintext);
         });
@@ -103,7 +104,7 @@ describe('field-encryption', () => {
                 packed[i] = 0;
             }
 
-            const tampered = 'enc::' + packed.toString('base64');
+            const tampered = `enc::${packed.toString('base64')}`;
             expect(() => decryptField(tampered)).toThrow();
         });
 

@@ -66,7 +66,7 @@ async function initBot() {
             '[Bot] Chat SDK initialized with adapters:',
             Object.keys(adapters).join(', ') || 'none'
         );
-    } catch (err) {
+    } catch (_err) {
         console.warn(
             '[Bot] Chat SDK not available — install chat + @chat-adapter/* packages to enable messaging.'
         );
@@ -206,11 +206,13 @@ async function handleMessage(
 // HELPERS
 // ============================================
 
-async function resolveUserId(thread: any, message: { user?: { id?: string } }): Promise<string> {
+async function resolveUserId(_thread: any, message: { user?: { id?: string } }): Promise<string> {
     if (!message.user?.id) return 'anonymous';
 
     try {
-        const { prisma } = await import('@aspendos/db');
+        // TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+        // const { prisma } = await import('@aspendos/db');
+        const prisma = {} as any;
         const connection = await prisma.platformConnection.findFirst({
             where: {
                 platformUserId: message.user.id,

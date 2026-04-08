@@ -480,7 +480,7 @@ async function checkAchievementCriteria(
 /**
  * Unlock an achievement
  */
-export async function unlockAchievement(userId: string, profileId: string, code: AchievementCode) {
+export async function unlockAchievement(_userId: string, profileId: string, code: AchievementCode) {
     const achievement = ACHIEVEMENTS[code];
 
     await prisma.achievement.create({

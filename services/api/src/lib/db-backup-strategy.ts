@@ -80,9 +80,7 @@ export function getBackupHistory(limit?: number): BackupRecord[] {
  * Return the most recent backup, optionally filtered by type.
  */
 export function getLastBackup(type?: BackupType): BackupRecord | null {
-    const filtered = type
-        ? backupRegistry.filter((r) => r.type === type)
-        : backupRegistry;
+    const filtered = type ? backupRegistry.filter((r) => r.type === type) : backupRegistry;
     if (filtered.length === 0) return null;
     return filtered.reduce((latest, current) =>
         current.timestamp.getTime() > latest.timestamp.getTime() ? current : latest
@@ -111,12 +109,8 @@ export function validateBackupRecency(): {
         incrementalCurrent: lastIncremental
             ? now - lastIncremental.timestamp.getTime() < ONE_HOUR
             : false,
-        fullCurrent: lastFull
-            ? now - lastFull.timestamp.getTime() < TWENTY_FOUR_HOURS
-            : false,
-        archiveCurrent: lastArchive
-            ? now - lastArchive.timestamp.getTime() < SEVEN_DAYS
-            : false,
+        fullCurrent: lastFull ? now - lastFull.timestamp.getTime() < TWENTY_FOUR_HOURS : false,
+        archiveCurrent: lastArchive ? now - lastArchive.timestamp.getTime() < SEVEN_DAYS : false,
     };
 }
 

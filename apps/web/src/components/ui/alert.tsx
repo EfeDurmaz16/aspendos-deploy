@@ -16,16 +16,13 @@ const alertVariants = cva(
         variants: {
             variant: {
                 info: 'border-border bg-foreground/5 text-foreground',
-                success:
-                    'border-border bg-foreground/5 text-foreground',
-                warning:
-                    'border-border bg-foreground/5 text-muted-foreground',
+                success: 'border-border bg-foreground/5 text-foreground',
+                warning: 'border-border bg-foreground/5 text-muted-foreground',
                 error: 'border-border bg-foreground/5 text-foreground',
                 // YULA Feature alerts
                 import: 'border-border bg-foreground/5 text-foreground',
                 pac: 'border-border bg-foreground/5 text-muted-foreground',
-                council:
-                    'border-border bg-muted-foreground/5 text-muted-foreground',
+                council: 'border-border bg-muted-foreground/5 text-muted-foreground',
             },
         },
         defaultVariants: {
@@ -100,4 +97,4 @@ const AlertClose = React.forwardRef<
 ));
 AlertClose.displayName = 'AlertClose';
 
-export { Alert, AlertIcon, AlertContent, AlertTitle, AlertDescription, AlertClose, alertVariants };
+export { Alert, AlertClose, AlertContent, AlertDescription, AlertIcon, AlertTitle, alertVariants };

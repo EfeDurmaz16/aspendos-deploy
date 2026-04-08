@@ -53,7 +53,7 @@ function findEndpointLimit(method: string, path: string): EndpointLimit | null {
     return null;
 }
 
-function formatLabel(bytes: number): string {
+function _formatLabel(bytes: number): string {
     if (bytes >= MB) return `${bytes / MB}mb`;
     if (bytes >= KB) return `${bytes / KB}kb`;
     return `${bytes}b`;

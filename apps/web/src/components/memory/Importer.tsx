@@ -128,8 +128,8 @@ export function MemoryImporter() {
                 <DialogHeader>
                     <DialogTitle>Memory Import/Export</DialogTitle>
                     <DialogDescription>
-                        Import your conversation history from ChatGPT or Claude, or export your
-                        Yula memories.
+                        Import your conversation history from ChatGPT or Claude, or export your Yula
+                        memories.
                     </DialogDescription>
                 </DialogHeader>
 

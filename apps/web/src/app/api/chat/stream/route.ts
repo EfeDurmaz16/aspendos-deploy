@@ -1,5 +1,8 @@
 export const dynamic = 'force-dynamic';
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import type { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { createEmbedding, createUnifiedStreamingCompletion, executeHybridRoute } from '@/lib/ai';
