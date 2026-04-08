@@ -1,11 +1,21 @@
 /**
- * Better Auth Middleware for Hono
- * Verifies sessions via HTTP-only cookies.
+ * Auth Middleware for Hono
+ *
+ * TODO(phase-a-day-4): replaced by WorkOS AuthKit — see @workos-inc/authkit-nextjs.
+ * During the Phase A Day 1 purge, Better Auth's session verification was removed.
+ * This middleware now treats every request as unauthenticated until Day 4 wires
+ * WorkOS's withAuth() for the Hono API. `requireAuth` will therefore return 401
+ * for every authenticated route — this is intentional for the purge window.
  */
 
-import { prisma } from '@aspendos/db';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { prisma } from '@aspendos/db';
+const prisma = {} as any;
+
 import type { Context, Next } from 'hono';
-import { auth } from '../lib/auth';
+// TODO(phase-a-day-4): WorkOS withAuth() will replace the inline session
+// stub below. The former Better Auth `auth.api.getSession()` call was removed
+// in the Phase A Day 1 purge.
 
 export interface AuthUser {
     userId: string;
@@ -64,10 +74,8 @@ export async function authMiddleware(c: Context, next: Next) {
         }
 
         // Fallback path: global middleware did not run or returned no session.
-        // Perform the DB lookup ourselves.
-        const session = await auth.api.getSession({
-            headers: c.req.raw.headers,
-        });
+        // TODO(phase-a-day-4): WorkOS withAuth() replaces this
+        const session = null as any;
 
         if (session?.user && session?.session) {
             // Validate session is not expired

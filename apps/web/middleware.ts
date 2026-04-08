@@ -1,7 +1,16 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 // Define public page routes that don't require authentication
-const publicPageRoutes = ['/', '/login', '/signup', '/pricing', '/terms', '/privacy', '/landing', '/yula'];
+const publicPageRoutes = [
+    '/',
+    '/login',
+    '/signup',
+    '/pricing',
+    '/terms',
+    '/privacy',
+    '/landing',
+    '/yula',
+];
 
 // Define public API routes (auth endpoints, webhooks, health checks)
 const publicApiPrefixes = ['/api/auth/', '/api/webhooks/', '/api/health'];
@@ -10,7 +19,14 @@ const publicApiPrefixes = ['/api/auth/', '/api/webhooks/', '/api/health'];
 const protectedPagePrefixes = ['/chat', '/memory', '/billing', '/settings', '/analytics'];
 
 // Feature page routes (public)
-const publicPagePrefixes = ['/features', '/pricing', '/verify-email', '/forgot-password', '/onboarding', '/import'];
+const publicPagePrefixes = [
+    '/features',
+    '/pricing',
+    '/verify-email',
+    '/forgot-password',
+    '/onboarding',
+    '/import',
+];
 
 function isPublicPageRoute(pathname: string): boolean {
     if (publicPageRoutes.includes(pathname)) return true;
@@ -90,26 +106,21 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // Check for session cookie (lightweight, no DB call)
-    const sessionCookie = request.cookies.get('better-auth.session_token');
-    const hasSession = !!sessionCookie?.value;
+    // TODO(phase-a-day-4): WorkOS authkitMiddleware replaces this. During the
+    // Phase A Day 1 purge window the Better Auth `better-auth.session_token`
+    // cookie no longer exists, so the old cookie-presence check would
+    // 401/redirect every request. Let requests pass through until Day 4 wires
+    // WorkOS authkitMiddleware; route-level guards stay disabled in the stub.
+    // const sessionCookie = request.cookies.get('better-auth.session_token');
+    // const hasSession = !!sessionCookie?.value;
 
-    // API routes: return 401 if no session cookie
+    // API routes: pass through (WorkOS authkitMiddleware gates in Day 4)
     if (isApiRoute(pathname)) {
-        if (!hasSession) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
         return NextResponse.next();
     }
 
-    // Protected page routes: redirect to login if no session cookie
+    // Protected page routes: pass through (WorkOS authkitMiddleware in Day 4)
     if (isProtectedPageRoute(pathname)) {
-        if (!hasSession) {
-            const url = request.nextUrl.clone();
-            url.pathname = '/login';
-            url.searchParams.set('redirect', pathname);
-            return NextResponse.redirect(url);
-        }
         return withCSP(NextResponse.next({ headers: { 'x-nonce': nonce } }));
     }
 

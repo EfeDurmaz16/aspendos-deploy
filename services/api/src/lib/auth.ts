@@ -1,57 +1,47 @@
-import { prisma } from './prisma';
-import { betterAuth } from 'better-auth';
-import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { Resend } from 'resend';
+// TODO(phase-a-day-4): Better Auth fully removed — replaced by WorkOS AuthKit.
+// See @workos-inc/authkit-nextjs. This file is a stub that keeps type-level
+// compatibility with existing Hono middleware / index.ts until Day 4 rewires
+// session verification to WorkOS.
 
-export const auth = betterAuth({
-    database: prismaAdapter(prisma, {
-        provider: 'postgresql',
-    }),
-    emailAndPassword: {
-        enabled: true,
-        requireEmailVerification: process.env.DISABLE_EMAIL_VERIFICATION !== 'true',
-        minPasswordLength: 8,
-        maxPasswordLength: 128,
-        autoSignIn: true,
-        revokeSessionsOnPasswordReset: true,
-        sendResetPassword: async ({ user, url }) => {
-            const apiKey = process.env.RESEND_API_KEY;
-            if (!apiKey) {
-                console.error('[Auth] RESEND_API_KEY not set, cannot send password reset email');
-                return;
-            }
-            const resend = new Resend(apiKey);
-            await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL || 'YULA <noreply@yula.dev>',
-                to: user.email,
-                subject: 'Reset your YULA password',
-                html: `<p>Click the link below to reset your password:</p><p><a href="${url}">Reset Password</a></p><p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>`,
-            });
-        },
-    },
-    account: {
-        accountLinking: {
-            enabled: false,
-        },
-    },
+type StubSession = {
+    user: {
+        id: string;
+        email: string;
+        name?: string | null;
+        image?: string | null;
+        tier?: string;
+    };
     session: {
-        expiresIn: 60 * 60 * 24 * 7,
-        updateAge: 60 * 60 * 24,
-        cookie: {
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            httpOnly: true,
-        },
+        id: string;
+        expiresAt: Date | string;
+    };
+};
+
+// TODO(phase-a-day-4): WorkOS withAuth() replaces auth.api.getSession(). The
+// real export used to be the `betterAuth(...)` return value, which is both a
+// request handler (`auth.handler(req)`) and a container for `auth.api.*`
+// methods plus a `$Infer` type helper. We stub the same surface with `any`.
+export const auth: any = {
+    // TODO(phase-a-day-4): WorkOS route handler replaces this
+    handler: async (_req: Request): Promise<Response> =>
+        new Response(
+            JSON.stringify({
+                error: 'Auth temporarily unavailable',
+                code: 'AUTH_MIGRATING',
+                message: 'Better Auth removed. WorkOS AuthKit lands in Phase A Day 4.',
+            }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } }
+        ),
+    api: {
+        // TODO(phase-a-day-4): WorkOS withAuth() replaces this
+        getSession: async (_opts: { headers: Headers }): Promise<StubSession | null> => null,
     },
-    rateLimit: {
-        window: 60,
-        max: 10,
+    // $Infer is a type-level helper in Better Auth used by Hono's Variables.
+    // We expose it as `any` so `typeof auth.$Infer.Session.user` still type-checks.
+    $Infer: {} as {
+        Session: {
+            user: StubSession['user'];
+            session: StubSession['session'];
+        };
     },
-    trustedOrigins: [
-        'http://localhost:3000',
-        'https://yula.dev',
-        'https://www.yula.dev',
-    ],
-    // TODO: Add Stripe billing plugin
-    plugins: [],
-});
+};
