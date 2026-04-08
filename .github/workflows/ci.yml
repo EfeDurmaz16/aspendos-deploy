@@ -266,16 +266,6 @@ jobs:
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
 
-      - name: Build agents image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./services/agents
-          file: services/agents/Dockerfile
-          push: false
-          tags: yula-agents:latest
-          cache-from: type=gha,scope=agents
-          cache-to: type=gha,mode=max,scope=agents
-
   # ============================================
   # DEPLOY FRONTEND (Hetzner CX23 #1)
   # ============================================
