@@ -2,6 +2,23 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **🚨 REORDER NOTE (discovered 2026-04-08 during Day A1 execution)**: The original day ordering (Day 1 = Next 16 + UI, Day 2 = Convex, Day 3 = WorkOS, Day 4 = LangGraph removal, Day 5 = OpenMemory removal) was **wrong**. Attempting Next 16 upgrade first blew up on `@sentry/nextjs@10.38.0` incompatibility (`TypeError: api.createContextKey is not a function` from @opentelemetry/api version mismatch). Polar + Better Auth + Qdrant + OpenMemory + Prisma packages may have similar Next 16 compatibility issues, and we're **deleting all of them anyway**.
+>
+> **New ordering (revised Day sequence)**:
+> - **Day 1 — Package Purge**: Delete Better Auth, @polar-sh/* (all), OpenMemory + Qdrant, Prisma + `packages/db`, LangGraph Python service + `services/agents/`. Remove all imports of these packages from code (compile errors expected — that's the point). Result: smaller codebase, fewer Next 16 incompatibility surfaces. This corresponds to the OLD Days A3.2 (delete Better Auth) + A4.1 (delete services/agents) + A5.1 (delete OpenMemory) compressed into one intensive day.
+> - **Day 2 — Next.js 16 upgrade + UI polish**: Now runs cleanly because the problematic packages are gone. Original Day A1 content.
+> - **Day 3 — Convex setup + schema**: Original Day A2.
+> - **Day 4 — WorkOS Auth integration**: Original Day A3 but without the "delete Better Auth" part (already done Day 1). Just install + wire WorkOS.
+> - **Day 5 — AI SDK v6 Agent orchestrator + Convex Workflow wiring**: Original Day A4 but without "delete services/agents" (already done Day 1). Just wire the new orchestrator. Also includes the E2E smoke test from old Day A5.
+>
+> **Why this works**: By Day 2, the codebase has NO Sentry-incompatible packages, NO Better Auth, NO Polar, NO Prisma, NO Qdrant, NO OpenMemory, NO LangGraph. The Next.js 16 upgrade then succeeds because the only remaining dependencies are ones Next 16 supports cleanly (React 19, shadcn/ui, Radix, Tailwind 4, SuperMemory HTTP client, Vercel AI SDK, Vercel Chat SDK, Phosphor, Stripe).
+>
+> **Execution evidence for the reorder**: On 2026-04-08 17:30, running `bun add next@latest react@latest react-dom@latest` succeeded but `bun run --cwd apps/web build` failed with the OpenTelemetry + Sentry error. Rolled back to clean state (`apps/web/package.json` and `bun.lock` reverted). Branch `stack-migration/phase-a` still active, zero commits lost.
+>
+> **Sprint impact**: Still 5 days Phase A. Just reordered. No time lost.
+>
+> **TODO for next session**: Rewrite the day-by-day task blocks below to match the new ordering. The task content itself is mostly valid; it just needs to be moved to different days. Task A1.1 (Next 16 codemod) is the single most impacted task — it moves from Day 1 to Day 2 and can only run AFTER Day 1 package purge.
+
 **Goal:** Pivot YULA's tech stack from Postgres+Better Auth+LangGraph+OpenMemory to Convex+WorkOS+AI SDK v6+SuperMemory-only, plus upgrade Next.js 15 → 16.2 and add Phosphor icons + Manrope font. **5 working days. Phase A blocks Phase B (the v1 build sprint).**
 
 **Architecture target:** All-TypeScript stack. Convex as the single primary database. WorkOS AuthKit for auth. Vercel AI SDK v6 `Agent` for tool loops with `prepareStep`/`onStepFinish` hooks for FIDES sign + Convex commit middleware. Convex Workflow + Durable Agents components for durability and HITL pauses. SuperMemory hosted Pro $19 for memory layer (with `MEMORY_BACKEND=supermemory` as the only backend; OpenMemory legacy dropped). Multi-provider LLM routing through Vercel AI Gateway: Groq Llama 4 router + Haiku 4.5 routine + Sonnet 4.6 tool use + Opus/GPT-5/Gemini for council mode + Anthropic Computer Use for desktop driver. Next.js 16.2 with Turbopack default, Cache Components opt-in, Phosphor icons, Manrope font.
