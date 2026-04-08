@@ -43,9 +43,7 @@ function createSSEEncoder() {
             return encoder.encode(data);
         },
         done: (): Uint8Array => {
-            return encoder.encode('data: [DONE]
-
-');
+            return encoder.encode('data: [DONE]\n\n');
         },
     };
 }
