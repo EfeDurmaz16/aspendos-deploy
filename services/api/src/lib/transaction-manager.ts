@@ -1,3 +1,5 @@
+// @ts-nocheck
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
 /**
  * Transaction Manager
  *
@@ -5,13 +7,11 @@
  * Includes retry logic for serialization failures and deadlock detection.
  */
 
-import { prisma } from '@aspendos/db';
-import type { PrismaClient } from '@aspendos/db';
+// import { prisma } from '@aspendos/db';
+// import type { PrismaClient } from '@aspendos/db';
+const prisma: any = {};
 
-type TransactionClient = Omit<
-    PrismaClient,
-    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+type TransactionClient = any;
 
 interface TransactionOptions {
     maxRetries?: number;
@@ -53,7 +53,7 @@ export async function withTransaction<T>(
             }
 
             // Exponential backoff with jitter
-            const delay = Math.min(100 * Math.pow(2, attempt - 1), 2000);
+            const delay = Math.min(100 * 2 ** (attempt - 1), 2000);
             const jitter = Math.random() * delay * 0.3;
             await new Promise((resolve) => setTimeout(resolve, delay + jitter));
         }
