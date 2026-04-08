@@ -18,6 +18,26 @@
 >
 > Tasks below should produce the same outcomes; only the implementation backend differs. Specific test/code blocks may need editor adjustments to match the new SDKs.
 
+> **🆕 v4 additions (2026-04-07)**: 11 patterns from OpenClaw + Hermes Agent research (see spec §16 and `docs/superpowers/specs/2026-04-07-yula-v1.5-backlog.md`). These slot into existing Phase B days without extending the sprint. When executing tasks below, inject these additions at the specified days:
+>
+> | Day | Addition | Effort | Source |
+> |---|---|---|---|
+> | Day 2 (tool registry) | **Pattern 4**: create `services/api/src/security/dangerous-tools.ts` — centralized denylist array | +1h | OpenClaw |
+> | Day 2 (orchestrator) | **Pattern 3**: two-tier router — pattern-match first (heuristic, $0), Groq LLM fallback for ambiguous | +2h | Hermes |
+> | Day 2 (step middleware) | **Pattern 6**: pre-compaction silent flush turn when context reaches 80% | +2h | OpenClaw |
+> | Day 3 (reference tools) | **Pattern 11**: add `PAC.schedule` tool + `/settings/schedules` page — surface scheduled actions as explicit feature | +1h | Existing PAC made visible |
+> | Day 4-5 (surface adapters) | **Pattern 2**: refactor Vercel Chat SDK integration into ~20 typed slots (`auth`, `outbound`, `approvalCard`, `undoCommand`, `doctor`, `reversibilityBadge`, etc.) — net time SAVED on 4 new surface activations | net 0 (saves time) | OpenClaw |
+> | Day 6 (undo command) | **Pattern 1**: unify PAC with normal chat pipeline — heartbeats become silent filtered messages through `runToolStep`, not separate code path | +0.5d | OpenClaw |
+> | Day 6 (browser tool) | **Pattern 10 / External content defense**: wrap Steel.dev browser output + email body output with `<external_content trust_level="untrusted">` markers and injection reminder | +4h | OpenClaw `security/external-content.ts` |
+> | Day 6 (surfaces) | **Pattern 7**: minimal `/doctor` slash command showing auth/webhook/rate-limit health per surface | +2h | OpenClaw `ChannelDoctorAdapter` |
+> | Day 8 (landing + pricing) | **Pattern 8**: cost dashboard at `/settings/usage` — real-time token counts, tier caps, BYOK management | +2h | Hermes token-bloat UX lesson |
+> | Day 14 (pre-launch) | **Pattern 9**: USPTO trademark audit for "YULA" and "Aspendos" (class 9 software, class 42 SaaS) + domain availability check | +2h | OpenClaw rename saga lesson |
+> | Day 14 (pre-launch) | **§12 Risks update**: add 7 new anti-pattern rows from competitor failure modes | +30min | OpenClaw + Hermes bugs |
+>
+> Additionally: **Phase A Day A1 already uses Pattern 12 `shadcn apply`** as an internal tool to collapse font/icons/theme setup into one preset+apply command.
+>
+> And: **Prompt-cache stability invariant (Pattern 5)** is enforced in Phase A Day 4 (AI SDK v6 Agent wiring), not Phase B — the `buildCanonicalPayload()` helper with deterministic ordering lives in `services/api/src/orchestrator/payload-builder.ts` from Day 1 of v1 build.
+
 **Goal:** Ship YULA v1 in 10 days — a trustworthy general AI agent on 8 messaging surfaces + Web command center, with the 5-class Reversibility Model (undoable / cancelable_window / compensatable / approval_only / irreversible_blocked) as the product spine. Every action FIDES-signed, AGIT-committed, class-badged, and surfaced to the user before execution.
 
 **Architecture:** Layered stack. Chat SDK bot router + Web AI route funnel into a single agent orchestrator. Every tool call passes through: (1) reversibility classification → (2) FIDES sign → (3) AGIT pre-commit → (4) execution → (5) AGIT post-commit. The tool registry declares a reversibility class + rollback strategy + human explanation per tool. Approval cards on every surface use a 4-color badge system. Web `/timeline` is the rewind + audit console. E2B is the sandbox layer, Steel.dev the browser, Anthropic Computer Use API the desktop driver.

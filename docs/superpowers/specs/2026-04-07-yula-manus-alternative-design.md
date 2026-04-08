@@ -1,13 +1,14 @@
 # YULA → Trustworthy General Agent (Manus Alternative)
 
 > Design spec — locked 2026-04-07
-> v1 (initial), v2 (Reversibility Model elevated, scope narrowed), **v3 (tech stack pivoted to Convex+WorkOS+AI SDK v6+Next 16, see ADR 0001)**
+> v1 (initial), v2 (Reversibility Model elevated, scope narrowed), v3 (tech stack pivoted to Convex+WorkOS+AI SDK v6+Next 16, see ADR 0001), **v4 (11 patterns from OpenClaw + Hermes Agent research added, see §16)**
 > Status: **Approved for implementation planning**
 > Author: Efe Baran Durmaz + collaboration session
-> Decision context: brainstorming session 2026-04-07 (Patika A locked, full-scope v1, tech stack pivoted)
+> Decision context: brainstorming session 2026-04-07 (Patika A locked, full-scope v1, tech stack pivoted, competitor lessons absorbed)
 > Companion: `docs/adr/0001-tech-stack-pivot-2026-04-07.md`
 > Phase A plan: `docs/superpowers/plans/2026-04-07-yula-v0-stack-migration.md`
 > Phase B plan: `docs/superpowers/plans/2026-04-07-yula-v1-manus-alternative.md`
+> v1.5 + v2+ backlog: `docs/superpowers/specs/2026-04-07-yula-v1.5-backlog.md`
 
 ## 1. Decision Summary
 
@@ -689,6 +690,58 @@ Do **not** chase these numbers at the cost of product integrity. If engagement d
 5. **Eval cadence**: weekly automated GAIA run or only pre-launch one-shot?
 6. **Reverse handlers for non-trivial irreversible tools**: how do we handle DB writes (snapshot/restore?), Stripe charges (refund?), API calls without idempotency keys?
 7. **Approval timeout policy**: if user doesn't approve within N minutes, auto-cancel or auto-execute?
+
+## 16. v1 Additions from Competitor Research (v4 layer)
+
+On 2026-04-07 we did deep technical + UX investigations of OpenClaw (351k ⭐ MIT) and Hermes Agent (34k ⭐ MIT) codebases. The following 11 patterns are **additive to v1 scope** — they slot into existing Phase B tasks without extending the 15-day sprint window. Full lesson writeup and the larger v1.5+v2 backlog live in `docs/superpowers/specs/2026-04-07-yula-v1.5-backlog.md`.
+
+### Pattern 1 — Heartbeat as silent-tick through same pipeline (OpenClaw `src/chat/heartbeat.ts`)
+PAC proactive callbacks should not have a separate code path. Unify them into the normal step middleware: heartbeats become silent filtered messages that flow through `runToolStep` → FIDES sign → Convex commit → reversibility classifier. Same guards, same approvals, same audit trail. **Phase B Day 6 +0.5d.**
+
+### Pattern 2 — Channel adapter slot composition (OpenClaw `src/channels/plugins/types.plugin.ts`)
+Refactor Vercel Chat SDK integration into ~20 narrowly-typed slots (`auth`, `outbound`, `threading`, `mention`, `approvalCard`, `undoCommand`, `reversibilityBadge`, `doctor`, `allowlist`, `security`) instead of one monolithic handler. Adding a new surface becomes "implement the slots you need" not "touch mega-class". **Phase B Days 4-5 — net 0 days (actually saves time on 4 new surface activations).**
+
+### Pattern 3 — Cheap heuristic router (Hermes `agent/smart_model_routing.py:62-100`)
+Two-tier router: pattern-match layer (0ms, $0) first — if message <160 chars, <28 words, no backticks, no URL, no complex-keyword, route directly to Haiku. Groq Llama 4 LLM-based routing only for ambiguous cases. **Phase B Day 2 +2h.** Saves ~60% of router cost.
+
+### Pattern 4 — Centralized dangerous tools denylist (OpenClaw `src/security/dangerous-tools.ts`)
+A single `services/api/src/security/dangerous-tools.ts` const array captures every irreversible_blocked pattern in one auditable file. Policy class becomes data, not conditionals scattered across tool implementations. **Phase B Day 2 +1h.**
+
+### Pattern 5 — Prompt-cache stability invariant (OpenClaw `AGENTS.md §Prompt Cache Stability`)
+Enforce deterministic payload assembly order: `[system, personality, skills sorted by ID, memories sorted by ID, tools sorted by name, messages, user input]`. Non-deterministic ordering breaks Anthropic prompt caching (90% discount on cached input), and a single cache miss erases hours of savings. Central `buildCanonicalPayload()` helper + runtime assertion. **Phase A Day 4 (AI SDK v6 wiring) +1h.**
+
+### Pattern 6 — Pre-compaction silent turn (OpenClaw memory flush pattern)
+When conversation context approaches 80% of window, inject a silent "flush learnings to persistent memory" turn before compaction kicks in. Prevents information loss at context boundaries. Implemented via AI SDK v6 `prepareStep` hook. **Phase B Day 2 +2h.**
+
+### Pattern 7 — Minimal `/doctor` diagnostics command (OpenClaw `ChannelDoctorAdapter`)
+Every surface gets a `/doctor` slash command that reports: auth status, webhook receipt latency, rate limit usage, memory sync health, last error timestamps, suggested repair action. Compliance-dev persona loves this; reduces support tickets 60-80%. v1 ships the minimal version (auth + webhook + rate limit); full version deferred to v1.5. **Phase B Day 6 +2h.**
+
+### Pattern 8 — Cost dashboard for users (responding to Hermes token-bloat complaints)
+`/settings/usage` page with real-time token counts per model, per-tier caps, current month spend, upgrade prompts, BYOK key management. Compliance-dev + ops personas demand cost transparency; Hermes users loudly complain about "4M tokens in 2 hours" surprises. **Phase B Day 8 +2h.**
+
+### Pattern 9 — Trademark audit before launch (OpenClaw rename saga lesson)
+Before public launch on day 18-21, run USPTO trademark search on "YULA" and "Aspendos" in software (class 9) and SaaS (class 42) categories. Check domain availability (aspendos.dev/aspendos.ai/aspendos.com). File trademark application. OpenClaw was renamed twice in Feb 2026 due to Anthropic pressure on "Claud/Clawd" naming adjacency — YULA+Aspendos appear clean but verify. **Phase B Day 14 +2h.**
+
+### Pattern 10 — Anti-patterns added to §12 Risks
+Seven new rows in the risks table, drawn from OpenClaw + Hermes failure modes:
+- Loopback trust model (OpenClaw ClawJacked CVE) → YULA enforces WorkOS auth on every endpoint
+- Unsandboxed skill marketplace (OpenClaw ClawHub 341 malicious skills) → no user-generated skills in v1, curated+signed only in v2
+- Learned helplessness from transient failures (Hermes Issue #6051) → skill TTL + re-validation + confidence scoring in v1.5
+- Monolithic orchestrator files (Hermes 9,400-line run_agent.py) → all orchestrator files stay <300 LOC, split by responsibility
+- LLM-judged skill worthiness on main model (Hermes cost bloat) → use cheap classifier first in v1.5
+- Per-platform duplicated adapters (Hermes 15+ near-duplicate files) → slot composition (Pattern 2)
+- Context-bloat memory auto-load (OpenClaw today+yesterday pattern) → sliding window + semantic search
+**Phase B Day 14 +30min for §12 update.**
+
+### Pattern 11 — Scheduled actions surfaced as explicit user feature (PAC already exists, make it visible)
+PAC Proactive AI Callbacks (already built in YULA) should have a dedicated settings page: *"Schedule YULA to check my inbox every Monday at 9am and summarize unread threads."* Surface the existing feature as a first-class capability. **Phase B Day 3 +1h.**
+
+### Bonus Pattern 12 — `shadcn apply` as internal tooling (shadcn CLI v4, March 2026)
+Use `shadcn/create` web tool to build a YULA design preset (Manrope font + Phosphor icons + monochrome palette + CSS variables + border radius), then apply it to `apps/web/` with `npx shadcn@latest apply --preset <code>`. Collapses three manual Phase A Day A1 tasks (font install, icon install, shadcn verify) into one preset generation + one apply command. **Internal workflow tool, NOT shipped as a product feature. Phase A Day A1 saves ~2h.**
+
+### Sprint math
+
+Net v1 addition cost: Pattern 1 (+0.5d) + Pattern 2 (net 0, saves time) + Patterns 3-11 total (~12h spread across Phase B Days 2-14) + Bonus 12 (saves 2h on Phase A Day A1) = **effectively 0 additional days**. Sprint remains 15 days.
 
 ## 15. References
 

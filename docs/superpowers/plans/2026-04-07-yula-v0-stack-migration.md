@@ -114,85 +114,119 @@ git add apps/web/proxy.ts apps/web/next.config.ts
 git commit -m "chore(web): migrate middleware.ts → proxy.ts for Next 16"
 ```
 
-### Task A1.3: Add Manrope font
+### Task A1.3: Design the YULA design system on shadcn/create
 
 **Files:**
-- Modify: `apps/web/app/layout.tsx`
-- Modify: `apps/web/app/globals.css`
+- None (out-of-repo: https://ui.shadcn.com/create — web tool live preview)
 
-- [ ] **Step 1: Import Manrope from next/font/google**
+**Context**: The shadcn CLI v4 (March 2026) introduced `shadcn apply` and the `shadcn/create` web tool — a single alphanumeric preset code now packs **fonts + icons + colors + CSS variables + border radius + component base** and can be applied to an existing project with one command. We use this to collapse the three tasks "add Manrope font / install Phosphor icons / verify shadcn+Tailwind 4" into one preset generation + one apply command. This is an internal workflow tool, not a product feature we ship.
 
-In `apps/web/app/layout.tsx`:
+- [ ] **Step 1: Open shadcn/create in the browser**
 
-```tsx
-import { Manrope } from 'next/font/google';
+Visit: https://ui.shadcn.com/create
+You will land on a live-preview design system editor.
 
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-manrope',
-  display: 'swap',
-});
+- [ ] **Step 2: Configure the YULA preset**
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en" className={manrope.variable}>
-      <body className="font-sans">{children}</body>
-    </html>
-  );
-}
-```
+Set these values (match the existing monochrome theme from recent commits):
 
-- [ ] **Step 2: Wire font-sans to Manrope in tailwind config**
+| Field | Value |
+|---|---|
+| Style base | New York (or whatever existing `components.json` uses) |
+| Base color | Neutral / slate (pick whatever matches the current web dark monochrome vibe) |
+| Primary | #0a0a0a (near-black) |
+| Accent | #e5e5e5 (near-white) |
+| Border radius | 0.5rem (medium — per existing shadcn components) |
+| Font — sans | **Manrope** |
+| Font — mono | Geist Mono (current) or JetBrains Mono |
+| Icon library | **Phosphor** (the CLI lists this as a built-in option) |
+| Dark mode | enabled (CSS variables) |
 
-In `apps/web/tailwind.config.ts` (or theme extension if using Tailwind 4 CSS-only config):
+Use the live preview to check: buttons, inputs, cards, dialogs all render cleanly with Manrope + Phosphor + the chosen monochrome palette.
 
-```ts
-extend: {
-  fontFamily: {
-    sans: ['var(--font-manrope)', 'system-ui', 'sans-serif'],
-  },
-},
-```
+- [ ] **Step 3: Grab the preset code**
 
-- [ ] **Step 3: Visual smoke test**
-
-Run dev server, verify all text on `/`, `/chat`, `/timeline` renders in Manrope.
-
-- [ ] **Step 4: Commit**
+shadcn/create emits a short alphanumeric code (e.g. `YuLADS1` or similar). Copy it. Record it in `apps/web/.yula-preset-code` (gitignored or committed as operational metadata):
 
 ```bash
-git add apps/web/app/layout.tsx apps/web/app/globals.css apps/web/tailwind.config.ts
-git commit -m "feat(web): add Manrope font as primary sans-serif"
+echo "YuLADS1" > apps/web/.yula-preset-code
 ```
 
-### Task A1.4: Install Phosphor icons + remove Hugeicons
+- [ ] **Step 4: Commit the preset code reference**
+
+```bash
+git add apps/web/.yula-preset-code
+git commit -m "chore(web): record YULA design preset code (shadcn/create)"
+```
+
+### Task A1.4: Apply the YULA preset to apps/web
 
 **Files:**
-- Modify: `apps/web/package.json`
+- Auto-modified by `shadcn apply`: `apps/web/components.json`, `apps/web/app/globals.css` (or wherever Tailwind 4 theme lives), `apps/web/app/layout.tsx` (font import), `apps/web/components/ui/*` (if components need re-install), `apps/web/package.json` (dep changes for Phosphor)
 
-- [ ] **Step 1: Install Phosphor**
+- [ ] **Step 1: Run shadcn apply**
 
 ```bash
 cd apps/web
-bun add @phosphor-icons/react
+npx shadcn@latest apply --preset $(cat .yula-preset-code) --yes
 ```
 
-- [ ] **Step 2: Remove Hugeicons if present**
+Expected: CLI downloads the preset config, updates CSS variables, installs Manrope font + Phosphor icon package, updates `components.json`, and updates relevant component imports.
+
+If the CLI prompts "merge, reinstall, or skip" for existing components, choose **merge** (keep user-customized components, only update tokens/theme/CSS vars).
+
+- [ ] **Step 2: Verify dev build still works**
 
 ```bash
-bun remove hugeicons-react @hugeicons/react
+bun install  # pick up any new deps Phosphor added
+bun run build
+bun run dev
 ```
 
-- [ ] **Step 3: Find and replace icon imports**
+Expected: clean build, dev server runs, `/` and `/chat` render in Manrope with the monochrome palette.
 
-Use grep to find existing icon imports:
+- [ ] **Step 3: Commit the auto-applied changes**
 
 ```bash
-grep -r "from 'hugeicons-react'" apps/web/ apps/web/src/ 2>/dev/null
-grep -r "from '@hugeicons" apps/web/ apps/web/src/ 2>/dev/null
+git add apps/web/
+git commit -m "chore(web): apply YULA design preset (Manrope + Phosphor + monochrome theme)"
 ```
 
-For each match, rewrite to Phosphor equivalents:
+### Task A1.5: Replace remaining Hugeicons imports with Phosphor
+
+**Files:**
+- Modify: anywhere in `apps/web/src/` that imports from `hugeicons-react`, `@hugeicons/react`, or `@hugeicons/core-free-icons`
+
+**Note**: `shadcn apply` installs Phosphor as a dep but does NOT rewrite your existing `import X from 'hugeicons-react'` lines — those are application code, not design-system config. You do the sweep manually.
+
+- [ ] **Step 1: Find existing Hugeicons imports**
+
+```bash
+grep -r "from 'hugeicons-react'" apps/web/src/ 2>/dev/null
+grep -r "from '@hugeicons" apps/web/src/ 2>/dev/null
+```
+
+- [ ] **Step 2: Rewrite each import to Phosphor equivalents**
+
+Phosphor naming: PascalCase, no `Icon` suffix. Six weights available via `weight="thin|light|regular|bold|fill|duotone"`.
+
+Common mapping:
+
+| Hugeicons | Phosphor |
+|---|---|
+| `ArrowLeftIcon` | `ArrowLeft` |
+| `CheckIcon` | `Check` |
+| `CrossIcon` | `X` |
+| `Loading03Icon` | `CircleNotch` (with `className="animate-spin"`) |
+| `Settings01Icon` | `Gear` |
+| `UserIcon` | `User` |
+| `ChatIcon` | `ChatCircle` |
+| `PlusIcon` | `Plus` |
+| `TrashIcon` | `Trash` |
+| `EyeIcon` | `Eye` |
+| `EyeOffIcon` | `EyeSlash` |
+
+For unknown icons, browse https://phosphoricons.com/ and pick the closest match.
 
 ```tsx
 // Before
@@ -202,50 +236,57 @@ import { ArrowLeftIcon, CheckIcon } from 'hugeicons-react';
 import { ArrowLeft, Check } from '@phosphor-icons/react';
 ```
 
-Phosphor naming: PascalCase, no `Icon` suffix. Six weights available: `weight="thin|light|regular|bold|fill|duotone"`.
+- [ ] **Step 3: Remove old Hugeicons package**
 
-- [ ] **Step 4: Visual smoke test**
+```bash
+bun remove hugeicons-react @hugeicons/react @hugeicons/core-free-icons 2>/dev/null || true
+```
 
-Run dev server, navigate through main pages, ensure no missing icons.
+- [ ] **Step 4: Build verify + visual smoke test**
+
+```bash
+bun run build
+bun run dev
+```
+
+Expected: clean build, navigate all main pages (`/`, `/chat`, `/timeline`, `/billing`, `/settings`, `/agent-log`), verify no missing icons, no broken layouts.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/web/package.json apps/web/bun.lock apps/web/src/
-git commit -m "chore(web): switch from Hugeicons to Phosphor icons"
+git add -A apps/web/
+git commit -m "chore(web): replace Hugeicons imports with Phosphor across all pages"
 ```
 
-### Task A1.5: Verify shadcn/ui + Tailwind 4 still works after upgrade
+### Task A1.6: Final Day A1 sanity check
 
-**Files:**
-- Possibly: `components.json` (shadcn config)
-
-- [ ] **Step 1: Re-run shadcn init if needed**
+- [ ] **Step 1: Verify everything Day A1 was supposed to ship is in place**
 
 ```bash
-cd apps/web
-bunx shadcn@latest init
+# Next 16 installed
+cat apps/web/package.json | grep '"next":'  # expect 16.x
+
+# proxy.ts exists (no middleware.ts)
+ls apps/web/proxy.ts 2>/dev/null && echo "proxy.ts OK"
+! ls apps/web/middleware.ts 2>/dev/null && echo "middleware.ts removed OK"
+
+# Manrope font is imported in layout.tsx
+grep -l "Manrope" apps/web/app/layout.tsx
+
+# Phosphor is a dep
+cat apps/web/package.json | grep '@phosphor-icons/react'
+
+# Hugeicons is gone
+! cat apps/web/package.json | grep hugeicons && echo "Hugeicons removed OK"
+
+# shadcn preset code recorded
+cat apps/web/.yula-preset-code
 ```
 
-Choose: New York style, Slate base color (or your project's), CSS variables yes, RSC yes.
-
-- [ ] **Step 2: Test re-installing one component**
+- [ ] **Step 2: Tag Day A1 as complete**
 
 ```bash
-bunx shadcn@latest add button
-```
-
-Verify the button component installs cleanly to `apps/web/src/components/ui/button.tsx`.
-
-- [ ] **Step 3: Visual smoke test**
-
-Render a button on the homepage, verify variant/size/style work.
-
-- [ ] **Step 4: Commit if any config changed**
-
-```bash
-git add apps/web/components.json apps/web/src/components/ui/
-git commit -m "chore(web): verify shadcn/ui works on Next 16 + Tailwind 4"
+git tag phase-a-day-1-complete
 ```
 
 ---
