@@ -65,7 +65,7 @@ function buildCSP(nonce: string): string {
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
         "font-src 'self' data:",
-        `connect-src 'self' ${apiUrl} https://yula.dev https://www.yula.dev https://onesignal.com https://api.onesignal.com wss://onesignal.com https://*.sentry.io https://*.qdrant.io wss://*.qdrant.io`,
+        `connect-src 'self' ${apiUrl} https://yula.dev https://www.yula.dev https://onesignal.com https://api.onesignal.com wss://onesignal.com`,
         "frame-src 'self'",
         "worker-src 'self' blob:",
         "object-src 'none'",

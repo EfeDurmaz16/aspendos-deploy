@@ -8,7 +8,7 @@
         "packages/*"
     ],
     "scripts": {
-        "postinstall": "ln -sf ../@biomejs/biome/bin/biome node_modules/.bin/biome 2>/dev/null; ln -sf ../turbo/bin/turbo node_modules/.bin/turbo 2>/dev/null; rm -rf node_modules/.bun/@opentelemetry+api@1.9.0 2>/dev/null; mkdir -p node_modules/.bun/@opentelemetry+api@1.9.0/node_modules && ln -sf $(pwd)/node_modules/@opentelemetry node_modules/.bun/@opentelemetry+api@1.9.0/node_modules/@opentelemetry 2>/dev/null; ln -sf $(pwd)/node_modules/@opentelemetry/api/build/src node_modules/.bun/@sentry+node@10.45.0/node_modules/@opentelemetry/api/build/src 2>/dev/null; true",
+        "postinstall": "ln -sf ../@biomejs/biome/bin/biome node_modules/.bin/biome 2>/dev/null; ln -sf ../turbo/bin/turbo node_modules/.bin/turbo 2>/dev/null; true",
         "dev": "turbo run dev --filter=@aspendos/web --filter=@aspendos/api",
         "dev:all": "turbo run dev",
         "dev:web": "turbo run dev --filter=@aspendos/web",
@@ -20,8 +20,6 @@
         "check:fix": "biome check --write .",
         "bench:web-dev": "bash scripts/benchmark_web_dev.sh",
         "release:ready": "bash ./scripts/check_release_readiness.sh",
-        "db:generate": "turbo run db:generate --filter=@aspendos/db",
-        "db:push": "turbo run db:push --filter=@aspendos/db",
         "prepare": "husky"
     },
     "devDependencies": {
@@ -35,12 +33,9 @@
             "biome check --write --no-errors-on-unmatched"
         ]
     },
-    "dependencies": {
-        "@opentelemetry/api": "^1.9.1"
-    },
+    "dependencies": {},
     "overrides": {
         "ai": "^6.0.49",
-        "@sentry/core": "^10.38.0",
         "lucide-react": "^0.562.0"
     }
 }

@@ -23,7 +23,6 @@
         "@chat-adapter/whatsapp": "^4.20.2",
         "@google/genai": "^1.37.0",
         "@hono/node-server": "^1.13.7",
-        "@sentry/node": "^10.38.0",
         "@supermemory/tools": "^1.4.0",
         "@upstash/ratelimit": "^2.0.8",
         "@upstash/redis": "^1.36.2",

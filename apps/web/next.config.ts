@@ -1,4 +1,3 @@
-import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
 // Note: Serwist PWA is disabled in development
@@ -30,8 +29,9 @@ const nextConfig: NextConfig = {
         formats: ['image/avif', 'image/webp'],
     },
 
-    // Prisma 7 + pg adapter must be external (not bundled by Turbopack)
-    serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg', '@opentelemetry/api'],
+    // OpenTelemetry must be external (not bundled by Turbopack)
+    // Prisma + pg removed in Phase A Day 1 package purge (commit f3a9e42)
+    serverExternalPackages: ['@opentelemetry/api'],
 
     // Experimental features
     experimental: {
@@ -86,21 +86,8 @@ const nextConfig: NextConfig = {
     },
 };
 
-const sentryWebpackPluginOptions = {
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT,
-    authToken: process.env.SENTRY_AUTH_TOKEN,
-    silent: !process.env.CI,
-    dryRun: process.env.NODE_ENV !== 'production',
-    hideSourceMaps: true,
-    webpack: {
-        treeshake: {
-            removeDebugLogging: true,
-        },
-    },
-};
-
-// Skip Sentry webpack wrapping in dev - saves ~30s compile time
-export default process.env.NODE_ENV === 'production'
-    ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
-    : nextConfig;
+// Sentry removed in Phase A Day 0 (Tier 1.1) — @sentry/nextjs blocked Next.js 16
+// upgrade via OpenTelemetry version conflicts. Day 14 task 14.6 will re-evaluate
+// adding back if @sentry/nextjs@10.45.0+ is Next 16 compatible. See plan at
+// ~/.claude/plans/golden-spinning-stallman.md
+export default nextConfig;
