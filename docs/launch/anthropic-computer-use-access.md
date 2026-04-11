@@ -1,35 +1,33 @@
-# Anthropic Computer Use Access — REQUIRED for Day 10
+# Anthropic Computer Use — Day 10 Integration Reference
 
-> **Status**: NOT YET REQUESTED — human action required
-> **Lead time**: 3-7 business days
-> **Blocks**: Day 10 (Phase B Day 5 — Capabilities) of the 15-day v5 push sprint
-> **Plan**: `~/.claude/plans/golden-spinning-stallman.md` task P1 + Day 0.7
+> **Status**: OPEN AVAILABILITY (no access request needed — public beta)
+> **Blocks**: None. Day 10 unblocked by default.
+> **Plan**: `~/.claude/plans/golden-spinning-stallman.md` Day 10 (cap-computer-use)
+> **Docs**: https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool
+> **Reference impl**: https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo
 
-## Why this matters
+## Status update (verified 2026-04-11)
 
-Day 10 of the v5 sprint integrates Anthropic Computer Use API as a Pro+ tier feature. The API is gated behind a public beta access request. Without access by Day 10, the integration falls back to "recorded demo only" mode (per plan risk register).
+The current Anthropic docs do **NOT** mention an access request form. Computer Use is a public beta gated only by the `anthropic-beta` header — any account with an API key can use it. The audit's "P1 prerequisite with 3-7 day lead time" was stale; we can proceed on Day 10 without pre-application.
 
-The 3-7 day lead time means **the request must be submitted on Day 0** (today) to land in time. Submitting later compresses the buffer or kills the feature.
+## Integration facts
 
-## Action
+- **Beta header**: `anthropic-beta: computer-use-2025-11-24`
+- **Tool type**: `computer_20251124`
+- **Supported models**: Claude Opus 4.6, Sonnet 4.6, Opus 4.5
+- **Token overhead**: ~735 tokens/tool definition + 466-499 tokens system prompt
+- **Screenshot scaling**: max 1568px per Anthropic guidance (keep it small to save tokens)
+- **New `zoom` action**: requires `enable_zoom: true` in tool config
+- **ZDR eligible**: yes, no data retention if your account has ZDR enabled
 
-1. Visit https://docs.claude.com/en/docs/build-with-claude/computer-use
-2. Click "Request access" or follow the access form link
-3. Use the Anthropic console account associated with the YULA Anthropic API key
-4. Application context (paste this in the request form):
+## Day 10 implementation
 
-> YULA is a deterministic AI agent product (Manus alternative) launching in 15 days. We use Anthropic Sonnet 4.6 + the computer-use beta to drive a virtual desktop in an E2B custom template (based on anthropic-quickstarts/computer-use-demo). The feature is gated to our Pro and Team paid tiers ($60 and $180/seat respectively). Every action through the agent loop is cryptographically signed (Ed25519 via FIDES) and committed to a content-addressed audit log (AGIT) before execution, with reversibility class metadata visible to the user on every approval card. We expect ~50-200 Pro+ tier users in the first 30 days, with ~20% running computer-use tasks (small-scale, 5-10 actions per session, max 1568px screenshots scaled per Anthropic guidance). Compliance posture: no logging of screenshot contents beyond the user's own audit timeline. Production at https://yula.dev. GitHub org github.com/aspendos.
+1. Build E2B custom template at `infra/e2b-templates/computer-use/Dockerfile` based on `anthropic-quickstarts/computer-use-demo`
+2. Create `services/api/src/tools/computer-use.ts` wrapping the agent loop with the beta header
+3. Gate to Pro+ tiers via `services/api/src/lib/tier-gate.ts`
+4. Every action flows through `runToolStep()` → FIDES sign → AGIT pre-commit → execute → AGIT post-commit (same as every other tool)
+5. Reversibility class: `approval_only` for any destructive desktop action (file delete, form submit with payment, etc.), `compensatable` for benign navigation
 
-5. **Mark this file complete** by editing the Status line to `REQUESTED ON YYYY-MM-DD` once submitted.
+## Risk register downgrade
 
-## Fallback if access denied or delayed past Day 13
-
-Per plan risk register: Day 10 task `cap-computer-use` falls back to a recorded demo using the existing `anthropic-quickstarts/computer-use-demo` Docker image running in an E2B sandbox locally — **not** behind a real Anthropic API call. The demo video on the landing page would still be authentic, but Pro+ users couldn't run new computer-use tasks until access is granted. Day 13 task 13.4 records the fallback demo.
-
-## Tracking
-
-Once submitted:
-- Update Status line above with date
-- Note the application reference number (Anthropic typically gives one)
-- Watch for response email to your Anthropic console account email
-- If granted, set `ANTHROPIC_COMPUTER_USE_ENABLED=true` in production env vars on Day 10
+Previous risk "Anthropic Computer Use access denied or delayed past Day 10" → **REMOVED**. Computer Use is open. Day 13 fallback recorded demo is no longer needed as a contingency, only as marketing asset.
