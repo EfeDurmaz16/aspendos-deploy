@@ -1,23 +1,24 @@
-# YULA → Trustworthy General Agent (Manus Alternative)
+# YULA → Deterministic AI Agents That Prove What — and Why (Manus Alternative)
 
 > Design spec — locked 2026-04-07
-> v1 (initial), v2 (Reversibility Model elevated, scope narrowed), v3 (tech stack pivoted to Convex+WorkOS+AI SDK v6+Next 16, see ADR 0001), **v4 (11 patterns from OpenClaw + Hermes Agent research added, see §16)**
+> v1 (initial), v2 (Reversibility Model elevated, scope narrowed), v3 (tech stack pivoted to Convex+WorkOS+AI SDK v6+Next 16, see ADR 0001), v4 (11 patterns from OpenClaw + Hermes Agent research added, see §16), **v5 (positioning flipped from "trustworthy/locked-down" framing to "deterministic + provable" after Garry Tan 'Free the Claw' signal — see §17)**
 > Status: **Approved for implementation planning**
 > Author: Efe Baran Durmaz + collaboration session
-> Decision context: brainstorming session 2026-04-07 (Patika A locked, full-scope v1, tech stack pivoted, competitor lessons absorbed)
+> Decision context: brainstorming session 2026-04-07 (Patika A locked, full-scope v1, tech stack pivoted, competitor lessons absorbed, positioning re-anchored 2026-04-11)
 > Companion: `docs/adr/0001-tech-stack-pivot-2026-04-07.md`
 > Phase A plan: `docs/superpowers/plans/2026-04-07-yula-v0-stack-migration.md`
 > Phase B plan: `docs/superpowers/plans/2026-04-07-yula-v1-manus-alternative.md`
 > v1.5 + v2+ backlog: `docs/superpowers/specs/2026-04-07-yula-v1.5-backlog.md`
+> Landing prototype: Paper canvas artboard `LX-0` "YULA — Landing"
 
 ## 1. Decision Summary
 
-YULA pivots from "consumer AI chat with memory" to **"a trustworthy AI agent for Slack and web — every action is signed, logged, approval-aware, and reversible when supported. Built on Aspendos, the open agent OS."**
+YULA pivots from "consumer AI chat with memory" to **"deterministic AI agents that prove what they did — and why. Every action is structured, signed, and reversible. Same task, same outcome, same proof — every time. Built on Aspendos, the open agent OS."**
 
 The product launches on **Slack + Web** (with Telegram as a fast-follow within 14 days), and the existing web app is repositioned as a **command center + audit + rewind console**, not a generic chat UI. Three concrete differentiators against Manus, Genspark, Devin, Operator, OpenClaw, and Hermes Agent:
 
-1. **Every action is FIDES-signed** (Ed25519 DID + RFC 9421 HTTP signatures) — cryptographically verifiable audit log
-2. **Every action has a declared reversibility class** (see §5 Reversibility Model) and a transparent rollback strategy surfaced to the user *before* execution
+1. **Every action is FIDES-signed** (Ed25519 DID + RFC 9421 HTTP signatures) — a stranger with a public key can verify what YULA did **and why**
+2. **Every action has a declared reversibility class** (see §5 Reversibility Model) and a transparent rollback strategy surfaced to the user *before* execution. YULA never moralizes — never says "I cannot help with that." `irreversible_blocked` constrains *agent autonomy*, never *user override*.
 3. **Built on open infrastructure** — FIDES, AGIT, OAPS, OSP, Switchboard are MIT/Apache user-authored projects, openly published, providing a defensible moat that takes years to replicate
 
 ## 2. Context and Motivation
@@ -742,6 +743,58 @@ Use `shadcn/create` web tool to build a YULA design preset (Manrope font + Phosp
 ### Sprint math
 
 Net v1 addition cost: Pattern 1 (+0.5d) + Pattern 2 (net 0, saves time) + Patterns 3-11 total (~12h spread across Phase B Days 2-14) + Bonus 12 (saves 2h on Phase A Day A1) = **effectively 0 additional days**. Sprint remains 15 days.
+
+## 17. Positioning Pivot — Garry Tan "Free the Claw" Signal (v5)
+
+On 2026-04-11 at 8:21 PM, Y Combinator President Garry Tan tweeted (within 1 hour: ~12,200 views):
+
+> *"The most underrated thing in AI agents right now is: OpenClaw/Hermes Agent is just more free than other locked down AI agents (the standard out-of-box Claude/ChatGPT route). 'Free the Claw' is not a vibe I understood until I tried it. Now that I have it, I don't want to go back."*
+
+Garry Tan is the **exact target persona** for YULA's #1 primary wedge customer (Solo Founder / Indie Hacker, locked in `project_customer_personas.md`). His public framing surfaced a critical risk in the v4 spec headline.
+
+### The conflict
+
+The pre-pivot v4 headline was *"a trustworthy AI agent for Slack and web — every action is signed, logged, approval-aware, and reversible when supported."* The phrases **"trustworthy"**, **"approval-aware"**, and **"reversible"** read as **locked-down** to the indie hacker audience — exactly the framing Garry Tan was rejecting. YULA risked being mis-categorized as "another ChatGPT-locked product" before users even tried it.
+
+This was a marketing crisis, not a product crisis. The mechanics were fine — the language was wrong.
+
+### The product distinction (made explicit in v5)
+
+YULA's `irreversible_blocked` reversibility class **constrains agent autonomy, never user override**. ChatGPT and Claude reject prompts based on content moderation. YULA never moralizes. YULA never says "I cannot help with that." When a user explicitly says *"yes, run DROP TABLE"* or *"yes, charge $15,000"*, YULA executes. The blocks only fire when the agent autonomously chooses something irreversible without user direction — and even then, the user can override.
+
+This makes YULA **more permissive than ChatGPT/Claude** while being **more accountable than OpenClaw/Hermes**. The v4 marketing language hid this. The v5 language leads with it.
+
+### v5 positioning (locked 2026-04-11)
+
+**New headline**: *"Deterministic AI agents that prove what they did. And why."*
+
+**New subline**: *"Every action is structured, signed, and reversible. Same task, same outcome, same proof — every time. Built on Aspendos, the open agent OS."*
+
+**Key vocabulary swaps** (v4 → v5):
+- *"trustworthy"* → *"deterministic"* / *"structured"*
+- *"approval-aware"* → *"proves what — and why"*
+- *"safe"* / *"governed"* → *"no moralizing, no 'I cannot help with that'"*
+- *"reversible when supported"* → *"reversible — and an undo button you mostly won't need"*
+- *"general agent"* → *"AI agents you can audit AND reproduce"*
+
+**Anti-vocabulary** (do NOT use): trustworthy, governed, safe, restricted, guardrails, limits, compliance-first, enterprise-grade. These trigger locked-down associations in the indie hacker audience.
+
+### What changed (and what didn't)
+
+| Layer | v4 → v5 | Why |
+|---|---|---|
+| Product | Unchanged | Reversibility Model + FIDES + AGIT + 5 reference tools all stay |
+| Spec §1 | Headline rewritten | Lead with deterministic, not trustworthy |
+| Landing page | All 7 sections rewritten | Paper artboard `LX-0` reflects v5 framing |
+| §12 Risks | Add "perceived as locked-down" risk | Mitigated by v5 vocabulary discipline |
+| Launch tweet | New asset drafted | `docs/launch/garry-tan-quote-tweet.md` — quote-tweet @garrytan with "Free the Claw with an undo button" |
+| Pricing | Unchanged | $25/$60/$180 + BYOK still correct |
+| Tech stack | Unchanged | Convex + WorkOS + AI SDK v6 + Next 16 still correct (ADR 0001) |
+| Sprint plan | Unchanged | Phase A package purge complete, Phase A Day 2 next |
+
+### Memory pointer
+
+Full signal interpretation + watch-list lives in `~/.claude/projects/-Users-efebarandurmaz-Desktop-aspendos-deploy/memory/project_strategic_signals.md`.
 
 ## 15. References
 
