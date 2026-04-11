@@ -81,7 +81,7 @@ function buildCSP(nonce: string): string {
  * Only checks cookie presence - actual session validation happens server-side.
  * This avoids importing Prisma/Better Auth which use Node.js APIs unsupported in Edge Runtime.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Generate CSP nonce for every request

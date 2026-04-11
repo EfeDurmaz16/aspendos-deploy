@@ -15,10 +15,7 @@ const nextConfig: NextConfig = {
         ignoreBuildErrors: true,
     },
 
-    // Skip ESLint during build
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
+    // ESLint config removed in Next 16 — use `next lint` CLI separately
 
     // Optimize images
     images: {
@@ -79,7 +76,7 @@ const nextConfig: NextConfig = {
                         key: 'Permissions-Policy',
                         value: 'camera=(), microphone=(self), geolocation=()',
                     },
-                    // CSP is now handled by middleware with per-request nonce (see middleware.ts)
+                    // CSP is now handled by proxy with per-request nonce (see proxy.ts)
                 ],
             },
         ];

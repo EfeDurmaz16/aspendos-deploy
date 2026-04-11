@@ -5,7 +5,7 @@
  */
 
 import { generateText } from 'ai';
-import { groq } from '@/lib/ai/providers';
+import { getRouterModel } from '@/lib/ai/providers';
 import type { PACAnalysisResult } from './types';
 
 // ============================================
@@ -71,7 +71,7 @@ export async function analyzeContextForPAC(
     try {
         // Use Vercel AI SDK generateText with Groq router model
         const result = await generateText({
-            model: groq('llama-3.1-8b-instant'),
+            model: getRouterModel(),
             messages: [
                 { role: 'system', content: PAC_SYSTEM_PROMPT },
                 {

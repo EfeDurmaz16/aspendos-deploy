@@ -6,7 +6,7 @@
  */
 
 import { generateText } from 'ai';
-import { groq } from './providers';
+import { getFallbackRouterModel, getRouterModel } from './providers';
 
 // ============================================
 // ROUTING DECISION TYPES
@@ -97,7 +97,7 @@ export async function routeUserMessage(
     try {
         // Primary: Use fast Groq router
         const result = await generateText({
-            model: groq('llama-3.1-8b-instant'),
+            model: getRouterModel(),
             messages: [
                 { role: 'system', content: ROUTER_SYSTEM_PROMPT },
                 { role: 'user', content: userPrompt },
@@ -151,7 +151,7 @@ export async function routeUserMessage(
         // Fallback: Try alternate Groq model
         try {
             const fallback = await generateText({
-                model: groq('llama3-8b-8192'),
+                model: getFallbackRouterModel(),
                 messages: [
                     { role: 'system', content: ROUTER_SYSTEM_PROMPT },
                     { role: 'user', content: userPrompt },

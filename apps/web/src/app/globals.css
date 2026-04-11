@@ -2,7 +2,7 @@
  * YULA OS Design System v5.0 - Monochrome
  *
  * Philosophy: Pure grayscale. Typography and spacing do the work.
- * Geist throughout. No color accents. Subtle warmth in neutrals.
+ * Manrope throughout. No color accents. Subtle warmth in neutrals.
  */
 
 @import "tailwindcss";
@@ -62,10 +62,10 @@
   --color-persona-prudent: var(--persona-prudent);
   --color-persona-advocate: var(--persona-advocate);
 
-  /* Typography - Geist throughout */
-  --font-sans: var(--font-geist-sans), 'Geist', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: var(--font-geist-sans), 'Geist', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: var(--font-geist-mono), 'Geist Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  /* Typography - Manrope throughout */
+  --font-sans: var(--font-manrope), 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: var(--font-manrope), 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Consolas, monospace;
 
   /* Border Radius */
   --radius-sm: 4px;

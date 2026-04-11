@@ -149,11 +149,11 @@ export const colors = {
 
 export const typography = {
     // ---------------------------------------------------------------------------
-    // Font Families (Geist family from Vercel)
+    // Font Families (Manrope via next/font/google)
     // ---------------------------------------------------------------------------
     fontFamily: {
-        sans: "'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        mono: "'Geist Mono', ui-monospace, 'SF Mono', Consolas, monospace",
+        sans: "'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        mono: "ui-monospace, 'SF Mono', Consolas, monospace",
         fallback: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     },
 

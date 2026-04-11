@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from 'next';
+import { Manrope } from 'next/font/google';
 import { headers } from 'next/headers';
 import Script from 'next/script';
 import './globals.css';
+
+const manrope = Manrope({
+    subsets: ['latin'],
+    variable: '--font-manrope',
+    display: 'swap',
+});
 import { SkipLink } from '@/components/accessibility/skip-link';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
@@ -44,7 +51,7 @@ export default async function RootLayout({
     const nonce = headersList.get('x-nonce') || undefined;
 
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en" suppressHydrationWarning className={manrope.variable}>
             <head>
                 {/* PWA Meta Tags */}
                 <meta name="application-name" content="Yula" />
