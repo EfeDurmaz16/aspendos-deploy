@@ -10,7 +10,7 @@
  *   → streamText() with tools → thread.post(fullStream) → Platform
  */
 
-import { gateway, streamText } from 'ai';
+import { gateway, streamText, stepCountIs } from 'ai';
 import { getSystemPrompt } from './prompt';
 import { getAgentTools } from './tools';
 
@@ -154,6 +154,28 @@ bot.onAction(async (action) => {
 // CORE MESSAGE HANDLER
 // ============================================
 
+async function handleSlashCommand(
+    thread: any,
+    command: string,
+    userId: string,
+): Promise<boolean> {
+    if (command === '/undo') {
+        const { handleUndoCommand } = await import('../audit/undo');
+        const result = await handleUndoCommand(userId);
+        await thread.post(result.success ? `✅ ${result.message}` : `❌ ${result.message}`);
+        return true;
+    }
+
+    if (command === '/doctor') {
+        const { runDoctorChecks, formatDoctorText } = await import('../messaging/cards/doctor');
+        const report = runDoctorChecks();
+        await thread.post(formatDoctorText(report));
+        return true;
+    }
+
+    return false;
+}
+
 async function handleMessage(
     thread: any,
     message: { text: string; user?: { id?: string; name?: string } }
@@ -161,6 +183,13 @@ async function handleMessage(
     try {
         // Resolve YULA user from platform connection
         const userId = await resolveUserId(thread, message);
+
+        // Parse slash commands first
+        const trimmed = message.text.trim();
+        if (trimmed.startsWith('/')) {
+            const handled = await handleSlashCommand(thread, trimmed.split(' ')[0], userId);
+            if (handled) return;
+        }
 
         // Get system prompt with memory context
         const systemPrompt = await getSystemPrompt(userId, message.text);
@@ -179,7 +208,7 @@ async function handleMessage(
             system: systemPrompt,
             messages: [...history, { role: 'user', content: message.text }],
             tools,
-            maxSteps: 5,
+            stopWhen: stepCountIs(5),
             temperature: 0.7,
         });
 
@@ -210,17 +239,8 @@ async function resolveUserId(_thread: any, message: { user?: { id?: string } }):
     if (!message.user?.id) return 'anonymous';
 
     try {
-        // TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-        // const { prisma } = await import('@aspendos/db');
-        const prisma = {} as any;
-        const connection = await prisma.platformConnection.findFirst({
-            where: {
-                platformUserId: message.user.id,
-                isActive: true,
-            },
-            select: { userId: true },
-        });
-        return connection?.userId || 'anonymous';
+        // TODO(convex-migrate): replace with Convex query for platform connections
+        return 'anonymous';
     } catch {
         return 'anonymous';
     }
