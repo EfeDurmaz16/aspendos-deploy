@@ -1,43 +1,66 @@
 'use client';
 
-// TODO(phase-a-day-4): WorkOS useAuth() replaces this. The Better Auth client
-// hooks (useSession / signOut) were removed in the Phase A Day 1 purge — this
-// module preserves the public shape that apps/web consumes (useAuth / useUser
-// with Clerk-like fields) so components keep compiling. Day 4 will wire these
-// to @workos-inc/authkit-nextjs.
-import { signOut as authClientSignOut, useSession } from '@/lib/auth-client';
+import { useEffect, useState } from 'react';
+
+interface AuthState {
+    user: { id: string; email: string; firstName: string | null; lastName: string | null; profilePictureUrl: string | null } | null;
+    loading: boolean;
+}
+
+let cachedAuth: AuthState | null = null;
 
 export function useAuth() {
-    // TODO(phase-a-day-4): WorkOS useAuth() replaces this
-    const session = useSession();
+    const [state, setState] = useState<AuthState>(cachedAuth ?? { user: null, loading: true });
+
+    useEffect(() => {
+        if (cachedAuth) return;
+
+        (async () => {
+            try {
+                const { useAuth: workosUseAuth } = await import('@workos-inc/authkit-nextjs');
+                const { user, loading } = workosUseAuth();
+                const authState = { user, loading };
+                cachedAuth = authState;
+                setState(authState);
+            } catch {
+                setState({ user: null, loading: false });
+            }
+        })();
+    }, []);
+
     return {
-        isLoaded: !session.isPending,
-        isSignedIn: !!(session.data as any)?.user,
-        userId: (session.data as any)?.user?.id ?? null,
-        sessionId: (session.data as any)?.session?.id ?? null,
+        isLoaded: !state.loading,
+        isSignedIn: !!state.user,
+        userId: state.user?.id ?? null,
+        sessionId: state.user?.id ?? null,
         getToken: async () => null,
         signOut: async () => {
-            await authClientSignOut();
+            try {
+                const { signOut } = await import('@workos-inc/authkit-nextjs');
+                await signOut();
+            } catch {
+                window.location.href = '/';
+            }
         },
     };
 }
 
 export function useUser() {
-    // TODO(phase-a-day-4): WorkOS useUser() (or equivalent) replaces this
-    const session = useSession();
-    const data = session.data as any;
+    const { isLoaded, isSignedIn, userId } = useAuth();
+    const [state] = useState<AuthState>(cachedAuth ?? { user: null, loading: !isLoaded });
+
     return {
-        isLoaded: true,
-        isSignedIn: !!data?.user,
-        user: data?.user
+        isLoaded,
+        isSignedIn,
+        user: state.user
             ? {
-                  id: data.user.id,
-                  firstName: data.user.name?.split(' ')[0] ?? null,
-                  lastName: data.user.name?.split(' ').slice(1).join(' ') || null,
-                  fullName: data.user.name ?? null,
-                  emailAddresses: data.user.email ? [{ emailAddress: data.user.email }] : [],
-                  primaryEmailAddress: data.user.email ? { emailAddress: data.user.email } : null,
-                  imageUrl: data.user.image ?? null,
+                  id: state.user.id,
+                  firstName: state.user.firstName,
+                  lastName: state.user.lastName,
+                  fullName: [state.user.firstName, state.user.lastName].filter(Boolean).join(' ') || null,
+                  emailAddresses: state.user.email ? [{ emailAddress: state.user.email }] : [],
+                  primaryEmailAddress: state.user.email ? { emailAddress: state.user.email } : null,
+                  imageUrl: state.user.profilePictureUrl,
               }
             : null,
     };
