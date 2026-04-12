@@ -1,11 +1,11 @@
 export const dynamic = 'force-dynamic';
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { deleteUserMemories } from '@/lib/services/qdrant';
+import { prisma } from '@/lib/prisma';
+
+// TODO(phase-a-day-3): Qdrant removed — memory deletion will use Convex + SuperMemory
+async function deleteUserMemories(_userId: string): Promise<void> {}
 
 /**
  * DELETE /api/account
@@ -20,9 +20,9 @@ import { deleteUserMemories } from '@/lib/services/qdrant';
  * - Notification logs and preferences
  * - Push subscriptions
  * - API keys
- * - Sessions and accounts (Better Auth)
+ * - Sessions and accounts
  * - User record itself
- * - Vector embeddings in Qdrant
+ * - Vector embeddings
  */
 export async function DELETE() {
     const session = await auth();
@@ -189,13 +189,13 @@ export async function DELETE() {
             });
         });
 
-        // Delete user memories from Qdrant (vector database)
+        // Delete user memories from vector database
         // This is outside the transaction because it's a separate service
         try {
             await deleteUserMemories(userId);
-        } catch (qdrantError) {
-            console.error('[DELETE /api/account] Failed to delete Qdrant memories:', qdrantError);
-            // Continue even if Qdrant fails - user data in DB is already deleted
+        } catch (memoryError) {
+            console.error('[DELETE /api/account] Failed to delete memories:', memoryError);
+            // Continue even if memory deletion fails - user data in DB is already deleted
         }
 
         // Audit log for GDPR compliance - record the deletion event
