@@ -4,7 +4,6 @@
  * GDPR-compliant data retention with configurable policies per data type.
  * Designed to run as a daily cron job via Railway or similar scheduler.
  */
-// TODO(convex-migrate): replace prisma with Convex client
 const prisma = null as any;
 
 // Retention policies (in days)

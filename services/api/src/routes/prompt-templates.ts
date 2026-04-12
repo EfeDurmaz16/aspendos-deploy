@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-// TODO(convex-migrate): replace prisma with Convex client
 const prisma = null as any;
 import { requireAuth } from '../middleware/auth';
 

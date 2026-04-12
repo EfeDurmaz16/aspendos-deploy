@@ -11,7 +11,6 @@
  */
 
 import type { Context, Next } from 'hono';
-// TODO(convex-migrate): replace prisma with Convex client
 const prisma = null as any;
 
 type ServerStatus = 'running' | 'draining' | 'stopped';

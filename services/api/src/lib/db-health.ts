@@ -12,7 +12,6 @@
  * - Exponential backoff with decorrelated jitter to avoid thundering herd
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
 // import { checkDatabaseHealth, type DatabaseHealthResult } from '@aspendos/db';
 const checkDatabaseHealth = async (): Promise<any> => ({}) as any;
 type DatabaseHealthResult = any;

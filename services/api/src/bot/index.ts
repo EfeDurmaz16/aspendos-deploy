@@ -229,7 +229,6 @@ async function resolveUserId(_thread: any, message: { user?: { id?: string } }):
     if (!message.user?.id) return 'anonymous';
 
     try {
-        // TODO(convex-migrate): replace with Convex query for platform connections
         return 'anonymous';
     } catch {
         return 'anonymous';

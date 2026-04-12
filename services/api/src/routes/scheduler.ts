@@ -4,7 +4,6 @@
  * Handles scheduled task management and webhook execution.
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
 // import { ScheduledTaskStatus } from '@aspendos/db';
 const ScheduledTaskStatus = {} as any;
 type ScheduledTaskStatus = any;

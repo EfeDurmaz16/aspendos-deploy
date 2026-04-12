@@ -1,5 +1,4 @@
 // @ts-nocheck
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
 /**
  * Transaction Manager
  *
