@@ -191,29 +191,19 @@ async function handleMessage(
             if (handled) return;
         }
 
-        // Get system prompt with memory context
-        const systemPrompt = await getSystemPrompt(userId, message.text);
-
-        // Get tools for this user
-        const tools = await getAgentTools(userId);
-
-        // Stream AI response through Chat SDK
-        const model = gateway('groq', { modelId: 'llama-3.3-70b-versatile' });
+        // Route through YULA orchestrator agent (FIDES sign + AGIT commit on every tool call)
+        const { createYulaAgent } = await import('../orchestrator/agent');
+        const agent = createYulaAgent(userId);
 
         // Build conversation history from thread
         const history = await getThreadHistory(thread);
 
-        const result = streamText({
-            model,
-            system: systemPrompt,
-            messages: [...history, { role: 'user', content: message.text }],
-            tools,
-            stopWhen: stepCountIs(5),
-            temperature: 0.7,
+        const result = await agent.stream({
+            messages: [...history, { role: 'user' as const, content: message.text }],
         });
 
         // Post streamed response — Chat SDK handles progressive editing per platform
-        await thread.post(result.fullStream);
+        await thread.post(result.textStream);
 
         // Auto-extract memory from exchange (fire-and-forget)
         if (userId) {
