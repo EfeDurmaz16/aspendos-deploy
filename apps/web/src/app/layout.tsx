@@ -22,6 +22,7 @@ import {
     softwareAppSchema,
     websiteSchema,
 } from '@/lib/seo/structured-data';
+import { ConvexClientProvider } from '@/components/convex-client-provider';
 import { cn } from '@/lib/utils';
 
 // Comprehensive metadata for SEO and GEO
@@ -104,6 +105,7 @@ export default async function RootLayout({
                 {/* Accessibility: Skip to main content link */}
                 <SkipLink />
 
+                <ConvexClientProvider>
                 <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
                     <OfflineBanner />
                     <ErrorBoundary>
@@ -115,6 +117,7 @@ export default async function RootLayout({
                     <UpdatePrompt />
                     <CookieConsent />
                 </ThemeProvider>
+                </ConvexClientProvider>
             </body>
         </html>
     );
