@@ -153,6 +153,37 @@ export default defineSchema({
         .index('by_event_type', ['event_type'])
         .index('by_timestamp', ['timestamp']),
 
+    organizations: defineTable({
+        name: v.string(),
+        slug: v.string(),
+        owner_id: v.id('users'),
+        workos_org_id: v.optional(v.string()),
+        tier: v.union(
+            v.literal('team'),
+            v.literal('team_byok'),
+            v.literal('enterprise'),
+        ),
+        created_at: v.number(),
+    })
+        .index('by_slug', ['slug'])
+        .index('by_owner', ['owner_id'])
+        .index('by_workos_org', ['workos_org_id']),
+
+    org_members: defineTable({
+        org_id: v.id('organizations'),
+        user_id: v.id('users'),
+        role: v.union(
+            v.literal('owner'),
+            v.literal('admin'),
+            v.literal('member'),
+            v.literal('viewer'),
+        ),
+        joined_at: v.number(),
+    })
+        .index('by_org', ['org_id'])
+        .index('by_user', ['user_id'])
+        .index('by_org_user', ['org_id', 'user_id']),
+
     byok_credentials: defineTable({
         user_id: v.id('users'),
         provider: v.string(),

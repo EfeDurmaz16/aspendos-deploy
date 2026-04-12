@@ -15,6 +15,7 @@ import type * as commits from "../commits.js";
 import type * as conversations from "../conversations.js";
 import type * as memories from "../memories.js";
 import type * as messages from "../messages.js";
+import type * as organizations from "../organizations.js";
 import type * as snapshots from "../snapshots.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as toolAllowlist from "../toolAllowlist.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   conversations: typeof conversations;
   memories: typeof memories;
   messages: typeof messages;
+  organizations: typeof organizations;
   snapshots: typeof snapshots;
   subscriptions: typeof subscriptions;
   toolAllowlist: typeof toolAllowlist;
