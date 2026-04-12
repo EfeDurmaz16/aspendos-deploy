@@ -163,7 +163,7 @@ function HeroSection() {
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/60 bg-card/50"
                     >
                         <Sparkle size={14} weight="fill" className="text-pac" />
-                        <span className="text-xs text-muted-foreground">Your AI, reimagined</span>
+                        <span className="text-xs text-muted-foreground">Deterministic AI agents</span>
                     </motion.div>
 
                     {/* Headline */}
@@ -174,9 +174,8 @@ function HeroSection() {
                         className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight text-foreground"
                         style={{ textWrap: 'balance' as any }}
                     >
-                        One AI. <span className="text-muted-foreground">Every model.</span>
-                        <br />
-                        <span className="text-muted-foreground">All your</span> history.
+                        Prove what they did. <br />
+                        <span className="text-muted-foreground">And why.</span>
                     </motion.h1>
 
                     {/* Subtitle */}
@@ -186,8 +185,8 @@ function HeroSection() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed"
                     >
-                        Import your ChatGPT & Claude history. Get proactive reminders. Let multiple
-                        AIs debate your toughest decisions. All in one place.
+                        Every action is structured, signed, and reversible. Same task, same outcome,
+                        same proof — every time. Built on Aspendos, the open agent OS.
                     </motion.p>
 
                     {/* CTAs */}
