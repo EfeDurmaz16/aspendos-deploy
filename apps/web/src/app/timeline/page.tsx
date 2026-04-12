@@ -1,7 +1,6 @@
 'use client';
 
-import { useQuery } from 'convex/react';
-import { api } from '../../../../../convex/_generated/api';
+import { useState, useEffect } from 'react';
 
 const BADGE_COLORS: Record<string, string> = {
     undoable: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -55,10 +54,14 @@ function TimelineEntry({ commit }: { commit: any }) {
 }
 
 export default function TimelinePage() {
-    const commits = useQuery(api.commits.listByUser, {
-        user_id: '' as any,
-        limit: 100,
-    });
+    const [commits, setCommits] = useState<any[] | null>(null);
+
+    useEffect(() => {
+        fetch('/api/timeline')
+            .then((r) => (r.ok ? r.json() : { commits: [] }))
+            .then((d) => setCommits(d.commits ?? []))
+            .catch(() => setCommits([]));
+    }, []);
 
     return (
         <div className="mx-auto max-w-3xl px-4 py-8">
