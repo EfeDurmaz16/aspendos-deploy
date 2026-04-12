@@ -109,6 +109,14 @@
         "vitest": "^4.0.17",
       },
     },
+    "packages/agit-sdk": {
+      "name": "@agit/sdk",
+      "version": "0.1.0",
+    },
+    "packages/fides-sdk": {
+      "name": "@fides/sdk",
+      "version": "0.1.0",
+    },
     "packages/i18n": {
       "name": "@aspendos/i18n",
       "version": "0.1.0",
@@ -174,6 +182,8 @@
     "@acemir/cssom": ["@acemir/cssom@0.9.31", "", {}, "sha512-ZnR3GSaH+/vJ0YlHau21FjfLYjMpYVIzTD8M8vIEQvIGxeOXyXdzCI140rrCY862p/C/BbzWsjc1dgnM9mkoTA=="],
 
     "@adobe/css-tools": ["@adobe/css-tools@4.4.4", "", {}, "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg=="],
+
+    "@agit/sdk": ["@agit/sdk@workspace:packages/agit-sdk"],
 
     "@ai-sdk/anthropic": ["@ai-sdk/anthropic@2.0.70", "", { "dependencies": { "@ai-sdk/provider": "2.0.1", "@ai-sdk/provider-utils": "3.0.22" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-W3WjQlb0Ho+CVAQUvb8Rtk3hGS3Jlgy79ihY2H0yj2k4yU8XuxpQw0Oz+7JQsB47j+jlHhk7nUXtxhAeRg3S3Q=="],
 
@@ -494,6 +504,8 @@
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
 
     "@exodus/bytes": ["@exodus/bytes@1.15.0", "", { "peerDependencies": { "@noble/hashes": "^1.8.0 || ^2.0.0" }, "optionalPeers": ["@noble/hashes"] }, "sha512-UY0nlA+feH81UGSHv92sLEPLCeZFjXOuHhrIo0HQydScuQc8s0A7kL/UdgwgDq8g8ilksmuoF35YVTNphV2aBQ=="],
+
+    "@fides/sdk": ["@fides/sdk@workspace:packages/fides-sdk"],
 
     "@floating-ui/core": ["@floating-ui/core@1.7.5", "", { "dependencies": { "@floating-ui/utils": "^0.2.11" } }, "sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ=="],
 
