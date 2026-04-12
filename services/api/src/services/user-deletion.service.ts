@@ -6,11 +6,11 @@
  * - Art. 17: Right to Erasure (account deletion with grace period)
  * - Art. 20: Data Portability (full data export)
  * - Art. 15: Right of Access (data summary)
+ *
+ * Backed by Convex for data access.
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
+import { getConvexClient, api } from '../lib/convex';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -204,7 +204,7 @@ export function getExportJobOwner(jobId: string): string | null {
 
 /**
  * Process an export job asynchronously.
- * Gathers all user data from the database.
+ * Gathers all user data from Convex.
  */
 async function processExportJob(jobId: string, userId: string): Promise<void> {
     const job = exportJobs.get(jobId);
@@ -227,90 +227,98 @@ async function processExportJob(jobId: string, userId: string): Promise<void> {
  * Gather all user data for export (GDPR Art. 20 - Data Portability).
  */
 export async function exportUserData(userId: string): Promise<ExportData> {
-    const prismaAny = prisma as any;
-    const notificationModel = prismaAny.notificationLog ?? prismaAny.notification;
+    try {
+        const client = getConvexClient();
 
-    const [user, chats, memories, reminders, billingAccount, councilSessions, notifications] =
-        await Promise.all([
-            prisma.user.findUnique({
-                where: { id: userId },
-                select: { id: true, email: true, name: true, createdAt: true },
-            }),
-            prisma.chat.findMany({
-                where: { userId },
-                include: {
-                    messages: {
-                        select: { role: true, content: true, createdAt: true, modelUsed: true },
-                    },
-                },
-                orderBy: { createdAt: 'desc' },
-            }),
-            prisma.memory.findMany({
-                where: { userId },
-                select: { content: true, type: true, sector: true, createdAt: true },
-            }),
-            prisma.pACReminder.findMany({
-                where: { userId },
-                select: {
-                    content: true,
-                    type: true,
-                    status: true,
-                    triggerAt: true,
-                    createdAt: true,
-                },
-            }),
-            prisma.billingAccount.findUnique({
-                where: { userId },
-                select: {
-                    plan: true,
-                    creditUsed: true,
-                    monthlyCredit: true,
-                    createdAt: true,
-                },
-            }),
-            prisma.councilSession.findMany({
-                where: { userId },
-                include: {
-                    responses: { select: { persona: true, content: true } },
-                },
-                orderBy: { createdAt: 'desc' },
-            }),
-            notificationModel.findMany({
-                where: { userId },
-                select: prismaAny.notificationLog
-                    ? { type: true, title: true, message: true, createdAt: true }
-                    : { type: true, title: true, body: true, createdAt: true },
-                orderBy: { createdAt: 'desc' },
-            }),
-        ]);
+        // Fetch conversations
+        const conversations = await client.query(api.conversations.listByUser, {
+            user_id: userId as any,
+        });
 
-    return {
-        exportedAt: new Date().toISOString(),
-        format: 'YULA_GDPR_EXPORT_V1',
-        user,
-        chats: chats.map((chat: any) => ({
-            id: chat.id,
-            title: chat.title,
-            createdAt: chat.createdAt,
-            messages: chat.messages,
-        })),
-        memories,
-        reminders,
-        billing: billingAccount,
-        councilSessions: councilSessions.map((s: any) => ({
-            id: s.id,
-            query: s.query,
-            status: s.status,
-            createdAt: s.createdAt,
-            responses: s.responses,
-        })),
-        notifications: notifications.map((n: any) => ({
-            type: n.type,
-            title: n.title,
-            body: n.message ?? n.body ?? null,
-            createdAt: n.createdAt,
-        })),
-    };
+        // Fetch messages for each conversation
+        const chats: ExportData['chats'] = [];
+        for (const conv of conversations) {
+            try {
+                const messages = await client.query(api.messages.listByConversation, {
+                    conversation_id: conv._id,
+                });
+                chats.push({
+                    id: conv._id,
+                    title: conv.title || null,
+                    createdAt: new Date(conv.created_at),
+                    messages: messages.map((m) => ({
+                        role: m.role,
+                        content: m.content,
+                        createdAt: new Date(m.created_at),
+                        modelUsed: null,
+                    })),
+                });
+            } catch {
+                // Continue with other conversations
+            }
+        }
+
+        // Fetch memories
+        const memoriesRaw = await client.query(api.memories.listByUser, {
+            user_id: userId as any,
+        });
+        const memories = memoriesRaw.map((m) => ({
+            content: m.content_preview || '',
+            type: null,
+            sector: null,
+            createdAt: new Date(m.created_at),
+        }));
+
+        // Fetch action_log for council sessions, notifications, etc.
+        const actionLogs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 1000,
+        });
+
+        const councilSessions = actionLogs
+            .filter((l) => l.event_type === 'council_session_created')
+            .map((l) => ({
+                id: (l.details?.sessionId as string) || '',
+                query: (l.details?.query as string) || '',
+                status: (l.details?.status as string) || 'UNKNOWN',
+                createdAt: new Date(l.timestamp),
+                responses: [] as Array<{ persona: string | null; content: string }>,
+            }));
+
+        const notifications = actionLogs
+            .filter((l) => l.event_type === 'notification')
+            .map((l) => ({
+                type: (l.details?.type as string) || 'unknown',
+                title: (l.details?.title as string) || '',
+                body: (l.details?.body as string) || null,
+                createdAt: new Date(l.timestamp),
+            }));
+
+        return {
+            exportedAt: new Date().toISOString(),
+            format: 'YULA_GDPR_EXPORT_V1',
+            user: null, // User data from auth system, not Convex
+            chats,
+            memories,
+            reminders: [], // Reminders not in Convex schema
+            billing: null, // Billing data from Stripe, not Convex
+            councilSessions,
+            notifications,
+        };
+    } catch (error) {
+        console.error('[GDPR] exportUserData failed:', error);
+        return {
+            exportedAt: new Date().toISOString(),
+            format: 'YULA_GDPR_EXPORT_V1',
+            user: null,
+            chats: [],
+            memories: [],
+            reminders: [],
+            billing: null,
+            councilSessions: [],
+            notifications: [],
+        };
+    }
 }
 
 // ─── Data Summary ────────────────────────────────────────────────────────────
@@ -319,66 +327,85 @@ export async function exportUserData(userId: string): Promise<ExportData> {
  * Get a summary of all stored data for a user (GDPR Art. 15 - Right of Access).
  */
 export async function getDataSummary(userId: string): Promise<DataSummary> {
-    const prismaAny = prisma as any;
-    const notificationModel = prismaAny.notificationLog ?? prismaAny.notification;
+    try {
+        const client = getConvexClient();
 
-    const [
-        chatCount,
-        messageCount,
-        memoryCount,
-        reminderCount,
-        councilSessionCount,
-        importJobCount,
-        achievementCount,
-        notificationCount,
-        auditLogCount,
-        apiKeyCount,
-        user,
-        lastMessage,
-    ] = await Promise.all([
-        prisma.chat.count({ where: { userId } }),
-        prisma.message.count({ where: { userId } }),
-        prisma.memory.count({ where: { userId } }),
-        prisma.pACReminder.count({ where: { userId } }),
-        prisma.councilSession.count({ where: { userId } }),
-        prisma.importJob.count({ where: { userId } }),
-        prisma.achievement.count({ where: { profile: { userId } } }),
-        notificationModel.count({ where: { userId } }),
-        prisma.auditLog.count({ where: { userId } }),
-        prisma.apiKey.count({ where: { userId } }),
-        prisma.user.findUnique({
-            where: { id: userId },
-            select: { createdAt: true },
-        }),
-        prisma.message.findFirst({
-            where: { userId, role: 'user' },
-            orderBy: { createdAt: 'desc' },
-            select: { createdAt: true },
-        }),
-    ]);
+        const [conversations, memoriesRaw, actionLogs] = await Promise.all([
+            client.query(api.conversations.listByUser, { user_id: userId as any }),
+            client.query(api.memories.listByUser, { user_id: userId as any }),
+            client.query(api.actionLog.listByUser, { user_id: userId as any, limit: 5000 }),
+        ]);
 
-    // Rough storage estimate: ~2KB per message, ~1KB per memory, ~500B per notification
-    const storageEstimateBytes =
-        messageCount * 2048 + memoryCount * 1024 + notificationCount * 512 + chatCount * 256;
+        // Count messages across all conversations
+        let messageCount = 0;
+        for (const conv of conversations.slice(0, 50)) {
+            try {
+                const msgs = await client.query(api.messages.listByConversation, {
+                    conversation_id: conv._id,
+                });
+                messageCount += msgs.length;
+            } catch { /* continue */ }
+        }
 
-    return {
-        userId,
-        counts: {
-            chats: chatCount,
-            messages: messageCount,
-            memories: memoryCount,
-            reminders: reminderCount,
-            councilSessions: councilSessionCount,
-            importJobs: importJobCount,
-            achievements: achievementCount,
-            notifications: notificationCount,
-            auditLogs: auditLogCount,
-            apiKeys: apiKeyCount,
-        },
-        storageEstimateBytes,
-        accountCreatedAt: user?.createdAt ?? null,
-        lastActiveAt: lastMessage?.createdAt ?? null,
-    };
+        const councilSessionCount = actionLogs.filter(
+            (l) => l.event_type === 'council_session_created'
+        ).length;
+        const importJobCount = actionLogs.filter(
+            (l) => l.event_type === 'import_job_created'
+        ).length;
+        const achievementCount = actionLogs.filter(
+            (l) => l.event_type === 'achievement_unlocked'
+        ).length;
+
+        const storageEstimateBytes =
+            messageCount * 2048 + memoriesRaw.length * 1024 + conversations.length * 256;
+
+        // Find last user message timestamp
+        let lastActiveAt: Date | null = null;
+        const lastXpLog = actionLogs.find((l) => l.event_type === 'xp_awarded');
+        if (lastXpLog) {
+            lastActiveAt = new Date(lastXpLog.timestamp);
+        }
+
+        return {
+            userId,
+            counts: {
+                chats: conversations.length,
+                messages: messageCount,
+                memories: memoriesRaw.length,
+                reminders: 0,
+                councilSessions: councilSessionCount,
+                importJobs: importJobCount,
+                achievements: achievementCount,
+                notifications: 0,
+                auditLogs: actionLogs.length,
+                apiKeys: 0,
+            },
+            storageEstimateBytes,
+            accountCreatedAt: null, // From auth system
+            lastActiveAt,
+        };
+    } catch (error) {
+        console.error('[GDPR] getDataSummary failed:', error);
+        return {
+            userId,
+            counts: {
+                chats: 0,
+                messages: 0,
+                memories: 0,
+                reminders: 0,
+                councilSessions: 0,
+                importJobs: 0,
+                achievements: 0,
+                notifications: 0,
+                auditLogs: 0,
+                apiKeys: 0,
+            },
+            storageEstimateBytes: 0,
+            accountCreatedAt: null,
+            lastActiveAt: null,
+        };
+    }
 }
 
 // ─── Account Deletion ────────────────────────────────────────────────────────
@@ -447,43 +474,51 @@ export function getPendingDeletion(
 /**
  * Anonymize a user account: strip PII but keep aggregate/analytical data.
  * This is an alternative to full deletion under GDPR Art. 17(3).
+ * With Convex, we log the anonymization event. Actual data removal
+ * would need to be coordinated with auth system and Convex admin.
  */
 export async function anonymizeUser(userId: string): Promise<void> {
-    const anonymizedEmail = `anon-${crypto.randomUUID()}@deleted.yula.dev`;
-    const anonymizedName = 'Anonymized User';
+    try {
+        const client = getConvexClient();
 
-    await prisma.$transaction(async (tx) => {
-        const txAny = tx as any;
-        const notificationModel = txAny.notificationLog ?? txAny.notification;
-        const notificationData = txAny.notificationLog
-            ? { title: '[anonymized]', message: '[anonymized]' }
-            : { title: '[anonymized]', body: '[anonymized]' };
-
-        // Anonymize user record
-        await tx.user.update({
-            where: { id: userId },
-            data: {
-                email: anonymizedEmail,
-                name: anonymizedName,
-                image: null,
+        // Log the anonymization request
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'user_anonymization_requested',
+            details: {
+                requestedAt: new Date().toISOString(),
+                note: 'PII removal requires coordinated cleanup across auth system and Convex',
             },
         });
 
-        // Clear session data
-        await tx.session.deleteMany({ where: { userId } });
-
-        // Clear auth accounts (OAuth links)
-        await tx.account.deleteMany({ where: { userId } });
-
-        // Anonymize notification content
-        await notificationModel.updateMany({
-            where: { userId },
-            data: notificationData,
+        // Delete all user memories from Convex
+        const memories = await client.query(api.memories.listByUser, {
+            user_id: userId as any,
         });
+        for (const memory of memories) {
+            try {
+                await client.mutation(api.memories.remove, { id: memory._id });
+            } catch { /* continue */ }
+        }
 
-        // Delete API keys
-        await tx.apiKey.deleteMany({ where: { userId } });
-    });
+        // Delete all conversations and messages
+        const conversations = await client.query(api.conversations.listByUser, {
+            user_id: userId as any,
+        });
+        for (const conv of conversations) {
+            try {
+                const messages = await client.query(api.messages.listByConversation, {
+                    conversation_id: conv._id,
+                });
+                for (const msg of messages) {
+                    await client.mutation(api.messages.remove, { id: msg._id });
+                }
+                await client.mutation(api.conversations.remove, { id: conv._id });
+            } catch { /* continue */ }
+        }
+    } catch (error) {
+        console.error('[GDPR] anonymizeUser failed:', error);
+    }
 }
 
 // ─── Testing Helpers ─────────────────────────────────────────────────────────

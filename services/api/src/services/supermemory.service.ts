@@ -9,13 +9,13 @@
  * - HMD sectors stored as metadata on memories
  * - Profile API for auto-maintained user facts (static + dynamic)
  * - Conversation API for smart memory extraction with diffing
+ *
+ * Backed by Convex memories table for ownership tracking and fallback.
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 
 import { Supermemory as SuperMemory } from 'supermemory';
+import { getConvexClient, api } from '../lib/convex';
 import { breakers } from '../lib/circuit-breaker';
 import { queueFallbackWrite, searchFallback } from '../lib/memory-fallback';
 import type { MemoryResult, MemoryStats } from './memory-router.service';
@@ -228,49 +228,52 @@ export async function searchMemories(
             },
         }));
 
-        // Also check PostgreSQL for unsynced fallback memories (same hybrid pattern)
+        // Also check Convex for unsynced fallback memories (hybrid pattern)
         try {
+            const client = getConvexClient();
+            const convexMemories = await client.query(api.memories.listByUser, {
+                user_id: userId as any,
+                limit: options?.limit || 5,
+            });
+
             const queryWords = query
                 .toLowerCase()
                 .split(/\s+/)
                 .filter((w) => w.length > 2);
 
-            if (queryWords.length > 0) {
-                const pgImports = await prisma.memory.findMany({
-                    where: {
-                        userId,
-                        isActive: true,
-                        decayScore: 0,
-                        source: { in: ['import_pending', 'supermemory_fallback'] },
-                        OR: queryWords.map((word) => ({
-                            content: { contains: word, mode: 'insensitive' as const },
-                        })),
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    take: options?.limit || 5,
-                });
+            if (queryWords.length > 0 && convexMemories.length > 0) {
+                const pendingMemories = convexMemories.filter(
+                    (m) =>
+                        m.source &&
+                        (m.source === 'import_pending' || m.source === 'supermemory_fallback') &&
+                        m.content_preview &&
+                        queryWords.some((w) =>
+                            m.content_preview!.toLowerCase().includes(w)
+                        )
+                );
 
                 const existingContents = new Set(
                     mapped.map((m: { content: string }) => m.content.slice(0, 100))
                 );
-                for (const pg of pgImports) {
-                    if (!existingContents.has(pg.content.slice(0, 100))) {
+                for (const pg of pendingMemories) {
+                    const preview = pg.content_preview || '';
+                    if (!existingContents.has(preview.slice(0, 100))) {
                         mapped.push({
-                            id: pg.id,
-                            content: pg.content,
-                            sector: pg.sector || 'semantic',
-                            salience: pg.confidence || 0.5,
-                            score: pg.confidence || 0.5,
-                            createdAt: pg.createdAt.toISOString(),
+                            id: pg._id as any as string,
+                            content: preview,
+                            sector: 'semantic',
+                            salience: 0.5,
+                            score: 0.5,
+                            createdAt: new Date(pg.created_at).toISOString(),
                             metadata: { source: pg.source },
                             trace: undefined,
                         });
-                        existingContents.add(pg.content.slice(0, 100));
+                        existingContents.add(preview.slice(0, 100));
                     }
                 }
             }
         } catch (pgError) {
-            console.warn('[HybridSearch] PostgreSQL import search failed:', pgError);
+            console.warn('[HybridSearch] Convex import search failed:', pgError);
         }
 
         const boosted = applyRecencyBoost(mapped);
@@ -369,57 +372,62 @@ export async function deleteMemory(id: string): Promise<void> {
 }
 
 /**
- * Reinforce a memory (re-add with boosted metadata since SuperMemory has no native reinforce)
+ * Reinforce a memory (track reinforcement in Convex since SuperMemory has no native reinforce)
  */
 export async function reinforceMemory(id: string): Promise<void> {
-    // SuperMemory doesn't have a reinforce concept.
-    // We track reinforcement in PostgreSQL and boost the metadata.
-    const pgMemory = await prisma.memory.findFirst({ where: { id } });
-    if (pgMemory) {
-        await prisma.memory.update({
-            where: { id },
-            data: {
-                accessCount: { increment: 1 },
-                confidence: Math.min(1.0, (pgMemory.confidence || 0.5) + 0.1),
-            },
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            event_type: 'memory_reinforced',
+            details: { memoryId: id, reinforcedAt: new Date().toISOString() },
         });
+    } catch (error) {
+        console.warn('[SuperMemory] reinforceMemory tracking failed:', error);
     }
 }
 
 /**
- * Get memory stats for a user (from PostgreSQL since SuperMemory has no stats endpoint)
+ * Get memory stats for a user (from Convex memories + SuperMemory)
  */
 export async function getMemoryStats(userId: string): Promise<MemoryStats> {
-    const memories = await prisma.memory.findMany({
-        where: { userId, isActive: true },
-        select: { sector: true, confidence: true },
-    });
+    try {
+        const client = getConvexClient();
+        const memories = await client.query(api.memories.listByUser, {
+            user_id: userId as any,
+        });
 
-    const bySector: Record<string, number> = {};
-    let totalSalience = 0;
+        const bySector: Record<string, number> = {};
+        for (const m of memories) {
+            const sector = 'semantic'; // Convex memories table doesn't have sector field
+            bySector[sector] = (bySector[sector] || 0) + 1;
+        }
 
-    for (const m of memories) {
-        const sector = m.sector || 'semantic';
-        bySector[sector] = (bySector[sector] || 0) + 1;
-        totalSalience += m.confidence || 0;
+        return {
+            total: memories.length,
+            bySector,
+            avgSalience: 0.5, // Default since Convex memories don't track salience
+        };
+    } catch (error) {
+        console.warn('[SuperMemory] getMemoryStats failed:', error);
+        return { total: 0, bySector: {}, avgSalience: 0 };
     }
-
-    return {
-        total: memories.length,
-        bySector,
-        avgSalience: memories.length > 0 ? totalSalience / memories.length : 0,
-    };
 }
 
 /**
  * Verify that a memory belongs to a specific user (IDOR prevention)
- * Uses PostgreSQL since it's always the source of truth for ownership.
+ * Uses Convex memories table for ownership check.
  */
 export async function verifyMemoryOwnership(memoryId: string, userId: string): Promise<boolean> {
-    const memory = await prisma.memory.findFirst({
-        where: { id: memoryId, userId },
-    });
-    return !!memory;
+    try {
+        const client = getConvexClient();
+        const memories = await client.query(api.memories.listByUser, {
+            user_id: userId as any,
+            limit: 500,
+        });
+        return memories.some((m) => (m._id as any as string) === memoryId || m.supermemory_id === memoryId);
+    } catch {
+        return false;
+    }
 }
 
 /**
