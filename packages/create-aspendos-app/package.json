@@ -1,0 +1,17 @@
+{
+    "name": "create-aspendos-app",
+    "version": "0.1.0",
+    "description": "Create a new Aspendos agent app with governance, reversibility, and audit built in",
+    "type": "module",
+    "bin": {
+        "create-aspendos-app": "./index.ts"
+    },
+    "license": "Apache-2.0",
+    "keywords": [
+        "aspendos",
+        "ai-agents",
+        "governance",
+        "create-app",
+        "scaffold"
+    ]
+}
