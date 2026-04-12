@@ -103,3 +103,23 @@ export interface AgentTool {
     type: 'builtin' | 'mcp' | 'custom';
     config?: Record<string, unknown>;
 }
+
+export type ReversibilityClass =
+    | 'undoable'
+    | 'cancelable_window'
+    | 'compensatable'
+    | 'approval_only'
+    | 'irreversible_blocked';
+
+export interface ApprovalCardProps {
+    commitHash: string;
+    toolName: string;
+    humanExplanation: string;
+    reversibilityClass: ReversibilityClass;
+    badgeColor: string;
+    badgeLabel: string;
+    expiresAt?: string;
+    onApprove?: () => void;
+    onReject?: () => void;
+    onAlwaysAllow?: () => void;
+}
