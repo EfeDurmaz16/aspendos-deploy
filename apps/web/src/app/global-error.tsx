@@ -20,7 +20,7 @@ export default function GlobalError({
                     margin: 0,
                     padding: 0,
                     fontFamily:
-                        "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+                        "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
                     backgroundColor: '#0d0d0d',
                     color: '#ececec',
                     minHeight: '100vh',

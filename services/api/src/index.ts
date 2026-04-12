@@ -67,6 +67,10 @@ validateEnv();
 // Initialize Sentry
 initSentry();
 
+// Register governance tools at startup
+import { registerAllTools } from './tools/register-all';
+registerAllTools();
+
 type Variables = {
     user: typeof auth.$Infer.Session.user | null;
     session: typeof auth.$Infer.Session.session | null;

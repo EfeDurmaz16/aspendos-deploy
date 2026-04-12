@@ -21,6 +21,8 @@
         "@chat-adapter/state-pg": "^4.20.2",
         "@chat-adapter/telegram": "^4.20.2",
         "@chat-adapter/whatsapp": "^4.20.2",
+        "@daytona/sdk": "^0.164.0",
+        "@e2b/code-interpreter": "^2.4.0",
         "@google/genai": "^1.37.0",
         "@hono/node-server": "^1.13.7",
         "@supermemory/tools": "^1.4.0",
@@ -35,6 +37,8 @@
         "nanoid": "^5.1.6",
         "openai": "^6.16.0",
         "resend": "^6.9.2",
+        "steel-sdk": "^0.18.0",
+        "stripe": "^22.0.1",
         "supermemory": "^3.0.0",
         "zod": "^3.24.0"
     },
