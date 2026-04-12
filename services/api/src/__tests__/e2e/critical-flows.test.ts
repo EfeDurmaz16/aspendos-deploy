@@ -4,26 +4,11 @@
  * These are integration tests using vitest, not browser tests
  */
 
-import { Hono } from 'hono';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearRateLimits_forTesting } from '../../middleware/endpoint-rate-limit';
-import { clearGlobalRateLimits_forTesting } from '../../middleware/rate-limit';
-
-vi.mock('openmemory-js', () => ({
-    Memory: vi.fn(function () {
-        return {
-            add: vi.fn().mockResolvedValue({ id: 'mock-id' }),
-            search: vi.fn().mockResolvedValue([]),
-            get: vi.fn().mockResolvedValue(null),
-            update: vi.fn().mockResolvedValue(undefined),
-            delete: vi.fn().mockResolvedValue(undefined),
-            clear: vi.fn().mockResolvedValue(undefined),
-        };
-    }),
-}));
-
+import { beforeEach, describe, expect, it } from 'vitest';
 // Import the app
 import app from '../../index';
+import { clearRateLimits_forTesting } from '../../middleware/endpoint-rate-limit';
+import { clearGlobalRateLimits_forTesting } from '../../middleware/rate-limit';
 
 // Clear rate limits between each test to prevent 429s
 beforeEach(() => {
@@ -63,8 +48,8 @@ describe('E2E - Health & System Tests', () => {
             expect(data.circuitBreakers).toHaveProperty('openai');
             expect(data.circuitBreakers).toHaveProperty('anthropic');
             expect(data.circuitBreakers).toHaveProperty('groq');
-            expect(data.circuitBreakers).toHaveProperty('qdrant');
             expect(data.circuitBreakers).toHaveProperty('google');
+            expect(data.circuitBreakers).toHaveProperty('supermemory');
         });
 
         it('returns correct status code based on health', async () => {

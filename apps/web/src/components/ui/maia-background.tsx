@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * YULA Monolith Background
  * Uses subtle amber glow - no purple/blue gradients

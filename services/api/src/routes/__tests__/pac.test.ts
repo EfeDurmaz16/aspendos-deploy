@@ -23,6 +23,7 @@ vi.mock('../../middleware/auth', () => ({
 }));
 
 import { requireAuth } from '../../middleware/auth';
+
 const mockRequireAuth = requireAuth as any;
 
 vi.mock('../../services/pac.service', () => ({
@@ -38,6 +39,7 @@ vi.mock('../../services/pac.service', () => ({
 }));
 
 import * as pacService from '../../services/pac.service';
+
 const mockService = pacService as any;
 
 vi.mock('../../lib/audit-log', () => ({
@@ -339,7 +341,6 @@ describe('PAC Routes', () => {
             );
         });
     });
-
 
     describe('PATCH /pac/reminders/:id/complete - Complete reminder', () => {
         it('should complete reminder successfully', async () => {

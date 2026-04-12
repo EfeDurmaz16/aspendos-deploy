@@ -2,14 +2,13 @@
  * Import Embedding Worker
  *
  * Background worker that processes pending import memories by creating
- * embeddings via OpenMemory (Qdrant) and updating the PostgreSQL records.
+ * embeddings via SuperMemory and updating the Convex records.
  *
- * Memories are stored instantly during import with decayScore=0 and
- * source='import_pending' or 'import_extraction_pending'. This worker
- * picks them up and creates embeddings lazily in batches.
+ * Memories are stored instantly during import via Convex memories table.
+ * This worker picks them up and creates embeddings lazily in batches.
  */
 
-import { prisma } from '../lib/prisma';
+import { getConvexClient, api } from '../lib/convex';
 import * as openMemory from './memory-router.service';
 
 const BATCH_SIZE = 10;
@@ -17,7 +16,7 @@ const BATCH_DELAY_MS = 500;
 
 /**
  * Process pending import memories for a given user/job.
- * Creates embeddings via OpenMemory and updates the PostgreSQL record.
+ * Creates embeddings via SuperMemory and updates the Convex record.
  */
 export async function processImportEmbeddings(
     userId: string,
@@ -26,69 +25,67 @@ export async function processImportEmbeddings(
     let processed = 0;
     let failed = 0;
 
-    // Fetch all pending import memories for this user
-    const pendingMemories = await prisma.memory.findMany({
-        where: {
-            userId,
-            decayScore: 0,
-            source: { startsWith: 'import' },
-            tags: { has: jobId },
-        },
-        orderBy: { createdAt: 'asc' },
-    });
+    try {
+        const client = getConvexClient();
 
-    if (pendingMemories.length === 0) {
-        return { processed: 0, failed: 0 };
-    }
-
-    console.log(
-        `[ImportEmbedding] Processing ${pendingMemories.length} pending memories for job ${jobId}`
-    );
-
-    // Process in batches using batch upsert
-    for (let i = 0; i < pendingMemories.length; i += BATCH_SIZE) {
-        const batch = pendingMemories.slice(i, i + BATCH_SIZE);
-
-        // Batch upsert to Qdrant
-        const batchItems = batch.map((memory) => ({
-            content: memory.content,
-            sector: memory.sector,
-            tags: memory.tags,
-            metadata: {
-                type: memory.type,
-                postgresId: memory.id,
-            },
-        }));
-
-        const batchResult = await openMemory.addMemoriesBatch(batchItems, userId, {
-            batchSize: BATCH_SIZE,
-            delayMs: 100,
+        // Fetch all memories for this user from Convex
+        const allMemories = await client.query(api.memories.listByUser, {
+            user_id: userId as any,
+            limit: 500,
         });
 
-        // Update PostgreSQL records for successful embeddings
-        const successIds = batch.slice(0, batchResult.succeeded).map((m) => m.id);
-        if (successIds.length > 0) {
-            await prisma.memory.updateMany({
-                where: { id: { in: successIds } },
-                data: {
-                    source: 'import_synced',
-                    decayScore: 1.0,
+        // Filter to pending import memories (source starts with 'import')
+        const pendingMemories = allMemories.filter(
+            (m) =>
+                m.source &&
+                m.source.startsWith('import') &&
+                m.source !== 'import_synced'
+        );
+
+        if (pendingMemories.length === 0) {
+            return { processed: 0, failed: 0 };
+        }
+
+        console.log(
+            `[ImportEmbedding] Processing ${pendingMemories.length} pending memories for job ${jobId}`
+        );
+
+        // Process in batches using batch upsert
+        for (let i = 0; i < pendingMemories.length; i += BATCH_SIZE) {
+            const batch = pendingMemories.slice(i, i + BATCH_SIZE);
+
+            // Batch upsert to SuperMemory
+            const batchItems = batch.map((memory) => ({
+                content: memory.content_preview || '',
+                sector: 'episodic',
+                tags: ['imported', jobId],
+                metadata: {
+                    type: 'context',
+                    convexId: memory._id,
                 },
+            }));
+
+            const batchResult = await openMemory.addMemoriesBatch(batchItems, userId, {
+                batchSize: BATCH_SIZE,
+                delayMs: 100,
             });
+
+            processed += batchResult.succeeded;
+            failed += batchResult.failed;
+
+            // Delay between batches to avoid rate limits
+            if (i + BATCH_SIZE < pendingMemories.length) {
+                await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+            }
         }
 
-        processed += batchResult.succeeded;
-        failed += batchResult.failed;
+        console.log(
+            `[ImportEmbedding] Job ${jobId} complete: ${processed} processed, ${failed} failed`
+        );
 
-        // Delay between batches to avoid rate limits
-        if (i + BATCH_SIZE < pendingMemories.length) {
-            await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
-        }
+        return { processed, failed };
+    } catch (error) {
+        console.error('[ImportEmbedding] processImportEmbeddings failed:', error);
+        return { processed, failed };
     }
-
-    console.log(
-        `[ImportEmbedding] Job ${jobId} complete: ${processed} processed, ${failed} failed`
-    );
-
-    return { processed, failed };
 }

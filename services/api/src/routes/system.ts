@@ -18,8 +18,8 @@ systemRoutes.get('/circuit-breakers', (c) => {
             openai: breakers.openai.getDetailedState(),
             anthropic: breakers.anthropic.getDetailedState(),
             groq: breakers.groq.getDetailedState(),
-            qdrant: breakers.qdrant.getDetailedState(),
             google: breakers.google.getDetailedState(),
+            supermemory: breakers.supermemory.getDetailedState(),
         },
         summary: {
             openCircuits: Object.values(breakers).filter((b) => b.getState().state === 'OPEN')
@@ -86,7 +86,6 @@ systemRoutes.get('/critical-readiness', async (c) => {
     const statusCode: 200 | 503 = report.status === 'blocked' ? 503 : 200;
     return c.json(report, statusCode);
 });
-
 
 // GET /system/info - Runtime info (admin only)
 systemRoutes.get('/info', requireAdmin, (c) => {

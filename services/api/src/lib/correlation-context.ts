@@ -56,7 +56,7 @@ function generateCorrelationId(): string {
  */
 export function runWithContext<T>(
     context: Partial<CorrelationContext>,
-    fn: () => Promise<T>,
+    fn: () => Promise<T>
 ): Promise<T> {
     const fullContext: CorrelationContext = {
         correlationId: context.correlationId ?? generateCorrelationId(),

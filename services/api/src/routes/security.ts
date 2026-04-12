@@ -6,7 +6,7 @@
  */
 
 import { Hono } from 'hono';
-import { getSecretsHealth, getAccessLog } from '../lib/secrets-manager';
+import { getAccessLog, getSecretsHealth } from '../lib/secrets-manager';
 import { requireAdmin } from './admin';
 
 const securityRoutes = new Hono();
@@ -104,10 +104,9 @@ securityRoutes.get('/audit', (c) => {
                 process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
                     ? 'pass'
                     : 'warn',
-            details:
-                process.env.UPSTASH_REDIS_REST_URL
-                    ? 'Distributed rate limiting active'
-                    : 'In-memory fallback (not suitable for multi-instance)',
+            details: process.env.UPSTASH_REDIS_REST_URL
+                ? 'Distributed rate limiting active'
+                : 'In-memory fallback (not suitable for multi-instance)',
         },
     ];
 
@@ -131,7 +130,9 @@ function getRecommendations(
 
     const unset = health.filter((h) => !h.isSet);
     if (unset.length > 0) {
-        recs.push(`Configure ${unset.length} missing secrets: ${unset.map((h) => h.key).join(', ')}`);
+        recs.push(
+            `Configure ${unset.length} missing secrets: ${unset.map((h) => h.key).join(', ')}`
+        );
     }
 
     const invalid = health.filter((h) => h.isSet && !h.isValid);

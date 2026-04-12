@@ -1,9 +1,18 @@
 export const dynamic = 'force-dynamic';
-import { prisma } from '@aspendos/db';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { createEmbedding } from '@/lib/ai';
 import { analyzeContextForPAC } from '@/lib/pac/analyzer';
-import { searchConversations } from '@/lib/services/qdrant';
+import { prisma } from '@/lib/prisma';
+
+// TODO(phase-a-day-3): Qdrant removed — conversation search will use Convex + SuperMemory
+async function searchConversations(
+    _userId: string,
+    _embedding: number[],
+    _limit: number,
+): Promise<Array<{ content: string }>> {
+    return [];
+}
 
 // ============================================
 // PAC CRON ENDPOINT

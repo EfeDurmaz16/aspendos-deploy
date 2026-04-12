@@ -159,7 +159,8 @@ class SemanticCache {
             try {
                 const raw = await this.redis.get<string>(this.REDIS_PREFIX + key);
                 if (raw) {
-                    entry = typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as CacheEntry);
+                    entry =
+                        typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as CacheEntry);
                     // Populate local cache for subsequent fast reads
                     if (entry) {
                         this.cache.set(key, entry);
@@ -388,4 +389,4 @@ class SemanticCache {
 // Singleton instance
 const semanticCache = new SemanticCache();
 
-export { semanticCache, type CacheEntry, type CacheLookupResult, type CacheStats };
+export { type CacheEntry, type CacheLookupResult, type CacheStats, semanticCache };

@@ -22,6 +22,7 @@ vi.mock('../../middleware/auth', () => ({
 }));
 
 import { requireAuth } from '../../middleware/auth';
+
 const mockRequireAuth = requireAuth as any;
 
 vi.mock('@aspendos/db', () => ({
@@ -36,7 +37,6 @@ vi.mock('@aspendos/db', () => ({
     },
 }));
 
-import { prisma } from '@aspendos/db';
 const mockPrisma = prisma as any;
 
 vi.mock('../../services/notification.service', () => ({
@@ -50,6 +50,7 @@ import {
     registerPushSubscription,
     updateNotificationPreferences,
 } from '../../services/notification.service';
+
 const mockRegisterPush = registerPushSubscription as any;
 const mockGetPrefs = getUserNotificationPreferences as any;
 const mockUpdatePrefs = updateNotificationPreferences as any;
@@ -144,7 +145,11 @@ describe('Notification Routes', () => {
             expect(res.status).toBe(400);
             const body = await res.json();
             expect(body.error).toBe('Validation failed');
-            expect(body.details.some((d: any) => d.message.includes('valid URL') || d.message.includes('url'))).toBe(true);
+            expect(
+                body.details.some(
+                    (d: any) => d.message.includes('valid URL') || d.message.includes('url')
+                )
+            ).toBe(true);
         });
 
         it('should return 400 when keys are missing', async () => {
@@ -179,7 +184,9 @@ describe('Notification Routes', () => {
             expect(res.status).toBe(400);
             const body = await res.json();
             expect(body.error).toBe('Validation failed');
-            expect(body.details.some((d: any) => d.path.includes('auth') || d.path.includes('keys'))).toBe(true);
+            expect(
+                body.details.some((d: any) => d.path.includes('auth') || d.path.includes('keys'))
+            ).toBe(true);
         });
 
         it('should register push subscription successfully and return 201', async () => {
@@ -348,7 +355,9 @@ describe('Notification Routes', () => {
             expect(res.status).toBe(400);
             const body = await res.json();
             expect(body.error).toBe('Validation failed');
-            expect(body.details.some((d: any) => d.message.includes('No valid preference fields'))).toBe(true);
+            expect(
+                body.details.some((d: any) => d.message.includes('No valid preference fields'))
+            ).toBe(true);
         });
 
         it('should update boolean preference fields', async () => {

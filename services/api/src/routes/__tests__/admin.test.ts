@@ -35,7 +35,6 @@ vi.mock('@aspendos/db', () => ({
     },
 }));
 
-import { prisma } from '@aspendos/db';
 const mockPrisma = prisma as any;
 
 vi.mock('../../lib/audit-log', () => ({
@@ -45,7 +44,7 @@ vi.mock('../../lib/audit-log', () => ({
 import adminRoutes from '../admin';
 
 // Helper to create test app with admin routes
-function createTestApp() {
+function _createTestApp() {
     const app = new Hono();
     app.route('/admin', adminRoutes);
     return app;

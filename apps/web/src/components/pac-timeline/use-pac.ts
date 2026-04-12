@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type PACItem, type PACItemType } from '@/stores/yula-store';
+import type { PACItem, PACItemType } from '@/stores/yula-store';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -203,39 +203,33 @@ export function usePAC() {
         [refreshReminders]
     );
 
-    const approve = useCallback(
-        async (id: string) => {
-            try {
-                const response = await fetch(`${API_BASE}/api/pac/reminders/${id}/complete`, {
-                    method: 'PATCH',
-                    credentials: 'include',
-                });
-                if (response.ok) {
-                    setItems((prev) => prev.filter((item) => item.id !== id));
-                }
-            } catch (error) {
-                console.error('[PAC] Failed to complete reminder:', error);
+    const approve = useCallback(async (id: string) => {
+        try {
+            const response = await fetch(`${API_BASE}/api/pac/reminders/${id}/complete`, {
+                method: 'PATCH',
+                credentials: 'include',
+            });
+            if (response.ok) {
+                setItems((prev) => prev.filter((item) => item.id !== id));
             }
-        },
-        [setItems]
-    );
+        } catch (error) {
+            console.error('[PAC] Failed to complete reminder:', error);
+        }
+    }, []);
 
-    const dismiss = useCallback(
-        async (id: string) => {
-            try {
-                const response = await fetch(`${API_BASE}/api/pac/reminders/${id}/dismiss`, {
-                    method: 'PATCH',
-                    credentials: 'include',
-                });
-                if (response.ok) {
-                    setItems((prev) => prev.filter((item) => item.id !== id));
-                }
-            } catch (error) {
-                console.error('[PAC] Failed to dismiss reminder:', error);
+    const dismiss = useCallback(async (id: string) => {
+        try {
+            const response = await fetch(`${API_BASE}/api/pac/reminders/${id}/dismiss`, {
+                method: 'PATCH',
+                credentials: 'include',
+            });
+            if (response.ok) {
+                setItems((prev) => prev.filter((item) => item.id !== id));
             }
-        },
-        [setItems]
-    );
+        } catch (error) {
+            console.error('[PAC] Failed to dismiss reminder:', error);
+        }
+    }, []);
 
     const remove = useCallback((id: string) => {
         setItems((prev) => prev.filter((item) => item.id !== id));

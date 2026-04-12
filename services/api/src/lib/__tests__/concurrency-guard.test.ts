@@ -1,11 +1,11 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     acquireLock,
+    clearLocks_forTesting,
+    getLockStats,
+    isLocked,
     releaseLock,
     withLock,
-    isLocked,
-    getLockStats,
-    clearLocks_forTesting,
 } from '../concurrency-guard';
 
 describe('ConcurrencyGuard', () => {
@@ -106,11 +106,7 @@ describe('ConcurrencyGuard', () => {
             acquireLock('billing:user1:credit_deduction', 60_000);
 
             await expect(
-                withLock(
-                    'billing:user1:credit_deduction',
-                    async () => 'should not run',
-                    200
-                )
+                withLock('billing:user1:credit_deduction', async () => 'should not run', 200)
             ).rejects.toThrow('Lock timeout');
         });
 

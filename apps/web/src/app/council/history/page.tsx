@@ -15,7 +15,6 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { personaDefinitions } from '@/components/council/use-council';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
@@ -208,11 +207,14 @@ export default function CouncilHistoryPage() {
                                         <div className="flex items-center gap-3 mt-2">
                                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                                                 <CalendarBlank className="w-3 h-3" />
-                                                {new Date(session.createdAt).toLocaleDateString(undefined, {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                })}
+                                                {new Date(session.createdAt).toLocaleDateString(
+                                                    undefined,
+                                                    {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        year: 'numeric',
+                                                    }
+                                                )}
                                             </span>
                                             {session.totalLatencyMs && (
                                                 <span className="text-xs text-muted-foreground">
@@ -235,22 +237,25 @@ export default function CouncilHistoryPage() {
                                     </div>
                                     {/* Persona dots */}
                                     <div className="flex gap-1 shrink-0">
-                                        {['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'].map(
-                                            (p) => (
-                                                <div
-                                                    key={p}
-                                                    className={cn(
-                                                        'w-2.5 h-2.5 rounded-full',
-                                                        session.selectedPersona === p
-                                                            ? 'ring-2 ring-offset-1 ring-offset-background'
-                                                            : 'opacity-50'
-                                                    )}
-                                                    style={{
-                                                        backgroundColor: personaColors[p],
-                                                    }}
-                                                />
-                                            )
-                                        )}
+                                        {[
+                                            'SCHOLAR',
+                                            'CREATIVE',
+                                            'PRACTICAL',
+                                            'DEVILS_ADVOCATE',
+                                        ].map((p) => (
+                                            <div
+                                                key={p}
+                                                className={cn(
+                                                    'w-2.5 h-2.5 rounded-full',
+                                                    session.selectedPersona === p
+                                                        ? 'ring-2 ring-offset-1 ring-offset-background'
+                                                        : 'opacity-50'
+                                                )}
+                                                style={{
+                                                    backgroundColor: personaColors[p],
+                                                }}
+                                            />
+                                        ))}
                                     </div>
                                 </div>
 

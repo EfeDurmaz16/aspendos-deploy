@@ -1,7 +1,7 @@
 /**
  * Tests for cursor-based chat message pagination (Commit 4.1)
  */
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Prisma
 const mockFindFirst = vi.fn();

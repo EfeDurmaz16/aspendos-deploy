@@ -41,10 +41,9 @@ export const notificationPreferencesSchema = z
             .regex(/^\d{2}:\d{2}$/, 'quietHoursEnd must be in HH:MM format')
             .optional(),
     })
-    .refine(
-        (data) => Object.values(data).some((v) => v !== undefined),
-        { message: 'No valid preference fields provided' }
-    );
+    .refine((data) => Object.values(data).some((v) => v !== undefined), {
+        message: 'No valid preference fields provided',
+    });
 
 /**
  * Push unsubscribe schema

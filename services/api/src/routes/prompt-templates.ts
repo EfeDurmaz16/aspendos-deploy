@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { prisma } from '../lib/prisma';
+const prisma = null as any;
 import { requireAuth } from '../middleware/auth';
 
 type Variables = { userId: string };
@@ -111,9 +111,9 @@ app.post('/:id/use', requireAuth, async (c) => {
     const userId = c.get('userId');
     const id = c.req.param('id');
     const body = (await c.req.json()) as Record<string, unknown>;
-    const vars = (body.variables && typeof body.variables === 'object'
-        ? body.variables
-        : {}) as Record<string, unknown>;
+    const vars = (
+        body.variables && typeof body.variables === 'object' ? body.variables : {}
+    ) as Record<string, unknown>;
 
     const template = await prisma.promptTemplate.findFirst({
         where: { id, userId },

@@ -7,7 +7,7 @@ interface HealthCheckResult {
     status: 'healthy' | 'degraded' | 'unhealthy';
     checks: {
         database: { status: string; latencyMs?: number; error?: string };
-        qdrant: { status: string; latencyMs?: number; error?: string };
+        supermemory: { status: string; latencyMs?: number; error?: string };
         redis: { status: string; latencyMs?: number; error?: string };
     };
     uptime: number;
@@ -17,7 +17,7 @@ interface HealthCheckResult {
 export async function checkReadiness(): Promise<HealthCheckResult> {
     const checks: HealthCheckResult['checks'] = {
         database: { status: 'unknown' as string },
-        qdrant: { status: 'unknown' as string },
+        supermemory: { status: 'unknown' as string },
         redis: { status: 'unknown' as string },
     };
 
@@ -35,37 +35,19 @@ export async function checkReadiness(): Promise<HealthCheckResult> {
         };
     }
 
-    // Check Qdrant with timing (graceful)
+    // Check SuperMemory with timing (graceful)
     try {
-        const qdrantUrl = process.env.QDRANT_URL;
-        if (!qdrantUrl) {
-            checks.qdrant = { status: 'not_configured' };
+        if (!process.env.SUPERMEMORY_API_KEY) {
+            checks.supermemory = { status: 'not_configured' };
         } else {
-            const qdrantStart = Date.now();
-            const response = await fetch(`${qdrantUrl}/collections`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(process.env.QDRANT_API_KEY && {
-                        'api-key': process.env.QDRANT_API_KEY,
-                    }),
-                },
-                signal: AbortSignal.timeout(5000), // 5 second timeout
-            });
-            const qdrantLatency = Date.now() - qdrantStart;
-
-            if (response.ok) {
-                checks.qdrant = { status: 'healthy', latencyMs: qdrantLatency };
-            } else {
-                checks.qdrant = {
-                    status: 'degraded',
-                    latencyMs: qdrantLatency,
-                    error: `HTTP ${response.status}`,
-                };
-            }
+            const smStart = Date.now();
+            const { searchMemories } = await import('../services/memory-router.service');
+            await searchMemories('health-check-probe', 'system', { limit: 1 });
+            const smLatency = Date.now() - smStart;
+            checks.supermemory = { status: 'healthy', latencyMs: smLatency };
         }
     } catch (error) {
-        checks.qdrant = {
+        checks.supermemory = {
             status: 'degraded',
             error: error instanceof Error ? error.message : 'Unknown error',
         };
@@ -114,10 +96,10 @@ export async function checkReadiness(): Promise<HealthCheckResult> {
     if (checks.database.status === 'unhealthy') {
         overallStatus = 'unhealthy';
     }
-    // Qdrant or Redis degraded = overall degraded
+    // SuperMemory or Redis degraded = overall degraded
     else if (
-        checks.qdrant.status === 'unhealthy' ||
-        checks.qdrant.status === 'degraded' ||
+        checks.supermemory.status === 'unhealthy' ||
+        checks.supermemory.status === 'degraded' ||
         checks.redis.status === 'unhealthy' ||
         checks.redis.status === 'degraded'
     ) {

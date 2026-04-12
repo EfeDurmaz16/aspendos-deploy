@@ -7,13 +7,15 @@
  * understanding of user workflows.
  *
  * Flow:
- * 1. Query AgentActionLog for recurring tool sequences
- * 2. If same sequence appears 3+ times for similar queries → pattern detected
+ * 1. Query action_log for recurring tool sequences
+ * 2. If same sequence appears 3+ times for similar queries -> pattern detected
  * 3. Extract skill draft (system prompt, tool sequence, guard config)
  * 4. Suggest to user: "I noticed you often do X. Create a shortcut?"
+ *
+ * Backed by Convex action_log.
  */
 
-import { prisma } from '@aspendos/db';
+import { getConvexClient, api } from '../lib/convex';
 import * as skillService from './skill.service';
 
 // ============================================
@@ -38,75 +40,85 @@ export interface DetectedPattern {
  * Returns patterns that appear 3+ times in the last 30 days.
  */
 export async function detectPatterns(userId: string): Promise<DetectedPattern[]> {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-    // Get all tool call sessions (grouped by sessionId)
-    const sessions = await prisma.agentActionLog.groupBy({
-        by: ['sessionId'],
-        where: {
-            userId,
-            actionType: 'tool_call',
-            toolName: { not: null },
-            createdAt: { gte: thirtyDaysAgo },
-        },
-        _count: { id: true },
-        having: { id: { _count: { gte: 2 } } }, // Sessions with 2+ tool calls
-    });
-
-    // For each session, get the tool sequence
-    const sequences: Array<{ tools: string[]; sessionId: string }> = [];
-
-    for (const session of sessions.slice(0, 50)) {
-        // Limit to 50 sessions
-        const actions = await prisma.agentActionLog.findMany({
-            where: {
-                userId,
-                sessionId: session.sessionId,
-                actionType: 'tool_call',
-                toolName: { not: null },
-            },
-            orderBy: { createdAt: 'asc' },
-            select: { toolName: true },
-            take: 10, // Max 10 tools per sequence
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 2000,
         });
 
-        const tools = actions.map((a) => a.toolName!).filter(Boolean);
-        if (tools.length >= 2) {
-            sequences.push({ tools, sessionId: session.sessionId });
+        const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+        // Filter to tool_call events in the last 30 days
+        const toolCallLogs = logs.filter(
+            (l) =>
+                l.event_type === 'tool_call' &&
+                l.timestamp >= thirtyDaysAgo &&
+                l.details?.toolName
+        );
+
+        // Group by sessionId
+        const sessionGroups = new Map<string, Array<{ toolName: string; timestamp: number }>>();
+        for (const log of toolCallLogs) {
+            const sessionId = (log.details?.sessionId as string) || 'unknown';
+            if (!sessionGroups.has(sessionId)) {
+                sessionGroups.set(sessionId, []);
+            }
+            sessionGroups.get(sessionId)!.push({
+                toolName: log.details!.toolName as string,
+                timestamp: log.timestamp,
+            });
         }
+
+        // Build sequences from sessions with 2+ tool calls
+        const sequences: Array<{ tools: string[]; sessionId: string }> = [];
+        for (const [sessionId, actions] of sessionGroups) {
+            if (actions.length < 2) continue;
+            // Sort by timestamp ascending
+            actions.sort((a, b) => a.timestamp - b.timestamp);
+            const tools = actions.slice(0, 10).map((a) => a.toolName);
+            sequences.push({ tools, sessionId });
+        }
+
+        // Count occurrences of each unique tool sequence
+        const sequenceCounts = new Map<
+            string,
+            { count: number; tools: string[]; sessions: string[] }
+        >();
+
+        for (const seq of sequences.slice(0, 50)) {
+            const key = seq.tools.join('→');
+            const existing = sequenceCounts.get(key) || {
+                count: 0,
+                tools: seq.tools,
+                sessions: [],
+            };
+            existing.count++;
+            existing.sessions.push(seq.sessionId);
+            sequenceCounts.set(key, existing);
+        }
+
+        // Filter to patterns with 3+ occurrences
+        const patterns: DetectedPattern[] = [];
+
+        for (const [_key, value] of sequenceCounts) {
+            if (value.count < 3) continue;
+
+            patterns.push({
+                toolSequence: value.tools,
+                occurrences: value.count,
+                lastSeen: new Date(), // Approximate
+                sampleInputs: [], // Would need to query chat messages
+                suggestedName: generatePatternName(value.tools),
+                suggestedDescription: `Automated workflow: ${value.tools.join(' → ')} (used ${value.count} times)`,
+            });
+        }
+
+        return patterns.sort((a, b) => b.occurrences - a.occurrences);
+    } catch (error) {
+        console.error('[Learning] detectPatterns failed:', error);
+        return [];
     }
-
-    // Count occurrences of each unique tool sequence
-    const sequenceCounts = new Map<
-        string,
-        { count: number; tools: string[]; sessions: string[] }
-    >();
-
-    for (const seq of sequences) {
-        const key = seq.tools.join('→');
-        const existing = sequenceCounts.get(key) || { count: 0, tools: seq.tools, sessions: [] };
-        existing.count++;
-        existing.sessions.push(seq.sessionId);
-        sequenceCounts.set(key, existing);
-    }
-
-    // Filter to patterns with 3+ occurrences
-    const patterns: DetectedPattern[] = [];
-
-    for (const [_key, value] of sequenceCounts) {
-        if (value.count < 3) continue;
-
-        patterns.push({
-            toolSequence: value.tools,
-            occurrences: value.count,
-            lastSeen: new Date(), // Approximate
-            sampleInputs: [], // Would need to query chat messages
-            suggestedName: generatePatternName(value.tools),
-            suggestedDescription: `Automated workflow: ${value.tools.join(' → ')} (used ${value.count} times)`,
-        });
-    }
-
-    return patterns.sort((a, b) => b.occurrences - a.occurrences);
 }
 
 /**
@@ -134,35 +146,61 @@ export async function createSkillFromPattern(
  * Skills with success rate < 70% or avg feedback < 3.0 get flagged.
  */
 export async function getSkillsNeedingRefinement(userId?: string): Promise<string[]> {
-    const skills = await prisma.skill.findMany({
-        where: {
-            usageCount: { gte: 5 }, // Only check skills with enough data
-            OR: [{ successRate: { lt: 0.7 } }],
-            ...(userId ? { createdBy: userId } : {}),
-        },
-        select: { id: true },
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 2000 });
 
-    // Also check average feedback
-    const lowFeedbackSkills = await prisma.skillExecution.groupBy({
-        by: ['skillId'],
-        where: {
-            feedback: { not: null },
-            ...(userId ? { userId } : {}),
-        },
-        _avg: { feedback: true },
-        _count: { feedback: true },
-        having: {
-            feedback: { _count: { gte: 3 }, _avg: { lt: 3.0 } },
-        },
-    });
+        // Filter to skill_execution events
+        const execLogs = logs.filter(
+            (l) =>
+                l.event_type === 'skill_execution' &&
+                (!userId || l.user_id === (userId as any))
+        );
 
-    const skillIds = new Set([
-        ...skills.map((s) => s.id),
-        ...lowFeedbackSkills.map((s) => s.skillId),
-    ]);
+        // Group by skillId
+        const skillStats = new Map<
+            string,
+            { total: number; successes: number; feedbackSum: number; feedbackCount: number }
+        >();
 
-    return Array.from(skillIds);
+        for (const log of execLogs) {
+            const skillId = log.details?.skillId as string;
+            if (!skillId) continue;
+
+            const stats = skillStats.get(skillId) || {
+                total: 0,
+                successes: 0,
+                feedbackSum: 0,
+                feedbackCount: 0,
+            };
+            stats.total++;
+            if (log.details?.success) stats.successes++;
+            if (typeof log.details?.feedback === 'number') {
+                stats.feedbackSum += log.details.feedback;
+                stats.feedbackCount++;
+            }
+            skillStats.set(skillId, stats);
+        }
+
+        const needsRefinement: string[] = [];
+        for (const [skillId, stats] of skillStats) {
+            if (stats.total < 5) continue; // Not enough data
+            const successRate = stats.successes / stats.total;
+            const avgFeedback =
+                stats.feedbackCount >= 3
+                    ? stats.feedbackSum / stats.feedbackCount
+                    : 5.0; // Default OK
+
+            if (successRate < 0.7 || avgFeedback < 3.0) {
+                needsRefinement.push(skillId);
+            }
+        }
+
+        return needsRefinement;
+    } catch (error) {
+        console.error('[Learning] getSkillsNeedingRefinement failed:', error);
+        return [];
+    }
 }
 
 // ============================================
@@ -170,30 +208,54 @@ export async function getSkillsNeedingRefinement(userId?: string): Promise<strin
 // ============================================
 
 export async function refineSkill(skillId: string): Promise<boolean> {
-    const skill = await prisma.skill.findUnique({ where: { id: skillId } });
-    if (!skill) return false;
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 1000 });
 
-    const failures = await prisma.skillExecution.findMany({
-        where: { skillId, success: false },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-        select: { input: true },
-    });
+        // Find the skill definition
+        const skillLog = logs.find(
+            (l) =>
+                l.event_type === 'skill_created' &&
+                l.details?.skillId === skillId
+        );
+        if (!skillLog) return false;
 
-    if (failures.length === 0) return false;
+        // Find failed executions
+        const failures = logs
+            .filter(
+                (l) =>
+                    l.event_type === 'skill_execution' &&
+                    l.details?.skillId === skillId &&
+                    !l.details?.success
+            )
+            .slice(0, 10);
 
-    const failureInputs = failures.map((f) => f.input).filter(Boolean);
-    const patterns = findCommonWords(failureInputs);
-    if (patterns.length === 0) return false;
+        if (failures.length === 0) return false;
 
-    const refinedPrompt = `${skill.systemPrompt}\n\nKnown failure patterns to handle carefully:\n${patterns.map((p) => `- ${p}`).join('\n')}`;
+        const failureInputs = failures
+            .map((f) => (f.details?.input as string) || '')
+            .filter(Boolean);
+        const patterns = findCommonWords(failureInputs);
+        if (patterns.length === 0) return false;
 
-    await prisma.skill.update({
-        where: { id: skillId },
-        data: { systemPrompt: refinedPrompt, version: { increment: 1 } },
-    });
+        const currentPrompt = (skillLog.details?.systemPrompt as string) || '';
+        const refinedPrompt = `${currentPrompt}\n\nKnown failure patterns to handle carefully:\n${patterns.map((p) => `- ${p}`).join('\n')}`;
 
-    return true;
+        // Log the refinement
+        await client.mutation(api.actionLog.log, {
+            event_type: 'skill_refined',
+            details: {
+                skillId,
+                refinedPrompt,
+                failurePatterns: patterns,
+            },
+        });
+
+        return true;
+    } catch (error) {
+        console.error('[Learning] refineSkill failed:', error);
+        return false;
+    }
 }
 
 export async function runRefinementCycle(userId?: string): Promise<number> {

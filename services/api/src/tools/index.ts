@@ -283,8 +283,6 @@ export type UserTier = 'FREE' | 'STARTER' | 'PRO' | 'ULTRA';
 async function getSupermemoryTools(
     userId: string
 ): Promise<Record<string, ReturnType<typeof tool>> | null> {
-    const backend = process.env.MEMORY_BACKEND || 'openmemory';
-    if (backend !== 'supermemory' && backend !== 'dual') return null;
     if (!process.env.SUPERMEMORY_API_KEY) return null;
 
     try {

@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from 'next';
+import { Manrope } from 'next/font/google';
 import { headers } from 'next/headers';
 import Script from 'next/script';
 import './globals.css';
+
+const manrope = Manrope({
+    subsets: ['latin'],
+    variable: '--font-manrope',
+    display: 'swap',
+});
 import { SkipLink } from '@/components/accessibility/skip-link';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
@@ -15,6 +22,7 @@ import {
     softwareAppSchema,
     websiteSchema,
 } from '@/lib/seo/structured-data';
+import { ConvexClientProvider } from '@/components/convex-client-provider';
 import { cn } from '@/lib/utils';
 
 // Comprehensive metadata for SEO and GEO
@@ -44,7 +52,7 @@ export default async function RootLayout({
     const nonce = headersList.get('x-nonce') || undefined;
 
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en" suppressHydrationWarning className={manrope.variable}>
             <head>
                 {/* PWA Meta Tags */}
                 <meta name="application-name" content="Yula" />
@@ -63,21 +71,33 @@ export default async function RootLayout({
                 <Script
                     id="organization-schema"
                     type="application/ld+json"
-                    strategy="afterInteractive" nonce={nonce}
+                    strategy="afterInteractive"
+                    nonce={nonce}
                 >
                     {serializeSchema(organizationSchema)}
                 </Script>
-                <Script id="website-schema" type="application/ld+json" strategy="afterInteractive" nonce={nonce}>
+                <Script
+                    id="website-schema"
+                    type="application/ld+json"
+                    strategy="afterInteractive"
+                    nonce={nonce}
+                >
                     {serializeSchema(websiteSchema)}
                 </Script>
                 <Script
                     id="software-app-schema"
                     type="application/ld+json"
-                    strategy="afterInteractive" nonce={nonce}
+                    strategy="afterInteractive"
+                    nonce={nonce}
                 >
                     {serializeSchema(softwareAppSchema)}
                 </Script>
-                <Script id="faq-schema" type="application/ld+json" strategy="afterInteractive" nonce={nonce}>
+                <Script
+                    id="faq-schema"
+                    type="application/ld+json"
+                    strategy="afterInteractive"
+                    nonce={nonce}
+                >
                     {serializeSchema(faqSchema)}
                 </Script>
             </head>
@@ -85,6 +105,7 @@ export default async function RootLayout({
                 {/* Accessibility: Skip to main content link */}
                 <SkipLink />
 
+                <ConvexClientProvider>
                 <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
                     <OfflineBanner />
                     <ErrorBoundary>
@@ -96,6 +117,7 @@ export default async function RootLayout({
                     <UpdatePrompt />
                     <CookieConsent />
                 </ThemeProvider>
+                </ConvexClientProvider>
             </body>
         </html>
     );

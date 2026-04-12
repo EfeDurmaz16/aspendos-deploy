@@ -1,42 +1,66 @@
 'use client';
 
-import {
-    signOut as betterAuthSignOut,
-    useSession as useBetterAuthSession,
-} from '@/lib/auth-client';
+import { useEffect, useState } from 'react';
+
+interface AuthState {
+    user: { id: string; email: string; firstName: string | null; lastName: string | null; profilePictureUrl: string | null } | null;
+    loading: boolean;
+}
+
+let cachedAuth: AuthState | null = null;
 
 export function useAuth() {
-    const session = useBetterAuthSession();
+    const [state, setState] = useState<AuthState>(cachedAuth ?? { user: null, loading: true });
+
+    useEffect(() => {
+        if (cachedAuth) return;
+
+        (async () => {
+            try {
+                const { useAuth: workosUseAuth } = await import('@workos-inc/authkit-nextjs');
+                const { user, loading } = workosUseAuth();
+                const authState = { user, loading };
+                cachedAuth = authState;
+                setState(authState);
+            } catch {
+                setState({ user: null, loading: false });
+            }
+        })();
+    }, []);
+
     return {
-        isLoaded: !session.isPending,
-        isSignedIn: !!session.data?.user,
-        userId: session.data?.user?.id ?? null,
-        sessionId: session.data?.session?.id ?? null,
+        isLoaded: !state.loading,
+        isSignedIn: !!state.user,
+        userId: state.user?.id ?? null,
+        sessionId: state.user?.id ?? null,
         getToken: async () => null,
         signOut: async () => {
-            await betterAuthSignOut();
+            try {
+                const { signOut } = await import('@workos-inc/authkit-nextjs');
+                await signOut();
+            } catch {
+                window.location.href = '/';
+            }
         },
     };
 }
 
 export function useUser() {
-    const session = useBetterAuthSession();
+    const { isLoaded, isSignedIn, userId } = useAuth();
+    const [state] = useState<AuthState>(cachedAuth ?? { user: null, loading: !isLoaded });
+
     return {
-        isLoaded: true,
-        isSignedIn: !!session.data?.user,
-        user: session.data?.user
+        isLoaded,
+        isSignedIn,
+        user: state.user
             ? {
-                  id: session.data.user.id,
-                  firstName: session.data.user.name?.split(' ')[0] ?? null,
-                  lastName: session.data.user.name?.split(' ').slice(1).join(' ') || null,
-                  fullName: session.data.user.name ?? null,
-                  emailAddresses: session.data.user.email
-                      ? [{ emailAddress: session.data.user.email }]
-                      : [],
-                  primaryEmailAddress: session.data.user.email
-                      ? { emailAddress: session.data.user.email }
-                      : null,
-                  imageUrl: session.data.user.image ?? null,
+                  id: state.user.id,
+                  firstName: state.user.firstName,
+                  lastName: state.user.lastName,
+                  fullName: [state.user.firstName, state.user.lastName].filter(Boolean).join(' ') || null,
+                  emailAddresses: state.user.email ? [{ emailAddress: state.user.email }] : [],
+                  primaryEmailAddress: state.user.email ? { emailAddress: state.user.email } : null,
+                  imageUrl: state.user.profilePictureUrl,
               }
             : null,
     };

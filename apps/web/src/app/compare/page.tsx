@@ -1,8 +1,5 @@
 import type { Metadata } from 'next';
-import {
-    CompareIndexPage,
-    type CompareIndexCompetitor,
-} from '@/components/seo/CompareIndexPage';
+import { type CompareIndexCompetitor, CompareIndexPage } from '@/components/seo/CompareIndexPage';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = generatePageMetadata(

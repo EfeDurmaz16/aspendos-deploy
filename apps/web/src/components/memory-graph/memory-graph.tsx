@@ -151,7 +151,11 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
     const handleNodeClick = useCallback(
         (node: NodeObject) => {
             const nodeId =
-                typeof node.id === 'number' ? node.id.toString() : typeof node.id === 'string' ? node.id : null;
+                typeof node.id === 'number'
+                    ? node.id.toString()
+                    : typeof node.id === 'string'
+                      ? node.id
+                      : null;
             if (!nodeId) return;
             selectNode(nodeId);
             // Center on node
@@ -167,7 +171,11 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
     const handleNodeHover = useCallback(
         (node: NodeObject | null) => {
             const nodeId = node
-                ? typeof node.id === 'number' ? node.id.toString() : typeof node.id === 'string' ? node.id : null
+                ? typeof node.id === 'number'
+                    ? node.id.toString()
+                    : typeof node.id === 'string'
+                      ? node.id
+                      : null
                 : null;
             hoverNode(nodeId);
         },

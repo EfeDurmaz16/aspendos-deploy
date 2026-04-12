@@ -205,7 +205,10 @@ function BillingContent() {
 
                 {/* Header */}
                 <div className="animate-fade-up">
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-3" style={{ textWrap: 'balance' as any }}>
+                    <h1
+                        className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-3"
+                        style={{ textWrap: 'balance' as any }}
+                    >
                         Billing & Usage
                     </h1>
                     <p className="text-lg text-zinc-600 dark:text-zinc-400">
@@ -254,15 +257,15 @@ function BillingContent() {
                         >
                             Change Plan
                         </a>
-                        <a
-                            href="https://polar.sh/purchases/subscriptions"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 hover:from-foreground/90 hover:to-foreground/80 text-background font-semibold shadow-md hover:shadow-lg transition-all"
+                        {/* TODO(stripe-migration): replace with <a href={stripePortalUrl}> once Stripe customer portal is wired up */}
+                        <span
+                            aria-disabled="true"
+                            title="Temporarily disabled during Stripe migration"
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background font-semibold shadow-md transition-all opacity-60 cursor-not-allowed select-none"
                         >
                             Manage Subscription
                             <ArrowRight weight="bold" />
-                        </a>
+                        </span>
                     </div>
                 </div>
 

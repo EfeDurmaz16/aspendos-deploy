@@ -59,9 +59,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
             transition={{ duration: 0.3 }}
         >
             {/* Header with accent */}
-            <div
-                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl relative bg-foreground/10"
-            >
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl relative bg-foreground/10">
                 <Bell className="h-8 w-8 text-foreground" />
                 {/* Notification badge */}
                 <motion.div
@@ -84,9 +82,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
             <div className="mb-6 w-full max-w-md">
                 <div className="rounded-xl border border-border bg-foreground/[0.02] overflow-hidden">
                     {/* Phone mockup header */}
-                    <div
-                        className="flex items-center justify-between px-4 py-2 bg-foreground/[0.03]"
-                    >
+                    <div className="flex items-center justify-between px-4 py-2 bg-foreground/[0.03]">
                         <span className="text-xs text-muted-foreground">Yula Notification</span>
                         <div className="flex gap-1">
                             {DEMO_NOTIFICATIONS.map((_, i) => (
@@ -94,7 +90,9 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                                     key={i}
                                     className={cn(
                                         'h-1.5 w-1.5 rounded-full transition-colors',
-                                        i === activeNotification ? 'bg-foreground' : 'bg-foreground/10'
+                                        i === activeNotification
+                                            ? 'bg-foreground'
+                                            : 'bg-foreground/10'
                                     )}
                                 />
                             ))}
@@ -196,9 +194,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
 function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFICATIONS)[number] }) {
     return (
         <div className="flex gap-3">
-            <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground/10 text-foreground"
-            >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground/10 text-foreground">
                 {notification.icon}
             </div>
             <div className="flex-1 min-w-0">
@@ -212,9 +208,7 @@ function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFIC
                     {notification.message}
                 </div>
                 <div className="mt-2 flex gap-2">
-                    <button
-                        className="rounded-md px-3 py-1 text-xs font-medium bg-foreground text-background"
-                    >
+                    <button className="rounded-md px-3 py-1 text-xs font-medium bg-foreground text-background">
                         Reply
                     </button>
                     <button className="rounded-md px-3 py-1 text-xs text-muted-foreground bg-foreground/5">
@@ -228,9 +222,7 @@ function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFIC
 
 function StepIndicator({ number }: { number: number }) {
     return (
-        <div
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-foreground text-background"
-        >
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-foreground text-background">
             {number}
         </div>
     );

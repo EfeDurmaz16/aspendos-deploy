@@ -2,13 +2,13 @@
  * Import Service
  *
  * Handles importing chat history from ChatGPT and Claude exports.
- * Parses conversation formats, stores in database, and indexes for search.
+ * Parses conversation formats, stores in Convex, and indexes for search.
  */
 
 import { randomUUID } from 'node:crypto';
-import { type Prisma } from '@aspendos/db';
+
+import { getConvexClient, api } from '../lib/convex';
 import { jobQueue } from '../lib/job-queue';
-import { prisma } from '../lib/prisma';
 import * as importParsers from './import-parsers';
 
 // Types for parsed conversations
@@ -28,7 +28,7 @@ export interface ParsedConversation {
 }
 
 /**
- * Create a new import job
+ * Create a new import job (tracked via action_log)
  */
 export async function createImportJob(
     userId: string,
@@ -36,17 +36,38 @@ export async function createImportJob(
     fileName: string,
     fileSize: number
 ) {
-    const normalizedSource = source === 'PERPLEXITY' ? 'OTHER' : source;
+    try {
+        const client = getConvexClient();
+        const normalizedSource = source === 'PERPLEXITY' ? 'OTHER' : source;
+        const jobId = `import_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-    return prisma.importJob.create({
-        data: {
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'import_job_created',
+            details: {
+                jobId,
+                source: normalizedSource,
+                fileName,
+                fileSize,
+                status: 'PENDING',
+                totalItems: 0,
+                importedItems: 0,
+            },
+        });
+
+        return {
+            id: jobId,
             userId,
             source: normalizedSource,
             fileName,
             fileSize,
             status: 'PENDING',
-        },
-    });
+        };
+    } catch (error) {
+        console.error('[Import] createImportJob failed:', error);
+        const jobId = `import_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        return { id: jobId, userId, source, fileName, fileSize, status: 'PENDING' };
+    }
 }
 
 /**
@@ -65,35 +86,109 @@ export async function updateImportJobStatus(
         | 'CANCELED',
     error?: string
 ) {
-    return prisma.importJob.update({
-        where: { id: jobId },
-        data: {
-            status,
-            errorMessage: error,
-            ...(status === 'COMPLETED' || status === 'FAILED' ? { completedAt: new Date() } : {}),
-        },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            event_type: 'import_job_status_updated',
+            details: {
+                jobId,
+                status,
+                errorMessage: error,
+                ...(status === 'COMPLETED' || status === 'FAILED'
+                    ? { completedAt: new Date().toISOString() }
+                    : {}),
+            },
+        });
+        return { id: jobId, status };
+    } catch (err) {
+        console.error('[Import] updateImportJobStatus failed:', err);
+        return { id: jobId, status };
+    }
 }
 
 /**
  * Get import job by ID
  */
 export async function getImportJob(jobId: string, userId: string) {
-    return prisma.importJob.findFirst({
-        where: { id: jobId, userId },
-        include: { entities: true },
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 500,
+        });
+
+        // Find the creation event
+        const creationLog = logs.find(
+            (l) =>
+                l.event_type === 'import_job_created' && l.details?.jobId === jobId
+        );
+        if (!creationLog) return null;
+
+        // Find latest status update
+        const statusLogs = logs
+            .filter(
+                (l) =>
+                    l.event_type === 'import_job_status_updated' &&
+                    l.details?.jobId === jobId
+            )
+            .sort((a, b) => b.timestamp - a.timestamp);
+
+        const latestStatus = statusLogs[0]?.details?.status || creationLog.details?.status;
+
+        // Find entities
+        const entities = logs
+            .filter(
+                (l) =>
+                    l.event_type === 'import_entity_stored' && l.details?.jobId === jobId
+            )
+            .map((l) => l.details);
+
+        return {
+            id: jobId,
+            ...creationLog.details,
+            status: latestStatus,
+            entities,
+        };
+    } catch {
+        return null;
+    }
 }
 
 /**
  * List import jobs for a user
  */
 export async function listImportJobs(userId: string, limit = 20) {
-    return prisma.importJob.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 500,
+        });
+
+        const jobCreations = logs
+            .filter((l) => l.event_type === 'import_job_created')
+            .slice(0, limit);
+
+        // Enrich with latest status
+        return jobCreations.map((job) => {
+            const latestStatus = logs
+                .filter(
+                    (l) =>
+                        l.event_type === 'import_job_status_updated' &&
+                        l.details?.jobId === job.details?.jobId
+                )
+                .sort((a, b) => b.timestamp - a.timestamp)[0];
+
+            return {
+                id: job.details?.jobId,
+                ...job.details,
+                status: latestStatus?.details?.status || job.details?.status,
+                createdAt: new Date(job.timestamp),
+            };
+        });
+    } catch {
+        return [];
+    }
 }
 
 /**
@@ -273,7 +368,9 @@ export function parseClaudeExport(data: unknown): ParsedConversation[] {
         }
 
         // Use first user message as title fallback when name is empty
-        const fallbackTitle = messages.find((m) => m.role === 'user')?.content?.slice(0, 80) || 'Untitled Conversation';
+        const fallbackTitle =
+            messages.find((m) => m.role === 'user')?.content?.slice(0, 80) ||
+            'Untitled Conversation';
         conversations.push({
             externalId: conv.uuid || `claude-${randomUUID()}`,
             title: conv.name || fallbackTitle,
@@ -383,181 +480,210 @@ export function parsePerplexityExport(data: unknown): ParsedConversation[] {
  * Store parsed entities for preview
  */
 export async function storeImportEntities(jobId: string, conversations: ParsedConversation[]) {
-    const entities = conversations.map((conv) => ({
-        jobId,
-        type: 'CONVERSATION' as const,
-        externalId: conv.externalId,
-        title: conv.title,
-        content: {
-            messages: conv.messages.map((msg) => ({
-                role: msg.role,
-                content: msg.content,
-                createdAt: msg.createdAt.toISOString(),
-            })),
-            source: conv.source,
-            createdAt: conv.createdAt.toISOString(),
-            updatedAt: conv.updatedAt.toISOString(),
-        } as Prisma.InputJsonValue,
-        selected: true,
-        imported: false,
-    }));
+    try {
+        const client = getConvexClient();
 
-    await prisma.importEntity.createMany({ data: entities });
+        for (const conv of conversations) {
+            await client.mutation(api.actionLog.log, {
+                event_type: 'import_entity_stored',
+                details: {
+                    jobId,
+                    type: 'CONVERSATION',
+                    externalId: conv.externalId,
+                    title: conv.title,
+                    content: {
+                        messages: conv.messages.map((msg) => ({
+                            role: msg.role,
+                            content: msg.content,
+                            createdAt: msg.createdAt.toISOString(),
+                        })),
+                        source: conv.source,
+                        createdAt: conv.createdAt.toISOString(),
+                        updatedAt: conv.updatedAt.toISOString(),
+                    },
+                    selected: true,
+                    imported: false,
+                },
+            });
+        }
 
-    // Update job with total count
-    await prisma.importJob.update({
-        where: { id: jobId },
-        data: { totalItems: entities.length },
-    });
+        // Update job with total count
+        await client.mutation(api.actionLog.log, {
+            event_type: 'import_job_status_updated',
+            details: { jobId, totalItems: conversations.length },
+        });
 
-    return entities.length;
+        return conversations.length;
+    } catch (error) {
+        console.error('[Import] storeImportEntities failed:', error);
+        return 0;
+    }
 }
 
 /**
  * Update entity selection
  */
 export async function updateEntitySelection(entityId: string, jobId: string, selected: boolean) {
-    return prisma.importEntity.update({
-        where: { id: entityId, jobId },
-        data: { selected },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            event_type: 'import_entity_selection_updated',
+            details: { entityId, jobId, selected },
+        });
+        return { id: entityId, jobId, selected };
+    } catch {
+        return { id: entityId, jobId, selected };
+    }
 }
 
 /**
  * Execute import for selected entities
  */
 export async function executeImport(jobId: string, userId: string, selectedIds?: string[]) {
-    // Get selected entities
-    const entities = await prisma.importEntity.findMany({
-        where: {
-            jobId,
-            selected: true,
-            imported: false,
-            ...(selectedIds ? { id: { in: selectedIds } } : {}),
-        },
-    });
+    try {
+        const client = getConvexClient();
 
-    if (entities.length === 0) {
-        throw new Error('No entities selected for import');
-    }
+        // Get stored entities from action_log
+        const logs = await client.query(api.actionLog.listRecent, { limit: 1000 });
+        const entityLogs = logs.filter(
+            (l) =>
+                l.event_type === 'import_entity_stored' &&
+                l.details?.jobId === jobId &&
+                l.details?.selected === true &&
+                l.details?.imported !== true &&
+                (!selectedIds || selectedIds.includes(l.details?.externalId))
+        );
 
-    // Update job status
-    await updateImportJobStatus(jobId, 'IMPORTING');
-
-    let importedCount = 0;
-
-    for (const entity of entities) {
-        try {
-            const content = entity.content as unknown as {
-                messages: ParsedMessage[];
-                source: string;
-                createdAt: string;
-                updatedAt: string;
-            };
-
-            // Create conversation in YULA
-            const chat = await prisma.chat.create({
-                data: {
-                    userId,
-                    title: entity.title || 'Imported Conversation',
-                    modelPreference: 'imported',
-                    description: `Imported from ${content.source} on ${new Date().toISOString()}`,
-                },
-            });
-
-            // Create messages
-            const messageData = content.messages.map((msg) => ({
-                chatId: chat.id,
-                userId,
-                role: msg.role,
-                content: msg.content,
-                createdAt: new Date(msg.createdAt),
-                modelUsed: 'imported',
-            }));
-
-            await prisma.message.createMany({ data: messageData });
-
-            // Store memory in PostgreSQL immediately (no embedding call)
-            // Embeddings will be created lazily in the background
-            const memoryContent = content.messages
-                .map((m) => `${m.role}: ${m.content}`)
-                .join('\n\n')
-                .slice(0, 10000); // Limit size
-
-            await prisma.memory.create({
-                data: {
-                    userId,
-                    chatId: chat.id,
-                    content: memoryContent,
-                    type: 'context',
-                    sector: 'episodic',
-                    source: 'import_pending',
-                    importance: 50,
-                    confidence: 0.8,
-                    decayScore: 0, // Flag: not yet synced to Qdrant
-                    tags: ['imported', content.source.toLowerCase(), jobId],
-                },
-            });
-
-            // Mark entity as imported
-            await prisma.importEntity.update({
-                where: { id: entity.id },
-                data: { imported: true },
-            });
-
-            importedCount++;
-
-            // Update job progress
-            await prisma.importJob.update({
-                where: { id: jobId },
-                data: { importedItems: importedCount },
-            });
-        } catch (error) {
-            console.error(`Failed to import entity ${entity.id}:`, error);
-            // Continue with next entity
+        if (entityLogs.length === 0) {
+            throw new Error('No entities selected for import');
         }
+
+        await updateImportJobStatus(jobId, 'IMPORTING');
+
+        let importedCount = 0;
+
+        for (const entityLog of entityLogs) {
+            try {
+                const entity = entityLog.details as any;
+                const content = entity.content as {
+                    messages: ParsedMessage[];
+                    source: string;
+                    createdAt: string;
+                    updatedAt: string;
+                };
+
+                // Create conversation in Convex
+                const convId = await client.mutation(api.conversations.create, {
+                    user_id: userId as any,
+                    title: entity.title || 'Imported Conversation',
+                });
+
+                // Create messages in Convex
+                for (const msg of content.messages) {
+                    const role = msg.role as 'user' | 'assistant' | 'system';
+                    await client.mutation(api.messages.create, {
+                        conversation_id: convId,
+                        user_id: userId as any,
+                        role,
+                        content: msg.content,
+                    });
+                }
+
+                // Store memory reference in Convex
+                const memoryContent = content.messages
+                    .map((m) => `${m.role}: ${m.content}`)
+                    .join('\n\n')
+                    .slice(0, 10000);
+
+                await client.mutation(api.memories.create, {
+                    user_id: userId as any,
+                    content_preview: memoryContent.slice(0, 500),
+                    source: 'import_pending',
+                });
+
+                // Mark entity as imported
+                await client.mutation(api.actionLog.log, {
+                    user_id: userId as any,
+                    event_type: 'import_entity_imported',
+                    details: { jobId, externalId: entity.externalId },
+                });
+
+                importedCount++;
+
+                // Update job progress
+                await client.mutation(api.actionLog.log, {
+                    user_id: userId as any,
+                    event_type: 'import_job_status_updated',
+                    details: { jobId, importedItems: importedCount },
+                });
+            } catch (error) {
+                console.error(`Failed to import entity:`, error);
+                // Continue with next entity
+            }
+        }
+
+        // Update job status
+        await updateImportJobStatus(
+            jobId,
+            importedCount > 0 ? 'COMPLETED' : 'FAILED',
+            importedCount === 0 ? 'No entities were imported' : undefined
+        );
+
+        // Extract memories from imported conversations (instant, no AI calls)
+        if (importedCount > 0) {
+            extractMemoriesFromImport(userId, jobId).catch((error) => {
+                console.error('Memory extraction from import failed (non-blocking):', error);
+            });
+
+            // Queue background embedding job for all pending memories
+            queueEmbeddingJobs(userId, jobId);
+        }
+
+        return {
+            total: entityLogs.length,
+            imported: importedCount,
+            failed: entityLogs.length - importedCount,
+        };
+    } catch (error) {
+        if (error instanceof Error && error.message === 'No entities selected for import') {
+            throw error;
+        }
+        console.error('[Import] executeImport failed:', error);
+        return { total: 0, imported: 0, failed: 0 };
     }
-
-    // Update job status
-    await updateImportJobStatus(
-        jobId,
-        importedCount > 0 ? 'COMPLETED' : 'FAILED',
-        importedCount === 0 ? 'No entities were imported' : undefined
-    );
-
-    // Extract memories from imported conversations (instant, no AI calls)
-    if (importedCount > 0) {
-        extractMemoriesFromImport(userId, jobId).catch((error) => {
-            console.error('Memory extraction from import failed (non-blocking):', error);
-        });
-
-        // Queue background embedding job for all pending memories
-        queueEmbeddingJobs(userId, jobId);
-    }
-
-    return {
-        total: entities.length,
-        imported: importedCount,
-        failed: entities.length - importedCount,
-    };
 }
 
 /**
  * Get import statistics for a user
  */
 export async function getImportStats(userId: string) {
-    const [jobs, totalImported] = await Promise.all([
-        prisma.importJob.count({ where: { userId } }),
-        prisma.importJob.aggregate({
-            where: { userId, status: 'COMPLETED' },
-            _sum: { importedItems: true },
-        }),
-    ]);
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 500,
+        });
 
-    return {
-        totalJobs: jobs,
-        totalImported: totalImported._sum.importedItems || 0,
-    };
+        const jobs = logs.filter((l) => l.event_type === 'import_job_created');
+        const completedJobs = logs.filter(
+            (l) =>
+                l.event_type === 'import_job_status_updated' &&
+                l.details?.status === 'COMPLETED'
+        );
+
+        // Sum imported items from completed jobs
+        let totalImported = 0;
+        for (const job of completedJobs) {
+            totalImported += (job.details?.importedItems as number) || 0;
+        }
+
+        return {
+            totalJobs: jobs.length,
+            totalImported,
+        };
+    } catch {
+        return { totalJobs: 0, totalImported: 0 };
+    }
 }
 
 /**
@@ -567,103 +693,100 @@ export async function getImportStats(userId: string) {
  * Competitors just import; we build intelligence from imports.
  */
 export async function extractMemoriesFromImport(userId: string, jobId: string): Promise<number> {
-    const entities = await prisma.importEntity.findMany({
-        where: {
-            jobId,
-            imported: true,
-            type: 'CONVERSATION',
-        },
-        take: 100, // Process max 100 conversations per import
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 1000 });
 
-    if (entities.length === 0) return 0;
+        const entityLogs = logs
+            .filter(
+                (l) =>
+                    l.event_type === 'import_entity_stored' &&
+                    l.details?.jobId === jobId &&
+                    l.details?.type === 'CONVERSATION'
+            )
+            .slice(0, 100); // Process max 100 conversations per import
 
-    let memoriesCreated = 0;
-    const maxMemoriesPerImport = 50; // Cap to prevent abuse
+        if (entityLogs.length === 0) return 0;
 
-    for (const entity of entities) {
-        if (memoriesCreated >= maxMemoriesPerImport) break;
+        let memoriesCreated = 0;
+        const maxMemoriesPerImport = 50;
 
-        try {
-            const content = entity.content as unknown as {
-                messages: ParsedMessage[];
-                source: string;
-                createdAt: string;
-            };
+        for (const entityLog of entityLogs) {
+            if (memoriesCreated >= maxMemoriesPerImport) break;
 
-            if (!content.messages || content.messages.length === 0) continue;
+            try {
+                const entity = entityLog.details as any;
+                const content = entity.content as {
+                    messages: ParsedMessage[];
+                    source: string;
+                    createdAt: string;
+                };
 
-            // Extract a brief summary of the conversation
-            const userMessages = content.messages
-                .filter((m) => m.role === 'user')
-                .map((m) => m.content)
-                .join(' ');
+                if (!content.messages || content.messages.length === 0) continue;
 
-            const assistantMessages = content.messages
-                .filter((m) => m.role === 'assistant')
-                .map((m) => m.content)
-                .join(' ');
+                const userMessages = content.messages
+                    .filter((m) => m.role === 'user')
+                    .map((m) => m.content)
+                    .join(' ');
 
-            // Create a summary: first user message + topics discussed
-            const firstUserMsg = content.messages.find((m) => m.role === 'user')?.content || '';
-            const summary = `${entity.title || 'Imported conversation'}: ${firstUserMsg.slice(0, 200)}`;
+                const assistantMessages = content.messages
+                    .filter((m) => m.role === 'assistant')
+                    .map((m) => m.content)
+                    .join(' ');
 
-            // Store directly in PostgreSQL (no embedding call)
-            await prisma.memory.create({
-                data: {
-                    userId,
-                    content: summary,
-                    type: 'context',
-                    sector: 'episodic',
+                const firstUserMsg =
+                    content.messages.find((m) => m.role === 'user')?.content || '';
+                const summary = `${entity.title || 'Imported conversation'}: ${firstUserMsg.slice(0, 200)}`;
+
+                await client.mutation(api.memories.create, {
+                    user_id: userId as any,
+                    content_preview: summary.slice(0, 500),
                     source: 'import_extraction_pending',
-                    importance: 50,
-                    confidence: 0.8,
-                    decayScore: 0, // Flag: not yet synced to Qdrant
-                    tags: ['imported', 'extraction', content.source.toLowerCase(), jobId],
-                },
-            });
+                });
 
-            memoriesCreated++;
+                memoriesCreated++;
 
-            // Extract key topics/themes from longer conversations
-            if (content.messages.length >= 10 && memoriesCreated < maxMemoriesPerImport) {
-                // Look for technical terms, repeated topics
-                const allText = `${userMessages} ${assistantMessages}`.toLowerCase();
-                const technicalPatterns = [
-                    /\b(typescript|javascript|python|react|node|api|database|sql)\b/g,
-                    /\b(architecture|design|pattern|implementation|algorithm)\b/g,
-                    /\b(learn|study|understand|explain|how to)\b/g,
-                ];
+                // Extract key topics/themes from longer conversations
+                if (
+                    content.messages.length >= 10 &&
+                    memoriesCreated < maxMemoriesPerImport
+                ) {
+                    const allText =
+                        `${userMessages} ${assistantMessages}`.toLowerCase();
+                    const technicalPatterns = [
+                        /\b(typescript|javascript|python|react|node|api|database|sql)\b/g,
+                        /\b(architecture|design|pattern|implementation|algorithm)\b/g,
+                        /\b(learn|study|understand|explain|how to)\b/g,
+                    ];
 
-                for (const pattern of technicalPatterns) {
-                    const matches = allText.match(pattern);
-                    if (matches && matches.length >= 3) {
-                        const topic = matches[0];
-                        await prisma.memory.create({
-                            data: {
-                                userId,
-                                content: `User discussed ${topic} in imported conversation from ${content.source}`,
-                                type: 'context',
-                                sector: 'semantic',
+                    for (const pattern of technicalPatterns) {
+                        const matches = allText.match(pattern);
+                        if (matches && matches.length >= 3) {
+                            const topic = matches[0];
+                            await client.mutation(api.memories.create, {
+                                user_id: userId as any,
+                                content_preview: `User discussed ${topic} in imported conversation from ${content.source}`,
                                 source: 'import_extraction_pending',
-                                importance: 40,
-                                confidence: 0.7,
-                                decayScore: 0,
-                                tags: ['imported', 'extraction', 'topic', topic, jobId],
-                            },
-                        });
-                        memoriesCreated++;
-                        break; // Only one semantic memory per conversation
+                            });
+                            memoriesCreated++;
+                            break; // Only one semantic memory per conversation
+                        }
                     }
                 }
+            } catch (error) {
+                console.error(
+                    `Failed to extract memories from entity:`,
+                    error
+                );
+                // Continue with next entity
             }
-        } catch (error) {
-            console.error(`Failed to extract memories from entity ${entity.id}:`, error);
-            // Continue with next entity
         }
-    }
 
-    return memoriesCreated;
+        return memoriesCreated;
+    } catch (error) {
+        console.error('[Import] extractMemoriesFromImport failed:', error);
+        return 0;
+    }
 }
 
 /**

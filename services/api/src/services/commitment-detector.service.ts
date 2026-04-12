@@ -5,7 +5,9 @@
  * re-engagement messages when scheduled tasks are executed.
  * All AI calls route through Vercel AI Gateway.
  */
-import type { ScheduledTask } from '@aspendos/db';
+// import type { ScheduledTask } from '@aspendos/db';
+type ScheduledTask = any;
+
 import { gateway, generateText } from 'ai';
 import { type CommitmentDetectionResult, parseTimeExpression } from './scheduler.service';
 

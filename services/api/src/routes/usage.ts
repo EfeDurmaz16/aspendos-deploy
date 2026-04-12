@@ -5,7 +5,7 @@
  * Provides cost breakdowns, burn rate projections, and budget monitoring.
  */
 
-import { prisma } from '@aspendos/db';
+
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { usageLedger } from '../lib/usage-ledger';

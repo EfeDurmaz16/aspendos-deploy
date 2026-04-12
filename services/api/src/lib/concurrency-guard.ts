@@ -88,7 +88,9 @@ export async function withLock<T>(
     }
 
     if (!token) {
-        throw new Error(`Lock timeout: could not acquire lock on "${resource}" within ${timeoutMs}ms`);
+        throw new Error(
+            `Lock timeout: could not acquire lock on "${resource}" within ${timeoutMs}ms`
+        );
     }
 
     try {

@@ -1,6 +1,6 @@
 /**
  * Circuit Breaker Pattern for external API calls.
- * Prevents cascading failures when upstream services (OpenAI, Qdrant, Groq) are down.
+ * Prevents cascading failures when upstream services (OpenAI, SuperMemory, Groq) are down.
  *
  * States:
  * - CLOSED: Normal operation, requests pass through
@@ -192,7 +192,6 @@ export const breakers = {
     openai: new CircuitBreaker({ name: 'OpenAI', failureThreshold: 5, resetTimeout: 30000 }),
     anthropic: new CircuitBreaker({ name: 'Anthropic', failureThreshold: 5, resetTimeout: 30000 }),
     groq: new CircuitBreaker({ name: 'Groq', failureThreshold: 3, resetTimeout: 15000 }),
-    qdrant: new CircuitBreaker({ name: 'Qdrant', failureThreshold: 3, resetTimeout: 20000 }),
     google: new CircuitBreaker({ name: 'Google', failureThreshold: 5, resetTimeout: 30000 }),
     supermemory: new CircuitBreaker({
         name: 'SuperMemory',

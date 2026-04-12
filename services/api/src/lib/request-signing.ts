@@ -4,7 +4,7 @@
  * Uses constant-time comparison and replay attack prevention.
  */
 
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
 const DEFAULT_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -15,7 +15,7 @@ const DEFAULT_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
 export function signRequest(
     payload: string,
     secret: string,
-    timestamp?: number,
+    timestamp?: number
 ): { signature: string; timestamp: number } {
     const ts = timestamp ?? Date.now();
     const message = `${ts}.${payload}`;
@@ -33,7 +33,7 @@ export function verifySignature(
     signature: string,
     secret: string,
     timestamp: number,
-    maxAgeMs: number = DEFAULT_MAX_AGE_MS,
+    maxAgeMs: number = DEFAULT_MAX_AGE_MS
 ): boolean {
     const age = Math.abs(Date.now() - timestamp);
     if (age > maxAgeMs) {
@@ -57,10 +57,7 @@ export function verifySignature(
  * Create standard webhook headers for an outbound request.
  * Returns X-Signature and X-Timestamp headers.
  */
-export function createWebhookHeaders(
-    payload: string,
-    secret: string,
-): Record<string, string> {
+export function createWebhookHeaders(payload: string, secret: string): Record<string, string> {
     const { signature, timestamp } = signRequest(payload, secret);
     return {
         'X-Signature': signature,

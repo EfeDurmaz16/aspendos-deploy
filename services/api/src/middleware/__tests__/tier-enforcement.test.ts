@@ -12,7 +12,9 @@ vi.mock('../../lib/prisma', () => ({
 }));
 
 // Import the mocked prisma so we can control return values
-import { prisma } from '../../lib/prisma';
+// TODO(convex-migrate): replace prisma with Convex client
+const prisma = null as any;
+
 const mockFindUnique = prisma.user.findUnique as ReturnType<typeof vi.fn>;
 
 describe('Tier Enforcement Middleware', () => {
@@ -167,9 +169,7 @@ describe('Tier Enforcement Middleware', () => {
                 await next();
             });
             // monthlyChats is 100 on FREE, so it should pass
-            app.post('/test', enforceTierLimit('monthlyChats'), (c) =>
-                c.json({ success: true })
-            );
+            app.post('/test', enforceTierLimit('monthlyChats'), (c) => c.json({ success: true }));
 
             const res = await app.request('/test', { method: 'POST' });
             expect(res.status).toBe(200);

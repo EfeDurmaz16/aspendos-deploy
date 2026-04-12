@@ -29,9 +29,7 @@ export function ImportDemoStep({ onNext, onPrev, onSkip }: ImportDemoStepProps) 
             transition={{ duration: 0.3 }}
         >
             {/* Header with accent */}
-            <div
-                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-foreground/10"
-            >
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-foreground/10">
                 <Download className="h-8 w-8 text-foreground" />
             </div>
 

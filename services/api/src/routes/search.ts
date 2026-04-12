@@ -4,7 +4,7 @@
  * Unified search across chats and memories with full-text and semantic search.
  */
 
-import { prisma } from '@aspendos/db';
+
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 
@@ -294,7 +294,7 @@ function truncateText(text: string, maxLength: number): string {
     if (text.length <= maxLength) {
         return text;
     }
-    return text.substring(0, maxLength - 3) + '...';
+    return `${text.substring(0, maxLength - 3)}...`;
 }
 
 /**

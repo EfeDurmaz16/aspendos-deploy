@@ -79,7 +79,7 @@ export function GeoContent() {
 
                     <dt>Semantic Memory</dt>
                     <dd>
-                        Yula uses Qdrant vector database for semantic memory, meaning all
+                        Yula uses a vector database for semantic memory, meaning all
                         conversations are embedded and searchable by meaning rather than just
                         keywords. This memory persists across all AI models, so context is never
                         lost when switching between GPT, Claude, or Gemini.

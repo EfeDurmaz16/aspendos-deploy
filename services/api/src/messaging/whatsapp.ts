@@ -47,7 +47,7 @@ export class WhatsAppGateway implements MessagingGateway {
                     type: 'button',
                     body: { text: content.text },
                     action: {
-                        buttons: content.actions.slice(0, 3).map((action, i) => ({
+                        buttons: content.actions.slice(0, 3).map((action, _i) => ({
                             type: 'reply',
                             reply: {
                                 id: `${action.action}:${action.value || ''}`,
@@ -119,7 +119,7 @@ export class WhatsAppGateway implements MessagingGateway {
                 platformUserId: msg.from,
                 text: msg.text.body,
                 messageId: msg.id,
-                timestamp: new Date(parseInt(msg.timestamp) * 1000),
+                timestamp: new Date(parseInt(msg.timestamp, 10) * 1000),
             };
         }
 
@@ -132,7 +132,7 @@ export class WhatsAppGateway implements MessagingGateway {
                 platformUserId: msg.from,
                 text: `__callback__:${action}:${value || ''}`,
                 messageId: msg.id,
-                timestamp: new Date(parseInt(msg.timestamp) * 1000),
+                timestamp: new Date(parseInt(msg.timestamp, 10) * 1000),
                 metadata: { isCallback: true, action, value },
             };
         }

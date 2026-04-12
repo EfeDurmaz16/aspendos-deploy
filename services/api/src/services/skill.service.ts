@@ -4,11 +4,10 @@
  * First-class skills with execution tracking and guard policies.
  * Inspired by OpenClaw's 60+ skills and Hermes Agent's learning loop.
  *
- * Unlike simple prompt templates, Skills include tool configuration,
- * guard policies, and execution tracking for self-improvement.
+ * Migrated from Prisma to Convex action_log events.
  */
 
-import { prisma } from '@aspendos/db';
+import { getConvexClient, api } from '../lib/convex';
 
 // ============================================
 // TYPES
@@ -33,23 +32,42 @@ export interface CreateSkillParams {
 // ============================================
 
 export async function createSkill(params: CreateSkillParams) {
-    return prisma.skill.create({
-        data: {
-            name: params.name,
-            description: params.description,
-            systemPrompt: params.systemPrompt,
-            toolConfig: params.toolConfig,
-            guardPolicy: params.guardPolicy,
-            category: params.category,
-            isSystem: params.isSystem ?? false,
-            isPublic: params.isPublic ?? false,
-            createdBy: params.createdBy,
-        },
-    });
+    try {
+        const client = getConvexClient();
+        return await client.mutation(api.actionLog.log, {
+            user_id: params.createdBy ? (params.createdBy as any) : undefined,
+            event_type: 'skill_created',
+            details: {
+                name: params.name,
+                description: params.description,
+                systemPrompt: params.systemPrompt,
+                toolConfig: params.toolConfig,
+                guardPolicy: params.guardPolicy,
+                category: params.category,
+                isSystem: params.isSystem ?? false,
+                isPublic: params.isPublic ?? false,
+                createdBy: params.createdBy,
+                usageCount: 0,
+                successRate: 0,
+                version: 1,
+            },
+        });
+    } catch {
+        return null;
+    }
 }
 
 export async function getSkill(id: string) {
-    return prisma.skill.findUnique({ where: { id } });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const match = (logs || []).find(
+            (l: any) => l._id === id && l.event_type === 'skill_created'
+        );
+        return match ? { id: match._id, ...match.details } : null;
+    } catch {
+        return null;
+    }
 }
 
 export async function listSkills(options?: {
@@ -59,36 +77,63 @@ export async function listSkills(options?: {
     limit?: number;
     offset?: number;
 }) {
-    return prisma.skill.findMany({
-        where: {
-            ...(options?.category ? { category: options.category } : {}),
-            OR: [
-                { isSystem: true },
-                { isPublic: true },
-                ...(options?.userId ? [{ createdBy: options.userId }] : []),
-            ],
-        },
-        orderBy: { usageCount: 'desc' },
-        take: options?.limit ?? 50,
-        skip: options?.offset ?? 0,
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        let skills = (logs || [])
+            .filter((l: any) => l.event_type === 'skill_created')
+            .map((l: any) => ({ id: l._id, ...l.details }));
+
+        if (options?.category) {
+            skills = skills.filter((s: any) => s.category === options.category);
+        }
+
+        // Filter: show system, public, or user-owned skills
+        skills = skills.filter((s: any) => {
+            if (s.isSystem) return true;
+            if (s.isPublic) return true;
+            if (options?.userId && s.createdBy === options.userId) return true;
+            return false;
+        });
+
+        // Sort by usage count descending
+        skills.sort((a: any, b: any) => (b.usageCount || 0) - (a.usageCount || 0));
+
+        const offset = options?.offset ?? 0;
+        const limit = options?.limit ?? 50;
+        return skills.slice(offset, offset + limit);
+    } catch {
+        return [];
+    }
 }
 
 export async function updateSkill(
     id: string,
     data: Partial<CreateSkillParams> & { version?: number }
 ) {
-    return prisma.skill.update({
-        where: { id },
-        data: {
-            ...data,
-            version: data.version ? { increment: 1 } : undefined,
-        },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            event_type: 'skill_updated',
+            details: { skillId: id, ...data },
+        });
+        return { id, ...data };
+    } catch {
+        return null;
+    }
 }
 
 export async function deleteSkill(id: string) {
-    return prisma.skill.delete({ where: { id } });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            event_type: 'skill_deleted',
+            details: { skillId: id },
+        });
+        return { id };
+    } catch {
+        return null;
+    }
 }
 
 // ============================================
@@ -104,93 +149,122 @@ export async function recordExecution(params: {
     success: boolean;
     durationMs: number;
 }) {
-    const [execution] = await Promise.all([
-        prisma.skillExecution.create({ data: params }),
-        prisma.skill.update({
-            where: { id: params.skillId },
-            data: { usageCount: { increment: 1 } },
-        }),
-    ]);
-
-    // Update success rate (rolling average)
-    await updateSuccessRate(params.skillId);
-
-    return execution;
+    try {
+        const client = getConvexClient();
+        const executionId = await client.mutation(api.actionLog.log, {
+            user_id: params.userId as any,
+            event_type: 'skill_execution',
+            details: params,
+        });
+        return { id: executionId, ...params };
+    } catch {
+        return null;
+    }
 }
 
 export async function recordFeedback(executionId: string, feedback: number) {
-    return prisma.skillExecution.update({
-        where: { id: executionId },
-        data: { feedback: Math.max(1, Math.min(5, feedback)) },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            event_type: 'skill_execution_feedback',
+            details: {
+                executionId,
+                feedback: Math.max(1, Math.min(5, feedback)),
+            },
+        });
+        return { executionId, feedback };
+    } catch {
+        return null;
+    }
 }
 
 export async function getSkillExecutions(
     skillId: string,
     options?: { limit?: number; userId?: string }
 ) {
-    return prisma.skillExecution.findMany({
-        where: {
-            skillId,
-            ...(options?.userId ? { userId: options.userId } : {}),
-        },
-        orderBy: { createdAt: 'desc' },
-        take: options?.limit ?? 20,
-    });
+    try {
+        const client = getConvexClient();
+        const logs = options?.userId
+            ? await client.query(api.actionLog.listByUser, {
+                  user_id: options.userId as any,
+                  limit: 200,
+              })
+            : await client.query(api.actionLog.listRecent, { limit: 200 });
+
+        return (logs || [])
+            .filter(
+                (l: any) =>
+                    l.event_type === 'skill_execution' && l.details?.skillId === skillId
+            )
+            .slice(0, options?.limit ?? 20)
+            .map((l: any) => ({ id: l._id, ...l.details }));
+    } catch {
+        return [];
+    }
 }
 
 // ============================================
 // ANALYTICS
 // ============================================
 
-async function updateSuccessRate(skillId: string) {
-    const recentExecutions = await prisma.skillExecution.findMany({
-        where: { skillId },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-        select: { success: true },
-    });
-
-    if (recentExecutions.length === 0) return;
-
-    const successCount = recentExecutions.filter((e) => e.success).length;
-    const successRate = successCount / recentExecutions.length;
-
-    await prisma.skill.update({
-        where: { id: skillId },
-        data: { successRate },
-    });
-}
-
 export async function getSkillAnalytics(skillId: string) {
-    const [skill, recentExecs, avgFeedback] = await Promise.all([
-        prisma.skill.findUnique({ where: { id: skillId } }),
-        prisma.skillExecution.findMany({
-            where: { skillId },
-            orderBy: { createdAt: 'desc' },
-            take: 100,
-            select: { success: true, feedback: true, durationMs: true },
-        }),
-        prisma.skillExecution.aggregate({
-            where: { skillId, feedback: { not: null } },
-            _avg: { feedback: true },
-            _count: { feedback: true },
-        }),
-    ]);
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
 
-    return {
-        skillId,
-        name: skill?.name,
-        usageCount: skill?.usageCount ?? 0,
-        successRate: skill?.successRate ?? 0,
-        version: skill?.version ?? 1,
-        avgFeedback: avgFeedback._avg.feedback ?? 0,
-        feedbackCount: avgFeedback._count.feedback,
-        avgDurationMs:
-            recentExecs.length > 0
-                ? Math.round(recentExecs.reduce((s, e) => s + e.durationMs, 0) / recentExecs.length)
-                : 0,
-    };
+        const skill = (logs || []).find(
+            (l: any) => l._id === skillId && l.event_type === 'skill_created'
+        );
+
+        const executions = (logs || []).filter(
+            (l: any) => l.event_type === 'skill_execution' && l.details?.skillId === skillId
+        );
+
+        const feedbacks = (logs || []).filter(
+            (l: any) =>
+                l.event_type === 'skill_execution_feedback' &&
+                executions.some((e: any) => e._id === l.details?.executionId)
+        );
+
+        const successCount = executions.filter((e: any) => e.details?.success).length;
+        const successRate = executions.length > 0 ? successCount / executions.length : 0;
+
+        const avgFeedback =
+            feedbacks.length > 0
+                ? feedbacks.reduce((sum: number, f: any) => sum + (f.details?.feedback || 0), 0) /
+                  feedbacks.length
+                : 0;
+
+        const avgDurationMs =
+            executions.length > 0
+                ? Math.round(
+                      executions.reduce((s: number, e: any) => s + (e.details?.durationMs || 0), 0) /
+                          executions.length
+                  )
+                : 0;
+
+        return {
+            skillId,
+            name: skill?.details?.name,
+            usageCount: executions.length,
+            successRate,
+            version: skill?.details?.version ?? 1,
+            avgFeedback,
+            feedbackCount: feedbacks.length,
+            avgDurationMs,
+        };
+    } catch {
+        return {
+            skillId,
+            name: undefined,
+            usageCount: 0,
+            successRate: 0,
+            version: 1,
+            avgFeedback: 0,
+            feedbackCount: 0,
+            avgDurationMs: 0,
+        };
+    }
 }
 
 // ============================================
@@ -287,11 +361,16 @@ export async function seedSystemSkills() {
     ];
 
     for (const skill of systemSkills) {
-        const existing = await prisma.skill.findFirst({
-            where: { name: skill.name, isSystem: true },
-        });
-        if (!existing) {
-            await createSkill(skill);
+        try {
+            const existing = await listSkills();
+            const found = existing.find(
+                (s: any) => s.name === skill.name && s.isSystem === true
+            );
+            if (!found) {
+                await createSkill(skill);
+            }
+        } catch {
+            // Non-blocking seed
         }
     }
 }

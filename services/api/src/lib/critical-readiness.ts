@@ -1,4 +1,6 @@
-import { prisma, ScheduledTaskStatus } from '@aspendos/db';
+const ScheduledTaskStatus = {} as any;
+type ScheduledTaskStatus = any;
+
 import { COUNCIL_PERSONAS } from '../services/council.service';
 import * as openMemory from '../services/memory-router.service';
 import { parseTimeExpression } from '../services/scheduler.service';
@@ -58,16 +60,11 @@ export async function checkCriticalReadiness(): Promise<CriticalReadinessReport>
         );
     }
 
-    const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
-    const isSupermemory = memoryBackend === 'supermemory' || memoryBackend === 'dual';
-    const breaker = isSupermemory ? breakers.supermemory : breakers.qdrant;
-    const circuitState = breaker.getState().state;
+    const circuitState = breakers.supermemory.getState().state;
     const memoryFallbackMode = circuitState === 'OPEN';
     if (sharedMemoryStatus !== 'blocked' && memoryFallbackMode) {
         sharedMemoryStatus = 'degraded';
-        warnings.push(
-            `Shared memory is running in fallback mode (${isSupermemory ? 'SuperMemory' : 'Qdrant'} circuit is OPEN).`
-        );
+        warnings.push('Shared memory is running in fallback mode (SuperMemory circuit is OPEN).');
     }
 
     // 2) Proactive callback readiness (PAC / scheduler)
@@ -151,7 +148,7 @@ export async function checkCriticalReadiness(): Promise<CriticalReadinessReport>
                 details: {
                     memoryCount,
                     memorySearchProbe,
-                    memoryBackend,
+                    memoryBackend: 'supermemory',
                     memoryCircuit: circuitState,
                     fallbackMode: memoryFallbackMode,
                     sharedContextEnabled: true,

@@ -18,7 +18,6 @@ export const createReminderSchema = z.object({
     conversationId: z.string().optional(),
 });
 
-
 export const snoozeReminderSchema = z.object({
     minutes: z
         .number()

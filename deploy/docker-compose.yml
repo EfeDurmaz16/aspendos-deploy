@@ -125,30 +125,6 @@ services:
     networks:
       - yula
 
-  agents:
-    build:
-      context: ..
-      dockerfile: services/agents/Dockerfile
-    restart: unless-stopped
-    profiles: ["backend"]
-    env_file: .env.production
-    environment:
-      - PORT=8000
-    expose:
-      - "8000"
-    healthcheck:
-      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-    networks:
-      - yula
-
 volumes:
   caddy_data:
   caddy_config:

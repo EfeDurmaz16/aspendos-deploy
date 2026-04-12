@@ -12,7 +12,6 @@
  * - Connection validation (warm connections)
  */
 
-import { prisma } from '@aspendos/db';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -136,7 +135,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 function computeDelay(attempt: number): number {
-    const exponential = BASE_RETRY_DELAY_MS * Math.pow(2, attempt);
+    const exponential = BASE_RETRY_DELAY_MS * 2 ** attempt;
     const jitter = Math.random() * exponential * 0.3;
     return Math.min(exponential + jitter, MAX_RETRY_DELAY_MS);
 }
@@ -218,10 +217,7 @@ function isRetryableDbError(error: Error): boolean {
 export async function validateConnection(): Promise<number> {
     const start = Date.now();
     const controller = new AbortController();
-    const timeout = setTimeout(
-        () => controller.abort(),
-        CONNECTION_VALIDATION_TIMEOUT_MS
-    );
+    const timeout = setTimeout(() => controller.abort(), CONNECTION_VALIDATION_TIMEOUT_MS);
 
     try {
         await prisma.$queryRawUnsafe('SELECT 1');

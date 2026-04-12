@@ -44,9 +44,12 @@ function ResetPasswordContent() {
 
     const passwordStrength = useMemo(() => {
         const passed = Object.values(passwordChecks).filter(Boolean).length;
-        if (passed <= 1) return { label: 'Weak', color: 'text-foreground/40', bg: 'bg-foreground/40' };
-        if (passed <= 2) return { label: 'Fair', color: 'text-foreground/55', bg: 'bg-foreground/55' };
-        if (passed <= 3) return { label: 'Good', color: 'text-foreground/70', bg: 'bg-foreground/70' };
+        if (passed <= 1)
+            return { label: 'Weak', color: 'text-foreground/40', bg: 'bg-foreground/40' };
+        if (passed <= 2)
+            return { label: 'Fair', color: 'text-foreground/55', bg: 'bg-foreground/55' };
+        if (passed <= 3)
+            return { label: 'Good', color: 'text-foreground/70', bg: 'bg-foreground/70' };
         return { label: 'Strong', color: 'text-foreground', bg: 'bg-foreground' };
     }, [passwordChecks]);
 

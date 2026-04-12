@@ -6,8 +6,16 @@
  */
 
 import { streamText } from 'ai';
-import { searchMemories } from '../services/qdrant';
 import { createEmbedding } from './embeddings';
+
+// TODO(phase-a-day-3): Qdrant removed — memory search will use Convex + SuperMemory
+async function searchMemories(
+    _userId: string,
+    _embedding: number[],
+    _limit: number,
+): Promise<Array<{ content: string; score: number }>> {
+    return [];
+}
 import { getFallbackModels, getModel, MODEL_REGISTRY, type ModelId } from './providers';
 import { fastRoute, type RouteDecision, routeUserMessage } from './router';
 

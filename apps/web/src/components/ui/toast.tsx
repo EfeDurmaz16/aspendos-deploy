@@ -73,11 +73,9 @@ const toastVariants = cva(
     {
         variants: {
             variant: {
-                success:
-                    'border-border bg-foreground/5 text-foreground',
+                success: 'border-border bg-foreground/5 text-foreground',
                 error: 'border-border bg-foreground/5 text-foreground',
-                warning:
-                    'border-border bg-foreground/5 text-muted-foreground',
+                warning: 'border-border bg-foreground/5 text-muted-foreground',
                 info: 'border-border bg-foreground/5 text-foreground',
             },
         },

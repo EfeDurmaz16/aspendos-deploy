@@ -106,9 +106,7 @@ export function getTraces(options?: {
     // Filter by path (exact match or starts with)
     if (options?.path) {
         const path = options.path;
-        filtered = filtered.filter(
-            (t) => t.path === path || t.path.startsWith(path)
-        );
+        filtered = filtered.filter((t) => t.path === path || t.path.startsWith(path));
     }
 
     // Filter by minimum duration
@@ -284,7 +282,7 @@ export function tracingMiddleware() {
             // Mark as error
             httpSpan.status = 'error';
             trace.status = 'error';
-            httpSpan.attributes['error'] = true;
+            httpSpan.attributes.error = true;
             httpSpan.attributes['error.message'] =
                 error instanceof Error ? error.message : 'Unknown error';
 
@@ -304,7 +302,7 @@ export function tracingMiddleware() {
             if (!hadError && c.res.status >= 400) {
                 httpSpan.status = 'error';
                 trace.status = 'error';
-                httpSpan.attributes['error'] = true;
+                httpSpan.attributes.error = true;
             } else if (!hadError) {
                 // Mark as successful
                 httpSpan.status = 'ok';
@@ -378,7 +376,7 @@ export function endSpan(span: Span, status: 'ok' | 'error' = 'ok', error?: Error
     span.status = status;
 
     if (error) {
-        span.attributes['error'] = true;
+        span.attributes.error = true;
         span.attributes['error.message'] = error.message;
         span.events.push({
             timestamp: Date.now(),

@@ -397,7 +397,7 @@ export function SpotlightOverlay({ children, className }: SpotlightOverlayProps)
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('scroll', handleScroll, true);
         };
-    }, [isActive, currentStep, updateSpotlight]);
+    }, [isActive, updateSpotlight]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -496,4 +496,4 @@ export function SpotlightOverlay({ children, className }: SpotlightOverlayProps)
 // EXPORTS
 // ============================================
 
-export type { SpotlightRect, TooltipPosition, SpotlightTarget };
+export type { SpotlightRect, SpotlightTarget, TooltipPosition };

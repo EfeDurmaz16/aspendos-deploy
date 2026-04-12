@@ -156,7 +156,7 @@ function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
             textareaRef.current.style.height = 'auto';
             textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
         }
-    }, [input]);
+    }, []);
 
     return (
         <div className="border-t border-zinc-800 bg-zinc-900/50 p-4">
@@ -252,7 +252,7 @@ export function ChatInterface({ chatId, className }: ChatInterfaceProps) {
     // Scroll to bottom on new messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, streamingContent]);
+    }, []);
 
     const handleSend = useCallback(
         async (content: string, _attachments?: File[]) => {

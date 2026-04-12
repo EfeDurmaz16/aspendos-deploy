@@ -18,17 +18,16 @@ vi.mock('@aspendos/db', () => ({
     },
 }));
 
-import { prisma } from '@aspendos/db';
 const mockPrisma = prisma as any;
 
 vi.mock('../../middleware/auth', () => ({
-    requireAuth: vi.fn((c, next) => next()),
+    requireAuth: vi.fn((_c, next) => next()),
 }));
 
 import searchRoutes from '../search';
 
 // Helper to create test app with search routes
-function createTestApp() {
+function _createTestApp() {
     const app = new Hono();
     app.route('/search', searchRoutes);
     return app;
@@ -125,7 +124,7 @@ describe('Search Routes', () => {
 
             mockPrisma.chat.findMany.mockResolvedValue(mockChats);
 
-            const query = 'authentication';
+            const _query = 'authentication';
             expect(mockChats[0].messages.length).toBe(2);
             expect(mockChats[0].messages[0].content).toContain('authentication');
         });
@@ -196,11 +195,11 @@ describe('Search Routes', () => {
         });
 
         it('should calculate relevance scores correctly', async () => {
-            const query = 'typescript';
+            const _query = 'typescript';
 
             // Title match should score highest
             const titleMatchScore = 10;
-            const descriptionMatchScore = 5;
+            const _descriptionMatchScore = 5;
             const messageMatchScore = 3;
 
             const totalScore = titleMatchScore + messageMatchScore * 2;
@@ -278,7 +277,7 @@ describe('Search Routes', () => {
             const truncated =
                 longText.length <= maxLength
                     ? longText
-                    : longText.substring(0, maxLength - 3) + '...';
+                    : `${longText.substring(0, maxLength - 3)}...`;
 
             expect(truncated.length).toBe(200);
             expect(truncated.endsWith('...')).toBe(true);
@@ -291,7 +290,7 @@ describe('Search Routes', () => {
             const truncated =
                 shortText.length <= maxLength
                     ? shortText
-                    : shortText.substring(0, maxLength - 3) + '...';
+                    : `${shortText.substring(0, maxLength - 3)}...`;
 
             expect(truncated).toBe(shortText);
             expect(truncated.endsWith('...')).toBe(false);

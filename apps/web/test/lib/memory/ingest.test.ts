@@ -18,16 +18,9 @@ vi.mock('@/lib/services/openai', () => ({
     createEmbeddings: vi.fn(),
 }));
 
-vi.mock('@/lib/services/qdrant', () => ({
-    storeMemory: vi.fn(),
-    qdrant: {
-        scroll: vi.fn(),
-    },
-    COLLECTIONS: {
-        USER_MEMORIES: 'user_memories',
-        CONVERSATION_EMBEDDINGS: 'conversation_embeddings',
-    },
-    VECTOR_SIZE: 1536,
+// Qdrant removed — ingest.ts now has local stubs
+vi.mock('@/lib/ai', () => ({
+    createEmbeddings: vi.fn().mockResolvedValue([new Array(1536).fill(0)]),
 }));
 
 vi.mock('uuid', () => ({

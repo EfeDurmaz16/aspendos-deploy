@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic';
-import { prisma } from '@aspendos/db';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
     try {
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
         }
 
         const { searchParams } = new URL(request.url);
-        const days = Math.min(Math.max(parseInt(searchParams.get('days') || '30'), 1), 365);
+        const days = Math.min(Math.max(parseInt(searchParams.get('days') || '30', 10), 1), 365);
 
         const now = new Date();
         const start = new Date(now);
@@ -31,7 +32,8 @@ export async function GET(request: Request) {
             orderBy: { _count: { id: 'desc' } },
         });
 
-        const totalCount = grouped.reduce((sum: number, item: any) => sum + item._count._all, 0) || 1;
+        const totalCount =
+            grouped.reduce((sum: number, item: any) => sum + item._count._all, 0) || 1;
 
         const data = grouped.map((item) => {
             const tokensIn = item._sum.tokensIn ?? 0;

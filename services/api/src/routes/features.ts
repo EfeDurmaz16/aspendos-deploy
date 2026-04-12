@@ -12,7 +12,10 @@ featuresRoutes.get('/', (c) => {
     const user = c.get('user') as Record<string, unknown> | null;
     const tier = ((user as unknown as Record<string, unknown>)?.tier as string) || 'FREE';
     return c.json({
-        features: getUserFeatures(userId ?? undefined, tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA'),
+        features: getUserFeatures(
+            userId ?? undefined,
+            tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA'
+        ),
     });
 });
 

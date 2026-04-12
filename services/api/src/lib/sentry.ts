@@ -1,78 +1,41 @@
-import * as Sentry from '@sentry/node';
+/**
+ * Sentry no-op shim — Phase A Day 0 (Tier 1.1 cleanup)
+ *
+ * @sentry/node was removed because @sentry/nextjs blocked Next.js 16 upgrade
+ * via OpenTelemetry version conflicts. This shim preserves the public API
+ * surface so call sites in services/api/src/index.ts don't break, but every
+ * function is a no-op.
+ *
+ * Day 14 task 14.6 will swap this shim back to a real implementation IF
+ * @sentry/nextjs@10.45.0+ proves Next 16 compatible without the postinstall
+ * symlink hack. Otherwise we use Vercel native logs + PostHog error tracking.
+ *
+ * Removed in commit: <to-be-set-on-day-0-commit>
+ * Tracked in plan: docs at ~/.claude/plans/golden-spinning-stallman.md
+ */
+
+// Sentry namespace surface — minimal subset matching prior @sentry/node usage
+export const Sentry = {
+    init: (_config: unknown) => {},
+    captureException: (_err: unknown, _ctx?: unknown) => {},
+    captureMessage: (_msg: string, _level?: string) => {},
+    setUser: (_user: unknown) => {},
+    setTag: (_key: string, _value: string) => {},
+    setContext: (_name: string, _ctx: unknown) => {},
+    addBreadcrumb: (_crumb: unknown) => {},
+    startSpan: <T>(_opts: unknown, fn: () => T): T => fn(),
+    httpIntegration: () => ({}),
+    captureConsoleIntegration: (_opts?: unknown) => ({}),
+};
 
 export function initSentry() {
-    if (!process.env.SENTRY_DSN) {
-        console.warn('[Sentry] DSN not configured, error tracking disabled');
-        return;
-    }
-
-    Sentry.init({
-        dsn: process.env.SENTRY_DSN,
-        environment: process.env.NODE_ENV || 'development',
-        tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
-        enabled: process.env.NODE_ENV === 'production',
-        integrations: [
-            Sentry.httpIntegration(),
-            Sentry.captureConsoleIntegration({ levels: ['error'] }),
-        ],
-    });
-
-    console.log('[Sentry] Initialized for API service');
+    // no-op: Sentry removed in Phase A Day 0 (Tier 1.1)
 }
 
-/**
- * Set user context in Sentry for better error attribution
- */
-export function setSentryUserContext(userId: string, tier?: string) {
-    Sentry.setUser({ id: userId });
-    if (tier) {
-        Sentry.setTag('user.tier', tier);
-    }
+export function setSentryUserContext(_userId: string, _tier?: string) {
+    // no-op
 }
 
-/**
- * Set request context in Sentry for better debugging
- */
-export function setSentryRequestContext(requestId: string, path: string, method: string) {
-    Sentry.setTag('request.id', requestId);
-    Sentry.setTag('request.path', path);
-    Sentry.setTag('request.method', method);
+export function setSentryRequestContext(_requestId: string, _path: string, _method: string) {
+    // no-op
 }
-
-/**
- * Start a performance transaction
- */
-export function startTransaction<T>(name: string, op: string, fn: () => T): T {
-    return Sentry.startSpan({ name, op }, fn);
-}
-
-/**
- * Measure async operation performance
- */
-export function measureAsync<T>(name: string, op: string, fn: () => Promise<T>): Promise<T> {
-    return Sentry.startSpan({ name, op }, async () => {
-        return fn();
-    });
-}
-
-/**
- * Capture API error with rich context and classification
- */
-export function captureApiError(
-    error: Error,
-    context: {
-        userId?: string;
-        action?: string;
-        severity?: 'fatal' | 'error' | 'warning' | 'info';
-    }
-) {
-    Sentry.withScope((scope) => {
-        if (context.userId) scope.setUser({ id: context.userId });
-        if (context.action) scope.setTag('action', context.action);
-        if (context.severity) scope.setLevel(context.severity);
-        scope.setTag('source', 'api');
-        Sentry.captureException(error);
-    });
-}
-
-export { Sentry };

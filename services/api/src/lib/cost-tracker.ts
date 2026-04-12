@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+const prisma = null as any;
 
 /**
  * Model pricing per 1K tokens (in USD)

@@ -179,7 +179,7 @@ describe('Tracing Middleware', () => {
 
         const httpSpan = trace?.spans[0];
         expect(httpSpan?.status).toBe('error');
-        expect(httpSpan?.attributes['error']).toBe(true);
+        expect(httpSpan?.attributes.error).toBe(true);
         // When error is caught by onError, we detect it via status code
         // The error message is only captured if the error propagates through the middleware
         expect(httpSpan?.attributes['http.status_code']).toBe(500);
@@ -386,7 +386,7 @@ describe('Tracing Middleware', () => {
         const span = trace?.spans[1];
 
         expect(span?.status).toBe('error');
-        expect(span?.attributes['error']).toBe(true);
+        expect(span?.attributes.error).toBe(true);
         expect(span?.attributes['error.message']).toBe('Operation failed');
         expect(span?.events.length).toBeGreaterThan(0);
         expect(span?.events[0]?.name).toBe('exception');

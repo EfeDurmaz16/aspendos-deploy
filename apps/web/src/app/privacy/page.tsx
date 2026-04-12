@@ -80,7 +80,7 @@ export default function PrivacyPage() {
                                 (OpenAI, Anthropic, Google, Groq)
                             </li>
                             <li>
-                                Maintain conversation context using memory embeddings in our Qdrant
+                                Maintain conversation context using memory embeddings in our
                                 vector database
                             </li>
                             <li>
@@ -130,7 +130,7 @@ export default function PrivacyPage() {
                                 <strong>Railway</strong> - API server hosting
                             </li>
                             <li>
-                                <strong>Qdrant</strong> - Vector database for memory storage
+                                <strong>SuperMemory</strong> - Vector database for memory storage
                             </li>
                             <li>
                                 <strong>Supabase</strong> - PostgreSQL database

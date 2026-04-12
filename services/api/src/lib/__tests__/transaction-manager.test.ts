@@ -1,10 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-    OptimisticLockError,
-    Saga,
-    SagaError,
-    withOptimisticLock,
-} from '../transaction-manager';
+import { OptimisticLockError, Saga, SagaError, withOptimisticLock } from '../transaction-manager';
 
 // Mock prisma
 vi.mock('@aspendos/db', () => ({
@@ -53,18 +48,30 @@ describe('Transaction Manager', () => {
             const saga = new Saga();
             saga.addStep(
                 'step1',
-                async () => { order.push('exec1'); },
-                async () => { order.push('comp1'); }
+                async () => {
+                    order.push('exec1');
+                },
+                async () => {
+                    order.push('comp1');
+                }
             );
             saga.addStep(
                 'step2',
-                async () => { order.push('exec2'); },
-                async () => { order.push('comp2'); }
+                async () => {
+                    order.push('exec2');
+                },
+                async () => {
+                    order.push('comp2');
+                }
             );
             saga.addStep(
                 'step3',
-                async () => { order.push('exec3'); },
-                async () => { order.push('comp3'); }
+                async () => {
+                    order.push('exec3');
+                },
+                async () => {
+                    order.push('comp3');
+                }
             );
 
             await saga.execute();
@@ -77,18 +84,30 @@ describe('Transaction Manager', () => {
             const saga = new Saga();
             saga.addStep(
                 'step1',
-                async () => { order.push('exec1'); },
-                async () => { order.push('comp1'); }
+                async () => {
+                    order.push('exec1');
+                },
+                async () => {
+                    order.push('comp1');
+                }
             );
             saga.addStep(
                 'step2',
-                async () => { order.push('exec2'); },
-                async () => { order.push('comp2'); }
+                async () => {
+                    order.push('exec2');
+                },
+                async () => {
+                    order.push('comp2');
+                }
             );
             saga.addStep(
                 'step3',
-                async () => { throw new Error('step3 failed'); },
-                async () => { order.push('comp3'); }
+                async () => {
+                    throw new Error('step3 failed');
+                },
+                async () => {
+                    order.push('comp3');
+                }
             );
 
             await expect(saga.execute()).rejects.toThrow(SagaError);
@@ -104,7 +123,9 @@ describe('Transaction Manager', () => {
             );
             saga.addStep(
                 'setup-billing',
-                async () => { throw new Error('Payment failed'); },
+                async () => {
+                    throw new Error('Payment failed');
+                },
                 async () => {}
             );
 
@@ -126,11 +147,15 @@ describe('Transaction Manager', () => {
             saga.addStep(
                 'step1',
                 async () => {},
-                async () => { throw new Error('Comp failed'); }
+                async () => {
+                    throw new Error('Comp failed');
+                }
             );
             saga.addStep(
                 'step2',
-                async () => { throw new Error('step2 failed'); },
+                async () => {
+                    throw new Error('step2 failed');
+                },
                 async () => {}
             );
 
@@ -150,7 +175,9 @@ describe('Transaction Manager', () => {
             const saga = new Saga();
             saga.addStep(
                 'only-step',
-                async () => { executed = true; },
+                async () => {
+                    executed = true;
+                },
                 async () => {}
             );
 
@@ -164,8 +191,12 @@ describe('Transaction Manager', () => {
             const saga = new Saga();
             saga.addStep(
                 'step1',
-                async () => { throw new Error('immediate fail'); },
-                async () => { order.push('comp1'); }
+                async () => {
+                    throw new Error('immediate fail');
+                },
+                async () => {
+                    order.push('comp1');
+                }
             );
 
             await expect(saga.execute()).rejects.toThrow(SagaError);

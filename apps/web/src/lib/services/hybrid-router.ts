@@ -1,7 +1,16 @@
 import { createAnthropicStreamingCompletion } from './anthropic';
 import { createGroqStreamingCompletion, type RouteDecision, routeUserMessage } from './groq';
 import { createEmbedding, createStreamingChatCompletion as createOpenAIStream } from './openai';
-import { searchMemories } from './qdrant';
+
+// TODO(phase-a-day-3): Qdrant removed — memory search will use Convex + SuperMemory
+async function searchMemories(
+    _userId: string,
+    _embedding: number[],
+    _limit: number,
+    _type?: string,
+): Promise<Array<{ content: string; score: number }>> {
+    return [];
+}
 
 // ============================================
 // MODEL PROVIDER MAPPING

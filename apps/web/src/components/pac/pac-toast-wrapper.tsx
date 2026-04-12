@@ -65,7 +65,9 @@ export function PACToastWrapper() {
                                         <p
                                             className={cn(
                                                 'text-xs mt-0.5 flex items-center gap-1',
-                                                isOverdue ? 'text-foreground' : 'text-muted-foreground'
+                                                isOverdue
+                                                    ? 'text-foreground'
+                                                    : 'text-muted-foreground'
                                             )}
                                         >
                                             <Clock className="w-3 h-3" />

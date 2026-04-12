@@ -344,9 +344,9 @@ app.post(
         // ========================================
         // MEMORY RETRIEVAL
         // ========================================
-        const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
-        const useSupermemoryWrapper =
-            (memoryBackend === 'supermemory' || memoryBackend === 'dual') && decision.useMemory;
+        // SuperMemory is the only memory backend; the wrapper is used whenever
+        // the memory agent decided to enable retrieval for this message.
+        const useSupermemoryWrapper = decision.useMemory;
 
         let memoriesUsed: {
             id: string;
@@ -655,12 +655,10 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
     const smartModelId = getSmartModelId(modelId, content);
     const { model: resolvedModel, actualModelId } = getModelWithFallback(smartModelId);
 
-    // Memory decision
-    const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
+    // Memory decision — SuperMemory is the only backend.
     const memoryAgent = getMemoryAgent();
     const decision = await memoryAgent.decideMemoryUsage(userId, content);
-    const useSupermemoryWrapper =
-        (memoryBackend === 'supermemory' || memoryBackend === 'dual') && decision.useMemory;
+    const useSupermemoryWrapper = decision.useMemory;
 
     // Memory retrieval (only if not using SuperMemory wrapper)
     let memoriesUsed: { content: string; sector: string; confidence: number }[] = [];

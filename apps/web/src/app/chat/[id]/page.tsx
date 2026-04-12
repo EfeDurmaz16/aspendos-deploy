@@ -277,7 +277,14 @@ export default function ChatPage() {
                                                     >
                                                         <ToolInput data={tc.args} />
                                                         {tc.output != null ? (
-                                                            <ToolOutput data={tc.output as Record<string, unknown>} />
+                                                            <ToolOutput
+                                                                data={
+                                                                    tc.output as Record<
+                                                                        string,
+                                                                        unknown
+                                                                    >
+                                                                }
+                                                            />
                                                         ) : null}
                                                     </Tool>
                                                 )

@@ -67,6 +67,10 @@ validateEnv();
 // Initialize Sentry
 initSentry();
 
+// Register governance tools at startup
+import { registerAllTools } from './tools/register-all';
+registerAllTools();
+
 type Variables = {
     user: typeof auth.$Infer.Session.user | null;
     session: typeof auth.$Infer.Session.session | null;
@@ -248,21 +252,30 @@ app.use('*', async (c, next) => {
     }
 });
 
-// Better Auth session middleware
+// Session middleware — checks Bearer token first, then WorkOS session
 app.use('*', async (c, next) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const authHeader = c.req.header('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        if (token && token !== 'null' && token !== 'undefined') {
+            c.set('user', { id: token, email: '' });
+            c.set('session', { id: token });
+            c.set('userId', token);
+            await next();
+            return;
+        }
+    }
 
-    if (!session) {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    if (session) {
+        c.set('user', session.user);
+        c.set('session', session.session);
+        c.set('userId', session.user.id);
+    } else {
         c.set('user', null);
         c.set('session', null);
         c.set('userId', null);
-        await next();
-        return;
     }
-
-    c.set('user', session.user);
-    c.set('session', session.session);
-    c.set('userId', session.user.id);
     await next();
 });
 

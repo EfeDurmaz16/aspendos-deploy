@@ -10,8 +10,7 @@ const optionalEnvVars = [
     'OPENAI_API_KEY',
     'ANTHROPIC_API_KEY',
     'GROQ_API_KEY',
-    'QDRANT_URL',
-    'QDRANT_API_KEY',
+    'SUPERMEMORY_API_KEY',
     'POLAR_ACCESS_TOKEN',
     'NEXT_PUBLIC_CONVEX_URL',
 ] as const;

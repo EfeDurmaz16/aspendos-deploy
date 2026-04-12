@@ -255,25 +255,6 @@ class MetricsCollector {
     }
 
     /**
-     * Parse serialized labels back to object
-     */
-    private parseLabels(serialized: string): Record<string, string> {
-        if (!serialized) return {};
-
-        const labels: Record<string, string> = {};
-        const pairs = serialized.split(',');
-
-        for (const pair of pairs) {
-            const match = pair.match(/^(.+)="(.+)"$/);
-            if (match) {
-                labels[match[1]] = match[2];
-            }
-        }
-
-        return labels;
-    }
-
-    /**
      * Generate Prometheus text exposition format
      */
     getMetricsText(): string {
@@ -341,7 +322,7 @@ class MetricsCollector {
             }
         }
 
-        return lines.join('\n') + '\n';
+        return `${lines.join('\n')}\n`;
     }
 }
 
@@ -414,4 +395,4 @@ export function resetMetrics(): void {
 }
 
 // Export bucket constants for use in other modules
-export { HTTP_DURATION_BUCKETS, SIZE_BUCKETS, AI_DURATION_BUCKETS };
+export { AI_DURATION_BUCKETS, HTTP_DURATION_BUCKETS, SIZE_BUCKETS };

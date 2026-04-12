@@ -65,9 +65,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
             transition={{ duration: 0.3 }}
         >
             {/* Header with accent */}
-            <div
-                className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl relative bg-foreground/10"
-            >
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl relative bg-foreground/10">
                 <Database className="h-8 w-8 text-foreground" />
                 {/* Pulse ring */}
                 <motion.div
@@ -90,16 +88,16 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
             <div className="mb-4 w-full max-w-md">
                 <div className="rounded-xl border border-border bg-foreground/[0.02] overflow-hidden">
                     {/* Model tabs */}
-                    <div
-                        className="flex items-center gap-1 px-3 py-2 bg-foreground/[0.03]"
-                    >
+                    <div className="flex items-center gap-1 px-3 py-2 bg-foreground/[0.03]">
                         <span className="text-xs text-muted-foreground mr-2">Model:</span>
                         {MODELS.map((model, i) => (
                             <motion.div
                                 key={model.name}
                                 className={cn(
                                     'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
-                                    i === activeModel ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground'
+                                    i === activeModel
+                                        ? 'bg-foreground/10 text-foreground'
+                                        : 'text-muted-foreground'
                                 )}
                                 animate={i === activeModel ? { scale: [1, 1.05, 1] } : {}}
                                 transition={{ duration: 0.3 }}
@@ -113,9 +111,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                     {/* Memory cards — persist across model switch */}
                     <div className="p-3 space-y-2">
                         <div className="flex items-center gap-2 mb-2">
-                            <div
-                                className="h-1.5 w-1.5 rounded-full bg-foreground"
-                            />
+                            <div className="h-1.5 w-1.5 rounded-full bg-foreground" />
                             <span className="text-xs text-muted-foreground">
                                 Memory active across{' '}
                                 <AnimatePresence mode="wait">
@@ -149,12 +145,8 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                                     <div className="text-xs text-muted-foreground">{card.text}</div>
                                 </div>
                                 {/* Persistent indicator */}
-                                <div
-                                    className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground/10"
-                                >
-                                    <div
-                                        className="h-2 w-2 rounded-full bg-foreground"
-                                    />
+                                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground/10">
+                                    <div className="h-2 w-2 rounded-full bg-foreground" />
                                 </div>
                             </motion.div>
                         ))}
@@ -238,9 +230,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
 
 function StepIndicator({ number }: { number: number }) {
     return (
-        <div
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-foreground text-background"
-        >
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-foreground text-background">
             {number}
         </div>
     );

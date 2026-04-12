@@ -3,7 +3,7 @@
  * Handles CRUD operations for user API keys.
  */
 import { Hono } from 'hono';
-import { prisma } from '../lib/prisma';
+const prisma = null as any;
 import { requireAuth } from '../middleware/auth';
 
 type Variables = { userId: string };

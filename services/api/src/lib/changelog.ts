@@ -23,7 +23,7 @@ const CHANGELOG: ChangelogEntry[] = [
             'Input sanitization and XSS protection across all endpoints',
             'Content moderation with PII detection and prompt injection defense',
             'API key management with SHA-256 hashing and scoped permissions',
-            'Deep health checks with DB, Qdrant, and Redis monitoring',
+            'Deep health checks with DB, SuperMemory, and Redis monitoring',
             'GDPR Article 20 data portability (full data export)',
             'Centralized error codes catalog for better developer experience',
             'Structured JSON logging with request correlation',
@@ -97,7 +97,7 @@ const CHANGELOG: ChangelogEntry[] = [
         type: 'feature',
         highlights: [
             'Multi-model AI chat with streaming responses',
-            'Persistent memory via Qdrant vector store',
+            'Persistent memory via SuperMemory vector store',
             'Council: query 4 AI models simultaneously',
             'PAC: proactive AI-initiated conversations',
             'ChatGPT and Claude conversation import',

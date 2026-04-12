@@ -4,7 +4,7 @@
  * Provides SSE stream, push subscription management, and notification preferences.
  */
 
-import { prisma } from '@aspendos/db';
+
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
@@ -15,8 +15,8 @@ import {
     updateNotificationPreferences,
 } from '../services/notification.service';
 import {
-    pushSubscriptionSchema,
     notificationPreferencesSchema,
+    pushSubscriptionSchema,
 } from '../validation/notifications.schema';
 
 const app = new Hono();

@@ -190,21 +190,30 @@ export function MessageRenderer({
                     // Custom heading styles
                     h1({ children }) {
                         return (
-                            <h1 className="text-[1.5rem] font-semibold mt-8 mb-3 leading-tight tracking-tight" style={{ hyphens: 'none', textWrap: 'balance' }}>
+                            <h1
+                                className="text-[1.5rem] font-semibold mt-8 mb-3 leading-tight tracking-tight"
+                                style={{ hyphens: 'none', textWrap: 'balance' }}
+                            >
                                 {children}
                             </h1>
                         );
                     },
                     h2({ children }) {
                         return (
-                            <h2 className="text-[1.35rem] font-semibold mt-7 mb-2 leading-tight tracking-tight" style={{ hyphens: 'none', textWrap: 'balance' }}>
+                            <h2
+                                className="text-[1.35rem] font-semibold mt-7 mb-2 leading-tight tracking-tight"
+                                style={{ hyphens: 'none', textWrap: 'balance' }}
+                            >
                                 {children}
                             </h2>
                         );
                     },
                     h3({ children }) {
                         return (
-                            <h3 className="text-[1.15rem] font-semibold mt-6 mb-1.5 leading-snug" style={{ hyphens: 'none', textWrap: 'balance' }}>
+                            <h3
+                                className="text-[1.15rem] font-semibold mt-6 mb-1.5 leading-snug"
+                                style={{ hyphens: 'none', textWrap: 'balance' }}
+                            >
                                 {children}
                             </h3>
                         );

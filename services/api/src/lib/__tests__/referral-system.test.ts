@@ -46,7 +46,7 @@ describe('Referral System', () => {
         });
 
         it('should handle long user IDs', () => {
-            const longUserId = 'user_' + 'a'.repeat(100);
+            const longUserId = `user_${'a'.repeat(100)}`;
             const code = generateReferralCode(longUserId);
             expect(code).toHaveLength(8);
         });

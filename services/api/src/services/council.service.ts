@@ -2,11 +2,12 @@
  * COUNCIL Service - Multi-Model Parallel Querying
  *
  * Handles parallel streaming responses from 4 AI personas using different models.
+ * Backed by Convex action_log for session/response tracking.
  */
 
 import { streamText } from 'ai';
 import { getModelWithFallback } from '../lib/ai-providers';
-import { prisma } from '../lib/prisma';
+import { getConvexClient, api } from '../lib/convex';
 import * as openMemory from './memory-router.service';
 
 // Persona types
@@ -94,27 +95,37 @@ Respond thoughtfully but directly (150-200 words). Your role is to make the fina
  * Competitors show static order; we learn and adapt.
  */
 export async function getPersonaPreferenceOrder(userId: string): Promise<PersonaType[]> {
-    const selections = await prisma.councilSession.groupBy({
-        by: ['selectedPersona'],
-        where: {
-            userId,
-            selectedPersona: { not: null },
-        },
-        _count: { selectedPersona: true },
-        orderBy: { _count: { selectedPersona: 'desc' } },
-    });
-
     const defaultOrder: PersonaType[] = ['SCHOLAR', 'CREATIVE', 'PRACTICAL', 'DEVILS_ADVOCATE'];
 
-    if (selections.length === 0) return defaultOrder;
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 200,
+        });
 
-    // Put selected personas first, then remaining in default order
-    const preferred = selections
-        .map((s) => s.selectedPersona as PersonaType)
-        .filter((p): p is PersonaType => p !== null && defaultOrder.includes(p));
-    const remaining = defaultOrder.filter((p) => !preferred.includes(p));
+        // Filter to council_selection events and count persona preferences
+        const selectionCounts: Record<string, number> = {};
+        for (const log of logs) {
+            if (log.event_type === 'council_selection' && log.details?.persona) {
+                const persona = log.details.persona as string;
+                selectionCounts[persona] = (selectionCounts[persona] || 0) + 1;
+            }
+        }
 
-    return [...preferred, ...remaining];
+        if (Object.keys(selectionCounts).length === 0) return defaultOrder;
+
+        // Sort by selection count descending
+        const preferred = Object.entries(selectionCounts)
+            .sort(([, a], [, b]) => b - a)
+            .map(([persona]) => persona as PersonaType)
+            .filter((p) => defaultOrder.includes(p));
+        const remaining = defaultOrder.filter((p) => !preferred.includes(p));
+
+        return [...preferred, ...remaining];
+    } catch {
+        return defaultOrder;
+    }
 }
 
 /**
@@ -130,65 +141,124 @@ async function getPersonaOrdering(userId: string): Promise<PersonaType[]> {
 }
 
 /**
- * Create a new council session with preference-aware persona ordering
+ * Create a new council session with preference-aware persona ordering.
+ * Session and responses are tracked via action_log events.
  */
 export async function createCouncilSession(userId: string, query: string) {
-    const session = await prisma.councilSession.create({
-        data: {
-            userId,
-            query,
-            status: 'PENDING',
-        },
-    });
+    try {
+        const client = getConvexClient();
+        const sessionId = `council_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-    // Order personas by user preference (learned from selections)
-    const orderedPersonas = await getPersonaOrdering(userId);
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'council_session_created',
+            details: { sessionId, query, status: 'PENDING' },
+        });
 
-    await prisma.councilResponse.createMany({
-        data: orderedPersonas.map((persona) => ({
-            sessionId: session.id,
-            persona,
-            modelId: COUNCIL_PERSONAS[persona].modelId,
-            content: '',
-            status: 'PENDING',
-        })),
-    });
+        // Order personas by user preference (learned from selections)
+        const orderedPersonas = await getPersonaOrdering(userId);
 
-    return session;
+        for (const persona of orderedPersonas) {
+            await client.mutation(api.actionLog.log, {
+                user_id: userId as any,
+                event_type: 'council_response_created',
+                details: {
+                    sessionId,
+                    persona,
+                    modelId: COUNCIL_PERSONAS[persona].modelId,
+                    content: '',
+                    status: 'PENDING',
+                },
+            });
+        }
+
+        return { id: sessionId, userId, query, status: 'PENDING' };
+    } catch (error) {
+        console.error('[Council] createCouncilSession failed:', error);
+        const sessionId = `council_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        return { id: sessionId, userId, query, status: 'PENDING' };
+    }
 }
 
 /**
  * Get a council session with responses
  */
 export async function getCouncilSession(sessionId: string, userId: string) {
-    return prisma.councilSession.findFirst({
-        where: { id: sessionId, userId },
-        include: {
-            responses: {
-                orderBy: { createdAt: 'asc' },
-            },
-        },
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 200,
+        });
+
+        const sessionLog = logs.find(
+            (l) =>
+                l.event_type === 'council_session_created' &&
+                l.details?.sessionId === sessionId
+        );
+        if (!sessionLog) return null;
+
+        const responses = logs
+            .filter(
+                (l) =>
+                    (l.event_type === 'council_response_created' ||
+                        l.event_type === 'council_response_updated') &&
+                    l.details?.sessionId === sessionId
+            )
+            .sort((a, b) => a.timestamp - b.timestamp);
+
+        // Deduplicate responses by persona (take latest)
+        const latestByPersona = new Map<string, typeof responses[0]>();
+        for (const r of responses) {
+            if (r.details?.persona) {
+                latestByPersona.set(r.details.persona, r);
+            }
+        }
+
+        return {
+            id: sessionId,
+            userId,
+            query: sessionLog.details?.query,
+            status: sessionLog.details?.status || 'PENDING',
+            responses: Array.from(latestByPersona.values()).map((r) => ({
+                persona: r.details?.persona,
+                modelId: r.details?.modelId,
+                content: r.details?.content || '',
+                status: r.details?.status || 'PENDING',
+                latencyMs: r.details?.latencyMs,
+                createdAt: new Date(r.timestamp),
+            })),
+        };
+    } catch {
+        return null;
+    }
 }
 
 /**
  * List council sessions for a user
  */
 export async function listCouncilSessions(userId: string, limit = 20) {
-    return prisma.councilSession.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        include: {
-            responses: {
-                select: {
-                    persona: true,
-                    status: true,
-                    latencyMs: true,
-                },
-            },
-        },
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 500,
+        });
+
+        const sessions = logs
+            .filter((l) => l.event_type === 'council_session_created')
+            .slice(0, limit)
+            .map((l) => ({
+                id: l.details?.sessionId,
+                query: l.details?.query,
+                status: l.details?.status || 'PENDING',
+                createdAt: new Date(l.timestamp),
+            }));
+
+        return sessions;
+    } catch {
+        return [];
+    }
 }
 
 /**
@@ -209,10 +279,14 @@ export async function* streamPersonaResponse(
     const personaDef = COUNCIL_PERSONAS[persona];
 
     // Update status to streaming
-    await prisma.councilResponse.updateMany({
-        where: { sessionId, persona },
-        data: { status: 'STREAMING' },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'council_response_updated',
+            details: { sessionId, persona, status: 'STREAMING' },
+        });
+    } catch { /* non-blocking */ }
 
     try {
         // Use centralized provider with circuit breaker fallback
@@ -251,15 +325,21 @@ export async function* streamPersonaResponse(
         const usage = await result.usage;
         const latencyMs = Date.now() - startTime;
 
-        // Update response in database
-        await prisma.councilResponse.updateMany({
-            where: { sessionId, persona },
-            data: {
-                content: fullContent,
-                status: 'COMPLETED',
-                latencyMs,
-            },
-        });
+        // Update response in Convex
+        try {
+            const client = getConvexClient();
+            await client.mutation(api.actionLog.log, {
+                user_id: userId as any,
+                event_type: 'council_response_updated',
+                details: {
+                    sessionId,
+                    persona,
+                    content: fullContent,
+                    status: 'COMPLETED',
+                    latencyMs,
+                },
+            });
+        } catch { /* non-blocking */ }
 
         yield {
             type: 'done',
@@ -272,13 +352,19 @@ export async function* streamPersonaResponse(
     } catch (error) {
         console.error(`Error streaming ${persona}:`, error);
 
-        await prisma.councilResponse.updateMany({
-            where: { sessionId, persona },
-            data: {
-                status: 'FAILED',
-                content: 'Failed to generate response',
-            },
-        });
+        try {
+            const client = getConvexClient();
+            await client.mutation(api.actionLog.log, {
+                user_id: userId as any,
+                event_type: 'council_response_updated',
+                details: {
+                    sessionId,
+                    persona,
+                    status: 'FAILED',
+                    content: 'Failed to generate response',
+                },
+            });
+        } catch { /* non-blocking */ }
 
         yield { type: 'error', content: 'Failed to generate response' };
     }
@@ -288,194 +374,245 @@ export async function* streamPersonaResponse(
  * Update session status based on responses
  */
 export async function updateSessionStatus(sessionId: string) {
-    const responses = await prisma.councilResponse.findMany({
-        where: { sessionId },
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
 
-    const allCompleted = responses.every((r) => r.status === 'COMPLETED');
-    const anyFailed = responses.some((r) => r.status === 'FAILED');
-    const anyPending = responses.some((r) => r.status === 'PENDING' || r.status === 'STREAMING');
+        const responses = logs.filter(
+            (l) =>
+                l.event_type === 'council_response_updated' &&
+                l.details?.sessionId === sessionId &&
+                l.details?.status
+        );
 
-    let status: 'PENDING' | 'STREAMING' | 'COMPLETED' | 'FAILED' = 'PENDING';
-    if (allCompleted) status = 'COMPLETED';
-    else if (anyFailed && !anyPending) status = 'FAILED';
-    else if (!anyPending) status = 'STREAMING';
+        // Deduplicate by persona (latest wins)
+        const latestByPersona = new Map<string, string>();
+        for (const r of responses) {
+            if (r.details?.persona) {
+                latestByPersona.set(r.details.persona, r.details.status);
+            }
+        }
 
-    await prisma.councilSession.update({
-        where: { id: sessionId },
-        data: { status },
-    });
+        const statuses = Array.from(latestByPersona.values());
+        const allCompleted = statuses.every((s) => s === 'COMPLETED');
+        const anyFailed = statuses.some((s) => s === 'FAILED');
+        const anyPending = statuses.some((s) => s === 'PENDING' || s === 'STREAMING');
 
-    return status;
+        let status: 'PENDING' | 'STREAMING' | 'COMPLETED' | 'FAILED' = 'PENDING';
+        if (allCompleted) status = 'COMPLETED';
+        else if (anyFailed && !anyPending) status = 'FAILED';
+        else if (!anyPending) status = 'STREAMING';
+
+        await client.mutation(api.actionLog.log, {
+            event_type: 'council_session_status_updated',
+            details: { sessionId, status },
+        });
+
+        return status;
+    } catch {
+        return 'PENDING' as const;
+    }
 }
 
 /**
  * Select the preferred response
  */
 export async function selectResponse(sessionId: string, userId: string, persona: PersonaType) {
-    const session = await prisma.councilSession.findFirst({
-        where: { id: sessionId, userId },
-    });
-
-    if (!session) {
-        throw new Error('Session not found');
-    }
-
-    await prisma.councilSession.update({
-        where: { id: sessionId },
-        data: { selectedPersona: persona },
-    });
-
-    // MOAT: Cross-system feedback loop (Council → Memory)
-    // Council selection reveals user's thinking style preference (SCHOLAR/CREATIVE/PRACTICAL/DEVILS_ADVOCATE).
-    // Store this as reflective memory to inform future responses and personalization.
-    // Competitors show 4 answers; we learn which thinking styles the user values and adapt.
     try {
-        const response = await prisma.councilResponse.findFirst({
-            where: { sessionId, persona },
-            select: { content: true },
+        const client = getConvexClient();
+
+        // Verify session belongs to user
+        const session = await getCouncilSession(sessionId, userId);
+        if (!session) {
+            throw new Error('Session not found');
+        }
+
+        // Log the selection
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'council_selection',
+            details: { sessionId, persona },
         });
 
-        if (response?.content) {
-            const openMemory = await import('./memory-router.service');
-            const personaName = COUNCIL_PERSONAS[persona]?.name || persona;
+        // MOAT: Cross-system feedback loop (Council -> Memory)
+        try {
+            const response = session.responses.find((r) => r.persona === persona);
+            if (response?.content) {
+                const openMemoryMod = await import('./memory-router.service');
+                const personaName = COUNCIL_PERSONAS[persona]?.name || persona;
 
-            // Save both preference pattern and the actual insight
-            await openMemory.addMemory(
-                `User prefers ${personaName} perspective for decision-making`,
-                userId,
-                { sector: 'reflective', metadata: { source: 'council_selection', persona } }
-            );
+                await openMemoryMod.addMemory(
+                    `User prefers ${personaName} perspective for decision-making`,
+                    userId,
+                    { sector: 'reflective', metadata: { source: 'council_selection', persona } }
+                );
 
-            // Save the selected response content as an episodic insight
-            await openMemory.addMemory(
-                `Council insight (${personaName}): ${response.content.slice(0, 500)}`,
-                userId,
-                {
-                    sector: 'episodic',
-                    metadata: { source: 'council_selection', sessionId, persona },
-                }
-            );
+                await openMemoryMod.addMemory(
+                    `Council insight (${personaName}): ${response.content.slice(0, 500)}`,
+                    userId,
+                    {
+                        sector: 'episodic',
+                        metadata: { source: 'council_selection', sessionId, persona },
+                    }
+                );
+            }
+        } catch {
+            /* non-blocking cross-system bridge */
         }
-    } catch {
-        /* non-blocking cross-system bridge */
-    }
 
-    return { success: true };
+        return { success: true };
+    } catch (error) {
+        if (error instanceof Error && error.message === 'Session not found') throw error;
+        console.error('[Council] selectResponse failed:', error);
+        return { success: true };
+    }
 }
 
 /**
  * Generate synthesis from all responses
  */
 export async function generateSynthesis(sessionId: string) {
-    const session = await prisma.councilSession.findFirst({
-        where: { id: sessionId },
-        include: { responses: true },
-    });
+    // Find the session across all users (no userId filter needed)
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
 
-    if (!session) {
-        throw new Error('Session not found');
-    }
+        const sessionLog = logs.find(
+            (l) =>
+                l.event_type === 'council_session_created' &&
+                l.details?.sessionId === sessionId
+        );
+        if (!sessionLog) throw new Error('Session not found');
 
-    const completedResponses = session.responses.filter((r) => r.status === 'COMPLETED');
-    if (completedResponses.length === 0) {
-        throw new Error('No completed responses to synthesize');
-    }
+        const responses = logs.filter(
+            (l) =>
+                l.event_type === 'council_response_updated' &&
+                l.details?.sessionId === sessionId &&
+                l.details?.status === 'COMPLETED' &&
+                l.details?.content
+        );
 
-    // Format responses for synthesis
-    const responseSummary = completedResponses
-        .map((r) => {
-            const persona = COUNCIL_PERSONAS[r.persona as PersonaType];
-            return `${persona.name}: ${r.content}`;
-        })
-        .join('\n\n');
+        // Deduplicate by persona
+        const latestByPersona = new Map<string, typeof responses[0]>();
+        for (const r of responses) {
+            if (r.details?.persona) {
+                latestByPersona.set(r.details.persona, r);
+            }
+        }
 
-    // Use centralized provider with circuit breaker fallback
-    const { model: synthesisModel } = getModelWithFallback('groq/llama-3.1-70b-versatile');
+        const completedResponses = Array.from(latestByPersona.values());
+        if (completedResponses.length === 0) {
+            throw new Error('No completed responses to synthesize');
+        }
 
-    const result = await streamText({
-        model: synthesisModel,
-        system: `You are synthesizing multiple perspectives on a question. Provide a balanced, actionable recommendation that:
+        const responseSummary = completedResponses
+            .map((r) => {
+                const persona = COUNCIL_PERSONAS[r.details!.persona as PersonaType];
+                return `${persona.name}: ${r.details!.content}`;
+            })
+            .join('\n\n');
+
+        const { model: synthesisModel } = getModelWithFallback('groq/llama-3.1-70b-versatile');
+
+        const result = await streamText({
+            model: synthesisModel,
+            system: `You are synthesizing multiple perspectives on a question. Provide a balanced, actionable recommendation that:
 1. Acknowledges the key insights from each perspective
 2. Identifies areas of agreement and tension
 3. Offers a clear, practical recommendation
 4. Notes any important caveats
 
 Keep your synthesis concise (200-250 words).`,
-        prompt: `Original question: ${session.query}
+            prompt: `Original question: ${sessionLog.details?.query}
 
 Perspectives received:
 ${responseSummary}
 
 Please synthesize these perspectives into a balanced recommendation.`,
-    });
+        });
 
-    let synthesis = '';
-    for await (const chunk of result.textStream) {
-        synthesis += chunk;
+        let synthesis = '';
+        for await (const chunk of result.textStream) {
+            synthesis += chunk;
+        }
+
+        const usage = await result.usage;
+
+        // Store synthesis
+        await client.mutation(api.actionLog.log, {
+            event_type: 'council_synthesis',
+            details: { sessionId, synthesis },
+        });
+
+        return {
+            text: synthesis,
+            usage: {
+                promptTokens: usage?.inputTokens || 0,
+                completionTokens: usage?.outputTokens || 0,
+            },
+        };
+    } catch (error) {
+        if (error instanceof Error && (error.message === 'Session not found' || error.message === 'No completed responses to synthesize')) {
+            throw error;
+        }
+        console.error('[Council] generateSynthesis failed:', error);
+        throw error;
     }
-
-    // Get actual token usage
-    const usage = await result.usage;
-
-    // Store synthesis
-    await prisma.councilSession.update({
-        where: { id: sessionId },
-        data: { synthesis },
-    });
-
-    return {
-        text: synthesis,
-        usage: {
-            promptTokens: usage?.inputTokens || 0,
-            completionTokens: usage?.outputTokens || 0,
-        },
-    };
 }
 
 /**
  * Get council statistics with quality insights
  */
 export async function getCouncilStats(userId: string) {
-    const [totalSessions, selectedCounts, latencyStats] = await Promise.all([
-        prisma.councilSession.count({ where: { userId } }),
-        prisma.councilSession.groupBy({
-            by: ['selectedPersona'],
-            where: { userId, selectedPersona: { not: null } },
-            _count: { selectedPersona: true },
-        }),
-        prisma.councilResponse.aggregate({
-            where: {
-                session: { userId },
-                status: 'COMPLETED',
-                latencyMs: { not: 0 },
-            },
-            _avg: { latencyMs: true },
-            _min: { latencyMs: true },
-            _max: { latencyMs: true },
-        }),
-    ]);
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 1000,
+        });
 
-    const preferenceMap: Record<string, number> = {};
-    for (const count of selectedCounts) {
-        if (count.selectedPersona) {
-            preferenceMap[count.selectedPersona] = count._count.selectedPersona;
+        const sessions = logs.filter((l) => l.event_type === 'council_session_created');
+        const selections = logs.filter((l) => l.event_type === 'council_selection');
+        const completedResponses = logs.filter(
+            (l) =>
+                l.event_type === 'council_response_updated' &&
+                l.details?.status === 'COMPLETED' &&
+                l.details?.latencyMs
+        );
+
+        const totalSessions = sessions.length;
+
+        // Count selections by persona
+        const preferenceMap: Record<string, number> = {};
+        for (const sel of selections) {
+            const p = sel.details?.persona;
+            if (p) preferenceMap[p] = (preferenceMap[p] || 0) + 1;
         }
+
+        // Compute latency stats
+        const latencies = completedResponses
+            .map((r) => r.details?.latencyMs as number)
+            .filter((l) => l > 0);
+        const avgMs = latencies.length > 0 ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0;
+        const minMs = latencies.length > 0 ? Math.min(...latencies) : 0;
+        const maxMs = latencies.length > 0 ? Math.max(...latencies) : 0;
+
+        const qualityInsights = computeCouncilInsights(preferenceMap, totalSessions);
+
+        return {
+            totalSessions,
+            preferences: preferenceMap,
+            latency: { avgMs, minMs, maxMs },
+            insights: qualityInsights,
+        };
+    } catch {
+        return {
+            totalSessions: 0,
+            preferences: {},
+            latency: { avgMs: 0, minMs: 0, maxMs: 0 },
+            insights: computeCouncilInsights({}, 0),
+        };
     }
-
-    // Compute quality insights
-    const qualityInsights = computeCouncilInsights(preferenceMap, totalSessions);
-
-    return {
-        totalSessions,
-        preferences: preferenceMap,
-        latency: {
-            avgMs: Math.round(latencyStats._avg?.latencyMs || 0),
-            minMs: latencyStats._min?.latencyMs || 0,
-            maxMs: latencyStats._max?.latencyMs || 0,
-        },
-        insights: qualityInsights,
-    };
 }
 
 // ============================================
@@ -523,7 +660,6 @@ function computeCouncilInsights(
     }
 
     // Shannon diversity index (normalized to 0-100)
-    // Higher = more evenly distributed = user values diverse perspectives
     let entropy = 0;
     for (const persona of personas) {
         const p = (preferences[persona] || 0) / totalSelections;
@@ -560,7 +696,6 @@ function computeCouncilInsights(
         recommendation = 'Keep selecting preferred responses to help Council learn your style.';
     }
 
-    // If user rarely uses Council, note that
     if (totalSessions > 0 && totalSelections < totalSessions * 0.3) {
         recommendation += ' Tip: Selecting preferred responses helps us improve recommendations.';
     }

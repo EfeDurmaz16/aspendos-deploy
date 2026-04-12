@@ -4,7 +4,7 @@
  * Provides endpoints for usage analytics, token consumption, and model statistics.
  */
 
-import { prisma } from '@aspendos/db';
+
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @aspendos/db inline (no vi.hoisted)
 vi.mock('@aspendos/db', () => ({
@@ -7,13 +7,13 @@ vi.mock('@aspendos/db', () => ({
     },
 }));
 
-import { prisma } from '@aspendos/db';
+
 import {
+    _forTestingReset,
     getPoolHealth,
     getPoolMetrics,
-    withDatabaseRetry,
     validateConnection,
-    _forTestingReset,
+    withDatabaseRetry,
 } from '../db-pool-manager';
 
 const mockPrisma = prisma as any;
@@ -53,7 +53,9 @@ describe('Database Pool Manager', () => {
                 await withDatabaseRetry(async () => {
                     throw new Error('non-retryable failure');
                 }, 0);
-            } catch { /* expected */ }
+            } catch {
+                /* expected */
+            }
 
             const metrics = getPoolMetrics();
             expect(metrics.totalFailures).toBe(1);
@@ -89,7 +91,9 @@ describe('Database Pool Manager', () => {
                     await withDatabaseRetry(async () => {
                         throw new Error('non-retryable db error');
                     }, 0);
-                } catch { /* expected */ }
+                } catch {
+                    /* expected */
+                }
             }
 
             const health = getPoolHealth();
@@ -105,12 +109,14 @@ describe('Database Pool Manager', () => {
                     await withDatabaseRetry(async () => {
                         throw new Error('non-retryable');
                     }, 0);
-                } catch { /* expected */ }
+                } catch {
+                    /* expected */
+                }
             }
 
-            await expect(
-                withDatabaseRetry(async () => 'should not run', 0)
-            ).rejects.toThrow('circuit breaker is OPEN');
+            await expect(withDatabaseRetry(async () => 'should not run', 0)).rejects.toThrow(
+                'circuit breaker is OPEN'
+            );
         });
 
         it('should reset to CLOSED on success', async () => {
@@ -120,7 +126,9 @@ describe('Database Pool Manager', () => {
                     await withDatabaseRetry(async () => {
                         throw new Error('non-retryable');
                     }, 0);
-                } catch { /* expected */ }
+                } catch {
+                    /* expected */
+                }
             }
 
             expect(getPoolHealth().consecutiveFailures).toBe(3);
@@ -139,7 +147,9 @@ describe('Database Pool Manager', () => {
                 await withDatabaseRetry(async () => {
                     throw new Error('non-retryable');
                 }, 0);
-            } catch { /* expected */ }
+            } catch {
+                /* expected */
+            }
 
             const health = getPoolHealth();
             expect(health.status).toBe('degraded');
@@ -151,7 +161,9 @@ describe('Database Pool Manager', () => {
                 await withDatabaseRetry(async () => {
                     throw new Error('unique db error 42');
                 }, 0);
-            } catch { /* expected */ }
+            } catch {
+                /* expected */
+            }
 
             const health = getPoolHealth();
             expect(health.lastErrorMessage).toBe('unique db error 42');
@@ -190,7 +202,9 @@ describe('Database Pool Manager', () => {
                     attempts++;
                     throw new Error('unique constraint violation');
                 }, 3);
-            } catch { /* expected */ }
+            } catch {
+                /* expected */
+            }
 
             expect(attempts).toBe(1);
         });
@@ -211,7 +225,9 @@ describe('Database Pool Manager', () => {
                     attempts++;
                     throw new Error('connection refused econnrefused');
                 }, 1);
-            } catch { /* expected */ }
+            } catch {
+                /* expected */
+            }
 
             // attempt 0 + 1 retry = 2 total attempts
             expect(attempts).toBe(2);
@@ -250,7 +266,9 @@ describe('Database Pool Manager', () => {
                     await withDatabaseRetry(async () => {
                         throw new Error('non-retryable');
                     }, 0);
-                } catch { /* expected */ }
+                } catch {
+                    /* expected */
+                }
             }
 
             const health = getPoolHealth();
@@ -291,9 +309,7 @@ describe('Database Pool Manager', () => {
                 new Error('database is not available')
             );
 
-            await expect(validateConnection()).rejects.toThrow(
-                'database is not available'
-            );
+            await expect(validateConnection()).rejects.toThrow('database is not available');
 
             const health = getPoolHealth();
             expect(health.consecutiveFailures).toBe(1);
@@ -313,7 +329,9 @@ describe('Database Pool Manager', () => {
                     await withDatabaseRetry(async () => {
                         throw new Error('non-retryable');
                     }, 0);
-                } catch { /* expected */ }
+                } catch {
+                    /* expected */
+                }
             }
             expect(getPoolHealth().circuitState).toBe('OPEN');
 

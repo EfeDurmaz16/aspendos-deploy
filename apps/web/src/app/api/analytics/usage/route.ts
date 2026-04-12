@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic';
-import { prisma } from '@aspendos/db';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
     try {
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
         const intervalParam = (searchParams.get('interval') || 'day').toLowerCase();
         const interval =
             intervalParam === 'week' || intervalParam === 'month' ? intervalParam : 'day';
-        const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '30'), 1), 365);
+        const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '30', 10), 1), 365);
 
         const now = new Date();
         const start = new Date(now);

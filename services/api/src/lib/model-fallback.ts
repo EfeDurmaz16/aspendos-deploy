@@ -11,7 +11,10 @@ const FALLBACK_CHAINS: Record<string, string[]> = {
     // ULTRA tier premium - fall back to Groq
     'openai/gpt-4o': ['groq/llama-3.1-70b-versatile', 'groq/mixtral-8x7b-32768'],
     'openai/o1': ['groq/llama-3.1-70b-versatile', 'groq/mixtral-8x7b-32768'],
-    'anthropic/claude-sonnet-4-20250514': ['groq/llama-3.1-70b-versatile', 'groq/mixtral-8x7b-32768'],
+    'anthropic/claude-sonnet-4-20250514': [
+        'groq/llama-3.1-70b-versatile',
+        'groq/mixtral-8x7b-32768',
+    ],
     'anthropic/claude-opus-4-20250514': ['groq/llama-3.1-70b-versatile', 'groq/mixtral-8x7b-32768'],
 };
 

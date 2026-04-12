@@ -1,12 +1,12 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    recordSuccess,
-    recordFailure,
-    isFeatureAvailable,
-    getFeatureHealth,
     getDegradedFeatures,
-    withFeatureFallback,
+    getFeatureHealth,
+    isFeatureAvailable,
+    recordFailure,
+    recordSuccess,
     resetFeatureHealth_forTesting,
+    withFeatureFallback,
 } from '../feature-degradation';
 
 describe('Feature Degradation', () => {

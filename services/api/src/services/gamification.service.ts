@@ -2,10 +2,11 @@
  * Gamification Service
  *
  * Handles XP, levels, achievements, streaks, and referral program.
+ * Backed by Convex action_log for event tracking.
  */
 
 import { nanoid } from 'nanoid';
-import { prisma } from '../lib/prisma';
+import { getConvexClient, api } from '../lib/convex';
 
 // ==========================================
 // LEVEL SYSTEM
@@ -247,36 +248,118 @@ export const ACHIEVEMENTS = {
 export type AchievementCode = keyof typeof ACHIEVEMENTS;
 
 // ==========================================
-// PROFILE MANAGEMENT
+// PROFILE MANAGEMENT (via action_log events)
 // ==========================================
+
+/** Reconstructs gamification profile from action_log events */
+async function reconstructProfile(userId: string) {
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 1000,
+        });
+
+        // Find profile creation event or create default
+        const profileLog = logs.find((l) => l.event_type === 'gamification_profile_created');
+        const referralCode =
+            profileLog?.details?.referralCode || nanoid(8).toUpperCase();
+
+        // Sum all XP awards
+        let totalXp = 0;
+        const xpLogs: Array<{ amount: number; action: string; timestamp: number }> = [];
+        for (const log of logs) {
+            if (log.event_type === 'xp_awarded') {
+                const amount = (log.details?.amount as number) || 0;
+                totalXp += amount;
+                xpLogs.push({
+                    amount,
+                    action: (log.details?.action as string) || 'unknown',
+                    timestamp: log.timestamp,
+                });
+            }
+        }
+
+        // Collect unlocked achievements
+        const achievements: Array<{ code: string; unlockedAt: Date }> = [];
+        for (const log of logs) {
+            if (log.event_type === 'achievement_unlocked') {
+                achievements.push({
+                    code: log.details?.code as string,
+                    unlockedAt: new Date(log.timestamp),
+                });
+            }
+        }
+
+        // Get streak info
+        const streakLogs = logs
+            .filter((l) => l.event_type === 'streak_updated')
+            .sort((a, b) => b.timestamp - a.timestamp);
+        const latestStreak = streakLogs[0]?.details || {};
+
+        // Get referral info
+        const referralLogs = logs.filter((l) => l.event_type === 'referral_processed');
+
+        return {
+            userId,
+            referralCode,
+            totalXp,
+            level: getLevelForXp(totalXp).level,
+            currentStreak: (latestStreak.currentStreak as number) || 0,
+            longestStreak: (latestStreak.longestStreak as number) || 0,
+            lastActiveDate: latestStreak.lastActiveDate
+                ? new Date(latestStreak.lastActiveDate as string)
+                : new Date(),
+            streakFreezes: 1,
+            freezesUsed: (latestStreak.freezesUsed as number) || 0,
+            totalReferrals: referralLogs.length,
+            proDaysEarned: referralLogs.length * 7,
+            referredBy: profileLog?.details?.referredBy || null,
+            achievements,
+            xpLogs: xpLogs.slice(0, 10),
+        };
+    } catch {
+        return {
+            userId,
+            referralCode: nanoid(8).toUpperCase(),
+            totalXp: 0,
+            level: 1,
+            currentStreak: 0,
+            longestStreak: 0,
+            lastActiveDate: new Date(),
+            streakFreezes: 1,
+            freezesUsed: 0,
+            totalReferrals: 0,
+            proDaysEarned: 0,
+            referredBy: null,
+            achievements: [] as Array<{ code: string; unlockedAt: Date }>,
+            xpLogs: [] as Array<{ amount: number; action: string; timestamp: number }>,
+        };
+    }
+}
 
 /**
  * Get or create a gamification profile
  */
 export async function getOrCreateProfile(userId: string) {
-    let profile = await prisma.gamificationProfile.findUnique({
-        where: { userId },
-        include: {
-            achievements: true,
-            xpLogs: {
-                orderBy: { createdAt: 'desc' },
-                take: 10,
-            },
-        },
-    });
+    const profile = await reconstructProfile(userId);
 
-    if (!profile) {
-        profile = await prisma.gamificationProfile.create({
-            data: {
-                userId,
-                referralCode: nanoid(8).toUpperCase(),
-            },
-            include: {
-                achievements: true,
-                xpLogs: true,
-            },
+    // Ensure profile creation event exists
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 100,
         });
-    }
+        const hasProfile = logs.some((l) => l.event_type === 'gamification_profile_created');
+        if (!hasProfile) {
+            await client.mutation(api.actionLog.log, {
+                user_id: userId as any,
+                event_type: 'gamification_profile_created',
+                details: { referralCode: profile.referralCode },
+            });
+        }
+    } catch { /* non-blocking */ }
 
     return profile;
 }
@@ -320,47 +403,46 @@ export async function awardXp(
     newLevel?: (typeof LEVELS)[number];
     achievementsUnlocked: AchievementCode[];
 }> {
-    const profile = await getOrCreateProfile(userId);
-    const xpAmount = XP_ACTIONS[action].xp;
+    try {
+        const profile = await getOrCreateProfile(userId);
+        const xpAmount = XP_ACTIONS[action].xp;
 
-    const previousLevel = getLevelForXp(profile.totalXp);
+        const previousLevel = getLevelForXp(profile.totalXp);
+        const newTotalXp = profile.totalXp + xpAmount;
+        const newLevel = getLevelForXp(newTotalXp);
+        const leveledUp = newLevel.level > previousLevel.level;
 
-    // Update profile and log XP
-    const updatedProfile = await prisma.gamificationProfile.update({
-        where: { id: profile.id },
-        data: {
-            totalXp: { increment: xpAmount },
-            xpLogs: {
-                create: {
-                    amount: xpAmount,
-                    action,
-                    metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : undefined,
-                },
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'xp_awarded',
+            details: {
+                amount: xpAmount,
+                action,
+                metadata: metadata || null,
+                totalXp: newTotalXp,
             },
-        },
-    });
-
-    const newLevel = getLevelForXp(updatedProfile.totalXp);
-    const leveledUp = newLevel.level > previousLevel.level;
-
-    // Check for unlocked achievements
-    const achievementsUnlocked = await checkAndUnlockAchievements(userId, action);
-
-    // Update level if changed
-    if (leveledUp) {
-        await prisma.gamificationProfile.update({
-            where: { id: profile.id },
-            data: { level: newLevel.level },
         });
-    }
 
-    return {
-        xpAwarded: xpAmount,
-        totalXp: updatedProfile.totalXp,
-        leveledUp,
-        newLevel: leveledUp ? newLevel : undefined,
-        achievementsUnlocked,
-    };
+        // Check for unlocked achievements
+        const achievementsUnlocked = await checkAndUnlockAchievements(userId, action);
+
+        return {
+            xpAwarded: xpAmount,
+            totalXp: newTotalXp,
+            leveledUp,
+            newLevel: leveledUp ? newLevel : undefined,
+            achievementsUnlocked,
+        };
+    } catch (error) {
+        console.error('[Gamification] awardXp failed:', error);
+        return {
+            xpAwarded: 0,
+            totalXp: 0,
+            leveledUp: false,
+            achievementsUnlocked: [],
+        };
+    }
 }
 
 // ==========================================
@@ -377,7 +459,6 @@ async function checkAndUnlockAchievements(
     const unlocked: AchievementCode[] = [];
     const profile = await getOrCreateProfile(userId);
 
-    // Check action-specific achievements
     const achievementChecks: Record<XPAction, AchievementCode[]> = {
         send_message: ['first_chat', 'chatty', 'prolific', 'marathon'],
         complete_conversation: [],
@@ -400,7 +481,7 @@ async function checkAndUnlockAchievements(
 
         const shouldUnlock = await checkAchievementCriteria(userId, code, action);
         if (shouldUnlock) {
-            await unlockAchievement(userId, profile.id, code);
+            await unlockAchievement(userId, code);
             unlocked.push(code);
         }
     }
@@ -425,51 +506,40 @@ async function checkAchievementCriteria(
         case 'first_referral':
             return true; // First-time achievements unlock immediately
 
-        case 'chatty': {
-            const count = await prisma.xPLog.count({
-                where: {
-                    profile: { userId },
-                    action: 'send_message',
-                },
-            });
-            return count >= 100;
-        }
-
-        case 'prolific': {
-            const count = await prisma.xPLog.count({
-                where: {
-                    profile: { userId },
-                    action: 'send_message',
-                },
-            });
-            return count >= 1000;
-        }
-
-        case 'marathon': {
-            const count = await prisma.xPLog.count({
-                where: {
-                    profile: { userId },
-                    action: 'send_message',
-                },
-            });
-            return count >= 10000;
-        }
-
-        case 'council_master': {
-            const count = await prisma.xPLog.count({
-                where: {
-                    profile: { userId },
-                    action: 'use_council',
-                },
-            });
-            return count >= 50;
-        }
-
+        case 'chatty':
+        case 'prolific':
+        case 'marathon':
+        case 'council_master':
         case 'referral_pro': {
-            const profile = await prisma.gamificationProfile.findUnique({
-                where: { userId },
-            });
-            return (profile?.totalReferrals || 0) >= 5;
+            try {
+                const client = getConvexClient();
+                const logs = await client.query(api.actionLog.listByUser, {
+                    user_id: userId as any,
+                    limit: 10001,
+                });
+
+                const xpLogs = logs.filter((l) => l.event_type === 'xp_awarded');
+
+                if (code === 'chatty') {
+                    return xpLogs.filter((l) => l.details?.action === 'send_message').length >= 100;
+                }
+                if (code === 'prolific') {
+                    return xpLogs.filter((l) => l.details?.action === 'send_message').length >= 1000;
+                }
+                if (code === 'marathon') {
+                    return xpLogs.filter((l) => l.details?.action === 'send_message').length >= 10000;
+                }
+                if (code === 'council_master') {
+                    return xpLogs.filter((l) => l.details?.action === 'use_council').length >= 50;
+                }
+                if (code === 'referral_pro') {
+                    const profile = await reconstructProfile(userId);
+                    return profile.totalReferrals >= 5;
+                }
+            } catch {
+                return false;
+            }
+            return false;
         }
 
         default:
@@ -480,31 +550,31 @@ async function checkAchievementCriteria(
 /**
  * Unlock an achievement
  */
-export async function unlockAchievement(userId: string, profileId: string, code: AchievementCode) {
+export async function unlockAchievement(_userId: string, code: AchievementCode) {
     const achievement = ACHIEVEMENTS[code];
 
-    await prisma.achievement.create({
-        data: {
-            profileId,
-            code,
-        },
-    });
-
-    // Award XP for the achievement
-    if (achievement.xpReward > 0) {
-        await prisma.gamificationProfile.update({
-            where: { id: profileId },
-            data: {
-                totalXp: { increment: achievement.xpReward },
-                xpLogs: {
-                    create: {
-                        amount: achievement.xpReward,
-                        action: `achievement_${code}`,
-                        metadata: { achievementCode: code },
-                    },
-                },
-            },
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: _userId as any,
+            event_type: 'achievement_unlocked',
+            details: { code },
         });
+
+        // Award XP for the achievement
+        if (achievement.xpReward > 0) {
+            await client.mutation(api.actionLog.log, {
+                user_id: _userId as any,
+                event_type: 'xp_awarded',
+                details: {
+                    amount: achievement.xpReward,
+                    action: `achievement_${code}`,
+                    metadata: { achievementCode: code },
+                },
+            });
+        }
+    } catch (error) {
+        console.error('[Gamification] unlockAchievement failed:', error);
     }
 
     return achievement;
@@ -576,33 +646,44 @@ export async function updateStreak(userId: string): Promise<{
                         (a) => a.code === achievementCode
                     );
                     if (!alreadyUnlocked) {
-                        await unlockAchievement(userId, profile.id, achievementCode);
+                        await unlockAchievement(userId, achievementCode);
                     }
                 }
             }
         }
     } else if (daysSinceActive <= 2 && profile.freezesUsed < profile.streakFreezes) {
         // Use a streak freeze
-        await prisma.gamificationProfile.update({
-            where: { id: profile.id },
-            data: { freezesUsed: { increment: 1 } },
-        });
+        try {
+            const client = getConvexClient();
+            await client.mutation(api.actionLog.log, {
+                user_id: userId as any,
+                event_type: 'streak_freeze_used',
+                details: { freezesUsed: profile.freezesUsed + 1 },
+            });
+        } catch { /* non-blocking */ }
     } else {
         // Streak broken
         streakBroken = true;
         currentStreak = 1;
     }
 
-    // Update profile
+    // Update streak in action_log
     const longestStreak = Math.max(currentStreak, profile.longestStreak);
-    await prisma.gamificationProfile.update({
-        where: { id: profile.id },
-        data: {
-            currentStreak,
-            longestStreak,
-            lastActiveDate: now,
-        },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'streak_updated',
+            details: {
+                currentStreak,
+                longestStreak,
+                lastActiveDate: now.toISOString(),
+                freezesUsed: profile.freezesUsed,
+            },
+        });
+    } catch (error) {
+        console.error('[Gamification] updateStreak failed:', error);
+    }
 
     return {
         currentStreak,
@@ -623,40 +704,53 @@ export async function processReferral(
     newUserId: string,
     referralCode: string
 ): Promise<{ success: boolean; referrerId?: string; proDaysEarned?: number }> {
-    // Find the referrer
-    const referrer = await prisma.gamificationProfile.findUnique({
-        where: { referralCode: referralCode.toUpperCase() },
-    });
+    try {
+        const client = getConvexClient();
 
-    if (!referrer || referrer.userId === newUserId) {
+        // Find the referrer by scanning profiles (referralCode is stored in profile_created events)
+        const allLogs = await client.query(api.actionLog.listRecent, { limit: 1000 });
+        const referrerLog = allLogs.find(
+            (l) =>
+                l.event_type === 'gamification_profile_created' &&
+                l.details?.referralCode === referralCode.toUpperCase()
+        );
+
+        if (!referrerLog || !referrerLog.user_id) {
+            return { success: false };
+        }
+
+        const referrerUserId = referrerLog.user_id;
+        if (referrerUserId === (newUserId as any)) {
+            return { success: false };
+        }
+
+        // Log referral for new user
+        await client.mutation(api.actionLog.log, {
+            user_id: newUserId as any,
+            event_type: 'gamification_profile_created',
+            details: { referredBy: referrerUserId, referralCode: nanoid(8).toUpperCase() },
+        });
+
+        // Log referral for referrer
+        const proDaysEarned = 7;
+        await client.mutation(api.actionLog.log, {
+            user_id: referrerUserId,
+            event_type: 'referral_processed',
+            details: { newUserId, proDaysEarned },
+        });
+
+        // Award XP to referrer
+        await awardXp(referrerUserId as any as string, 'invite_friend');
+
+        return {
+            success: true,
+            referrerId: referrerUserId as any as string,
+            proDaysEarned,
+        };
+    } catch (error) {
+        console.error('[Gamification] processReferral failed:', error);
         return { success: false };
     }
-
-    // Update new user's profile
-    const newUserProfile = await getOrCreateProfile(newUserId);
-    await prisma.gamificationProfile.update({
-        where: { id: newUserProfile.id },
-        data: { referredBy: referrer.userId },
-    });
-
-    // Award referrer
-    const proDaysEarned = 7; // 7 days of Pro per signup
-    await prisma.gamificationProfile.update({
-        where: { id: referrer.id },
-        data: {
-            totalReferrals: { increment: 1 },
-            proDaysEarned: { increment: proDaysEarned },
-        },
-    });
-
-    // Award XP
-    await awardXp(referrer.userId, 'invite_friend');
-
-    return {
-        success: true,
-        referrerId: referrer.userId,
-        proDaysEarned,
-    };
 }
 
 /**
@@ -665,19 +759,32 @@ export async function processReferral(
 export async function getReferralStats(userId: string) {
     const profile = await getOrCreateProfile(userId);
 
-    const referrals = await prisma.gamificationProfile.findMany({
-        where: { referredBy: userId },
-        select: { createdAt: true },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 200,
+        });
 
-    return {
-        referralCode: profile.referralCode,
-        totalReferrals: profile.totalReferrals,
-        proDaysEarned: profile.proDaysEarned,
-        recentReferrals: referrals,
-    };
+        const referrals = logs
+            .filter((l) => l.event_type === 'referral_processed')
+            .slice(0, 10)
+            .map((l) => ({ createdAt: new Date(l.timestamp) }));
+
+        return {
+            referralCode: profile.referralCode,
+            totalReferrals: profile.totalReferrals,
+            proDaysEarned: profile.proDaysEarned,
+            recentReferrals: referrals,
+        };
+    } catch {
+        return {
+            referralCode: profile.referralCode,
+            totalReferrals: 0,
+            proDaysEarned: 0,
+            recentReferrals: [],
+        };
+    }
 }
 
 // ==========================================
@@ -688,36 +795,50 @@ export async function getReferralStats(userId: string) {
  * Get leaderboard
  */
 export async function getLeaderboard(limit = 10) {
-    const profiles = await prisma.gamificationProfile.findMany({
-        orderBy: { totalXp: 'desc' },
-        take: limit,
-        include: {
-            user: {
-                select: { name: true, image: true },
-            },
-        },
-    });
+    try {
+        const client = getConvexClient();
+        const allLogs = await client.query(api.actionLog.listRecent, { limit: 5000 });
 
-    return profiles.map((p, index) => ({
-        rank: index + 1,
-        userId: p.userId,
-        name: p.user?.name || 'Anonymous',
-        avatar: p.user?.image,
-        totalXp: p.totalXp,
-        level: getLevelForXp(p.totalXp),
-        currentStreak: p.currentStreak,
-    }));
+        // Aggregate XP per user
+        const userXp = new Map<string, number>();
+        for (const log of allLogs) {
+            if (log.event_type === 'xp_awarded' && log.user_id) {
+                const uid = log.user_id as any as string;
+                const amount = (log.details?.amount as number) || 0;
+                userXp.set(uid, (userXp.get(uid) || 0) + amount);
+            }
+        }
+
+        // Sort by XP descending
+        const sorted = Array.from(userXp.entries())
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, limit);
+
+        return sorted.map(([userId, totalXp], index) => ({
+            rank: index + 1,
+            userId,
+            name: 'User',
+            avatar: null,
+            totalXp,
+            level: getLevelForXp(totalXp),
+            currentStreak: 0,
+        }));
+    } catch {
+        return [];
+    }
 }
 
 /**
  * Get user's rank
  */
 export async function getUserRank(userId: string): Promise<number> {
-    const profile = await getOrCreateProfile(userId);
+    try {
+        const profile = await getOrCreateProfile(userId);
+        const leaderboard = await getLeaderboard(1000);
 
-    const higherRanked = await prisma.gamificationProfile.count({
-        where: { totalXp: { gt: profile.totalXp } },
-    });
-
-    return higherRanked + 1;
+        const rank = leaderboard.findIndex((p) => p.userId === userId);
+        return rank >= 0 ? rank + 1 : leaderboard.length + 1;
+    } catch {
+        return 1;
+    }
 }

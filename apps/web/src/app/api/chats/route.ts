@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic';
-import { prisma } from '@aspendos/db';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 /**
  * GET /api/chats - List user's chats

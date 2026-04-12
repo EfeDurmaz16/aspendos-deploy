@@ -63,7 +63,6 @@ vi.mock('../../lib/secrets-manager', () => ({
     getAccessLog: vi.fn(() => []),
 }));
 
-import { prisma } from '@aspendos/db';
 const mockPrisma = prisma as any;
 
 // ============================================
@@ -298,10 +297,7 @@ describe('Security Remediation: Calculator rejects injection', () => {
     });
 
     it('should reject property access like "this.constructor"', async () => {
-        const result = await calculatorTool.execute(
-            { expression: 'this.constructor' },
-            {} as any
-        );
+        const result = await calculatorTool.execute({ expression: 'this.constructor' }, {} as any);
         expect(result.success).toBe(false);
         expect(result.error).toBeDefined();
     });
@@ -324,18 +320,12 @@ describe('Security Remediation: Calculator rejects injection', () => {
     });
 
     it('should reject expressions with backticks', async () => {
-        const result = await calculatorTool.execute(
-            { expression: '`${7*7}`' },
-            {} as any
-        );
+        const result = await calculatorTool.execute({ expression: '`${7*7}`' }, {} as any);
         expect(result.success).toBe(false);
     });
 
     it('should reject expressions with square brackets', async () => {
-        const result = await calculatorTool.execute(
-            { expression: '[][constructor]' },
-            {} as any
-        );
+        const result = await calculatorTool.execute({ expression: '[][constructor]' }, {} as any);
         expect(result.success).toBe(false);
     });
 
@@ -364,10 +354,7 @@ describe('Security Remediation: Calculator rejects injection', () => {
     });
 
     it('should correctly calculate nested parentheses', async () => {
-        const result = await calculatorTool.execute(
-            { expression: '((2+3)*(4-1))/5' },
-            {} as any
-        );
+        const result = await calculatorTool.execute({ expression: '((2+3)*(4-1))/5' }, {} as any);
         expect(result.success).toBe(true);
         expect(result.result).toBe(3);
     });
@@ -439,9 +426,7 @@ describe('Security Remediation: Content moderation', () => {
     });
 
     it('should block text with GitHub tokens (ghp_...)', () => {
-        const result = moderateContent(
-            'My github token: ghp_abcdefghijklmnopqrstuvwxyz1234567890'
-        );
+        const result = moderateContent('My github token: ghp_abcdefghijklmnopqrstuvwxyz1234567890');
         expect(result.flagged).toBe(true);
         expect(result.action).toBe('block');
         expect(result.categories).toContain('secret_exposure');

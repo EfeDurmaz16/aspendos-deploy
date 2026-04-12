@@ -84,10 +84,11 @@ vi.mock('../../lib/auth', () => ({
     },
 }));
 
-import { prisma } from '@aspendos/db';
+
 import {
-    clearStores_forTesting,
+    anonymizeUser,
     cancelDeletion,
+    clearStores_forTesting,
     exportUserData,
     getDataSummary,
     getExportJobOwner,
@@ -95,7 +96,6 @@ import {
     getPendingDeletion,
     queueExportJob,
     scheduleAccountDeletion,
-    anonymizeUser,
 } from '../../services/user-deletion.service';
 
 // Cast prisma to access mocked methods
@@ -209,9 +209,11 @@ function setupDefaultMocks() {
     });
 
     // Transaction mock: execute the callback with mockPrisma as tx
-    mockPrisma.$transaction.mockImplementation(async (fn: (tx: typeof mockPrisma) => Promise<void>) => {
-        await fn(mockPrisma);
-    });
+    mockPrisma.$transaction.mockImplementation(
+        async (fn: (tx: typeof mockPrisma) => Promise<void>) => {
+            await fn(mockPrisma);
+        }
+    );
 }
 
 // ─── Export Tests ────────────────────────────────────────────────────────────
@@ -655,8 +657,7 @@ describe('GDPR Compliance - End-to-End Flows', () => {
         await anonymizeUser(TEST_USER_ID);
 
         // Then schedule deletion
-        const { cancellationToken, scheduledDate } =
-            await scheduleAccountDeletion(TEST_USER_ID);
+        const { cancellationToken, scheduledDate } = await scheduleAccountDeletion(TEST_USER_ID);
         expect(scheduledDate).toBeInstanceOf(Date);
 
         // Cancel should still work

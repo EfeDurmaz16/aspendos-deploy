@@ -1,38 +1,46 @@
-import { passkeyClient } from '@better-auth/passkey/client';
-import { polarClient } from '@polar-sh/better-auth/client';
-import { createAuthClient } from 'better-auth/react';
+'use client';
 
-export const authClient = createAuthClient({
-    baseURL: process.env.NEXT_PUBLIC_APP_URL,
-    plugins: [passkeyClient(), polarClient()],
-});
+export function useSession() {
+    return { data: null, isPending: false, error: null };
+}
 
-export const {
-    signIn,
-    signOut,
-    signUp,
-    useSession,
-    passkey, // For passkey registration: passkey.addPasskey(), passkey.listUserPasskeys(), etc.
-    requestPasswordReset,
-    resetPassword,
-    sendVerificationEmail,
-} = authClient;
-
-export const forgetPassword = requestPasswordReset;
-
-// Polar checkout - navigate to checkout page with product slug
-export const checkout = async ({ slug }: { slug: string }) => {
-    // Use Better Auth's Polar plugin checkout
-    const response = await authClient.checkout({
-        products: [slug],
-    });
-
-    if ('data' in response && response.data?.url) {
-        window.location.href = response.data.url;
+export async function signOut(): Promise<void> {
+    try {
+        const { signOut: workosSignOut } = await import('@workos-inc/authkit-nextjs');
+        await workosSignOut();
+    } catch {
+        window.location.href = '/';
     }
+}
+
+export const signIn = {
+    email: async () => { window.location.href = '/login'; },
+    social: async ({ provider }: { provider: string; callbackURL?: string }) => {
+        window.location.href = `/login?provider=${provider}`;
+    },
+    passkey: async () => { window.location.href = '/login'; },
 };
 
-// Polar customer portal - manage subscriptions
-export const openCustomerPortal = async () => {
-    window.location.href = '/portal';
+export const signUp = {
+    email: async () => { window.location.href = '/signup'; },
 };
+
+export async function checkout(_opts: any): Promise<void> {
+    window.location.href = '/pricing';
+}
+
+export async function forgetPassword(): Promise<void> {
+    window.location.href = '/forgot-password';
+}
+
+export async function resetPassword(_opts: any): Promise<void> {
+    window.location.href = '/login';
+}
+
+export const passkey = {
+    addPasskey: async () => {},
+    deletePasskey: async () => {},
+};
+
+export async function sendVerificationEmail(_opts?: any): Promise<void> {}
+export async function verifyEmail(_opts?: any): Promise<void> {}

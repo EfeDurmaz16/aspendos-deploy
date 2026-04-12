@@ -2,12 +2,12 @@
  * Agent Action Log Service
  *
  * Persistent logging of every agent action for observability and causal tracing.
- * Replaces the in-memory AuditStore ring buffer for agent-specific events.
+ * Uses Convex HTTP client for persistence.
  * Adapted from AGIT's hash-chained commit model.
  */
 
-import { prisma } from '@aspendos/db';
-import type { BlastRadiusReport, GuardChainResult } from '../lib/agent-guards';
+import { getConvexClient, api } from '../lib/convex';
+import type { GuardChainResult } from '../lib/agent-guards';
 
 // ============================================
 // TYPES
@@ -38,32 +38,38 @@ export interface LogActionParams {
  * Log an agent action to the persistent store.
  */
 export async function logAction(params: LogActionParams): Promise<string> {
-    const record = await prisma.agentActionLog.create({
-        data: {
-            userId: params.userId,
-            sessionId: params.sessionId,
-            chatId: params.chatId,
-            actionType: params.actionType,
-            toolName: params.toolName,
-            toolArgs: params.toolArgs ?? undefined,
-            toolResult:
-                params.toolResult != null
-                    ? JSON.parse(JSON.stringify(params.toolResult))
-                    : undefined,
-            guardDecision: params.guardResult?.decision.type,
-            guardWarnings: params.guardResult?.warnings ?? [],
-            parentActionId: params.parentActionId,
-            blastRadius:
-                params.guardResult?.decision.type === 'require_approval'
-                    ? (params.guardResult.decision as any).blastRadius
-                    : undefined,
-            latencyMs: params.latencyMs ?? 0,
-            modelUsed: params.modelUsed,
-            tokenCost: params.tokenCost ?? 0,
-        },
-    });
+    try {
+        const client = getConvexClient();
+        const id = await client.mutation(api.actionLog.log, {
+            user_id: params.userId as any,
+            event_type: params.actionType,
+            details: {
+                sessionId: params.sessionId,
+                chatId: params.chatId,
+                toolName: params.toolName,
+                toolArgs: params.toolArgs,
+                toolResult:
+                    params.toolResult != null
+                        ? JSON.parse(JSON.stringify(params.toolResult))
+                        : undefined,
+                guardDecision: params.guardResult?.decision.type,
+                guardWarnings: params.guardResult?.warnings ?? [],
+                parentActionId: params.parentActionId,
+                blastRadius:
+                    params.guardResult?.decision.type === 'require_approval'
+                        ? (params.guardResult.decision as any).blastRadius
+                        : undefined,
+                latencyMs: params.latencyMs ?? 0,
+                modelUsed: params.modelUsed,
+                tokenCost: params.tokenCost ?? 0,
+            },
+        });
 
-    return record.id;
+        return id as string;
+    } catch (err) {
+        console.error('[action-log.service] logAction error:', err);
+        return '';
+    }
 }
 
 /**
@@ -106,51 +112,94 @@ export async function getSessionActions(
     sessionId: string,
     options?: { limit?: number; offset?: number }
 ) {
-    return prisma.agentActionLog.findMany({
-        where: { userId, sessionId },
-        orderBy: { createdAt: 'asc' },
-        take: options?.limit ?? 100,
-        skip: options?.offset ?? 0,
-    });
+    try {
+        const client = getConvexClient();
+        const all = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: options?.limit ?? 100,
+        });
+
+        // Filter by sessionId in JS (Convex action_log doesn't have sessionId index)
+        const filtered = (all || []).filter(
+            (a: any) => a.details?.sessionId === sessionId
+        );
+
+        const offset = options?.offset ?? 0;
+        return filtered.slice(offset, offset + (options?.limit ?? 100));
+    } catch {
+        return [];
+    }
 }
 
 /**
  * Get the causal chain for an action (trace back through parentActionId).
+ * With Convex's simpler schema, we approximate by fetching recent logs and filtering.
  */
-export async function getCausalChain(actionId: string, maxDepth = 20) {
-    const chain = [];
-    let currentId: string | null = actionId;
+export async function getCausalChain(actionId: string, _maxDepth = 20) {
+    try {
+        const client = getConvexClient();
+        const recent = await client.query(api.actionLog.listRecent, { limit: 200 });
+        if (!recent) return [];
 
-    for (let i = 0; i < maxDepth && currentId; i++) {
-        const action = await prisma.agentActionLog.findUnique({
-            where: { id: currentId },
-        });
-        if (!action) break;
-        chain.unshift(action);
-        currentId = action.parentActionId;
+        // Build lookup map
+        const byId = new Map<string, any>();
+        for (const entry of recent) {
+            byId.set(entry._id, entry);
+        }
+
+        // Trace backwards
+        const chain: any[] = [];
+        let currentId: string | null = actionId;
+        for (let i = 0; i < _maxDepth && currentId; i++) {
+            const action = byId.get(currentId);
+            if (!action) break;
+            chain.unshift(action);
+            currentId = action.details?.parentActionId ?? null;
+        }
+
+        return chain;
+    } catch {
+        return [];
     }
-
-    return chain;
 }
 
 /**
  * Get effects of an action (forward trace through child actions).
  */
 export async function getActionEffects(actionId: string, maxDepth = 10) {
-    const effects = [];
-    let currentIds = [actionId];
+    try {
+        const client = getConvexClient();
+        const recent = await client.query(api.actionLog.listRecent, { limit: 500 });
+        if (!recent) return [];
 
-    for (let depth = 0; depth < maxDepth && currentIds.length > 0; depth++) {
-        const children = await prisma.agentActionLog.findMany({
-            where: { parentActionId: { in: currentIds } },
-            orderBy: { createdAt: 'asc' },
-        });
-        if (children.length === 0) break;
-        effects.push(...children);
-        currentIds = children.map((c) => c.id);
+        // Build parent->children map
+        const childrenMap = new Map<string, any[]>();
+        for (const entry of recent) {
+            const parentId = entry.details?.parentActionId;
+            if (parentId) {
+                if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+                childrenMap.get(parentId)!.push(entry);
+            }
+        }
+
+        const effects: any[] = [];
+        let currentIds = [actionId];
+
+        for (let depth = 0; depth < maxDepth && currentIds.length > 0; depth++) {
+            const children: any[] = [];
+            for (const id of currentIds) {
+                const c = childrenMap.get(id) || [];
+                children.push(...c);
+            }
+            if (children.length === 0) break;
+            effects.push(...children);
+            currentIds = children.map((c) => c._id);
+        }
+
+        return effects;
+    } catch {
+        return [];
     }
-
-    return effects;
 }
 
 /**
@@ -160,12 +209,24 @@ export async function getRecentActions(
     userId: string,
     options?: { limit?: number; toolName?: string }
 ) {
-    return prisma.agentActionLog.findMany({
-        where: {
-            userId,
-            ...(options?.toolName ? { toolName: options.toolName } : {}),
-        },
-        orderBy: { createdAt: 'desc' },
-        take: options?.limit ?? 50,
-    });
+    try {
+        const client = getConvexClient();
+        let actions = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: options?.limit ?? 50,
+        });
+
+        if (!actions) return [];
+
+        // Filter by toolName in JS if requested
+        if (options?.toolName) {
+            actions = actions.filter(
+                (a: any) => a.details?.toolName === options.toolName
+            );
+        }
+
+        return actions;
+    } catch {
+        return [];
+    }
 }

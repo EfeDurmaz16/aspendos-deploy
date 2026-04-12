@@ -13,10 +13,16 @@ export const synthesizeSchema = z.object({
     text: z
         .string()
         .min(1, 'No text provided')
-        .max(MAX_TTS_TEXT_LENGTH, `Text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters`),
-    voice: z.enum(ALLOWED_VOICES, {
-        errorMap: () => ({ message: 'Invalid voice parameter' }),
-    }).optional().default('alloy'),
+        .max(
+            MAX_TTS_TEXT_LENGTH,
+            `Text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters`
+        ),
+    voice: z
+        .enum(ALLOWED_VOICES, {
+            errorMap: () => ({ message: 'Invalid voice parameter' }),
+        })
+        .optional()
+        .default('alloy'),
     speed: z.number().min(0.25).max(4.0).optional().default(1.0),
 });
 

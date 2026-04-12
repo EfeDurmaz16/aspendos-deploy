@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 // We need to test the JobQueue class directly, so let's create a fresh instance
 class TestJobQueue {
@@ -106,8 +106,7 @@ class TestJobQueue {
         const config = this.queues.get(queueName);
         if (!handler || !config) return false;
 
-        let nextJob: (typeof this.jobs extends Map<string, infer V> ? V : never) | undefined =
-            undefined;
+        let nextJob: (typeof this.jobs extends Map<string, infer V> ? V : never) | undefined;
         for (const job of this.jobs.values()) {
             if (job.queue === queueName && job.status === 'pending') {
                 if (!nextJob || job.priority > nextJob.priority) {

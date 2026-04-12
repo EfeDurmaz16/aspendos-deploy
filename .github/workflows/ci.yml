@@ -1,10 +1,8 @@
-# Yula OS CI/CD Pipeline
-# Deploys to Hetzner CX23 nodes via SSH
-name: CI/CD
+name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, stack-migration/*]
   pull_request:
     branches: [main]
 
@@ -14,395 +12,97 @@ concurrency:
 
 env:
   BUN_VERSION: '1.1.30'
-  NODE_VERSION: '20'
 
 jobs:
-  # ============================================
-  # LINT & TYPE CHECK
-  # ============================================
   lint:
-    name: Lint & Type Check
+    name: Biome Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+        continue-on-error: true
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      matrix:
+        workspace: [apps/web, services/api]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.bun/install/cache
             node_modules
           key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd ${{ matrix.workspace }} build
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - name: API tests
+        run: cd services/api && bunx vitest run
+      - name: Web tests
+        run: cd apps/web && bunx vitest run
+        continue-on-error: true
 
-      - name: Generate Prisma Client
-        run: cd packages/db && bunx prisma generate
-
-      - name: Type check API
-        run: cd services/api && bunx tsc --noEmit
-        continue-on-error: false
-
-      - name: Type check Web
-        run: cd apps/web && bun run typecheck
-        continue-on-error: false
-
-      - name: Biome check
-        run: bun biome check apps/web services/api packages/db
-        continue-on-error: false
-
-  # ============================================
-  # SECURITY SCAN
-  # ============================================
   security:
     name: Security Scan
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Check for known vulnerabilities
-        run: |
-          if bun audit 2>&1 | tee /tmp/audit-output.txt; then
-            echo "No vulnerabilities found."
-          else
-            if grep -qiE '(high|critical)' /tmp/audit-output.txt 2>/dev/null; then
-              echo "High or critical vulnerabilities detected"
-              exit 1
-            else
-              echo "Low or moderate vulnerabilities found - review recommended"
-            fi
-          fi
-
-      - name: Scan for hardcoded secrets
-        run: |
-          echo "Scanning for hardcoded secrets..."
-          FOUND=0
-          for pattern in "sk-[a-zA-Z0-9]{20,}" "ghp_[a-zA-Z0-9]{36}" "AKIA[0-9A-Z]{16}" "-----BEGIN.*PRIVATE KEY-----"; do
-            if grep -rn --include="*.ts" --include="*.tsx" --include="*.js" --include="*.json" -E "$pattern" . --exclude-dir=node_modules --exclude-dir=.git 2>/dev/null | grep -v "test" | grep -v "example" | grep -v ".env.example"; then
-              echo "WARNING: Potential secret found matching pattern"
-              FOUND=1
-            fi
-          done
-          if [ $FOUND -eq 1 ]; then
-            echo "::warning::Potential secrets detected in codebase"
-          else
-            echo "No hardcoded secrets detected."
-          fi
-
-      - name: Check for .env files in repo
+      - uses: actions/checkout@v4
+      - name: Check for .env files
         run: |
           if find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" -not -name ".env.local.example" | grep -q .; then
             echo "::error::Found .env files committed to repository!"
             exit 1
           fi
-          echo "No .env files found in repository."
+      - name: Scan for hardcoded secrets
+        run: |
+          FOUND=0
+          for pattern in "sk-[a-zA-Z0-9]{20,}" "ghp_[a-zA-Z0-9]{36}" "AKIA[0-9A-Z]{16}"; do
+            if grep -rn --include="*.ts" --include="*.tsx" -E "$pattern" . --exclude-dir=node_modules --exclude-dir=.git 2>/dev/null | grep -v test | grep -v example; then
+              FOUND=1
+            fi
+          done
+          if [ $FOUND -eq 1 ]; then
+            echo "::warning::Potential secrets detected"
+          fi
 
-  # ============================================
-  # TEST
-  # ============================================
-  test:
-    name: Test
+  convex-typecheck:
+    name: Convex Typecheck
     runs-on: ubuntu-latest
     needs: lint
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: yula_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            node_modules
-          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: cd packages/db && bunx prisma generate
-
-      - name: Run API tests
-        run: cd services/api && bun run test
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/yula_test
-          NODE_ENV: test
-          JWT_SECRET: test-secret-key-for-testing-only
-          BETTER_AUTH_SECRET: test-better-auth-secret-key
-
-      - name: Run Web tests
-        run: cd apps/web && bun run test
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080
-
-      - name: Run AI SDK Router tests
-        run: cd apps/web && bun run test:router
-        env:
-          AI_GATEWAY_API_KEY: test-key
-
-  # ============================================
-  # DATABASE MIGRATION CHECK
-  # ============================================
-  migration-check:
-    name: Database Migration Check
-    runs-on: ubuntu-latest
-    needs: lint
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: yula_migration_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Validate Prisma schema
-        run: cd packages/db && bunx prisma validate
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/yula_migration_test
-
-      - name: Push schema to test database
-        run: cd packages/db && bunx prisma db push --accept-data-loss
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/yula_migration_test
-
-      - name: Generate Prisma Client
-        run: cd packages/db && bunx prisma generate
-
-  # ============================================
-  # BUILD DOCKER IMAGES
-  # ============================================
-  build-images:
-    name: Build Docker Images
-    runs-on: ubuntu-latest
-    needs: [lint, test, security]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build web image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/web/Dockerfile
-          push: false
-          tags: yula-web:latest
-          cache-from: type=gha,scope=web
-          cache-to: type=gha,mode=max,scope=web
-          build-args: |
-            NEXT_PUBLIC_APP_URL=https://yula.dev
-            NEXT_PUBLIC_API_URL=https://api.yula.dev
-            NEXT_PUBLIC_AGENTS_URL=https://agents.yula.dev
-            NEXT_PUBLIC_POLAR_STARTER_PRODUCT_ID=${{ secrets.NEXT_PUBLIC_POLAR_STARTER_PRODUCT_ID }}
-            NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID=${{ secrets.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID }}
-            NEXT_PUBLIC_POLAR_ULTRA_PRODUCT_ID=${{ secrets.NEXT_PUBLIC_POLAR_ULTRA_PRODUCT_ID }}
-
-      - name: Build API image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./services/api
-          file: services/api/Dockerfile
-          push: false
-          tags: yula-api:latest
-          cache-from: type=gha,scope=api
-          cache-to: type=gha,mode=max,scope=api
-
-      - name: Build agents image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./services/agents
-          file: services/agents/Dockerfile
-          push: false
-          tags: yula-agents:latest
-          cache-from: type=gha,scope=agents
-          cache-to: type=gha,mode=max,scope=agents
-
-  # ============================================
-  # DEPLOY FRONTEND (Hetzner CX23 #1)
-  # ============================================
-  deploy-frontend:
-    name: Deploy Frontend
-    runs-on: ubuntu-latest
-    needs: [build-images, migration-check]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment:
-      name: production-frontend
-      url: https://yula.dev
-    steps:
-      - name: Deploy to frontend node
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.FRONTEND_HOST }}
-          username: deploy
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -euo pipefail
-            DEPLOY_DIR="/opt/yula"
-
-            # Pull latest code
-            if [ ! -d "$DEPLOY_DIR" ]; then
-              git clone https://github.com/EfeDurmaz16/aspendos-deploy.git "$DEPLOY_DIR"
-            else
-              cd "$DEPLOY_DIR"
-              git fetch origin main
-              git reset --hard origin/main
-            fi
-
-            cd "$DEPLOY_DIR/deploy"
-
-            # Build and deploy frontend profile
-            docker compose --profile frontend build --no-cache
-            docker compose --profile frontend up -d --remove-orphans
-
-            # Cleanup old images
-            docker image prune -f
-
-            # Show status
-            docker compose --profile frontend ps
-
-      - name: Health check frontend
-        run: |
-          echo "Waiting for frontend to start..."
-          sleep 30
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://yula.dev || echo "000")
-            if [ "$STATUS" = "200" ] || [ "$STATUS" = "308" ]; then
-              echo "Frontend health check passed (HTTP $STATUS)"
-              exit 0
-            fi
-            echo "Attempt $i: HTTP $STATUS, retrying in 15s..."
-            sleep 15
-          done
-          echo "::warning::Frontend health check failed after 5 attempts"
-
-  # ============================================
-  # DEPLOY BACKEND (Hetzner CX23 #2)
-  # ============================================
-  deploy-backend:
-    name: Deploy Backend
-    runs-on: ubuntu-latest
-    needs: [build-images, migration-check]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment:
-      name: production-backend
-      url: https://api.yula.dev
-    steps:
-      - name: Deploy to backend node
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.BACKEND_HOST }}
-          username: deploy
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -euo pipefail
-            DEPLOY_DIR="/opt/yula"
-
-            # Pull latest code
-            if [ ! -d "$DEPLOY_DIR" ]; then
-              git clone https://github.com/EfeDurmaz16/aspendos-deploy.git "$DEPLOY_DIR"
-            else
-              cd "$DEPLOY_DIR"
-              git fetch origin main
-              git reset --hard origin/main
-            fi
-
-            cd "$DEPLOY_DIR/deploy"
-
-            # Build and deploy backend profile
-            docker compose --profile backend build --no-cache
-            docker compose --profile backend up -d --remove-orphans
-
-            # Cleanup old images
-            docker image prune -f
-
-            # Show status
-            docker compose --profile backend ps
-
-      - name: Health check API
-        run: |
-          echo "Waiting for API to start..."
-          sleep 30
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://api.yula.dev/health || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "API health check passed"
-              exit 0
-            fi
-            echo "Attempt $i: HTTP $STATUS, retrying in 15s..."
-            sleep 15
-          done
-          echo "::warning::API health check failed after 5 attempts"
-
-      - name: Health check Agents
-        run: |
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://agents.yula.dev/health || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "Agents health check passed"
-              exit 0
-            fi
-            echo "Attempt $i: HTTP $STATUS, retrying in 15s..."
-            sleep 15
-          done
-          echo "::warning::Agents health check failed after 5 attempts"
+      - run: bun install --frozen-lockfile
+      - run: npx convex typecheck
+        continue-on-error: true

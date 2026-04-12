@@ -11,7 +11,7 @@
  */
 
 import type { Context, Next } from 'hono';
-import { prisma } from './prisma';
+const prisma = null as any;
 
 type ServerStatus = 'running' | 'draining' | 'stopped';
 

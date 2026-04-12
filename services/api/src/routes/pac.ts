@@ -9,6 +9,7 @@ import { requireAuth } from '../middleware/auth';
 import { enforceTierLimit } from '../middleware/tier-enforcement';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as pacService from '../services/pac.service';
+import { parseTimeExpression } from '../services/scheduler.service';
 import {
     createReminderSchema,
     detectCommitmentsSchema,
@@ -16,7 +17,6 @@ import {
     snoozeReminderSchema,
     updatePACSettingsSchema,
 } from '../validation/pac.schema';
-import { parseTimeExpression } from '../services/scheduler.service';
 
 type Variables = {
     validatedBody?: unknown;
@@ -32,49 +32,54 @@ app.use('*', requireAuth);
 /**
  * POST /api/pac/detect - Detect commitments in a message
  */
-app.post('/detect', enforceTierLimit('dailyVoiceMinutes'), validateBody(detectCommitmentsSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { message, conversationId } = c.get('validatedBody') as {
-        message: string;
-        conversationId?: string;
-    };
+app.post(
+    '/detect',
+    enforceTierLimit('dailyVoiceMinutes'),
+    validateBody(detectCommitmentsSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { message, conversationId } = c.get('validatedBody') as {
+            message: string;
+            conversationId?: string;
+        };
 
-    // Get user settings
-    const settings = await pacService.getPACSettings(userId);
+        // Get user settings
+        const settings = await pacService.getPACSettings(userId);
 
-    if (!settings.enabled) {
-        return c.json({ commitments: [], message: 'PAC is disabled' });
+        if (!settings.enabled) {
+            return c.json({ commitments: [], message: 'PAC is disabled' });
+        }
+
+        // Detect commitments
+        const commitments = pacService.detectCommitments(message);
+
+        // Filter based on settings
+        const filteredCommitments = commitments.filter((c) => {
+            if (c.type === 'EXPLICIT' && !settings.explicitEnabled) return false;
+            if (c.type === 'IMPLICIT' && !settings.implicitEnabled) return false;
+            return true;
+        });
+
+        // Create reminders for detected commitments
+        const createdReminders = [];
+        for (const commitment of filteredCommitments) {
+            const reminder = await pacService.createReminder(userId, commitment, conversationId);
+            createdReminders.push(reminder);
+        }
+
+        return c.json({
+            commitments: filteredCommitments,
+            reminders: createdReminders.map((r) => ({
+                id: r.id,
+                content: r.content,
+                type: r.type,
+                priority: r.priority,
+                triggerAt: r.triggerAt,
+                status: r.status,
+            })),
+        });
     }
-
-    // Detect commitments
-    const commitments = pacService.detectCommitments(message);
-
-    // Filter based on settings
-    const filteredCommitments = commitments.filter((c) => {
-        if (c.type === 'EXPLICIT' && !settings.explicitEnabled) return false;
-        if (c.type === 'IMPLICIT' && !settings.implicitEnabled) return false;
-        return true;
-    });
-
-    // Create reminders for detected commitments
-    const createdReminders = [];
-    for (const commitment of filteredCommitments) {
-        const reminder = await pacService.createReminder(userId, commitment, conversationId);
-        createdReminders.push(reminder);
-    }
-
-    return c.json({
-        commitments: filteredCommitments,
-        reminders: createdReminders.map((r) => ({
-            id: r.id,
-            content: r.content,
-            type: r.type,
-            priority: r.priority,
-            triggerAt: r.triggerAt,
-            status: r.status,
-        })),
-    });
-});
+);
 
 /**
  * GET /api/pac/reminders - Get pending reminders

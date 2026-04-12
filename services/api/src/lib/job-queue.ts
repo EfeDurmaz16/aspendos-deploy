@@ -384,9 +384,7 @@ jobQueue.register(
 jobQueue.register(
     'import-embedding',
     async (data: { userId: string; jobId: string }) => {
-        const { processImportEmbeddings } = await import(
-            '../services/import-embedding.worker'
-        );
+        const { processImportEmbeddings } = await import('../services/import-embedding.worker');
         return processImportEmbeddings(data.userId, data.jobId);
     },
     {

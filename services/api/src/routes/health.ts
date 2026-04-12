@@ -26,23 +26,19 @@ healthRoutes.get('/', async (c) => {
     }
     dependencies.database = { status: dbStatus, latencyMs: dbLatency };
 
-    // Check memory backend (Qdrant or SuperMemory) via circuit breaker
-    const memoryBackend = process.env.MEMORY_BACKEND || 'openmemory';
+    // Check SuperMemory via circuit breaker
     let memoryStatus: 'up' | 'down' = 'down';
-    const memoryLabel =
-        memoryBackend === 'supermemory' || memoryBackend === 'dual' ? 'supermemory' : 'qdrant';
-    const breaker = memoryLabel === 'supermemory' ? breakers.supermemory : breakers.qdrant;
     try {
         const memStart = Date.now();
-        await breaker.execute(async () => {
+        await breakers.supermemory.execute(async () => {
             const { searchMemories } = await import('../services/memory-router.service');
             await searchMemories('health-check-probe', 'system', { limit: 1 });
         });
         const memLatency = Date.now() - memStart;
         memoryStatus = 'up';
-        dependencies[memoryLabel] = { status: memoryStatus, latencyMs: memLatency };
+        dependencies.supermemory = { status: memoryStatus, latencyMs: memLatency };
     } catch {
-        dependencies[memoryLabel] = { status: memoryStatus };
+        dependencies.supermemory = { status: memoryStatus };
     }
 
     // Check Redis with timing
@@ -71,7 +67,7 @@ healthRoutes.get('/', async (c) => {
         openai: breakers.openai.getState(),
         anthropic: breakers.anthropic.getState(),
         groq: breakers.groq.getState(),
-        qdrant: breakers.qdrant.getState(),
+        supermemory: breakers.supermemory.getState(),
         google: breakers.google.getState(),
     };
 
@@ -80,7 +76,7 @@ healthRoutes.get('/', async (c) => {
     if (dbStatus === 'down') {
         overallStatus = 'unhealthy';
     } else if (
-        qdrantStatus === 'down' ||
+        memoryStatus === 'down' ||
         redisStatus === 'down' ||
         Object.values(circuitBreakers).some((cb) => cb.state === 'OPEN')
     ) {

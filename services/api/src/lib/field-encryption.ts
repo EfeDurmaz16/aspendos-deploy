@@ -87,7 +87,10 @@ function decryptFieldWithKey(passphrase: string, ciphertext: string): string {
         try {
             const salt = packed.subarray(0, SALT_LENGTH);
             const iv = packed.subarray(SALT_LENGTH, SALT_LENGTH + IV_LENGTH);
-            const authTag = packed.subarray(SALT_LENGTH + IV_LENGTH, SALT_LENGTH + IV_LENGTH + AUTH_TAG_LENGTH);
+            const authTag = packed.subarray(
+                SALT_LENGTH + IV_LENGTH,
+                SALT_LENGTH + IV_LENGTH + AUTH_TAG_LENGTH
+            );
             const encrypted = packed.subarray(SALT_LENGTH + IV_LENGTH + AUTH_TAG_LENGTH);
 
             const key = deriveKey(passphrase, salt);

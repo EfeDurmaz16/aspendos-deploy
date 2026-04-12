@@ -47,7 +47,7 @@ interface FeatureState {
 }
 
 const WINDOW_SIZE = 100;
-const ERROR_RATE_THRESHOLD = 0.10; // 10%
+const ERROR_RATE_THRESHOLD = 0.1; // 10%
 const P99_LATENCY_THRESHOLD = 5000; // 5000ms
 const RECOVERY_TIMEOUT_MS = 60_000; // 60 seconds
 
@@ -117,7 +117,10 @@ function evaluateHealth(state: FeatureState): void {
     if (errorRate > ERROR_RATE_THRESHOLD || p99 > P99_LATENCY_THRESHOLD) {
         state.status = 'degraded';
         const total = state.successCount + state.failureCount;
-        if (total >= 10 && (errorRate > ERROR_RATE_THRESHOLD * 2 || p99 > P99_LATENCY_THRESHOLD * 1.5)) {
+        if (
+            total >= 10 &&
+            (errorRate > ERROR_RATE_THRESHOLD * 2 || p99 > P99_LATENCY_THRESHOLD * 1.5)
+        ) {
             state.status = 'disabled';
             state.disabledAt = Date.now();
         }

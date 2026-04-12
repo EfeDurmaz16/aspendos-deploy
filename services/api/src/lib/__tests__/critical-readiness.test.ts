@@ -13,7 +13,7 @@ vi.mock('@aspendos/db', () => ({
 
 vi.mock('../circuit-breaker', () => ({
     breakers: {
-        qdrant: {
+        supermemory: {
             getState: vi.fn(() => ({ state: 'CLOSED' })),
         },
     },
@@ -36,7 +36,7 @@ vi.mock('../../services/council.service', () => ({
     },
 }));
 
-import { prisma } from '@aspendos/db';
+
 import { searchMemories } from '../../services/memory-router.service';
 import { parseTimeExpression } from '../../services/scheduler.service';
 import { breakers } from '../circuit-breaker';
@@ -59,7 +59,7 @@ describe('checkCriticalReadiness', () => {
         mockPrisma.councilSession.count.mockResolvedValue(3);
         mockSearchMemories.mockResolvedValue([]);
         mockParseTimeExpression.mockReturnValue(new Date(Date.now() + 60 * 60 * 1000));
-        mockBreakers.qdrant.getState.mockReturnValue({ state: 'CLOSED' });
+        mockBreakers.supermemory.getState.mockReturnValue({ state: 'CLOSED' });
     });
 
     afterEach(() => {
@@ -84,7 +84,7 @@ describe('checkCriticalReadiness', () => {
 
     it('returns degraded when fallback mode is active or cron secret missing', async () => {
         delete process.env.CRON_SECRET;
-        mockBreakers.qdrant.getState.mockReturnValue({ state: 'OPEN' });
+        mockBreakers.supermemory.getState.mockReturnValue({ state: 'OPEN' });
 
         const report = await checkCriticalReadiness();
 

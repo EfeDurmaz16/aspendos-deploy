@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -16,13 +16,12 @@ vi.mock('../db-pool-manager', () => ({
     getPoolHealth: vi.fn(),
 }));
 
-import { checkDatabaseHealth } from '@aspendos/db';
-import { getPoolMetrics, getPoolHealth } from '../db-pool-manager';
-import {
-    checkPoolUtilization,
-    withRetry,
-    computeBackoff,
-} from '../db-health';
+// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
+// import { checkDatabaseHealth } from '@aspendos/db';
+const checkDatabaseHealth = {} as any;
+
+import { checkPoolUtilization, computeBackoff, withRetry } from '../db-health';
+import { getPoolHealth, getPoolMetrics } from '../db-pool-manager';
 
 const mockCheckDatabaseHealth = checkDatabaseHealth as ReturnType<typeof vi.fn>;
 const mockGetPoolMetrics = getPoolMetrics as ReturnType<typeof vi.fn>;
@@ -130,16 +129,13 @@ describe('db-health', () => {
 
         it('should retry on failure and eventually succeed', async () => {
             let attempts = 0;
-            const result = await withRetry(
-                async () => {
-                    attempts++;
-                    if (attempts < 3) {
-                        throw new Error('transient failure');
-                    }
-                    return 'recovered';
-                },
-                3
-            );
+            const result = await withRetry(async () => {
+                attempts++;
+                if (attempts < 3) {
+                    throw new Error('transient failure');
+                }
+                return 'recovered';
+            }, 3);
 
             expect(result).toBe('recovered');
             expect(attempts).toBe(3);
@@ -147,12 +143,9 @@ describe('db-health', () => {
 
         it('should throw after exhausting all retries', async () => {
             await expect(
-                withRetry(
-                    async () => {
-                        throw new Error('persistent failure');
-                    },
-                    2
-                )
+                withRetry(async () => {
+                    throw new Error('persistent failure');
+                }, 2)
             ).rejects.toThrow('persistent failure');
         });
 
@@ -160,13 +153,10 @@ describe('db-health', () => {
             let attempts = 0;
 
             await expect(
-                withRetry(
-                    async () => {
-                        attempts++;
-                        throw new Error('fail');
-                    },
-                    0
-                )
+                withRetry(async () => {
+                    attempts++;
+                    throw new Error('fail');
+                }, 0)
             ).rejects.toThrow('fail');
 
             expect(attempts).toBe(1);
@@ -231,28 +221,15 @@ describe('db-health', () => {
 
             // Two retries occurred (attempt 1 fails, attempt 2 fails, attempt 3 succeeds)
             expect(onRetry).toHaveBeenCalledTimes(2);
-            expect(onRetry).toHaveBeenNthCalledWith(
-                1,
-                1,
-                expect.any(Number),
-                expect.any(Error)
-            );
-            expect(onRetry).toHaveBeenNthCalledWith(
-                2,
-                2,
-                expect.any(Number),
-                expect.any(Error)
-            );
+            expect(onRetry).toHaveBeenNthCalledWith(1, 1, expect.any(Number), expect.any(Error));
+            expect(onRetry).toHaveBeenNthCalledWith(2, 2, expect.any(Number), expect.any(Error));
         });
 
         it('should handle non-Error thrown values', async () => {
             await expect(
-                withRetry(
-                    async () => {
-                        throw 'string error';
-                    },
-                    0
-                )
+                withRetry(async () => {
+                    throw 'string error';
+                }, 0)
             ).rejects.toThrow('string error');
         });
 
@@ -285,13 +262,10 @@ describe('db-health', () => {
             let attempts = 0;
 
             try {
-                await withRetry(
-                    async () => {
-                        attempts++;
-                        throw new Error('always fails');
-                    },
-                    4
-                );
+                await withRetry(async () => {
+                    attempts++;
+                    throw new Error('always fails');
+                }, 4);
             } catch {
                 /* expected */
             }

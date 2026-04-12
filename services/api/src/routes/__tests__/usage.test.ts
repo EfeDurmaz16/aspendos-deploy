@@ -1,4 +1,4 @@
-import { prisma } from '@aspendos/db';
+
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usageLedger } from '../../lib/usage-ledger';

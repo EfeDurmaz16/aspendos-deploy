@@ -8,8 +8,8 @@ import { requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import * as workspaceService from '../services/workspace.service';
 import {
-    createWorkspaceSchema,
     addMemberSchema,
+    createWorkspaceSchema,
     updateMemberRoleSchema,
 } from '../validation/workspace.schema';
 

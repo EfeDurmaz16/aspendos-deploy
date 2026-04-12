@@ -10,7 +10,7 @@
  *   → streamText() with tools → thread.post(fullStream) → Platform
  */
 
-import { gateway, streamText } from 'ai';
+import { gateway, streamText, stepCountIs } from 'ai';
 import { getSystemPrompt } from './prompt';
 import { getAgentTools } from './tools';
 
@@ -66,7 +66,7 @@ async function initBot() {
             '[Bot] Chat SDK initialized with adapters:',
             Object.keys(adapters).join(', ') || 'none'
         );
-    } catch (err) {
+    } catch (_err) {
         console.warn(
             '[Bot] Chat SDK not available — install chat + @chat-adapter/* packages to enable messaging.'
         );
@@ -154,6 +154,28 @@ bot.onAction(async (action) => {
 // CORE MESSAGE HANDLER
 // ============================================
 
+async function handleSlashCommand(
+    thread: any,
+    command: string,
+    userId: string,
+): Promise<boolean> {
+    if (command === '/undo') {
+        const { handleUndoCommand } = await import('../audit/undo');
+        const result = await handleUndoCommand(userId);
+        await thread.post(result.success ? `✅ ${result.message}` : `❌ ${result.message}`);
+        return true;
+    }
+
+    if (command === '/doctor') {
+        const { runDoctorChecks, formatDoctorText } = await import('../messaging/cards/doctor');
+        const report = runDoctorChecks();
+        await thread.post(formatDoctorText(report));
+        return true;
+    }
+
+    return false;
+}
+
 async function handleMessage(
     thread: any,
     message: { text: string; user?: { id?: string; name?: string } }
@@ -162,29 +184,26 @@ async function handleMessage(
         // Resolve YULA user from platform connection
         const userId = await resolveUserId(thread, message);
 
-        // Get system prompt with memory context
-        const systemPrompt = await getSystemPrompt(userId, message.text);
+        // Parse slash commands first
+        const trimmed = message.text.trim();
+        if (trimmed.startsWith('/')) {
+            const handled = await handleSlashCommand(thread, trimmed.split(' ')[0], userId);
+            if (handled) return;
+        }
 
-        // Get tools for this user
-        const tools = await getAgentTools(userId);
-
-        // Stream AI response through Chat SDK
-        const model = gateway('groq', { modelId: 'llama-3.3-70b-versatile' });
+        // Route through YULA orchestrator agent (FIDES sign + AGIT commit on every tool call)
+        const { createYulaAgent } = await import('../orchestrator/agent');
+        const agent = createYulaAgent(userId);
 
         // Build conversation history from thread
         const history = await getThreadHistory(thread);
 
-        const result = streamText({
-            model,
-            system: systemPrompt,
-            messages: [...history, { role: 'user', content: message.text }],
-            tools,
-            maxSteps: 5,
-            temperature: 0.7,
+        const result = await agent.stream({
+            messages: [...history, { role: 'user' as const, content: message.text }],
         });
 
         // Post streamed response — Chat SDK handles progressive editing per platform
-        await thread.post(result.fullStream);
+        await thread.post(result.textStream);
 
         // Auto-extract memory from exchange (fire-and-forget)
         if (userId) {
@@ -206,19 +225,11 @@ async function handleMessage(
 // HELPERS
 // ============================================
 
-async function resolveUserId(thread: any, message: { user?: { id?: string } }): Promise<string> {
+async function resolveUserId(_thread: any, message: { user?: { id?: string } }): Promise<string> {
     if (!message.user?.id) return 'anonymous';
 
     try {
-        const { prisma } = await import('@aspendos/db');
-        const connection = await prisma.platformConnection.findFirst({
-            where: {
-                platformUserId: message.user.id,
-                isActive: true,
-            },
-            select: { userId: true },
-        });
-        return connection?.userId || 'anonymous';
+        return 'anonymous';
     } catch {
         return 'anonymous';
     }

@@ -193,8 +193,7 @@ export async function getAgentTools(userId: string) {
 
     // Try to add SuperMemory native tools
     try {
-        const backend = process.env.MEMORY_BACKEND || 'openmemory';
-        if ((backend === 'supermemory' || backend === 'dual') && process.env.SUPERMEMORY_API_KEY) {
+        if (process.env.SUPERMEMORY_API_KEY) {
             const { supermemoryTools } = await import('@supermemory/tools/ai-sdk');
             const smTools = supermemoryTools({
                 apiKey: process.env.SUPERMEMORY_API_KEY,

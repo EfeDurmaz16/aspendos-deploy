@@ -120,7 +120,10 @@ export default function AgentLogPage() {
                     </h2>
                     <div className="space-y-3">
                         {approvals.map((approval) => (
-                            <Card key={approval.id} className="border-foreground/20 bg-foreground/5">
+                            <Card
+                                key={approval.id}
+                                className="border-foreground/20 bg-foreground/5"
+                            >
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between">
                                         <div>

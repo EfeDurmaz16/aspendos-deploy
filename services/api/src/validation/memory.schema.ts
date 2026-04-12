@@ -3,7 +3,13 @@
  */
 import { z } from 'zod';
 
-export const VALID_SECTORS = ['semantic', 'episodic', 'procedural', 'emotional', 'reflective'] as const;
+export const VALID_SECTORS = [
+    'semantic',
+    'episodic',
+    'procedural',
+    'emotional',
+    'reflective',
+] as const;
 
 /**
  * Validates a memory ID string.

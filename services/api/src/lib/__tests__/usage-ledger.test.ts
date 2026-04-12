@@ -8,12 +8,20 @@ describe('usage-ledger', () => {
 
     describe('calculateCostFromTokens', () => {
         it('should calculate cost for groq/llama-3.1-70b-versatile', () => {
-            const cost = calculateCostFromTokens('groq/llama-3.1-70b-versatile', 1_000_000, 1_000_000);
+            const cost = calculateCostFromTokens(
+                'groq/llama-3.1-70b-versatile',
+                1_000_000,
+                1_000_000
+            );
             expect(cost).toBeCloseTo(0.59 + 0.79, 6);
         });
 
         it('should calculate cost for anthropic/claude-sonnet-4-20250514', () => {
-            const cost = calculateCostFromTokens('anthropic/claude-sonnet-4-20250514', 500_000, 200_000);
+            const cost = calculateCostFromTokens(
+                'anthropic/claude-sonnet-4-20250514',
+                500_000,
+                200_000
+            );
             expect(cost).toBeCloseTo((500_000 / 1_000_000) * 3.0 + (200_000 / 1_000_000) * 15.0, 6);
         });
 
@@ -533,7 +541,11 @@ describe('usage-ledger', () => {
 
     describe('edge cases', () => {
         it('should handle very large token counts', () => {
-            const cost = calculateCostFromTokens('anthropic/claude-sonnet-4-20250514', 10_000_000, 5_000_000);
+            const cost = calculateCostFromTokens(
+                'anthropic/claude-sonnet-4-20250514',
+                10_000_000,
+                5_000_000
+            );
             expect(cost).toBeGreaterThan(0);
             expect(Number.isFinite(cost)).toBe(true);
         });

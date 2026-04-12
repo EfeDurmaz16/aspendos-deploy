@@ -19,7 +19,10 @@ const FALLBACK_CHAIN: Record<string, string[]> = {
     'groq/llama3-8b-8192': ['groq/llama-3.1-8b-instant', 'groq/llama-3.1-70b-versatile'],
     // ULTRA tier premium models (fallback to Groq)
     'anthropic/claude-sonnet-4-20250514': ['groq/llama-3.1-70b-versatile', 'openai/gpt-4o'],
-    'anthropic/claude-opus-4-20250514': ['anthropic/claude-sonnet-4-20250514', 'groq/llama-3.1-70b-versatile'],
+    'anthropic/claude-opus-4-20250514': [
+        'anthropic/claude-sonnet-4-20250514',
+        'groq/llama-3.1-70b-versatile',
+    ],
     'openai/gpt-4o': ['groq/llama-3.1-70b-versatile', 'anthropic/claude-sonnet-4-20250514'],
     'openai/o1': ['openai/gpt-4o', 'groq/llama-3.1-70b-versatile'],
 };

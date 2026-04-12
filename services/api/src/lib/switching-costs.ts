@@ -97,21 +97,28 @@ function calculateDataInvestmentScore(metrics: SwitchingCostMetric[]): number {
     let score = 0;
 
     // Memories stored (0-8 points, cap at 100 memories)
-    const memories = Math.max(0, dataMetrics
-        .filter((m) => m.metric === 'memoriesStored')
-        .reduce((sum, m) => sum + m.value, 0));
+    const memories = Math.max(
+        0,
+        dataMetrics
+            .filter((m) => m.metric === 'memoriesStored')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(8, (memories / 100) * 8);
 
     // Conversations (0-7 points, cap at 50 conversations)
-    const conversations = Math.max(0, dataMetrics
-        .filter((m) => m.metric === 'conversations')
-        .reduce((sum, m) => sum + m.value, 0));
+    const conversations = Math.max(
+        0,
+        dataMetrics.filter((m) => m.metric === 'conversations').reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(7, (conversations / 50) * 7);
 
     // Custom templates (0-5 points, cap at 20 templates)
-    const templates = Math.max(0, dataMetrics
-        .filter((m) => m.metric === 'customTemplates')
-        .reduce((sum, m) => sum + m.value, 0));
+    const templates = Math.max(
+        0,
+        dataMetrics
+            .filter((m) => m.metric === 'customTemplates')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(5, (templates / 20) * 5);
 
     return Math.min(20, score);
@@ -127,21 +134,26 @@ function calculateHabitFormationScore(metrics: SwitchingCostMetric[]): number {
     let score = 0;
 
     // Days active (0-8 points, cap at 90 days)
-    const daysActive = Math.max(0, habitMetrics
-        .filter((m) => m.metric === 'daysActive')
-        .reduce((sum, m) => sum + m.value, 0));
+    const daysActive = Math.max(
+        0,
+        habitMetrics.filter((m) => m.metric === 'daysActive').reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(8, (daysActive / 90) * 8);
 
     // Session frequency (0-7 points, sessions per week, cap at 20)
-    const sessionFrequency = Math.max(0, habitMetrics
-        .filter((m) => m.metric === 'sessionFrequency')
-        .reduce((sum, m) => sum + m.value, 0));
+    const sessionFrequency = Math.max(
+        0,
+        habitMetrics
+            .filter((m) => m.metric === 'sessionFrequency')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(7, (sessionFrequency / 20) * 7);
 
     // Features used (0-5 points, unique features, cap at 10)
-    const featuresUsed = Math.max(0, habitMetrics
-        .filter((m) => m.metric === 'featuresUsed')
-        .reduce((sum, m) => sum + m.value, 0));
+    const featuresUsed = Math.max(
+        0,
+        habitMetrics.filter((m) => m.metric === 'featuresUsed').reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(5, (featuresUsed / 10) * 5);
 
     return Math.min(20, score);
@@ -157,21 +169,30 @@ function calculateNetworkEffectsScore(metrics: SwitchingCostMetric[]): number {
     let score = 0;
 
     // Workspace members (0-8 points, cap at 10 members)
-    const workspaceMembers = Math.max(0, networkMetrics
-        .filter((m) => m.metric === 'workspaceMembers')
-        .reduce((sum, m) => sum + m.value, 0));
+    const workspaceMembers = Math.max(
+        0,
+        networkMetrics
+            .filter((m) => m.metric === 'workspaceMembers')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(8, (workspaceMembers / 10) * 8);
 
     // Shared conversations (0-7 points, cap at 30)
-    const sharedConversations = Math.max(0, networkMetrics
-        .filter((m) => m.metric === 'sharedConversations')
-        .reduce((sum, m) => sum + m.value, 0));
+    const sharedConversations = Math.max(
+        0,
+        networkMetrics
+            .filter((m) => m.metric === 'sharedConversations')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(7, (sharedConversations / 30) * 7);
 
     // Referrals made (0-5 points, cap at 10)
-    const referrals = Math.max(0, networkMetrics
-        .filter((m) => m.metric === 'referralsMade')
-        .reduce((sum, m) => sum + m.value, 0));
+    const referrals = Math.max(
+        0,
+        networkMetrics
+            .filter((m) => m.metric === 'referralsMade')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(5, (referrals / 10) * 5);
 
     return Math.min(20, score);
@@ -187,21 +208,30 @@ function calculateCustomizationScore(metrics: SwitchingCostMetric[]): number {
     let score = 0;
 
     // PAC settings configured (0-7 points, cap at 10)
-    const pacSettings = Math.max(0, customMetrics
-        .filter((m) => m.metric === 'pacSettingsConfigured')
-        .reduce((sum, m) => sum + m.value, 0));
+    const pacSettings = Math.max(
+        0,
+        customMetrics
+            .filter((m) => m.metric === 'pacSettingsConfigured')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(7, (pacSettings / 10) * 7);
 
     // Model preferences (0-6 points, cap at 5)
-    const modelPreferences = Math.max(0, customMetrics
-        .filter((m) => m.metric === 'modelPreferences')
-        .reduce((sum, m) => sum + m.value, 0));
+    const modelPreferences = Math.max(
+        0,
+        customMetrics
+            .filter((m) => m.metric === 'modelPreferences')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(6, (modelPreferences / 5) * 6);
 
     // API keys created (0-7 points, cap at 5)
-    const apiKeys = Math.max(0, customMetrics
-        .filter((m) => m.metric === 'apiKeysCreated')
-        .reduce((sum, m) => sum + m.value, 0));
+    const apiKeys = Math.max(
+        0,
+        customMetrics
+            .filter((m) => m.metric === 'apiKeysCreated')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(7, (apiKeys / 5) * 7);
 
     return Math.min(20, score);
@@ -217,21 +247,30 @@ function calculateIntegrationDepthScore(metrics: SwitchingCostMetric[]): number 
     let score = 0;
 
     // MCP connections (0-7 points, cap at 5)
-    const mcpConnections = Math.max(0, integrationMetrics
-        .filter((m) => m.metric === 'mcpConnections')
-        .reduce((sum, m) => sum + m.value, 0));
+    const mcpConnections = Math.max(
+        0,
+        integrationMetrics
+            .filter((m) => m.metric === 'mcpConnections')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(7, (mcpConnections / 5) * 7);
 
     // Webhooks configured (0-6 points, cap at 5)
-    const webhooks = Math.max(0, integrationMetrics
-        .filter((m) => m.metric === 'webhooksConfigured')
-        .reduce((sum, m) => sum + m.value, 0));
+    const webhooks = Math.max(
+        0,
+        integrationMetrics
+            .filter((m) => m.metric === 'webhooksConfigured')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(6, (webhooks / 5) * 6);
 
     // API usage (0-7 points, cap at 10000 calls)
-    const apiUsage = Math.max(0, integrationMetrics
-        .filter((m) => m.metric === 'apiUsage')
-        .reduce((sum, m) => sum + m.value, 0));
+    const apiUsage = Math.max(
+        0,
+        integrationMetrics
+            .filter((m) => m.metric === 'apiUsage')
+            .reduce((sum, m) => sum + m.value, 0)
+    );
     score += Math.min(7, (apiUsage / 10000) * 7);
 
     return Math.min(20, score);

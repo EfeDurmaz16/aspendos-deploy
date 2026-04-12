@@ -174,9 +174,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
 function QuickTip({ icon, text }: { icon: React.ReactNode; text: string }) {
     return (
         <div className="flex items-center gap-3 rounded-lg bg-foreground/5 px-4 py-3">
-            <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground/10 text-foreground"
-            >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground/10 text-foreground">
                 {icon}
             </div>
             <span className="text-sm text-muted-foreground">{text}</span>

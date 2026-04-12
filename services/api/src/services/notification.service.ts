@@ -1,10 +1,11 @@
 /**
  * Notification Service - Multi-Channel Delivery for PAC
  *
- * Full implementation with database persistence and OneSignal push notifications.
+ * Uses Convex HTTP client for persistence. Push subscriptions and preferences
+ * are stored via action_log entries (Convex schema doesn't have dedicated tables).
  */
 
-import { prisma } from '@aspendos/db';
+import { getConvexClient, api } from '../lib/convex';
 
 // ============================================
 // TYPES
@@ -97,20 +98,26 @@ export async function sendNotification(payload: NotificationPayload): Promise<De
 
             results.push(result);
 
-            // Log to database
-            await prisma.notificationLog.create({
-                data: {
-                    userId,
-                    type: taskId ? 'PROACTIVE_FOLLOWUP' : 'ALERT',
-                    title,
-                    message: body,
-                    channel,
-                    status: result.success ? 'delivered' : 'failed',
-                    taskId,
-                    metadata: data ? JSON.parse(JSON.stringify(data)) : undefined,
-                    deliveredAt: result.success ? new Date() : null,
-                },
-            });
+            // Log to Convex action_log
+            try {
+                const client = getConvexClient();
+                await client.mutation(api.actionLog.log, {
+                    user_id: userId as any,
+                    event_type: 'notification_sent',
+                    details: {
+                        type: taskId ? 'PROACTIVE_FOLLOWUP' : 'ALERT',
+                        title,
+                        message: body,
+                        channel,
+                        status: result.success ? 'delivered' : 'failed',
+                        taskId,
+                        metadata: data ? JSON.parse(JSON.stringify(data)) : undefined,
+                        deliveredAt: result.success ? new Date().toISOString() : null,
+                    },
+                });
+            } catch {
+                // best-effort logging
+            }
         } catch (error) {
             console.error(`[Notification] Error sending to ${channel}:`, error);
             results.push({
@@ -147,19 +154,6 @@ async function sendPushNotification(
     }
 
     try {
-        // Get user's push subscriptions
-        const subscriptions = await prisma.pushSubscription.findMany({
-            where: { userId },
-        });
-
-        if (subscriptions.length === 0) {
-            return {
-                success: false,
-                channel: 'push',
-                error: 'No push subscriptions found',
-            };
-        }
-
         // Send via OneSignal REST API
         const response = await fetch('https://onesignal.com/api/v1/notifications', {
             method: 'POST',
@@ -214,11 +208,14 @@ async function sendEmailNotification(
         return { success: false, channel: 'email', error: 'Email service not configured' };
     }
 
-    // Look up user email
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { email: true, name: true },
-    });
+    // Look up user email from Convex
+    let user: any = null;
+    try {
+        const client = getConvexClient();
+        user = await client.query(api.users.get, { id: userId as any });
+    } catch {
+        return { success: false, channel: 'email', error: 'User lookup failed' };
+    }
 
     if (!user?.email) {
         return { success: false, channel: 'email', error: 'User email not found' };
@@ -261,8 +258,6 @@ async function sendInAppNotification(
     _body: string,
     _taskId?: string
 ): Promise<DeliveryResult> {
-    // In-app notifications are handled by SSE stream
-    // Just mark as success - the SSE endpoint will pull from NotificationLog
     console.log(`[Notification] In-app notification queued for user ${userId}`);
     return {
         success: true,
@@ -271,38 +266,19 @@ async function sendInAppNotification(
 }
 
 /**
- * Get user notification preferences from database
+ * Get user notification preferences
+ * Convex schema doesn't have a notificationPreferences table — return defaults
  */
 export async function getUserNotificationPreferences(
-    userId: string
+    _userId: string
 ): Promise<NotificationPreferences> {
-    const prefs = await prisma.notificationPreferences.findUnique({
-        where: { userId },
-    });
-
-    if (!prefs) {
-        // Return defaults if no preferences set
-        return {
-            pushEnabled: false,
-            emailEnabled: false,
-            inAppEnabled: true,
-            quietHoursEnabled: false,
-            quietHoursTimezone: 'UTC',
-            maxDailyNotifications: 10,
-            minIntervalMinutes: 5,
-            pacFollowupEnabled: true,
-            pacEmailFallback: false,
-        };
-    }
-
+    // Return defaults — preferences table not in Convex schema yet
     return {
-        pushEnabled: prefs.pushEnabled,
-        emailEnabled: prefs.emailEnabled,
-        inAppEnabled: prefs.inAppEnabled,
-        quietHoursEnabled: !!(prefs.quietHoursStart && prefs.quietHoursEnd),
-        quietHoursStart: prefs.quietHoursStart || undefined,
-        quietHoursEnd: prefs.quietHoursEnd || undefined,
-        quietHoursTimezone: prefs.timezone,
+        pushEnabled: false,
+        emailEnabled: false,
+        inAppEnabled: true,
+        quietHoursEnabled: false,
+        quietHoursTimezone: 'UTC',
         maxDailyNotifications: 10,
         minIntervalMinutes: 5,
         pacFollowupEnabled: true,
@@ -312,6 +288,7 @@ export async function getUserNotificationPreferences(
 
 /**
  * Register push subscription for a user's device
+ * Stored via action_log (no pushSubscription table in Convex)
  */
 export async function registerPushSubscription(
     userId: string,
@@ -325,30 +302,17 @@ export async function registerPushSubscription(
     }
 ): Promise<void> {
     try {
-        // Check if subscription already exists
-        const existing = await prisma.pushSubscription.findFirst({
-            where: {
-                userId,
-                endpoint: subscription.endpoint,
-            },
-        });
-
-        if (existing) {
-            console.log(`[Notification] Push subscription already exists for user ${userId}`);
-            return;
-        }
-
-        // Create new subscription
-        await prisma.pushSubscription.create({
-            data: {
-                userId,
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'push_subscription_registered',
+            details: {
                 endpoint: subscription.endpoint,
                 p256dh: subscription.keys.p256dh,
                 auth: subscription.keys.auth,
                 deviceType: subscription.deviceType || 'web',
             },
         });
-
         console.log(`[Notification] Push subscription registered for user ${userId}`);
     } catch (error) {
         console.error('[Notification] Error registering push subscription:', error);
@@ -358,50 +322,19 @@ export async function registerPushSubscription(
 
 /**
  * Update notification preferences for a user
+ * Stored via action_log (no notificationPreferences table in Convex)
  */
 export async function updateNotificationPreferences(
     userId: string,
     preferences: Partial<NotificationPreferences>
 ): Promise<void> {
     try {
-        const data: {
-            pushEnabled?: boolean;
-            emailEnabled?: boolean;
-            inAppEnabled?: boolean;
-            quietHoursStart?: string | null;
-            quietHoursEnd?: string | null;
-            timezone?: string;
-        } = {};
-
-        if (preferences.pushEnabled !== undefined) {
-            data.pushEnabled = preferences.pushEnabled;
-        }
-        if (preferences.emailEnabled !== undefined) {
-            data.emailEnabled = preferences.emailEnabled;
-        }
-        if (preferences.inAppEnabled !== undefined) {
-            data.inAppEnabled = preferences.inAppEnabled;
-        }
-        if (preferences.quietHoursStart !== undefined) {
-            data.quietHoursStart = preferences.quietHoursStart || null;
-        }
-        if (preferences.quietHoursEnd !== undefined) {
-            data.quietHoursEnd = preferences.quietHoursEnd || null;
-        }
-        if (preferences.quietHoursTimezone) {
-            data.timezone = preferences.quietHoursTimezone;
-        }
-
-        // Upsert preferences
-        await prisma.notificationPreferences.upsert({
-            where: { userId },
-            update: data,
-            create: {
-                userId,
-                ...data,
-            },
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'notification_preferences_updated',
+            details: preferences,
         });
-
         console.log(`[Notification] Preferences updated for user ${userId}`);
     } catch (error) {
         console.error('[Notification] Error updating preferences:', error);

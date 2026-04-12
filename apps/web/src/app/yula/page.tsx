@@ -9,8 +9,8 @@ import { WelcomeGuideTrigger } from '@/components/onboarding';
 // Components
 import { PACTimeline } from '@/components/pac-timeline';
 import { EngineIndicator, HybridEngineToggle } from '@/components/settings';
-import { useYulaStore } from '@/stores/yula-store';
 import { cn } from '@/lib/utils';
+import { useYulaStore } from '@/stores/yula-store';
 
 type ActiveView = 'chat' | 'council' | 'memory';
 
@@ -232,7 +232,10 @@ export default function YulaPage() {
                             <div className="flex h-full flex-col">
                                 <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
                                     <div className="flex items-center gap-2">
-                                        <Brain className="h-4 w-4 text-muted-foreground" weight="fill" />
+                                        <Brain
+                                            className="h-4 w-4 text-muted-foreground"
+                                            weight="fill"
+                                        />
                                         <span className="text-sm font-medium text-zinc-300">
                                             Memory
                                         </span>

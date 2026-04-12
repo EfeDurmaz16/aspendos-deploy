@@ -58,6 +58,11 @@ packages/db/prisma/*.db-journal
 
 
 *.md
+# Exceptions: design specs, implementation plans, ADRs, and launch assets are tracked
+!docs/superpowers/specs/*.md
+!docs/superpowers/plans/*.md
+!docs/adr/*.md
+!docs/launch/*.md
 
 # Sensitive Data
 conversations.json
@@ -93,7 +98,8 @@ better-min-time.txt
 apps/yula-video/build/
 klaros/build/
 
+.vercel
+
 .projects/*
 !.projects/state.json
 .env
-.vercel

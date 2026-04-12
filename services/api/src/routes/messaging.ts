@@ -9,7 +9,7 @@
  *   GET/POST/DELETE /messaging/connections → PlatformConnection CRUD
  */
 
-import { prisma } from '@aspendos/db';
+
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
