@@ -37,8 +37,17 @@ export async function getOrCreateUser(
         console.error('[chat.service] getOrCreateUser error:', err);
     }
 
-    // User should exist if session is valid - this is an error case
-    throw new Error('Authenticated user not found in database');
+    try {
+        const client = getConvexClient();
+        const id = await client.mutation(api.users.upsertFromWorkOS, {
+            workos_id: userId,
+            email: email || `${userId}@placeholder.local`,
+            name: _name,
+        });
+        return { _id: id, id: userId, email, name: _name };
+    } catch {
+        return { id: userId, email, name: _name };
+    }
 }
 
 /**
@@ -75,11 +84,12 @@ export interface ListChatsOptions {
 export async function createChat(input: CreateChatInput): Promise<Chat> {
     try {
         const client = getConvexClient();
+        const user = await client.query(api.users.getByWorkOSId, { workos_id: input.userId });
+        if (!user) return null;
         const id = await client.mutation(api.conversations.create, {
-            user_id: input.userId as any,
+            user_id: user._id,
             title: input.title || 'New Chat',
         });
-        // Return a chat-like object
         return { id, userId: input.userId, title: input.title || 'New Chat', modelPreference: input.modelPreference };
     } catch (err) {
         console.error('[chat.service] createChat error:', err);
@@ -93,8 +103,10 @@ export async function createChat(input: CreateChatInput): Promise<Chat> {
 export async function listChats(options: ListChatsOptions): Promise<Chat[]> {
     try {
         const client = getConvexClient();
+        const user = await client.query(api.users.getByWorkOSId, { workos_id: options.userId });
+        if (!user) return [];
         const conversations = await client.query(api.conversations.listByUser, {
-            user_id: options.userId as any,
+            user_id: user._id,
             limit: options.limit || 50,
         });
         return conversations || [];
