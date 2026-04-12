@@ -18,8 +18,8 @@ systemRoutes.get('/circuit-breakers', (c) => {
             openai: breakers.openai.getDetailedState(),
             anthropic: breakers.anthropic.getDetailedState(),
             groq: breakers.groq.getDetailedState(),
-            qdrant: breakers.qdrant.getDetailedState(),
             google: breakers.google.getDetailedState(),
+            supermemory: breakers.supermemory.getDetailedState(),
         },
         summary: {
             openCircuits: Object.values(breakers).filter((b) => b.getState().state === 'OPEN')

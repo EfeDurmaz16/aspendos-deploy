@@ -4,9 +4,6 @@
  * This file runs before all tests to configure the test environment.
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
 // Setup runs once before all tests

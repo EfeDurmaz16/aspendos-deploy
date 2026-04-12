@@ -12,7 +12,8 @@ vi.mock('../../lib/prisma', () => ({
 }));
 
 // Import the mocked prisma so we can control return values
-import { prisma } from '../../lib/prisma';
+// TODO(convex-migrate): replace prisma with Convex client
+const prisma = null as any;
 
 const mockFindUnique = prisma.user.findUnique as ReturnType<typeof vi.fn>;
 

@@ -37,9 +37,6 @@ vi.mock('@aspendos/db', () => ({
     },
 }));
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 const mockPrisma = prisma as any;
 
 vi.mock('../../services/notification.service', () => ({

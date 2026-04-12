@@ -7,7 +7,8 @@
 
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
-import { prisma } from '../lib/prisma';
+// TODO(convex-migrate): replace prisma with Convex client
+const prisma = null as any;
 import { requireAuth } from '../middleware/auth';
 
 const sessionRoutes = new Hono();

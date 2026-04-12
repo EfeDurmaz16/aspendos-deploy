@@ -214,7 +214,7 @@ export default function TermsPage() {
                             </li>
                             <li>We have data processing agreements (DPAs) with all AI providers</li>
                             <li>AI providers are prohibited from training on your data</li>
-                            <li>Memory embeddings are stored in our Qdrant vector database</li>
+                            <li>Memory embeddings are stored in our vector database</li>
                         </ul>
                         <p className="text-muted-foreground mt-3">
                             For full details, see our{' '}

@@ -6,9 +6,6 @@
  */
 import { Hono } from 'hono';
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 
 import { createLogger } from '../lib/logger';
 import { requireAuth } from '../middleware/auth';

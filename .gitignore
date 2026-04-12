@@ -98,7 +98,8 @@ better-min-time.txt
 apps/yula-video/build/
 klaros/build/
 
+.vercel
+
 .projects/*
 !.projects/state.json
 .env
-.vercel

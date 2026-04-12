@@ -1,4 +1,5 @@
-import { prisma } from './prisma';
+// TODO(convex-migrate): replace prisma with Convex client
+const prisma = null as any;
 
 /**
  * Model pricing per 1K tokens (in USD)

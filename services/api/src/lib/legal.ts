@@ -83,7 +83,7 @@ export function getPrivacyPolicy() {
             {
                 title: 'Data Storage and Security',
                 content:
-                    'Data is stored in PostgreSQL (Railway) and Qdrant (vector store). All data is encrypted in transit via TLS. We implement rate limiting, input sanitization, and content moderation to protect the platform.',
+                    'Data is stored in PostgreSQL (Railway) and SuperMemory (vector store). All data is encrypted in transit via TLS. We implement rate limiting, input sanitization, and content moderation to protect the platform.',
             },
             {
                 title: 'Third-Party Processors',

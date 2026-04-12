@@ -35,7 +35,7 @@ export async function createEmbeddings(texts: string[]): Promise<number[][]> {
 }
 
 /**
- * Get embedding dimension size (for Qdrant collection setup)
+ * Get embedding dimension size (for vector collection setup)
  */
 export function getEmbeddingDimension(): number {
     // text-embedding-3-small produces 1536-dimensional vectors

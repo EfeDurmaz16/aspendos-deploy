@@ -1,6 +1,6 @@
 /**
  * Circuit Breaker Pattern for external API calls.
- * Prevents cascading failures when upstream services (OpenAI, Qdrant, Groq) are down.
+ * Prevents cascading failures when upstream services (OpenAI, SuperMemory, Groq) are down.
  *
  * States:
  * - CLOSED: Normal operation, requests pass through

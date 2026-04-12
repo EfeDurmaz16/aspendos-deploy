@@ -1,6 +1,3 @@
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma, ScheduledTaskStatus } from '@aspendos/db';
-const prisma = {} as any;
 const ScheduledTaskStatus = {} as any;
 type ScheduledTaskStatus = any;
 

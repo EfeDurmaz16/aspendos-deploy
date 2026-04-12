@@ -4,9 +4,6 @@
  * Unified search across chats and memories with full-text and semantic search.
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';

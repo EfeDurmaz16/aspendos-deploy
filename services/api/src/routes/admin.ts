@@ -5,9 +5,6 @@
  * All endpoints require admin authentication.
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';

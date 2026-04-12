@@ -13,7 +13,7 @@ vi.mock('@aspendos/db', () => ({
 
 vi.mock('../circuit-breaker', () => ({
     breakers: {
-        qdrant: {
+        supermemory: {
             getState: vi.fn(() => ({ state: 'CLOSED' })),
         },
     },
@@ -36,9 +36,6 @@ vi.mock('../../services/council.service', () => ({
     },
 }));
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 
 import { searchMemories } from '../../services/memory-router.service';
 import { parseTimeExpression } from '../../services/scheduler.service';
@@ -62,7 +59,7 @@ describe('checkCriticalReadiness', () => {
         mockPrisma.councilSession.count.mockResolvedValue(3);
         mockSearchMemories.mockResolvedValue([]);
         mockParseTimeExpression.mockReturnValue(new Date(Date.now() + 60 * 60 * 1000));
-        mockBreakers.qdrant.getState.mockReturnValue({ state: 'CLOSED' });
+        mockBreakers.supermemory.getState.mockReturnValue({ state: 'CLOSED' });
     });
 
     afterEach(() => {
@@ -87,7 +84,7 @@ describe('checkCriticalReadiness', () => {
 
     it('returns degraded when fallback mode is active or cron secret missing', async () => {
         delete process.env.CRON_SECRET;
-        mockBreakers.qdrant.getState.mockReturnValue({ state: 'OPEN' });
+        mockBreakers.supermemory.getState.mockReturnValue({ state: 'OPEN' });
 
         const report = await checkCriticalReadiness();
 

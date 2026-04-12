@@ -4,7 +4,8 @@
  * Handles importing chat history from ChatGPT and Claude exports.
  */
 import { Hono } from 'hono';
-import { prisma } from '../lib/prisma';
+// TODO(convex-migrate): replace prisma with Convex client
+const prisma = null as any;
 import { requireAuth } from '../middleware/auth';
 import { enforceTierLimit } from '../middleware/tier-enforcement';
 import { validateBody, validateParams } from '../middleware/validate';

@@ -10,9 +10,6 @@
  * 3. SuperMemory search fails -> searchFallback() uses PostgreSQL ILIKE text search
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 
 import { breakers } from './circuit-breaker';
 

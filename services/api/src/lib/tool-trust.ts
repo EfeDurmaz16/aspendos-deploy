@@ -17,9 +17,6 @@
  * MCP chains: 0.85^depth transitive trust (from FIDES decay model)
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
 
 // ============================================
 // TYPES

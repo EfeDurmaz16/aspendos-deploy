@@ -23,16 +23,11 @@ vi.mock('@/lib/services/anthropic', () => ({
     createAnthropicStreamingCompletion: vi.fn(),
 }));
 
-vi.mock('@/lib/services/qdrant', () => ({
-    searchMemories: vi.fn(),
-}));
-
 // Import after mocking
 import { executeHybridRoute, createUnifiedStreamingCompletion, AVAILABLE_TOOLS } from '@/lib/services/hybrid-router';
 import { routeUserMessage } from '@/lib/services/groq';
 import { createStreamingChatCompletion as createOpenAIStream, createEmbedding } from '@/lib/services/openai';
 import { createAnthropicStreamingCompletion } from '@/lib/services/anthropic';
-import { searchMemories } from '@/lib/services/qdrant';
 
 describe('Hybrid Router', () => {
     beforeEach(() => {
@@ -43,7 +38,6 @@ describe('Hybrid Router', () => {
             reason: 'default',
         });
         vi.mocked(createEmbedding).mockResolvedValue(new Array(1536).fill(0));
-        vi.mocked(searchMemories).mockResolvedValue([]);
     });
 
     describe('executeHybridRoute', () => {
@@ -56,7 +50,6 @@ describe('Hybrid Router', () => {
 
             vi.mocked(routeUserMessage).mockResolvedValueOnce(mockDecision);
             vi.mocked(createEmbedding).mockResolvedValueOnce(new Array(1536).fill(0.1));
-            vi.mocked(searchMemories).mockResolvedValueOnce([]);
 
             const result = await executeHybridRoute('Hello!', 'user-123');
 
@@ -64,10 +57,11 @@ describe('Hybrid Router', () => {
                 recentMessages: undefined,
             });
             expect(result.decision).toEqual(mockDecision);
+            // Memory search returns empty since Qdrant was removed (stub returns [])
             expect(result.memories).toEqual([]);
         });
 
-        it('should perform RAG search for rag_search decisions', async () => {
+        it('should return empty memories for rag_search decisions (Qdrant removed)', async () => {
             const mockDecision = {
                 type: 'rag_search' as const,
                 query: 'travel plans',
@@ -75,27 +69,14 @@ describe('Hybrid Router', () => {
                 reason: 'User asking about past plans',
             };
 
-            const mockMemories = [
-                { content: 'User plans to visit Paris in March', score: 0.95 },
-                { content: 'User prefers business class flights', score: 0.85 },
-            ];
-
             vi.mocked(routeUserMessage).mockResolvedValueOnce(mockDecision);
             vi.mocked(createEmbedding).mockResolvedValueOnce(new Array(1536).fill(0.2));
-            vi.mocked(searchMemories).mockResolvedValueOnce(mockMemories.map(m => ({
-                id: 'mem-' + Math.random(),
-                ...m,
-                type: 'context',
-                conversationId: 'conv-1',
-                createdAt: new Date().toISOString(),
-            })));
 
             const result = await executeHybridRoute('What are my travel plans?', 'user-123');
 
             expect(createEmbedding).toHaveBeenCalledWith('travel plans');
-            expect(searchMemories).toHaveBeenCalled();
-            expect(result.memoryContext).toContain('User plans to visit Paris in March');
-            expect(result.memories).toHaveLength(2);
+            // Memory stub returns empty since Qdrant was removed
+            expect(result.memories).toEqual([]);
         });
 
         it('should skip router when forceModel is provided', async () => {
@@ -118,7 +99,6 @@ describe('Hybrid Router', () => {
                 reason: 'Follow-up question',
             });
             vi.mocked(createEmbedding).mockResolvedValueOnce(new Array(1536).fill(0.1));
-            vi.mocked(searchMemories).mockResolvedValueOnce([]);
 
             await executeHybridRoute('What about that?', 'user-123', {
                 recentMessages: ['User: I have a coding problem', 'Assistant: Tell me more'],

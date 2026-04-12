@@ -3,7 +3,8 @@
  * Handles CRUD operations for user API keys.
  */
 import { Hono } from 'hono';
-import { prisma } from '../lib/prisma';
+// TODO(convex-migrate): replace prisma with Convex client
+const prisma = null as any;
 import { requireAuth } from '../middleware/auth';
 
 type Variables = { userId: string };

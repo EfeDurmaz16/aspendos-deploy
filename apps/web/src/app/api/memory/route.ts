@@ -4,7 +4,18 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { createEmbedding } from '@/lib/ai';
 import { auth } from '@/lib/auth';
-import { deleteUserMemories, searchMemories, storeMemory } from '@/lib/services/qdrant';
+
+// TODO(phase-a-day-3): Qdrant removed — memory ops will use Convex + SuperMemory
+async function searchMemories(
+    _userId: string,
+    _embedding: number[],
+    _limit: number,
+    _type?: string,
+): Promise<Array<{ content: string; score: number }>> {
+    return [];
+}
+async function storeMemory(_params: Record<string, unknown>): Promise<void> {}
+async function deleteUserMemories(_userId: string): Promise<void> {}
 
 /**
  * GET /api/memory?q=query - Search user memories

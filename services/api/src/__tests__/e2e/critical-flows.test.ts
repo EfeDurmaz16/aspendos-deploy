@@ -48,8 +48,8 @@ describe('E2E - Health & System Tests', () => {
             expect(data.circuitBreakers).toHaveProperty('openai');
             expect(data.circuitBreakers).toHaveProperty('anthropic');
             expect(data.circuitBreakers).toHaveProperty('groq');
-            expect(data.circuitBreakers).toHaveProperty('qdrant');
             expect(data.circuitBreakers).toHaveProperty('google');
+            expect(data.circuitBreakers).toHaveProperty('supermemory');
         });
 
         it('returns correct status code based on health', async () => {
