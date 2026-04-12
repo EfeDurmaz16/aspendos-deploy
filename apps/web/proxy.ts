@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-// Define public page routes that don't require authentication
-const publicPageRoutes = [
+const publicRoutes = [
     '/',
     '/login',
     '/signup',
@@ -10,62 +9,39 @@ const publicPageRoutes = [
     '/privacy',
     '/landing',
     '/yula',
-];
-
-// Define public API routes (auth endpoints, webhooks, health checks)
-const publicApiPrefixes = ['/api/auth/', '/api/webhooks/', '/api/health'];
-
-// Define protected page routes that require authentication
-const protectedPagePrefixes = ['/chat', '/memory', '/billing', '/settings', '/analytics'];
-
-// Feature page routes (public)
-const publicPagePrefixes = [
+    '/callback',
     '/features',
-    '/pricing',
     '/verify-email',
     '/forgot-password',
     '/onboarding',
     '/import',
+    '/compare',
 ];
 
-function isPublicPageRoute(pathname: string): boolean {
-    if (publicPageRoutes.includes(pathname)) return true;
-    return publicPagePrefixes.some((prefix) => pathname.startsWith(prefix));
+const publicApiPrefixes = ['/api/auth/', '/api/webhooks/', '/api/health', '/api/verify/'];
+
+function isPublic(pathname: string): boolean {
+    if (publicRoutes.includes(pathname)) return true;
+    if (publicRoutes.some((r) => pathname.startsWith(`${r}/`))) return true;
+    if (publicApiPrefixes.some((p) => pathname.startsWith(p))) return true;
+    return false;
 }
 
-function isPublicApiRoute(pathname: string): boolean {
-    return publicApiPrefixes.some((prefix) => pathname.startsWith(prefix));
-}
-
-function isProtectedPageRoute(pathname: string): boolean {
-    return protectedPagePrefixes.some((prefix) => pathname.startsWith(prefix));
-}
-
-function isApiRoute(pathname: string): boolean {
-    return pathname.startsWith('/api/');
-}
-
-/**
- * Generate a cryptographic nonce for CSP headers (Edge-compatible).
- */
 function generateNonce(): string {
     const array = new Uint8Array(16);
     crypto.getRandomValues(array);
     return btoa(String.fromCharCode(...array));
 }
 
-/**
- * Build Content-Security-Policy header with nonce for script-src.
- */
 function buildCSP(nonce: string): string {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.yula.dev';
     return [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' https://cdn.onesignal.com`,
+        `script-src 'self' 'nonce-${nonce}'`,
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: blob: https://cdn.onesignal.com https://*.supabase.co https://avatars.githubusercontent.com",
+        "img-src 'self' data: blob: https://*.supabase.co https://avatars.githubusercontent.com",
         "font-src 'self' data:",
-        `connect-src 'self' ${apiUrl} https://yula.dev https://www.yula.dev https://onesignal.com https://api.onesignal.com wss://onesignal.com`,
+        `connect-src 'self' ${apiUrl} https://yula.dev https://www.yula.dev https://us.i.posthog.com`,
         "frame-src 'self'",
         "worker-src 'self' blob:",
         "object-src 'none'",
@@ -76,18 +52,10 @@ function buildCSP(nonce: string): string {
     ].join('; ');
 }
 
-/**
- * Lightweight Edge-compatible middleware.
- * Only checks cookie presence - actual session validation happens server-side.
- * This avoids importing Prisma/Better Auth which use Node.js APIs unsupported in Edge Runtime.
- */
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
-
-    // Generate CSP nonce for every request
     const nonce = generateNonce();
 
-    // Helper to create response with CSP headers
     function withCSP(response: NextResponse): NextResponse {
         if (process.env.NODE_ENV === 'production') {
             response.headers.set('Content-Security-Policy', buildCSP(nonce));
@@ -96,43 +64,25 @@ export async function proxy(request: NextRequest) {
         return response;
     }
 
-    // Allow public page routes
-    if (isPublicPageRoute(pathname)) {
+    if (isPublic(pathname)) {
         return withCSP(NextResponse.next({ headers: { 'x-nonce': nonce } }));
     }
 
-    // Allow public API routes (auth, webhooks, health)
-    if (isPublicApiRoute(pathname)) {
-        return NextResponse.next();
+    if (process.env.WORKOS_CLIENT_ID && process.env.WORKOS_API_KEY) {
+        const sessionCookie = request.cookies.get('wos-session');
+        if (!sessionCookie?.value) {
+            const loginUrl = new URL('/login', request.url);
+            loginUrl.searchParams.set('returnTo', pathname);
+            return NextResponse.redirect(loginUrl);
+        }
     }
 
-    // TODO(phase-a-day-4): WorkOS authkitMiddleware replaces this. During the
-    // Phase A Day 1 purge window the Better Auth `better-auth.session_token`
-    // cookie no longer exists, so the old cookie-presence check would
-    // 401/redirect every request. Let requests pass through until Day 4 wires
-    // WorkOS authkitMiddleware; route-level guards stay disabled in the stub.
-    // const sessionCookie = request.cookies.get('better-auth.session_token');
-    // const hasSession = !!sessionCookie?.value;
-
-    // API routes: pass through (WorkOS authkitMiddleware gates in Day 4)
-    if (isApiRoute(pathname)) {
-        return NextResponse.next();
-    }
-
-    // Protected page routes: pass through (WorkOS authkitMiddleware in Day 4)
-    if (isProtectedPageRoute(pathname)) {
-        return withCSP(NextResponse.next({ headers: { 'x-nonce': nonce } }));
-    }
-
-    // All other page routes are allowed
     return withCSP(NextResponse.next({ headers: { 'x-nonce': nonce } }));
 }
 
 export const config = {
     matcher: [
-        // Skip Next.js internals and static files
         '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-        // Always run for API routes
         '/(api|trpc)(.*)',
     ],
 };
