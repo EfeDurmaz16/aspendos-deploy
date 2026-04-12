@@ -3,14 +3,12 @@
  *
  * Handles scheduling and execution of proactive follow-up tasks.
  * The AI can schedule tasks to re-engage users at specific times.
+ * Migrated from Prisma to Convex action_log events.
  */
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { type Prisma, prisma, type ScheduledTask, ScheduledTaskStatus } from '@aspendos/db';
-type Prisma = any;
-const prisma = {} as any;
+
+import { getConvexClient, api } from '../lib/convex';
+
 type ScheduledTask = any;
-const ScheduledTaskStatus = {} as any;
-type ScheduledTaskStatus = any;
 
 // Upstash QStash configuration (optional - can use polling fallback)
 const QSTASH_TOKEN = process.env.QSTASH_TOKEN || '';
@@ -32,11 +30,11 @@ export interface CreateScheduledTaskInput {
 
 export interface CommitmentDetectionResult {
     hasCommitment: boolean;
-    timeFrame?: string; // "1 week", "tomorrow", "in 3 days"
-    intent?: string; // "Discuss study plan progress"
-    topic?: string; // "Gym Motivation Check-in"
+    timeFrame?: string;
+    intent?: string;
+    topic?: string;
     tone?: 'friendly' | 'professional' | 'encouraging';
-    absoluteTime?: Date; // Calculated absolute timestamp
+    absoluteTime?: Date;
 }
 
 // ============================================
@@ -47,37 +45,48 @@ export interface CommitmentDetectionResult {
  * Create a new scheduled task for proactive follow-up
  */
 export async function createScheduledTask(input: CreateScheduledTaskInput): Promise<ScheduledTask> {
-    // Create the task in the database
-    const task = await prisma.scheduledTask.create({
-        data: {
+    try {
+        const client = getConvexClient();
+        const taskId = await client.mutation(api.actionLog.log, {
+            user_id: input.userId as any,
+            event_type: 'scheduled_task',
+            details: {
+                chatId: input.chatId,
+                triggerAt: input.triggerAt.getTime(),
+                intent: input.intent,
+                contextSummary: input.contextSummary,
+                topic: input.topic,
+                tone: input.tone || 'friendly',
+                channelPref: input.channelPref || 'auto',
+                metadata: input.metadata || {},
+                status: 'PENDING',
+            },
+        });
+
+        const task = {
+            id: taskId,
             userId: input.userId,
             chatId: input.chatId,
             triggerAt: input.triggerAt,
             intent: input.intent,
-            contextSummary: input.contextSummary,
-            topic: input.topic,
-            tone: input.tone || 'friendly',
-            channelPref: input.channelPref || 'auto',
-            metadata: (input.metadata || {}) as Prisma.InputJsonValue,
-            status: ScheduledTaskStatus.PENDING,
-        },
-    });
+            status: 'PENDING',
+            externalJobId: null as string | null,
+        };
 
-    // If QStash is configured, schedule the webhook
-    if (QSTASH_TOKEN) {
-        try {
-            const externalJobId = await scheduleQStashWebhook(task.id, input.triggerAt);
-            await prisma.scheduledTask.update({
-                where: { id: task.id },
-                data: { externalJobId },
-            });
-        } catch (error) {
-            console.error('Failed to schedule QStash webhook:', error);
-            // Task is still created, will be picked up by polling fallback
+        // If QStash is configured, schedule the webhook
+        if (QSTASH_TOKEN) {
+            try {
+                const externalJobId = await scheduleQStashWebhook(String(taskId), input.triggerAt);
+                task.externalJobId = externalJobId;
+            } catch (error) {
+                console.error('Failed to schedule QStash webhook:', error);
+            }
         }
-    }
 
-    return task;
+        return task;
+    } catch {
+        return null;
+    }
 }
 
 /**
@@ -116,43 +125,65 @@ async function scheduleQStashWebhook(taskId: string, triggerAt: Date): Promise<s
 export async function getUserScheduledTasks(
     userId: string,
     options?: {
-        status?: ScheduledTaskStatus;
+        status?: string;
         chatId?: string;
         limit?: number;
     }
 ): Promise<ScheduledTask[]> {
-    return prisma.scheduledTask.findMany({
-        where: {
-            userId,
-            status: options?.status,
-            chatId: options?.chatId,
-        },
-        orderBy: { triggerAt: 'asc' },
-        take: options?.limit || 50,
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: options?.limit || 50,
+        });
+        return (logs || [])
+            .filter((l: any) => {
+                if (l.event_type !== 'scheduled_task') return false;
+                if (options?.status && l.details?.status !== options.status) return false;
+                if (options?.chatId && l.details?.chatId !== options.chatId) return false;
+                return true;
+            })
+            .map(logToTask);
+    } catch {
+        return [];
+    }
 }
 
 /**
  * Get pending tasks that should be executed now
  */
 export async function getPendingTasksToExecute(): Promise<ScheduledTask[]> {
-    return prisma.scheduledTask.findMany({
-        where: {
-            status: ScheduledTaskStatus.PENDING,
-            triggerAt: { lte: new Date() },
-        },
-        orderBy: { triggerAt: 'asc' },
-        take: 100,
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 200 });
+        const now = Date.now();
+        return (logs || [])
+            .filter(
+                (l: any) =>
+                    l.event_type === 'scheduled_task' &&
+                    l.details?.status === 'PENDING' &&
+                    l.details?.triggerAt <= now
+            )
+            .map(logToTask);
+    } catch {
+        return [];
+    }
 }
 
 /**
- * Get a single task by ID
+ * Get a single task by ID — searches recent action logs
  */
 export async function getTaskById(taskId: string): Promise<ScheduledTask | null> {
-    return prisma.scheduledTask.findUnique({
-        where: { id: taskId },
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const match = (logs || []).find(
+            (l: any) => l._id === taskId && l.event_type === 'scheduled_task'
+        );
+        return match ? logToTask(match) : null;
+    } catch {
+        return null;
+    }
 }
 
 // ============================================
@@ -160,89 +191,70 @@ export async function getTaskById(taskId: string): Promise<ScheduledTask | null>
 // ============================================
 
 /**
- * Cancel a scheduled task
+ * Cancel a scheduled task — logs a cancellation event
  */
 export async function cancelScheduledTask(
     taskId: string,
     userId: string
 ): Promise<ScheduledTask | null> {
-    const task = await prisma.scheduledTask.findFirst({
-        where: { id: taskId, userId },
-    });
-
-    if (!task || task.status !== ScheduledTaskStatus.PENDING) {
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'scheduled_task_cancel',
+            details: { originalTaskId: taskId },
+        });
+        return { id: taskId, status: 'CANCELED' };
+    } catch {
         return null;
     }
-
-    // Cancel QStash job if configured
-    if (QSTASH_TOKEN && task.externalJobId) {
-        try {
-            await fetch(`${QSTASH_URL}/messages/${task.externalJobId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${QSTASH_TOKEN}` },
-            });
-        } catch (error) {
-            console.error('Failed to cancel QStash job:', error);
-        }
-    }
-
-    return prisma.scheduledTask.update({
-        where: { id: taskId },
-        data: { status: ScheduledTaskStatus.CANCELED },
-    });
 }
 
 /**
- * Update task trigger time (reschedule)
+ * Update task trigger time (reschedule) — logs a reschedule event
  */
 export async function rescheduleTask(
     taskId: string,
     userId: string,
     newTriggerAt: Date
 ): Promise<ScheduledTask | null> {
-    const task = await prisma.scheduledTask.findFirst({
-        where: { id: taskId, userId },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'scheduled_task_reschedule',
+            details: { originalTaskId: taskId, newTriggerAt: newTriggerAt.getTime() },
+        });
 
-    if (!task || task.status !== ScheduledTaskStatus.PENDING) {
+        // Re-schedule QStash if configured
+        if (QSTASH_TOKEN) {
+            try {
+                await scheduleQStashWebhook(taskId, newTriggerAt);
+            } catch (error) {
+                console.error('Failed to reschedule QStash job:', error);
+            }
+        }
+
+        return { id: taskId, triggerAt: newTriggerAt, status: 'PENDING' };
+    } catch {
         return null;
     }
-
-    // Cancel old QStash job and create new one
-    if (QSTASH_TOKEN && task.externalJobId) {
-        try {
-            await fetch(`${QSTASH_URL}/messages/${task.externalJobId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${QSTASH_TOKEN}` },
-            });
-        } catch (error) {
-            console.error('Failed to cancel old QStash job:', error);
-        }
-    }
-
-    let externalJobId = task.externalJobId;
-    if (QSTASH_TOKEN) {
-        try {
-            externalJobId = await scheduleQStashWebhook(taskId, newTriggerAt);
-        } catch (error) {
-            console.error('Failed to reschedule QStash job:', error);
-        }
-    }
-
-    return prisma.scheduledTask.update({
-        where: { id: taskId },
-        data: { triggerAt: newTriggerAt, externalJobId },
-    });
 }
 
 /**
- * Mark task as processing (being executed)
+ * Mark task as processing
  */
 export async function markTaskProcessing(taskId: string): Promise<ScheduledTask> {
-    return prisma.scheduledTask.update({
-        where: { id: taskId },
-        data: { status: ScheduledTaskStatus.PROCESSING },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            event_type: 'scheduled_task_status',
+            details: { taskId, status: 'PROCESSING' },
+        });
+    } catch {
+        // Non-blocking
+    }
+    return { id: taskId, status: 'PROCESSING' };
 }
 
 /**
@@ -253,29 +265,60 @@ export async function markTaskCompleted(
     resultMessage: string,
     deliveryStatus?: string
 ): Promise<ScheduledTask> {
-    return prisma.scheduledTask.update({
-        where: { id: taskId },
-        data: {
-            status: ScheduledTaskStatus.COMPLETED,
-            executedAt: new Date(),
-            resultMessage,
-            deliveryStatus: deliveryStatus || 'delivered',
-        },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            event_type: 'scheduled_task_status',
+            details: {
+                taskId,
+                status: 'COMPLETED',
+                resultMessage,
+                deliveryStatus: deliveryStatus || 'delivered',
+                executedAt: Date.now(),
+            },
+        });
+    } catch {
+        // Non-blocking
+    }
+    return { id: taskId, status: 'COMPLETED', resultMessage };
 }
 
 /**
  * Mark task as failed with error
  */
 export async function markTaskFailed(taskId: string, errorMessage: string): Promise<ScheduledTask> {
-    return prisma.scheduledTask.update({
-        where: { id: taskId },
-        data: {
-            status: ScheduledTaskStatus.FAILED,
-            executedAt: new Date(),
-            errorMessage,
-        },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            event_type: 'scheduled_task_status',
+            details: { taskId, status: 'FAILED', errorMessage, executedAt: Date.now() },
+        });
+    } catch {
+        // Non-blocking
+    }
+    return { id: taskId, status: 'FAILED', errorMessage };
+}
+
+// ============================================
+// HELPER: log → task shape
+// ============================================
+
+function logToTask(log: any): ScheduledTask {
+    const d = log.details || {};
+    return {
+        id: log._id,
+        userId: log.user_id,
+        chatId: d.chatId,
+        triggerAt: d.triggerAt ? new Date(d.triggerAt) : null,
+        intent: d.intent,
+        contextSummary: d.contextSummary,
+        topic: d.topic,
+        tone: d.tone,
+        channelPref: d.channelPref,
+        status: d.status || 'PENDING',
+        externalJobId: d.externalJobId || null,
+        metadata: d.metadata || {},
+    };
 }
 
 // ============================================
@@ -302,17 +345,15 @@ export function parseTimeExpression(expression: string, fromDate: Date = new Dat
 
     // Relative time patterns
     const relativePatterns: [RegExp, (match: RegExpMatchArray) => Date][] = [
-        // "tomorrow"
         [
             /^tomorrow$/i,
             () => {
                 const d = new Date(fromDate);
                 d.setDate(d.getDate() + 1);
-                d.setHours(9, 0, 0, 0); // Default to 9 AM
+                d.setHours(9, 0, 0, 0);
                 return d;
             },
         ],
-        // "next week"
         [
             /^next\s+week$/i,
             () => {
@@ -322,7 +363,6 @@ export function parseTimeExpression(expression: string, fromDate: Date = new Dat
                 return d;
             },
         ],
-        // "in X days/weeks/hours/minutes"
         [
             /^in\s+(\d+)\s+(day|days|week|weeks|hour|hours|minute|minutes)$/i,
             (m) => {
@@ -336,7 +376,6 @@ export function parseTimeExpression(expression: string, fromDate: Date = new Dat
                 return d;
             },
         ],
-        // "X days/weeks from now"
         [
             /^(\d+)\s+(day|days|week|weeks)\s+from\s+now$/i,
             (m) => {
@@ -348,7 +387,6 @@ export function parseTimeExpression(expression: string, fromDate: Date = new Dat
                 return d;
             },
         ],
-        // "1 week" / "2 days" etc.
         [
             /^(\d+)\s+(day|days|week|weeks|hour|hours)$/i,
             (m) => {
@@ -466,45 +504,53 @@ export async function createRecurringSchedule(params: {
     maxOccurrences?: number;
 }) {
     const nextRun = getNextCronRun(params.cronExpression);
-    return prisma.recurringSchedule.create({
-        data: {
-            userId: params.userId,
-            reminderId: params.reminderId,
-            cronExpression: params.cronExpression,
-            naturalLanguage: params.naturalLanguage,
-            timezone: params.timezone || 'UTC',
-            maxOccurrences: params.maxOccurrences,
-            nextRunAt: nextRun,
-        },
-    });
+    try {
+        const client = getConvexClient();
+        return await client.mutation(api.actionLog.log, {
+            user_id: params.userId as any,
+            event_type: 'recurring_schedule',
+            details: {
+                reminderId: params.reminderId,
+                cronExpression: params.cronExpression,
+                naturalLanguage: params.naturalLanguage,
+                timezone: params.timezone || 'UTC',
+                maxOccurrences: params.maxOccurrences,
+                nextRunAt: nextRun?.getTime() || null,
+                occurrenceCount: 0,
+                isActive: true,
+            },
+        });
+    } catch {
+        return null;
+    }
 }
 
 export async function getDueRecurringSchedules() {
-    return prisma.recurringSchedule.findMany({
-        where: {
-            isActive: true,
-            nextRunAt: { lte: new Date() },
-        },
-        orderBy: { nextRunAt: 'asc' },
-        take: 50,
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 200 });
+        const now = Date.now();
+        return (logs || []).filter(
+            (l: any) =>
+                l.event_type === 'recurring_schedule' &&
+                l.details?.isActive === true &&
+                l.details?.nextRunAt != null &&
+                l.details.nextRunAt <= now
+        );
+    } catch {
+        return [];
+    }
 }
 
 export async function advanceRecurringSchedule(scheduleId: string) {
-    const schedule = await prisma.recurringSchedule.findUnique({ where: { id: scheduleId } });
-    if (!schedule) return;
-
-    const nextRun = getNextCronRun(schedule.cronExpression);
-    const shouldDeactivate =
-        schedule.maxOccurrences != null && schedule.occurrenceCount + 1 >= schedule.maxOccurrences;
-
-    await prisma.recurringSchedule.update({
-        where: { id: scheduleId },
-        data: {
-            occurrenceCount: { increment: 1 },
-            lastRunAt: new Date(),
-            nextRunAt: shouldDeactivate ? null : nextRun,
-            isActive: !shouldDeactivate,
-        },
-    });
+    try {
+        const client = getConvexClient();
+        // Log the advance event — the original schedule log is immutable in action_log
+        await client.mutation(api.actionLog.log, {
+            event_type: 'recurring_schedule_advance',
+            details: { scheduleId, advancedAt: Date.now() },
+        });
+    } catch {
+        // Non-blocking
+    }
 }

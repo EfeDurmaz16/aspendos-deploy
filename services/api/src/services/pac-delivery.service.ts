@@ -3,12 +3,10 @@
  *
  * Routes PAC notifications through the user's preferred messaging platform.
  * Supports: in-app push, email, Telegram, WhatsApp, Slack, Discord.
+ * Migrated from Prisma to Convex action_log.
  */
 
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma } from '@aspendos/db';
-const prisma = {} as any;
-
+import { getConvexClient, api } from '../lib/convex';
 import { type MessageContent, sendToUser } from '../messaging/gateway';
 
 export interface DeliveryOptions {
@@ -27,15 +25,32 @@ interface DeliveryReport {
 export async function deliverNotification(options: DeliveryOptions): Promise<DeliveryReport> {
     const report: DeliveryReport = { delivered: false, channels: [] };
 
-    const settings = await prisma.pACSettings.findUnique({
-        where: { userId: options.userId },
-    });
+    let settings: any = null;
+    let connections: any[] = [];
 
-    const connections = await prisma.platformConnection.findMany({
-        where: { userId: options.userId, isActive: true },
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: options.userId as any,
+            limit: 200,
+        });
 
-    const connectionMap = new Map(connections.map((c) => [c.platform, c.platformUserId]));
+        // Find PAC settings
+        const settingsLog = (logs || []).find(
+            (l: any) => l.event_type === 'pac_settings'
+        );
+        settings = settingsLog?.details || null;
+
+        // Find platform connections
+        const connectionLogs = (logs || []).filter(
+            (l: any) => l.event_type === 'platform_connection' && l.details?.isActive === true
+        );
+        connections = connectionLogs.map((l: any) => l.details);
+    } catch {
+        // Fall through with defaults
+    }
+
+    const connectionMap = new Map(connections.map((c: any) => [c.platform, c.platformUserId]));
 
     const messageContent: MessageContent = {
         text: options.content,

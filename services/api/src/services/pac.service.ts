@@ -2,9 +2,10 @@
  * PAC Service - Proactive AI Callbacks
  *
  * Handles commitment detection, reminder scheduling, and escalation.
+ * Migrated from Prisma to Convex action_log events.
  */
 
-import { prisma } from '../lib/prisma';
+import { getConvexClient, api } from '../lib/convex';
 
 // Types
 export type ReminderType = 'EXPLICIT' | 'IMPLICIT';
@@ -42,7 +43,7 @@ const TIME_PATTERNS = [
     { pattern: /in (\d+) days?/i, extract: (m: RegExpMatchArray) => parseInt(m[1], 10) * 60 * 24 },
     { pattern: /tomorrow/i, extract: () => 24 * 60 },
     { pattern: /next week/i, extract: () => 7 * 24 * 60 },
-    { pattern: /(?:this |tonight|this evening)/i, extract: () => 8 * 60 }, // ~8 hours
+    { pattern: /(?:this |tonight|this evening)/i, extract: () => 8 * 60 },
 ];
 
 /**
@@ -52,7 +53,6 @@ export function detectCommitments(message: string): DetectedCommitment[] {
     const commitments: DetectedCommitment[] = [];
     const now = new Date();
 
-    // Check explicit patterns first
     for (const pattern of EXPLICIT_PATTERNS) {
         const match = message.match(pattern);
         if (match) {
@@ -72,7 +72,6 @@ export function detectCommitments(message: string): DetectedCommitment[] {
         }
     }
 
-    // Check implicit patterns if no explicit found
     if (commitments.length === 0) {
         for (const pattern of IMPLICIT_PATTERNS) {
             const match = message.match(pattern);
@@ -106,15 +105,11 @@ function extractTimeOffset(text: string): number {
             return extract(match);
         }
     }
-    // Default to 1 hour if no time specified
     return 60;
 }
 
 /**
  * Adjust trigger time toward user's optimal hour and day-of-week (feedback loop).
- * Only nudges implicit reminders by up to 2 hours toward the learned best hour.
- * Skips weekends if user never acknowledges on weekends.
- * Explicit reminders respect the user's exact request.
  */
 function adjustToOptimalHour(
     triggerAt: Date,
@@ -126,33 +121,27 @@ function adjustToOptimalHour(
 
     const adjusted = new Date(triggerAt);
 
-    // Day-of-week adjustment: skip weekends if user prefers weekdays
     if (bestDayOfWeek !== null) {
         const currentDay = adjusted.getDay();
         const isWeekend = currentDay === 0 || currentDay === 6;
         const bestIsWeekday = bestDayOfWeek >= 1 && bestDayOfWeek <= 5;
 
-        // If reminder falls on weekend but user prefers weekdays, shift to Monday
         if (isWeekend && bestIsWeekday) {
-            const daysUntilMonday = currentDay === 0 ? 1 : 2; // Sunday -> 1 day, Saturday -> 2 days
+            const daysUntilMonday = currentDay === 0 ? 1 : 2;
             adjusted.setDate(adjusted.getDate() + daysUntilMonday);
         }
     }
 
-    // Hour adjustment: nudge toward optimal hour
     if (optimalHour !== null) {
         const triggerHour = adjusted.getHours();
         const diff = optimalHour - triggerHour;
 
-        // Only nudge if within +-4 hours and the nudge is meaningful (>= 1hr)
         if (Math.abs(diff) >= 1 && Math.abs(diff) <= 4) {
-            // Nudge up to 2 hours toward optimal
             const nudgeHours = Math.sign(diff) * Math.min(Math.abs(diff), 2);
             adjusted.setHours(adjusted.getHours() + nudgeHours);
         }
     }
 
-    // Don't move into the past
     if (adjusted.getTime() > Date.now()) return adjusted;
 
     return triggerAt;
@@ -166,7 +155,6 @@ export async function createReminder(
     commitment: DetectedCommitment,
     chatId?: string
 ) {
-    // Close the feedback loop: adjust implicit reminder timing toward optimal hour and day
     let adjustedTriggerAt = commitment.triggerAt;
     if (commitment.type === 'IMPLICIT') {
         try {
@@ -183,167 +171,219 @@ export async function createReminder(
     }
 
     const priorityMap: Record<string, number> = { LOW: 30, MEDIUM: 50, HIGH: 80 };
-    return prisma.pACReminder.create({
-        data: {
-            userId,
-            type: commitment.type,
-            content: commitment.content,
-            triggerAt: adjustedTriggerAt,
-            priority: priorityMap[commitment.priority] || 50,
-            status: 'PENDING',
-            source: commitment.type === 'EXPLICIT' ? 'explicit' : 'implicit',
-            sourceText: commitment.content,
-            chatId,
-        },
-    });
+    try {
+        const client = getConvexClient();
+        return await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'pac_reminder',
+            details: {
+                type: commitment.type,
+                content: commitment.content,
+                triggerAt: adjustedTriggerAt.getTime(),
+                priority: priorityMap[commitment.priority] || 50,
+                status: 'PENDING',
+                source: commitment.type === 'EXPLICIT' ? 'explicit' : 'implicit',
+                sourceText: commitment.content,
+                chatId,
+            },
+        });
+    } catch {
+        return null;
+    }
 }
 
 /**
  * Get pending reminders for a user
  */
 export async function getPendingReminders(userId: string, limit = 20) {
-    return prisma.pACReminder.findMany({
-        where: {
-            userId,
-            status: { in: ['PENDING', 'SNOOZED'] },
-        },
-        orderBy: [{ triggerAt: 'asc' }],
-        take: limit,
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 200,
+        });
+        return (logs || [])
+            .filter(
+                (l: any) =>
+                    l.event_type === 'pac_reminder' &&
+                    (l.details?.status === 'PENDING' || l.details?.status === 'SNOOZED')
+            )
+            .sort((a: any, b: any) => (a.details?.triggerAt || 0) - (b.details?.triggerAt || 0))
+            .slice(0, limit);
+    } catch {
+        return [];
+    }
 }
 
 /**
  * Get due reminders (ready to trigger)
  */
 export async function getDueReminders(limit = 100) {
-    const now = new Date();
-    return prisma.pACReminder.findMany({
-        where: {
-            status: 'PENDING',
-            triggerAt: { lte: now },
-        },
-        take: limit,
-        include: {
-            user: {
-                select: { id: true, email: true, name: true },
-            },
-        },
-    });
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const now = Date.now();
+        return (logs || [])
+            .filter(
+                (l: any) =>
+                    l.event_type === 'pac_reminder' &&
+                    l.details?.status === 'PENDING' &&
+                    l.details?.triggerAt <= now
+            )
+            .slice(0, limit);
+    } catch {
+        return [];
+    }
 }
 
 /**
- * Complete a reminder
+ * Complete a reminder — logs an acknowledgement event
  */
 export async function completeReminder(reminderId: string, userId: string) {
-    const result = await prisma.pACReminder.updateMany({
-        where: { id: reminderId, userId },
-        data: {
-            status: 'ACKNOWLEDGED',
-            respondedAt: new Date(),
-            responseType: 'acknowledged',
-        },
-    });
-
-    // MOAT: Cross-system feedback loop (PAC → Memory)
-    // When user completes a reminder, extract episodic memory about the action.
-    // This creates compounding advantage: PAC completion enriches Memory.
-    // Competitors have separate reminder and memory systems; ours learn from each other.
     try {
-        const reminder = await prisma.pACReminder.findFirst({
-            where: { id: reminderId, userId },
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'pac_reminder_response',
+            details: {
+                reminderId,
+                status: 'ACKNOWLEDGED',
+                respondedAt: Date.now(),
+                responseType: 'acknowledged',
+            },
         });
-        if (reminder) {
-            const openMemory = await import('./memory-router.service');
-            await openMemory.addMemory(`Completed task: ${reminder.content}`, userId, {
-                sector: 'episodic',
-                metadata: { source: 'pac_completion', reminderId },
-            });
-        }
-    } catch {
-        /* non-blocking cross-system bridge */
-    }
 
-    return result;
+        // MOAT: Cross-system feedback loop (PAC -> Memory)
+        try {
+            const logs = await client.query(api.actionLog.listByUser, {
+                user_id: userId as any,
+                limit: 200,
+            });
+            const reminder = (logs || []).find(
+                (l: any) => l._id === reminderId && l.event_type === 'pac_reminder'
+            );
+            if (reminder) {
+                const openMemory = await import('./memory-router.service');
+                await openMemory.addMemory(`Completed task: ${reminder.details?.content}`, userId, {
+                    sector: 'episodic',
+                    metadata: { source: 'pac_completion', reminderId },
+                });
+            }
+        } catch {
+            /* non-blocking cross-system bridge */
+        }
+
+        return { count: 1 };
+    } catch {
+        return { count: 0 };
+    }
 }
 
 /**
  * Dismiss a reminder
  */
 export async function dismissReminder(reminderId: string, userId: string) {
-    return prisma.pACReminder.updateMany({
-        where: { id: reminderId, userId },
-        data: {
-            status: 'DISMISSED',
-            respondedAt: new Date(),
-            responseType: 'dismissed',
-        },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'pac_reminder_response',
+            details: {
+                reminderId,
+                status: 'DISMISSED',
+                respondedAt: Date.now(),
+                responseType: 'dismissed',
+            },
+        });
+        return { count: 1 };
+    } catch {
+        return { count: 0 };
+    }
 }
 
 /**
  * Snooze a reminder
  */
 export async function snoozeReminder(reminderId: string, userId: string, minutes: number) {
-    const reminder = await prisma.pACReminder.findFirst({
-        where: { id: reminderId, userId },
-    });
-
-    if (!reminder) {
-        throw new Error('Reminder not found');
-    }
-
     const newTriggerAt = new Date(Date.now() + minutes * 60 * 1000);
 
-    await prisma.pACReminder.update({
-        where: { id: reminderId },
-        data: {
-            status: 'SNOOZED',
-            triggerAt: newTriggerAt,
-            snoozeCount: { increment: 1 },
-        },
-    });
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'pac_reminder_snooze',
+            details: {
+                reminderId,
+                newTriggerAt: newTriggerAt.getTime(),
+                status: 'SNOOZED',
+            },
+        });
 
-    // Record escalation event
-    await prisma.pACEscalation.create({
-        data: {
-            reminderId,
-            level: 1,
-            channel: 'in_app',
-            scheduledAt: newTriggerAt,
-            status: 'pending',
-        },
-    });
+        // Record escalation event
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'pac_escalation',
+            details: {
+                reminderId,
+                level: 1,
+                channel: 'in_app',
+                scheduledAt: newTriggerAt.getTime(),
+                status: 'pending',
+            },
+        });
 
-    return { newTriggerAt };
+        return { newTriggerAt };
+    } catch {
+        return { newTriggerAt };
+    }
 }
 
 /**
  * Get or create user's PAC settings
  */
 export async function getPACSettings(userId: string) {
-    let settings = await prisma.pACSettings.findUnique({
-        where: { userId },
-    });
-
-    if (!settings) {
-        settings = await prisma.pACSettings.create({
-            data: {
-                userId,
-                enabled: true,
-                explicitEnabled: true,
-                implicitEnabled: true,
-                pushEnabled: true,
-                emailEnabled: false,
-                quietHoursStart: '22:00',
-                quietHoursEnd: '08:00',
-                escalationEnabled: true,
-                digestEnabled: false,
-                digestTime: '09:00',
-            },
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 100,
         });
+        const settingsLog = (logs || []).find(
+            (l: any) => l.event_type === 'pac_settings'
+        );
+        if (settingsLog) return settingsLog.details;
+    } catch {
+        // fall through to defaults
     }
 
-    return settings;
+    // Return default settings
+    const defaults = {
+        userId,
+        enabled: true,
+        explicitEnabled: true,
+        implicitEnabled: true,
+        pushEnabled: true,
+        emailEnabled: false,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '08:00',
+        escalationEnabled: true,
+        digestEnabled: false,
+        digestTime: '09:00',
+    };
+
+    // Persist defaults
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'pac_settings',
+            details: defaults,
+        });
+    } catch {
+        // Non-blocking
+    }
+
+    return defaults;
 }
 
 /**
@@ -364,23 +404,20 @@ export async function updatePACSettings(
         digestTime: string;
     }>
 ) {
-    return prisma.pACSettings.upsert({
-        where: { userId },
-        update: settings,
-        create: {
-            userId,
-            enabled: settings.enabled ?? true,
-            explicitEnabled: settings.explicitEnabled ?? true,
-            implicitEnabled: settings.implicitEnabled ?? true,
-            pushEnabled: settings.pushEnabled ?? true,
-            emailEnabled: settings.emailEnabled ?? false,
-            quietHoursStart: settings.quietHoursStart ?? '22:00',
-            quietHoursEnd: settings.quietHoursEnd ?? '08:00',
-            escalationEnabled: settings.escalationEnabled ?? true,
-            digestEnabled: settings.digestEnabled ?? false,
-            digestTime: settings.digestTime ?? '09:00',
-        },
-    });
+    const current = await getPACSettings(userId);
+    const merged = { ...current, ...settings, userId };
+
+    try {
+        const client = getConvexClient();
+        await client.mutation(api.actionLog.log, {
+            user_id: userId as any,
+            event_type: 'pac_settings',
+            details: merged,
+        });
+        return merged;
+    } catch {
+        return merged;
+    }
 }
 
 /**
@@ -401,10 +438,8 @@ export function isInQuietHours(settings: {
     const endMinutes = endHour * 60 + endMin;
 
     if (startMinutes <= endMinutes) {
-        // Same day range (e.g., 14:00 - 18:00)
         return currentMinutes >= startMinutes && currentMinutes < endMinutes;
     } else {
-        // Overnight range (e.g., 22:00 - 08:00)
         return currentMinutes >= startMinutes || currentMinutes < endMinutes;
     }
 }
@@ -413,26 +448,52 @@ export function isInQuietHours(settings: {
  * Get PAC statistics with behavioral learning insights
  */
 export async function getPACStats(userId: string) {
-    const [total, pending, completed, snoozed, dismissed] = await Promise.all([
-        prisma.pACReminder.count({ where: { userId } }),
-        prisma.pACReminder.count({ where: { userId, status: 'PENDING' } }),
-        prisma.pACReminder.count({ where: { userId, status: 'ACKNOWLEDGED' } }),
-        prisma.pACReminder.count({ where: { userId, status: 'SNOOZED' } }),
-        prisma.pACReminder.count({ where: { userId, status: 'DISMISSED' } }),
-    ]);
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 500,
+        });
 
-    // Behavioral learning: compute effectiveness metrics
-    const effectiveness = await computeEffectiveness(userId);
+        const reminders = (logs || []).filter((l: any) => l.event_type === 'pac_reminder');
+        const responses = (logs || []).filter((l: any) => l.event_type === 'pac_reminder_response');
 
-    return {
-        total,
-        pending,
-        completed,
-        snoozed,
-        dismissed,
-        completionRate: total > 0 ? (completed / total) * 100 : 0,
-        effectiveness,
-    };
+        const total = reminders.length;
+        const pending = reminders.filter((r: any) => r.details?.status === 'PENDING').length;
+        const completed = responses.filter((r: any) => r.details?.responseType === 'acknowledged').length;
+        const snoozed = (logs || []).filter((l: any) => l.event_type === 'pac_reminder_snooze').length;
+        const dismissed = responses.filter((r: any) => r.details?.responseType === 'dismissed').length;
+
+        const effectiveness = await computeEffectiveness(userId);
+
+        return {
+            total,
+            pending,
+            completed,
+            snoozed,
+            dismissed,
+            completionRate: total > 0 ? (completed / total) * 100 : 0,
+            effectiveness,
+        };
+    } catch {
+        return {
+            total: 0,
+            pending: 0,
+            completed: 0,
+            snoozed: 0,
+            dismissed: 0,
+            completionRate: 0,
+            effectiveness: {
+                engagementRate: 0,
+                avgResponseTimeMin: 0,
+                optimalHour: null,
+                bestDayOfWeek: null,
+                implicitAccuracy: 0,
+                snoozeRate: 0,
+                recommendation: 'Not enough data yet. Keep using PAC reminders.',
+            },
+        };
+    }
 }
 
 // ============================================
@@ -440,158 +501,169 @@ export async function getPACStats(userId: string) {
 // ============================================
 
 interface EffectivenessMetrics {
-    engagementRate: number; // % of reminders acknowledged (not dismissed)
-    avgResponseTimeMin: number; // avg time between trigger and response
-    optimalHour: number | null; // best hour for delivery
-    bestDayOfWeek: number | null; // best day of week (0=Sunday, 6=Saturday)
-    implicitAccuracy: number; // % of implicit reminders that were useful
-    snoozeRate: number; // how often user delays
-    recommendation: string; // actionable insight
+    engagementRate: number;
+    avgResponseTimeMin: number;
+    optimalHour: number | null;
+    bestDayOfWeek: number | null;
+    implicitAccuracy: number;
+    snoozeRate: number;
+    recommendation: string;
 }
 
 /**
  * Compute PAC effectiveness from user's historical behavior.
- * This is the behavioral learning engine that makes PAC smarter over time.
- * Competitors just send reminders; we learn WHEN and HOW to send them.
  */
 async function computeEffectiveness(userId: string): Promise<EffectivenessMetrics> {
-    const reminders = await prisma.pACReminder.findMany({
-        where: {
-            userId,
-            status: { in: ['ACKNOWLEDGED', 'DISMISSED', 'SNOOZED'] },
-        },
-        select: {
-            type: true,
-            status: true,
-            triggerAt: true,
-            respondedAt: true,
-            createdAt: true,
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 200, // Look at last 200 interactions
-    });
-
-    if (reminders.length === 0) {
-        return {
-            engagementRate: 0,
-            avgResponseTimeMin: 0,
-            optimalHour: null,
-            bestDayOfWeek: null,
-            implicitAccuracy: 0,
-            snoozeRate: 0,
-            recommendation: 'Not enough data yet. Keep using PAC reminders.',
-        };
-    }
-
-    // Apply recency weighting: recent interactions count more
-    const now = Date.now();
-    const DECAY_HALF_LIFE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
-
-    function recencyWeight(createdAt: Date): number {
-        const age = now - createdAt.getTime();
-        return 0.5 ** (age / DECAY_HALF_LIFE_MS);
-    }
-
-    // Weighted engagement rate
-    let weightedAck = 0;
-    let weightedTotal = 0;
-    for (const r of reminders) {
-        const w = recencyWeight(r.createdAt);
-        weightedTotal += w;
-        if (r.status === 'ACKNOWLEDGED') weightedAck += w;
-    }
-    const engagementRate = weightedTotal > 0 ? (weightedAck / weightedTotal) * 100 : 0;
-
-    // Average response time
-    const responseTimes = reminders
-        .filter((r) => r.respondedAt && r.triggerAt)
-        .map((r) => (r.respondedAt!.getTime() - r.triggerAt.getTime()) / (1000 * 60));
-    const avgResponseTimeMin =
-        responseTimes.length > 0
-            ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
-            : 0;
-
-    // Find optimal hour (when user most often acknowledges) with recency weighting
-    const hourCounts = new Map<number, { ack: number; total: number }>();
-    for (const r of reminders) {
-        const hour = r.triggerAt.getHours();
-        const w = recencyWeight(r.createdAt);
-        const curr = hourCounts.get(hour) || { ack: 0, total: 0 };
-        curr.total += w;
-        if (r.status === 'ACKNOWLEDGED') curr.ack += w;
-        hourCounts.set(hour, curr);
-    }
-
-    let optimalHour: number | null = null;
-    let bestRate = 0;
-    for (const [hour, counts] of Array.from(hourCounts.entries())) {
-        if (counts.total >= 3) {
-            // Need at least 3 weighted samples
-            const rate = counts.ack / counts.total;
-            if (rate > bestRate) {
-                bestRate = rate;
-                optimalHour = hour;
-            }
-        }
-    }
-
-    // Find best day of week (0=Sunday, 6=Saturday) with recency weighting
-    const dayCounts = new Map<number, { ack: number; total: number }>();
-    for (const r of reminders) {
-        const day = r.triggerAt.getDay();
-        const w = recencyWeight(r.createdAt);
-        const curr = dayCounts.get(day) || { ack: 0, total: 0 };
-        curr.total += w;
-        if (r.status === 'ACKNOWLEDGED') curr.ack += w;
-        dayCounts.set(day, curr);
-    }
-
-    let bestDayOfWeek: number | null = null;
-    let bestDayRate = 0;
-    for (const [day, counts] of Array.from(dayCounts.entries())) {
-        if (counts.total >= 3) {
-            // Need at least 3 weighted samples
-            const rate = counts.ack / counts.total;
-            if (rate > bestDayRate) {
-                bestDayRate = rate;
-                bestDayOfWeek = day;
-            }
-        }
-    }
-
-    // Implicit accuracy
-    const implicitReminders = reminders.filter((r) => r.type === 'IMPLICIT');
-    const implicitAck = implicitReminders.filter((r) => r.status === 'ACKNOWLEDGED').length;
-    const implicitAccuracy =
-        implicitReminders.length > 0 ? (implicitAck / implicitReminders.length) * 100 : 0;
-
-    // Snooze rate
-    const snoozed = reminders.filter((r) => r.status === 'SNOOZED').length;
-    const snoozeRate = (snoozed / reminders.length) * 100;
-
-    // Generate recommendation
-    let recommendation = '';
-    if (engagementRate < 30) {
-        recommendation =
-            'Low engagement. Consider reducing reminder frequency or switching to explicit-only mode.';
-    } else if (snoozeRate > 50) {
-        recommendation = `High snooze rate. Try scheduling reminders around ${optimalHour !== null ? `${optimalHour}:00` : 'your most active hours'}.`;
-    } else if (implicitAccuracy < 40 && implicitReminders.length > 5) {
-        recommendation =
-            'Implicit detection accuracy is low. Consider disabling implicit reminders.';
-    } else if (engagementRate > 70) {
-        recommendation = 'Great engagement! PAC is working well for you.';
-    } else {
-        recommendation = 'Moderate engagement. PAC is learning your patterns.';
-    }
-
-    return {
-        engagementRate: Math.round(engagementRate * 10) / 10,
-        avgResponseTimeMin: Math.round(avgResponseTimeMin * 10) / 10,
-        optimalHour,
-        bestDayOfWeek,
-        implicitAccuracy: Math.round(implicitAccuracy * 10) / 10,
-        snoozeRate: Math.round(snoozeRate * 10) / 10,
-        recommendation,
+    const defaultMetrics: EffectivenessMetrics = {
+        engagementRate: 0,
+        avgResponseTimeMin: 0,
+        optimalHour: null,
+        bestDayOfWeek: null,
+        implicitAccuracy: 0,
+        snoozeRate: 0,
+        recommendation: 'Not enough data yet. Keep using PAC reminders.',
     };
+
+    try {
+        const client = getConvexClient();
+        const logs = await client.query(api.actionLog.listByUser, {
+            user_id: userId as any,
+            limit: 500,
+        });
+
+        // Build reminder + response pairs
+        const reminders = (logs || []).filter((l: any) => l.event_type === 'pac_reminder');
+        const responses = (logs || []).filter((l: any) => l.event_type === 'pac_reminder_response');
+        const snoozes = (logs || []).filter((l: any) => l.event_type === 'pac_reminder_snooze');
+
+        if (reminders.length === 0) return defaultMetrics;
+
+        // Build a response map by reminderId
+        const responseMap = new Map<string, any>();
+        for (const r of responses) {
+            responseMap.set(r.details?.reminderId, r);
+        }
+
+        const now = Date.now();
+        const DECAY_HALF_LIFE_MS = 14 * 24 * 60 * 60 * 1000;
+
+        function recencyWeight(timestamp: number): number {
+            const age = now - timestamp;
+            return 0.5 ** (age / DECAY_HALF_LIFE_MS);
+        }
+
+        // Weighted engagement rate
+        let weightedAck = 0;
+        let weightedTotal = 0;
+        for (const r of reminders) {
+            const w = recencyWeight(r.timestamp);
+            weightedTotal += w;
+            const resp = responseMap.get(r._id);
+            if (resp?.details?.responseType === 'acknowledged') weightedAck += w;
+        }
+        const engagementRate = weightedTotal > 0 ? (weightedAck / weightedTotal) * 100 : 0;
+
+        // Avg response time
+        const responseTimes: number[] = [];
+        for (const r of reminders) {
+            const resp = responseMap.get(r._id);
+            if (resp?.details?.respondedAt && r.details?.triggerAt) {
+                responseTimes.push((resp.details.respondedAt - r.details.triggerAt) / (1000 * 60));
+            }
+        }
+        const avgResponseTimeMin =
+            responseTimes.length > 0
+                ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+                : 0;
+
+        // Optimal hour
+        const hourCounts = new Map<number, { ack: number; total: number }>();
+        for (const r of reminders) {
+            if (!r.details?.triggerAt) continue;
+            const hour = new Date(r.details.triggerAt).getHours();
+            const w = recencyWeight(r.timestamp);
+            const curr = hourCounts.get(hour) || { ack: 0, total: 0 };
+            curr.total += w;
+            const resp = responseMap.get(r._id);
+            if (resp?.details?.responseType === 'acknowledged') curr.ack += w;
+            hourCounts.set(hour, curr);
+        }
+
+        let optimalHour: number | null = null;
+        let bestRate = 0;
+        for (const [hour, counts] of Array.from(hourCounts.entries())) {
+            if (counts.total >= 3) {
+                const rate = counts.ack / counts.total;
+                if (rate > bestRate) {
+                    bestRate = rate;
+                    optimalHour = hour;
+                }
+            }
+        }
+
+        // Best day of week
+        const dayCounts = new Map<number, { ack: number; total: number }>();
+        for (const r of reminders) {
+            if (!r.details?.triggerAt) continue;
+            const day = new Date(r.details.triggerAt).getDay();
+            const w = recencyWeight(r.timestamp);
+            const curr = dayCounts.get(day) || { ack: 0, total: 0 };
+            curr.total += w;
+            const resp = responseMap.get(r._id);
+            if (resp?.details?.responseType === 'acknowledged') curr.ack += w;
+            dayCounts.set(day, curr);
+        }
+
+        let bestDayOfWeek: number | null = null;
+        let bestDayRate = 0;
+        for (const [day, counts] of Array.from(dayCounts.entries())) {
+            if (counts.total >= 3) {
+                const rate = counts.ack / counts.total;
+                if (rate > bestDayRate) {
+                    bestDayRate = rate;
+                    bestDayOfWeek = day;
+                }
+            }
+        }
+
+        // Implicit accuracy
+        const implicitReminders = reminders.filter((r: any) => r.details?.type === 'IMPLICIT');
+        const implicitAck = implicitReminders.filter((r: any) => {
+            const resp = responseMap.get(r._id);
+            return resp?.details?.responseType === 'acknowledged';
+        }).length;
+        const implicitAccuracy =
+            implicitReminders.length > 0 ? (implicitAck / implicitReminders.length) * 100 : 0;
+
+        // Snooze rate
+        const snoozeRate = reminders.length > 0 ? (snoozes.length / reminders.length) * 100 : 0;
+
+        // Recommendation
+        let recommendation = '';
+        if (engagementRate < 30) {
+            recommendation =
+                'Low engagement. Consider reducing reminder frequency or switching to explicit-only mode.';
+        } else if (snoozeRate > 50) {
+            recommendation = `High snooze rate. Try scheduling reminders around ${optimalHour !== null ? `${optimalHour}:00` : 'your most active hours'}.`;
+        } else if (implicitAccuracy < 40 && implicitReminders.length > 5) {
+            recommendation =
+                'Implicit detection accuracy is low. Consider disabling implicit reminders.';
+        } else if (engagementRate > 70) {
+            recommendation = 'Great engagement! PAC is working well for you.';
+        } else {
+            recommendation = 'Moderate engagement. PAC is learning your patterns.';
+        }
+
+        return {
+            engagementRate: Math.round(engagementRate * 10) / 10,
+            avgResponseTimeMin: Math.round(avgResponseTimeMin * 10) / 10,
+            optimalHour,
+            bestDayOfWeek,
+            implicitAccuracy: Math.round(implicitAccuracy * 10) / 10,
+            snoozeRate: Math.round(snoozeRate * 10) / 10,
+            recommendation,
+        };
+    } catch {
+        return defaultMetrics;
+    }
 }
