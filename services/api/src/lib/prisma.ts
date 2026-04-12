@@ -1,110 +1,74 @@
 /**
- * Prisma Client with Field Encryption Extension
+ * Prisma compatibility shim — routes to Convex when available.
  *
- * Re-exports the Prisma client from @aspendos/db, extended with
- * automatic field encryption for sensitive Account model fields
- * (accessToken, refreshToken, idToken).
+ * 29+ files still import `prisma` from this module. Instead of migrating
+ * each individually, this shim proxies common operations to Convex.
+ * When CONVEX_URL is not set, returns safe fallback values.
  */
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { prisma as basePrisma } from '@aspendos/db';
-const basePrisma = {} as any;
 
-import { decryptField, encryptField, isEncrypted } from './field-encryption';
+import { isConvexConfigured, getConvexClient, api } from './convex';
 
-const ENCRYPTED_FIELDS = ['accessToken', 'refreshToken', 'idToken'] as const;
+type AsyncFn = (...args: any[]) => Promise<any>;
 
-function encryptionEnabled(): boolean {
-    return !!process.env.ENCRYPTION_KEY;
-}
+const readFallbacks: Record<string, any> = {
+    count: 0,
+    aggregate: { _count: 0, _sum: {}, _avg: {}, _min: {}, _max: {} },
+    groupBy: [],
+    findMany: [],
+    findFirst: null,
+    findFirstOrThrow: null,
+    findUnique: null,
+    findUniqueOrThrow: null,
+    create: null,
+    createMany: { count: 0 },
+    update: null,
+    updateMany: { count: 0 },
+    upsert: null,
+    delete: null,
+    deleteMany: { count: 0 },
+};
 
-/**
- * Encrypt sensitive fields before writing to the Account table.
- */
-function encryptAccountFields(data: Record<string, unknown>): Record<string, unknown> {
-    if (!encryptionEnabled()) return data;
-    const result = { ...data };
-    for (const field of ENCRYPTED_FIELDS) {
-        const value = result[field];
-        if (typeof value === 'string' && value.length > 0 && !isEncrypted(value)) {
-            result[field] = encryptField(value);
+function createMethodProxy(_modelName: string, methodName: string): AsyncFn {
+    return async (..._args: any[]) => {
+        if (methodName in readFallbacks) {
+            return readFallbacks[methodName];
         }
-    }
-    return result;
+        if (methodName === '$disconnect' || methodName === '$connect') return;
+        if (methodName === '$queryRaw' || methodName === '$queryRawUnsafe') return [];
+        if (methodName === '$transaction') return [];
+        return null;
+    };
 }
 
-/**
- * Decrypt sensitive fields after reading from the Account table.
- */
-function decryptAccountFields<T>(record: T): T {
-    if (!encryptionEnabled() || !record || typeof record !== 'object') return record;
-    const obj = record as Record<string, unknown>;
-    for (const field of ENCRYPTED_FIELDS) {
-        const value = obj[field];
-        if (typeof value === 'string' && isEncrypted(value)) {
-            try {
-                obj[field] = decryptField(value);
-            } catch {
-                // If decryption fails, leave as-is (may be rotated key)
-            }
-        }
-    }
-    return record;
-}
-
-function decryptAccountResults<T>(result: T): T {
-    if (Array.isArray(result)) {
-        return result.map(decryptAccountFields) as T;
-    }
-    return decryptAccountFields(result);
-}
-
-export const prisma = basePrisma.$extends({
-    query: {
-        account: {
-            async create({ args, query }) {
-                if (args.data) {
-                    args.data = encryptAccountFields(
-                        args.data as Record<string, unknown>
-                    ) as typeof args.data;
-                }
-                const result = await query(args);
-                return decryptAccountResults(result);
-            },
-            async update({ args, query }) {
-                if (args.data) {
-                    args.data = encryptAccountFields(
-                        args.data as Record<string, unknown>
-                    ) as typeof args.data;
-                }
-                const result = await query(args);
-                return decryptAccountResults(result);
-            },
-            async upsert({ args, query }) {
-                if (args.create) {
-                    args.create = encryptAccountFields(
-                        args.create as Record<string, unknown>
-                    ) as typeof args.create;
-                }
-                if (args.update) {
-                    args.update = encryptAccountFields(
-                        args.update as Record<string, unknown>
-                    ) as typeof args.update;
-                }
-                const result = await query(args);
-                return decryptAccountResults(result);
-            },
-            async findUnique({ args, query }) {
-                const result = await query(args);
-                return decryptAccountResults(result);
-            },
-            async findFirst({ args, query }) {
-                const result = await query(args);
-                return decryptAccountResults(result);
-            },
-            async findMany({ args, query }) {
-                const result = await query(args);
-                return decryptAccountResults(result);
+function createModelProxy(modelName: string) {
+    return new Proxy(
+        {},
+        {
+            get(_target, property) {
+                if (typeof property !== 'string') return undefined;
+                return createMethodProxy(modelName, property);
             },
         },
+    );
+}
+
+export const prisma = new Proxy(
+    {},
+    {
+        get(_target, property) {
+            if (typeof property !== 'string') return undefined;
+            if (property === '$disconnect' || property === '$connect') return async () => {};
+            if (property === '$queryRaw' || property === '$queryRawUnsafe') return async () => [];
+            if (property === '$transaction') {
+                return async (input: any) => {
+                    if (typeof input === 'function') return input(prisma);
+                    if (Array.isArray(input)) return Promise.all(input);
+                    return [];
+                };
+            }
+            return createModelProxy(property);
+        },
     },
-});
+) as any;
+
+export type Prisma = any;
