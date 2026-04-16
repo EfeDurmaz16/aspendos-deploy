@@ -194,4 +194,22 @@ export default defineSchema({
     })
         .index('by_user', ['user_id'])
         .index('by_user_provider', ['user_id', 'provider']),
+
+    tool_registry: defineTable({
+        name: v.string(),
+        description: v.string(),
+        reversibility_class: v.union(
+            v.literal('undoable'),
+            v.literal('cancelable_window'),
+            v.literal('compensatable'),
+            v.literal('approval_only'),
+            v.literal('irreversible_blocked')
+        ),
+        rollback_strategy: v.optional(v.any()),
+        human_explanation: v.string(),
+        registered_by: v.optional(v.id('users')),
+        registered_at: v.number(),
+    })
+        .index('by_name', ['name'])
+        .index('by_reversibility_class', ['reversibility_class']),
 });
