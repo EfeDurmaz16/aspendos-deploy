@@ -79,6 +79,38 @@ export const updateStatus = mutation({
     },
 });
 
+export const listAfterTimestamp = query({
+    args: {
+        user_id: v.id('users'),
+        after_timestamp: v.number(),
+    },
+    handler: async (ctx, args) => {
+        const all = await ctx.db
+            .query('commits')
+            .withIndex('by_user_time', (q) => q.eq('user_id', args.user_id))
+            .order('desc')
+            .collect();
+        return all.filter((c) => c.timestamp > args.after_timestamp);
+    },
+});
+
+export const batchUpdateStatus = mutation({
+    args: {
+        ids: v.array(v.id('commits')),
+        status: v.union(
+            v.literal('pending'),
+            v.literal('executed'),
+            v.literal('reverted'),
+            v.literal('failed')
+        ),
+    },
+    handler: async (ctx, args) => {
+        for (const id of args.ids) {
+            await ctx.db.patch(id, { status: args.status });
+        }
+    },
+});
+
 export const addCounterSignature = mutation({
     args: {
         id: v.id('commits'),

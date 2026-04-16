@@ -1,27 +1,73 @@
-import type { ReversibilityClass } from '@aspendos/shared-types';
+'use client';
 
-const STYLES: Record<ReversibilityClass, string> = {
-    undoable: 'bg-green-500/20 text-green-400 border-green-500/30',
-    cancelable_window: 'bg-green-500/20 text-green-400 border-green-500/30',
-    compensatable: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    approval_only: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    irreversible_blocked: 'bg-red-500/20 text-red-400 border-red-500/30',
-};
+import { useState, useRef, useEffect } from 'react';
+import type { ReversibilityClass } from '@/lib/reversibility/types';
+import { REVERSIBILITY_SPECS } from '@/lib/reversibility/types';
 
-const LABELS: Record<ReversibilityClass, string> = {
-    undoable: 'Undoable',
-    cancelable_window: 'Cancel Window',
-    compensatable: 'Compensatable',
-    approval_only: 'Approval Required',
-    irreversible_blocked: 'Blocked',
-};
+interface ReversibilityBadgeProps {
+    cls: ReversibilityClass;
+    /** Show tooltip on hover (default: true) */
+    showTooltip?: boolean;
+    /** Compact mode — emoji only, no label */
+    compact?: boolean;
+}
 
-export function ReversibilityBadge({ cls }: { cls: ReversibilityClass }) {
+export function ReversibilityBadge({
+    cls,
+    showTooltip = true,
+    compact = false,
+}: ReversibilityBadgeProps) {
+    const spec = REVERSIBILITY_SPECS[cls];
+    const [tooltipVisible, setTooltipVisible] = useState(false);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, []);
+
+    const handleMouseEnter = () => {
+        if (!showTooltip) return;
+        timeoutRef.current = setTimeout(() => setTooltipVisible(true), 300);
+    };
+
+    const handleMouseLeave = () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        setTooltipVisible(false);
+    };
+
     return (
         <span
-            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STYLES[cls]}`}
+            className="relative inline-flex"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
         >
-            {LABELS[cls]}
+            <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${spec.color} ${spec.textColor} ${spec.borderColor}`}
+            >
+                <span aria-hidden="true">{spec.emoji}</span>
+                {!compact && <span>{spec.label}</span>}
+            </span>
+
+            {showTooltip && tooltipVisible && (
+                <span
+                    role="tooltip"
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-56 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-xs text-neutral-300 shadow-lg pointer-events-none"
+                >
+                    <span className="block font-medium text-neutral-100 mb-0.5">
+                        {spec.emoji} {spec.label}
+                    </span>
+                    <span className="block">{spec.description}</span>
+                    {spec.canUndo && (
+                        <span className="mt-1 block text-green-400 text-[10px] font-medium">
+                            Undo available
+                        </span>
+                    )}
+                    {/* tooltip arrow */}
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neutral-700" />
+                </span>
+            )}
         </span>
     );
 }
