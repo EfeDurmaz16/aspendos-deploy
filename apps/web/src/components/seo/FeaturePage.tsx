@@ -94,7 +94,7 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                         </Link>
                         <ModeToggle />
                         <Button size="sm" asChild>
-                            <Link href="/signup">Get Started</Link>
+                            <a href="/signup">Get Started</a>
                         </Button>
                     </nav>
                 </div>
@@ -136,7 +136,7 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                     </p>
                     <div className="flex flex-wrap justify-center gap-4 pt-4">
                         <Button size="lg" asChild>
-                            <Link href="/signup">{feature.ctaText}</Link>
+                            <a href="/signup">{feature.ctaText}</a>
                         </Button>
                         <Button size="lg" variant="outline" asChild>
                             <Link href="/pricing">View Pricing</Link>
@@ -266,10 +266,10 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                         Start using Yula today and experience AI with {feature.name.toLowerCase()}.
                     </p>
                     <Button size="lg" asChild>
-                        <Link href="/signup" className="gap-2">
+                        <a href="/signup" className="gap-2">
                             {feature.ctaText}
                             <ArrowRight className="w-4 h-4" />
-                        </Link>
+                        </a>
                     </Button>
                 </section>
             </main>

@@ -279,7 +279,7 @@ function ResetPasswordContent() {
                     </div>
 
                     <Button asChild className="w-full">
-                        <Link href="/login">Continue to Sign In</Link>
+                        <a href="/login">Continue to Sign In</a>
                     </Button>
                 </motion.div>
             )}
@@ -316,10 +316,10 @@ export default function ResetPasswordPage() {
                 className="absolute top-7 left-5 text-zinc-600 dark:text-zinc-400"
                 asChild
             >
-                <Link href="/login">
+                <a href="/login">
                     <ChevronLeftIcon className="size-4 me-2" />
                     Back to login
-                </Link>
+                </a>
             </Button>
 
             <motion.div

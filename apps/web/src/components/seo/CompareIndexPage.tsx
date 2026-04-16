@@ -37,7 +37,7 @@ export function CompareIndexPage({ competitors }: CompareIndexPageProps) {
                             Pricing
                         </Link>
                         <Button size="sm" asChild>
-                            <Link href="/signup">Get Started</Link>
+                            <a href="/signup">Get Started</a>
                         </Button>
                     </nav>
                 </div>
@@ -109,10 +109,10 @@ export function CompareIndexPage({ competitors }: CompareIndexPageProps) {
                         proactive AI callbacks.
                     </p>
                     <Button size="lg" asChild>
-                        <Link href="/signup" className="gap-2">
+                        <a href="/signup" className="gap-2">
                             Get Started Free
                             <ArrowRight className="w-4 h-4" />
-                        </Link>
+                        </a>
                     </Button>
                 </section>
             </main>

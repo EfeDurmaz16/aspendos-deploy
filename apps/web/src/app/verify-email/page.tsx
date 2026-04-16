@@ -175,7 +175,7 @@ function VerifyEmailContent() {
                 </Button>
 
                 <Button variant="ghost" asChild className="w-full">
-                    <Link href="/login">Back to login</Link>
+                    <a href="/login">Back to login</a>
                 </Button>
             </div>
 

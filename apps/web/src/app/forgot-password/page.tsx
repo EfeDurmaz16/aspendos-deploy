@@ -52,10 +52,10 @@ export default function ForgotPasswordPage() {
                 className="absolute top-7 left-5 text-zinc-600 dark:text-zinc-400"
                 asChild
             >
-                <Link href="/login">
+                <a href="/login">
                     <ChevronLeftIcon className="size-4 me-2" />
                     Back to login
-                </Link>
+                </a>
             </Button>
 
             <motion.div
@@ -173,7 +173,7 @@ export default function ForgotPasswordPage() {
                                 Try a different email
                             </Button>
                             <Button variant="ghost" asChild className="w-full">
-                                <Link href="/login">Back to login</Link>
+                                <a href="/login">Back to login</a>
                             </Button>
                         </div>
                     </motion.div>
@@ -181,12 +181,12 @@ export default function ForgotPasswordPage() {
 
                 <p className="text-zinc-500 dark:text-zinc-400 text-sm text-center">
                     Remember your password?{' '}
-                    <Link
+                    <a
                         href="/login"
                         className="font-medium text-zinc-900 dark:text-zinc-50 hover:underline underline-offset-4 decoration-foreground/50"
                     >
                         Sign in
-                    </Link>
+                    </a>
                 </p>
             </motion.div>
         </main>

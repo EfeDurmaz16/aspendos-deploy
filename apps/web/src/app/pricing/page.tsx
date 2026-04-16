@@ -214,7 +214,7 @@ function PricingContent() {
                             </Button>
                         ) : (
                             <Button size="sm" variant="secondary" asChild>
-                                <Link href="/login">Log in</Link>
+                                <a href="/login">Log in</a>
                             </Button>
                         )}
                     </nav>
@@ -351,9 +351,7 @@ function PricingContent() {
                                         className="w-full"
                                         asChild
                                     >
-                                        <Link href={isSignedIn ? '/chat' : '/signup'}>
-                                            {tier.cta}
-                                        </Link>
+                                        <a href={isSignedIn ? '/chat' : '/signup'}>{tier.cta}</a>
                                     </Button>
                                 ) : isSignedIn ? (
                                     <Button
@@ -370,9 +368,9 @@ function PricingContent() {
                                         className="w-full"
                                         asChild
                                     >
-                                        <Link href={`/signup?redirect=pricing&tier=${tier.slug}`}>
+                                        <a href={`/signup?redirect=pricing&tier=${tier.slug}`}>
                                             {tier.cta}
-                                        </Link>
+                                        </a>
                                     </Button>
                                 )}
                             </CardFooter>

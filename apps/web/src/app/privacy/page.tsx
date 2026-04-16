@@ -21,7 +21,7 @@ export default function PrivacyPage() {
                     <nav className="flex gap-4 items-center">
                         <ModeToggle />
                         <Button size="sm" variant="secondary" asChild>
-                            <Link href="/login">Log in</Link>
+                            <a href="/login">Log in</a>
                         </Button>
                     </nav>
                 </div>
