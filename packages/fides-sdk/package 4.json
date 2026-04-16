@@ -1,0 +1,10 @@
+{
+    "name": "@fides/sdk",
+    "version": "0.1.0",
+    "description": "Ed25519 signing + DID identity for AI agents",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "license": "MIT",
+    "private": true
+}

@@ -167,19 +167,19 @@ function Navigation() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Link
+                    <a
                         href="/login"
                         className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
                     >
                         Sign in
-                    </Link>
-                    <Link
+                    </a>
+                    <a
                         href="/signup"
                         className="h-9 px-4 rounded-lg bg-foreground text-background text-sm font-medium flex items-center gap-1.5 hover:opacity-90 transition-opacity"
                     >
                         Get started
                         <ArrowRight size={14} weight="bold" />
-                    </Link>
+                    </a>
                 </div>
             </div>
         </nav>
@@ -247,13 +247,13 @@ function HeroSection() {
                         transition={{ duration: 0.6, delay: 0.3 }}
                         className="flex flex-wrap items-center justify-center gap-3"
                     >
-                        <Link
+                        <a
                             href="/signup"
                             className="h-11 px-6 rounded-lg bg-foreground text-background text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
                         >
                             Start free
                             <ArrowRight size={16} weight="bold" />
-                        </Link>
+                        </a>
                         <Link
                             href="#reversibility"
                             className="h-11 px-6 rounded-lg border border-border text-foreground text-sm font-medium flex items-center gap-2 hover:bg-card transition-colors"
@@ -1162,13 +1162,13 @@ function CTASection() {
                     you need more.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
-                    <Link
+                    <a
                         href="/signup"
                         className="h-11 px-6 rounded-lg bg-foreground text-background text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
                     >
                         Get started
                         <ArrowRight size={16} weight="bold" />
-                    </Link>
+                    </a>
                     <a
                         href="https://github.com/aspendos"
                         target="_blank"

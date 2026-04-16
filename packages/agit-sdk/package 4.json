@@ -1,0 +1,10 @@
+{
+    "name": "@agit/sdk",
+    "version": "0.1.0",
+    "description": "Git-like version control for AI agents",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "license": "MIT",
+    "private": true
+}

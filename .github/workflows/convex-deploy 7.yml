@@ -1,0 +1,21 @@
+name: Deploy Convex
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'convex/**'
+
+jobs:
+  deploy:
+    name: Deploy Convex Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.1.30'
+      - run: bun install --frozen-lockfile
+      - env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: npx convex deploy

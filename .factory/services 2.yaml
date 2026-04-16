@@ -1,0 +1,34 @@
+commands:
+  install: bun install
+  build: bun run build
+  test:web: cd apps/web && bunx vitest run
+  test:api: cd services/api && bunx vitest run
+  test: cd apps/web && bunx vitest run && cd ../../services/api && bunx vitest run
+  typecheck: bun run build
+  lint: biome check .
+  lint:fix: biome check --write .
+  format: biome format --write .
+  convex:dev: npx convex dev
+  convex:deploy: npx convex deploy
+
+services:
+  redis:
+    start: echo "Redis already running (system service)"
+    stop: echo "Do not stop system Redis"
+    healthcheck: redis-cli ping
+    port: 6379
+    depends_on: []
+
+  web:
+    start: cd apps/web && PORT=3000 bun run dev
+    stop: lsof -ti :3000 | xargs kill -9 2>/dev/null || true
+    healthcheck: curl -sf http://localhost:3000
+    port: 3000
+    depends_on: []
+
+  api:
+    start: cd services/api && PORT=8787 bun run dev
+    stop: lsof -ti :8787 | xargs kill -9 2>/dev/null || true
+    healthcheck: curl -sf http://localhost:8787/health
+    port: 8787
+    depends_on: [redis]

@@ -1,0 +1,60 @@
+replicaCount: 1
+
+web:
+  image:
+    repository: ghcr.io/aspendos/yula-web
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+api:
+  image:
+    repository: ghcr.io/aspendos/yula-api
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8787
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: 7-alpine
+
+env:
+  NEXT_PUBLIC_CONVEX_URL: ""
+  AI_GATEWAY_API_KEY: ""
+  SUPERMEMORY_API_KEY: ""
+  WORKOS_CLIENT_ID: ""
+  WORKOS_API_KEY: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: yula.example.com
+      paths:
+        - path: /
+          service: web
+        - path: /api
+          service: api
+  tls: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilization: 80

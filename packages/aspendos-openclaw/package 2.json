@@ -1,0 +1,21 @@
+{
+    "name": "@aspendos/openclaw",
+    "version": "0.1.0",
+    "description": "Aspendos governance skill pack for OpenClaw — FIDES signing + AGIT audit + reversibility",
+    "license": "Apache-2.0",
+    "keywords": [
+        "openclaw",
+        "skill",
+        "governance",
+        "fides",
+        "agit",
+        "reversibility",
+        "audit",
+        "aspendos"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/aspendos/aspendos-openclaw"
+    },
+    "files": ["skills/**/*", "README.md"]
+}

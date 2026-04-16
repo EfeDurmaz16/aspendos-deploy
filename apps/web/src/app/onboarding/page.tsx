@@ -18,6 +18,10 @@ export default function OnboardingPage() {
     const router = useRouter();
     const {
         currentStep,
+        isActive,
+        hasCompleted,
+        hasSkipped,
+        hasHydrated,
         nextStep,
         prevStep,
         skipTour,
@@ -26,19 +30,31 @@ export default function OnboardingPage() {
         restartTour,
     } = useOnboardingStore();
 
-    // Start onboarding flow on mount
+    // Only initialize onboarding for first-time users. Revisiting this route
+    // after completion should not clear the persisted completion state.
     useEffect(() => {
-        startOnboarding();
-    }, [startOnboarding]);
+        if (!hasHydrated) {
+            return;
+        }
+
+        if (hasCompleted || hasSkipped) {
+            router.replace('/chat');
+            return;
+        }
+
+        if (!isActive) {
+            startOnboarding();
+        }
+    }, [hasCompleted, hasSkipped, hasHydrated, isActive, router, startOnboarding]);
 
     const handleSkip = () => {
         skipTour();
-        router.push('/chat');
+        router.replace('/chat');
     };
 
     const handleComplete = () => {
         completeOnboarding();
-        router.push('/chat');
+        router.replace('/chat');
     };
 
     const renderStep = (step: OnboardingStep) => {

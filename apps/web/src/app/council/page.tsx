@@ -6,6 +6,7 @@ import { useCallback, useEffect } from 'react';
 import { CouncilChat } from '@/components/council/council-chat';
 import { IconRail } from '@/components/layout/icon-rail';
 import { useAuth } from '@/hooks/use-auth';
+import { hardNavigate } from '@/lib/hard-navigation';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -15,7 +16,7 @@ export default function CouncilPage() {
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
-            router.push('/login');
+            hardNavigate('/login', 'replace');
         }
     }, [isLoaded, isSignedIn, router]);
 

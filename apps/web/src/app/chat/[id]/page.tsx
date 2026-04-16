@@ -39,11 +39,10 @@ import { ModePicker, resolveMode, type YulaMode } from '@/components/chat/model-
 import { VoiceButton } from '@/components/chat/voice-button';
 import { CouncilChatSheet } from '@/components/council/council-chat-sheet';
 import { IconRail } from '@/components/layout/icon-rail';
-import { SpotlightOverlay } from '@/components/onboarding/spotlight-overlay';
 import { PACToastWrapper } from '@/components/pac/pac-toast-wrapper';
 import { useAuth } from '@/hooks/use-auth';
 import { type ChatMessage, type MemoryDecision, useStreamingChat } from '@/hooks/useStreamingChat';
-import { useOnboardingStore } from '@/lib/stores/onboarding-store';
+import { hardNavigate } from '@/lib/hard-navigation';
 import 'katex/dist/katex.min.css';
 
 const REMARK_PLUGINS = [remarkMath] as unknown as NonNullable<MessageResponseProps['plugins']>;
@@ -90,19 +89,6 @@ export default function ChatPage() {
         handleToolApproval,
         error: streamError,
     } = useStreamingChat(chatId);
-    const {
-        hasCompleted,
-        hasSkipped,
-        isActive: onboardingActive,
-        startOnboarding: startTour,
-    } = useOnboardingStore();
-
-    useEffect(() => {
-        if (isLoaded && isSignedIn && !hasCompleted && !hasSkipped && !onboardingActive) {
-            startTour();
-        }
-    }, [isLoaded, isSignedIn, hasCompleted, hasSkipped, onboardingActive, startTour]);
-
     // Load chat and messages
     useEffect(() => {
         if (!isLoaded || !isSignedIn || !chatId) return;
@@ -197,7 +183,7 @@ export default function ChatPage() {
     }
 
     if (!isSignedIn) {
-        router.push('/login');
+        hardNavigate('/login', 'replace');
         return null;
     }
 
@@ -375,7 +361,6 @@ export default function ChatPage() {
             <CouncilChatSheet isOpen={councilOpen} onClose={() => setCouncilOpen(false)} />
             <KeyboardShortcuts />
             <PACToastWrapper />
-            <SpotlightOverlay />
         </div>
     );
 }

@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useAuth, useUser } from '@/hooks/use-auth';
+import { hardNavigate } from '@/lib/hard-navigation';
 
 interface UserSettings {
     notifications: {
@@ -90,7 +91,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
-            router.push('/login');
+            hardNavigate('/login', 'replace');
             return;
         }
 

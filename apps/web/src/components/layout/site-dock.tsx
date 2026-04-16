@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Dock } from '@/components/ui/dock';
 
 import { SkyToggle } from '@/components/ui/sky-toggle';
+import { hardNavigate } from '@/lib/hard-navigation';
 
 export function SiteDock() {
     const router = useRouter();
@@ -44,7 +45,7 @@ export function SiteDock() {
         {
             icon: User,
             label: 'Profile', // Or Login if not authenticated? For now, Profile/Login
-            onClick: () => router.push('/login'),
+            onClick: () => hardNavigate('/login'),
         },
     ];
 

@@ -1,13 +1,40 @@
-import { NextResponse } from 'next/server';
+import { authkitMiddleware } from '@workos-inc/authkit-nextjs';
 
-// Auth is handled at the route level via withAuth() — no middleware auth gate.
-// This middleware only sets security headers.
-export function middleware() {
-    return NextResponse.next();
-}
+export default authkitMiddleware({
+    middlewareAuth: {
+        enabled: true,
+        unauthenticatedPaths: [
+            '/',
+            '/login',
+            '/signup',
+            '/callback',
+            '/pricing',
+            '/privacy',
+            '/terms',
+            '/compare',
+            '/compare/(.*)',
+            '/features',
+            '/features/(.*)',
+            '/landing',
+            '/api/health',
+            '/api/billing/webhook',
+            '/api/webhooks/(.*)',
+            '/api/tools',
+            '/api/bot/(.*)',
+            '/opengraph-image',
+            '/twitter-image',
+            '/sitemap.xml',
+            '/robots.txt',
+            '/offline',
+            '/forgot-password',
+            '/reset-password',
+            '/verify-email',
+        ],
+    },
+});
 
 export const config = {
     matcher: [
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf)$).*)',
     ],
 };

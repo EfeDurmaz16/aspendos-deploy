@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
+import { hardNavigate } from '@/lib/hard-navigation';
 import { cn } from '@/lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -60,7 +61,7 @@ export default function CouncilHistoryPage() {
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
-            router.push('/login');
+            hardNavigate('/login', 'replace');
         }
     }, [isLoaded, isSignedIn, router]);
 

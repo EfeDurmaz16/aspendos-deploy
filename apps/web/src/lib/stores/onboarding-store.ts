@@ -104,6 +104,7 @@ interface OnboardingState {
     isActive: boolean;
     hasCompleted: boolean;
     hasSkipped: boolean;
+    hasHydrated: boolean;
 
     // Step tracking
     visitedSteps: Set<OnboardingStep>;
@@ -142,6 +143,7 @@ export const useOnboardingStore = create<OnboardingState>()(
             isActive: false,
             hasCompleted: false,
             hasSkipped: false,
+            hasHydrated: false,
             visitedSteps: new Set<OnboardingStep>(['welcome']),
             startedAt: null,
             completedAt: null,
@@ -286,6 +288,8 @@ export const useOnboardingStore = create<OnboardingState>()(
                         state.visitedSteps as unknown as OnboardingStep[]
                     );
                 }
+
+                set({ hasHydrated: true });
             },
         }
     )

@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
+import { hardNavigate } from '@/lib/hard-navigation';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -111,7 +112,7 @@ export default function AnalyticsPage() {
 
     useEffect(() => {
         if (!isLoaded || !isSignedIn) {
-            router.push('/login');
+            hardNavigate('/login', 'replace');
             return;
         }
 
