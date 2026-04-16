@@ -2,36 +2,34 @@
 
 import { useEffect, useState } from 'react';
 
+interface UserData {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    profilePictureUrl: string | null;
+}
+
 interface AuthState {
-    user: {
-        id: string;
-        email: string;
-        firstName: string | null;
-        lastName: string | null;
-        profilePictureUrl: string | null;
-    } | null;
+    user: UserData | null;
     loading: boolean;
 }
 
-let cachedAuth: AuthState | null = null;
-
 export function useAuth() {
-    const [state, setState] = useState<AuthState>(cachedAuth ?? { user: null, loading: true });
+    const [state, setState] = useState<AuthState>({ user: null, loading: true });
 
     useEffect(() => {
-        if (cachedAuth) return;
-
-        (async () => {
-            try {
-                const { useAuth: workosUseAuth } = await import('@workos-inc/authkit-nextjs');
-                const { user, loading } = workosUseAuth();
-                const authState = { user, loading };
-                cachedAuth = authState;
-                setState(authState);
-            } catch {
+        fetch('/api/user')
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                setState({
+                    user: data?.user ?? null,
+                    loading: false,
+                });
+            })
+            .catch(() => {
                 setState({ user: null, loading: false });
-            }
-        })();
+            });
     }, []);
 
     return {
@@ -41,19 +39,28 @@ export function useAuth() {
         sessionId: state.user?.id ?? null,
         getToken: async () => null,
         signOut: async () => {
-            try {
-                const { signOut } = await import('@workos-inc/authkit-nextjs');
-                await signOut();
-            } catch {
-                window.location.href = '/';
-            }
+            window.location.href = '/api/auth/logout';
         },
     };
 }
 
 export function useUser() {
-    const { isLoaded, isSignedIn, userId } = useAuth();
-    const [state] = useState<AuthState>(cachedAuth ?? { user: null, loading: !isLoaded });
+    const { isLoaded, isSignedIn } = useAuth();
+    const [state, setState] = useState<AuthState>({ user: null, loading: true });
+
+    useEffect(() => {
+        fetch('/api/user')
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                setState({
+                    user: data?.user ?? null,
+                    loading: false,
+                });
+            })
+            .catch(() => {
+                setState({ user: null, loading: false });
+            });
+    }, []);
 
     return {
         isLoaded,
