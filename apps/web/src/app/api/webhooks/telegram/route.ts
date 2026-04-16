@@ -1,3 +1,8 @@
-import { bot } from '@/lib/bot-proxy';
+import { after } from 'next/server';
+import { bot } from '@/lib/messaging/bot';
 
-export const POST = async (req: Request) => bot.webhooks.telegram(req);
+export async function POST(request: Request) {
+    return bot.webhooks.telegram(request, {
+        waitUntil: (task) => after(() => task),
+    });
+}
