@@ -1,0 +1,28 @@
+# Yula OS - Frontend Caddy Config
+# Auto-SSL via Let's Encrypt, HTTP/3, reverse proxy
+
+yula.dev {
+	# Compression
+	encode gzip zstd
+
+	# Security headers
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		-Server
+	}
+
+	# Next.js app
+	reverse_proxy web:3000 {
+		health_uri /api/health
+		health_interval 30s
+		health_timeout 5s
+	}
+}
+
+# Redirect www to apex
+www.yula.dev {
+	redir https://yula.dev{uri} permanent
+}
