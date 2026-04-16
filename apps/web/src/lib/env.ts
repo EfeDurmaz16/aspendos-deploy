@@ -2,17 +2,17 @@
  * Environment variable validation - fails fast on missing required vars
  */
 
-const requiredEnvVars = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL'] as const;
+const requiredEnvVars = [] as const;
 
 const optionalEnvVars = [
-    'NEXT_PUBLIC_SENTRY_DSN',
-    'SENTRY_DSN',
+    'NEXT_PUBLIC_CONVEX_URL',
+    'WORKOS_CLIENT_ID',
+    'WORKOS_API_KEY',
     'OPENAI_API_KEY',
     'ANTHROPIC_API_KEY',
     'GROQ_API_KEY',
     'SUPERMEMORY_API_KEY',
-    'POLAR_ACCESS_TOKEN',
-    'NEXT_PUBLIC_CONVEX_URL',
+    'STRIPE_SECRET_KEY',
 ] as const;
 
 export function validateEnv() {
