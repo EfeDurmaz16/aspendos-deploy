@@ -5,7 +5,6 @@
  * Provides cost breakdowns, burn rate projections, and budget monitoring.
  */
 
-
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { usageLedger } from '../lib/usage-ledger';

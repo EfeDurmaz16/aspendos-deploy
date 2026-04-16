@@ -393,6 +393,7 @@ export function AddModelsModal({
                             <div className="flex items-center justify-between p-6 border-b border-border">
                                 <h2 className="text-2xl font-semibold text-foreground">Models</h2>
                                 <button
+                                    type="button"
                                     onClick={onClose}
                                     className="p-2 rounded-full hover:bg-muted transition-colors"
                                 >
@@ -413,6 +414,7 @@ export function AddModelsModal({
                                     />
                                     {searchQuery && (
                                         <button
+                                            type="button"
                                             onClick={() => setSearchQuery('')}
                                             className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
                                         >
@@ -518,6 +520,7 @@ function ModelRow({
                 </div>
             </div>
             <button
+                type="button"
                 onClick={onToggle}
                 className={`relative w-11 h-6 rounded-full transition-all duration-300 flex-shrink-0 ml-4 ${
                     isEnabled ? 'bg-foreground/40' : 'bg-muted'

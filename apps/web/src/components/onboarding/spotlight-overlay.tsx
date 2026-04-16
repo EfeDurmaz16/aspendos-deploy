@@ -285,6 +285,7 @@ const SpotlightTooltip = ({
                 {/* Actions */}
                 <div className="flex items-center justify-between">
                     <button
+                        type="button"
                         onClick={onSkip}
                         className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
@@ -293,6 +294,7 @@ const SpotlightTooltip = ({
                     <div className="flex gap-2">
                         {canGoPrev && (
                             <button
+                                type="button"
                                 onClick={onPrev}
                                 className={cn(
                                     'rounded-lg px-3 py-1.5 text-sm font-medium',
@@ -304,6 +306,7 @@ const SpotlightTooltip = ({
                             </button>
                         )}
                         <button
+                            type="button"
                             onClick={onNext}
                             className={cn(
                                 'rounded-lg px-4 py-1.5 text-sm font-medium',

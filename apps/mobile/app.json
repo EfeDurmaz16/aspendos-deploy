@@ -1,36 +1,34 @@
 {
-  "expo": {
-    "name": "YULA",
-    "slug": "yula",
-    "version": "1.0.0",
-    "scheme": "yula",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0A0A0A"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "dev.yula.app"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0A0A0A"
-      },
-      "edgeToEdgeEnabled": true,
-      "package": "dev.yula.app"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
-    "plugins": [
-      "expo-router"
-    ]
-  }
+    "expo": {
+        "name": "YULA",
+        "slug": "yula",
+        "version": "1.0.0",
+        "scheme": "yula",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        "splash": {
+            "image": "./assets/splash-icon.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#0A0A0A"
+        },
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "dev.yula.app"
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#0A0A0A"
+            },
+            "edgeToEdgeEnabled": true,
+            "package": "dev.yula.app"
+        },
+        "web": {
+            "favicon": "./assets/favicon.png",
+            "bundler": "metro"
+        },
+        "plugins": ["expo-router"]
+    }
 }

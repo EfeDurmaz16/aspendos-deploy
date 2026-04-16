@@ -48,7 +48,7 @@ function createModelProxy(modelName: string) {
                 if (typeof property !== 'string') return undefined;
                 return createMethodProxy(modelName, property);
             },
-        },
+        }
     );
 }
 
@@ -68,7 +68,7 @@ export const prisma = new Proxy(
             }
             return createModelProxy(property);
         },
-    },
+    }
 ) as any;
 
 export type Prisma = any;

@@ -46,7 +46,9 @@ export class DaytonaSandboxService implements SandboxService {
         const { Daytona } = await import('@daytona/sdk');
         const daytona = new Daytona();
         const sandbox = await daytona.get(sandboxId);
-        await sandbox.process.executeCommand(`cat > ${path} << 'SANDBOX_EOF'\n${content}\nSANDBOX_EOF`);
+        await sandbox.process.executeCommand(
+            `cat > ${path} << 'SANDBOX_EOF'\n${content}\nSANDBOX_EOF`
+        );
     }
 
     async readFile(sandboxId: string, path: string): Promise<string> {

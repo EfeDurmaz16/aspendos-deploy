@@ -13,7 +13,7 @@ export const create = mutation({
             v.literal('pending'),
             v.literal('executed'),
             v.literal('reverted'),
-            v.literal('failed'),
+            v.literal('failed')
         ),
         result: v.optional(v.any()),
         reversibility_class: v.union(
@@ -21,7 +21,7 @@ export const create = mutation({
             v.literal('cancelable_window'),
             v.literal('compensatable'),
             v.literal('approval_only'),
-            v.literal('irreversible_blocked'),
+            v.literal('irreversible_blocked')
         ),
         rollback_strategy: v.optional(v.any()),
         rollback_deadline: v.optional(v.number()),
@@ -67,7 +67,7 @@ export const updateStatus = mutation({
             v.literal('pending'),
             v.literal('executed'),
             v.literal('reverted'),
-            v.literal('failed'),
+            v.literal('failed')
         ),
         result: v.optional(v.any()),
     },

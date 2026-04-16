@@ -17,7 +17,9 @@ export function runDoctorChecks(): DoctorReport {
     checks.push({
         name: 'SuperMemory',
         status: process.env.SUPERMEMORY_API_KEY ? 'ok' : 'warn',
-        detail: process.env.SUPERMEMORY_API_KEY ? 'Connected' : 'SUPERMEMORY_API_KEY missing — memory disabled',
+        detail: process.env.SUPERMEMORY_API_KEY
+            ? 'Connected'
+            : 'SUPERMEMORY_API_KEY missing — memory disabled',
     });
 
     checks.push({
@@ -37,13 +39,17 @@ export function runDoctorChecks(): DoctorReport {
     checks.push({
         name: 'Stripe',
         status: process.env.STRIPE_SECRET_KEY ? 'ok' : 'warn',
-        detail: process.env.STRIPE_SECRET_KEY ? 'Connected' : 'STRIPE_SECRET_KEY missing — billing disabled',
+        detail: process.env.STRIPE_SECRET_KEY
+            ? 'Connected'
+            : 'STRIPE_SECRET_KEY missing — billing disabled',
     });
 
     checks.push({
         name: 'Steel (browser)',
         status: process.env.STEEL_API_KEY ? 'ok' : 'warn',
-        detail: process.env.STEEL_API_KEY ? 'Connected' : 'STEEL_API_KEY missing — browser tool disabled',
+        detail: process.env.STEEL_API_KEY
+            ? 'Connected'
+            : 'STEEL_API_KEY missing — browser tool disabled',
     });
 
     return { surface: 'doctor', checks };
@@ -51,8 +57,6 @@ export function runDoctorChecks(): DoctorReport {
 
 export function formatDoctorText(report: DoctorReport): string {
     const statusIcon = { ok: '✅', warn: '⚠️', fail: '❌' };
-    const lines = report.checks.map(
-        (c) => `${statusIcon[c.status]} ${c.name}: ${c.detail}`,
-    );
+    const lines = report.checks.map((c) => `${statusIcon[c.status]} ${c.name}: ${c.detail}`);
     return `🩺 *YULA Doctor*\n\n${lines.join('\n')}`;
 }

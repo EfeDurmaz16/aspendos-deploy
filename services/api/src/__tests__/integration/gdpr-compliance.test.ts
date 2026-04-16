@@ -84,7 +84,6 @@ vi.mock('../../lib/auth', () => ({
     },
 }));
 
-
 import {
     anonymizeUser,
     cancelDeletion,

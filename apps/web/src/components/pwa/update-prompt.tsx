@@ -24,6 +24,7 @@ export function UpdatePrompt() {
                         <p className="text-xs opacity-90">Refresh to get the latest version</p>
                     </div>
                     <button
+                        type="button"
                         onClick={updateServiceWorker}
                         className="px-3 py-1.5 bg-primary-foreground text-primary text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
                     >

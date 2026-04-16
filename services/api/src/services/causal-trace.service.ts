@@ -111,8 +111,7 @@ export async function getEffects(actionId: string, maxDepth = 10): Promise<Causa
             for (const id of currentIds) {
                 const children = childrenOf.get(id) || [];
                 for (const child of children) {
-                    const childId =
-                        (child.details?.actionId as string) || (child._id as string);
+                    const childId = (child.details?.actionId as string) || (child._id as string);
                     effects.push({
                         id: childId,
                         actionType: child.event_type,
@@ -267,8 +266,7 @@ export async function getSessionSummary(userId: string, sessionId: string) {
             blockedActions: blocked.length,
             approvalRequests: approvalRequired.length,
             totalLatencyMs: totalLatency,
-            avgLatencyMs:
-                actions.length > 0 ? Math.round(totalLatency / actions.length) : 0,
+            avgLatencyMs: actions.length > 0 ? Math.round(totalLatency / actions.length) : 0,
             toolUsage,
         };
     } catch (error) {

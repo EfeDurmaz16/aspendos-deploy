@@ -36,11 +36,12 @@ export default function UsagePage() {
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-6">
                     <h2 className="text-lg font-medium text-neutral-200 mb-4">BYOK Keys</h2>
                     <p className="text-sm text-neutral-400">
-                        Bring your own API keys to use your own provider accounts.
-                        Keys are encrypted with AES-GCM before storage.
+                        Bring your own API keys to use your own provider accounts. Keys are
+                        encrypted with AES-GCM before storage.
                     </p>
                     <div className="mt-4 text-sm text-neutral-500">
-                        Configure BYOK keys in your account settings after upgrading to Pro BYOK or Team BYOK.
+                        Configure BYOK keys in your account settings after upgrading to Pro BYOK or
+                        Team BYOK.
                     </div>
                 </div>
             </div>

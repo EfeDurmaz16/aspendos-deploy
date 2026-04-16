@@ -17,7 +17,6 @@
  * MCP chains: 0.85^depth transitive trust (from FIDES decay model)
  */
 
-
 // ============================================
 // TYPES
 // ============================================

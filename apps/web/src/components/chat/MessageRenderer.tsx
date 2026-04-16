@@ -42,6 +42,7 @@ function CodeBlock({ language, code }: CodeBlockProps) {
             <div className="flex items-center justify-between bg-zinc-800 dark:bg-zinc-900 text-zinc-300 px-4 py-2 rounded-t-lg text-sm">
                 <span className="font-mono">{language || 'plaintext'}</span>
                 <button
+                    type="button"
                     onClick={copyToClipboard}
                     className="text-zinc-400 hover:text-zinc-200 transition-colors"
                 >

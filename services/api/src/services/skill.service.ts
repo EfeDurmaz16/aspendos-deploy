@@ -193,8 +193,7 @@ export async function getSkillExecutions(
 
         return (logs || [])
             .filter(
-                (l: any) =>
-                    l.event_type === 'skill_execution' && l.details?.skillId === skillId
+                (l: any) => l.event_type === 'skill_execution' && l.details?.skillId === skillId
             )
             .slice(0, options?.limit ?? 20)
             .map((l: any) => ({ id: l._id, ...l.details }));
@@ -238,8 +237,10 @@ export async function getSkillAnalytics(skillId: string) {
         const avgDurationMs =
             executions.length > 0
                 ? Math.round(
-                      executions.reduce((s: number, e: any) => s + (e.details?.durationMs || 0), 0) /
-                          executions.length
+                      executions.reduce(
+                          (s: number, e: any) => s + (e.details?.durationMs || 0),
+                          0
+                      ) / executions.length
                   )
                 : 0;
 
@@ -363,9 +364,7 @@ export async function seedSystemSkills() {
     for (const skill of systemSkills) {
         try {
             const existing = await listSkills();
-            const found = existing.find(
-                (s: any) => s.name === skill.name && s.isSystem === true
-            );
+            const found = existing.find((s: any) => s.name === skill.name && s.isSystem === true);
             if (!found) {
                 await createSkill(skill);
             }

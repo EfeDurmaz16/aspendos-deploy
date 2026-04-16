@@ -12,14 +12,14 @@ import billing from './billing';
 import errors from './errors';
 
 export default {
-  common,
-  auth,
-  onboarding,
-  chat,
-  import: importNs,
-  pac,
-  council,
-  settings,
-  billing,
-  errors,
+    common,
+    auth,
+    onboarding,
+    chat,
+    import: importNs,
+    pac,
+    council,
+    settings,
+    billing,
+    errors,
 };

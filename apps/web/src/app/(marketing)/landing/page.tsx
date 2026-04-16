@@ -163,7 +163,9 @@ function HeroSection() {
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/60 bg-card/50"
                     >
                         <Sparkle size={14} weight="fill" className="text-pac" />
-                        <span className="text-xs text-muted-foreground">Deterministic AI agents</span>
+                        <span className="text-xs text-muted-foreground">
+                            Deterministic AI agents
+                        </span>
                     </motion.div>
 
                     {/* Headline */}
@@ -413,6 +415,7 @@ function HeroPreview() {
                                     <ArrowRight size={14} weight="bold" />
                                 </Link>
                                 <button
+                                    type="button"
                                     onClick={() => {
                                         setShowSignup(false);
                                         messageCountRef.current = 0;
@@ -465,6 +468,7 @@ function HeroPreview() {
                                     'Debug a React component',
                                 ].map((suggestion) => (
                                     <button
+                                        type="button"
                                         key={suggestion}
                                         onClick={() => handleSuggestion(suggestion)}
                                         className="text-xs px-3 py-1.5 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/50 transition-all"
@@ -567,6 +571,7 @@ function HeroPreview() {
                         />
                         <div className="flex items-center gap-1.5 pb-1">
                             <button
+                                type="button"
                                 onClick={() => {
                                     const modes = ['Auto', 'Smart', 'Fast', 'Creative'];
                                     const idx = modes.indexOf(selectedMode);
@@ -578,6 +583,7 @@ function HeroPreview() {
                                 {selectedMode}
                             </button>
                             <button
+                                type="button"
                                 onClick={handleSend}
                                 disabled={!inputValue.trim() || isStreaming}
                                 className={cn(
@@ -1006,6 +1012,7 @@ function FAQSection() {
                     {faqs.map((faq, idx) => (
                         <div key={idx} className="border-b border-border/40">
                             <button
+                                type="button"
                                 onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
                                 className="w-full flex items-center justify-between py-5 text-left group"
                             >

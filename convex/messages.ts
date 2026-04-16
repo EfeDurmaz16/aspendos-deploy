@@ -5,7 +5,12 @@ export const create = mutation({
     args: {
         conversation_id: v.id('conversations'),
         user_id: v.id('users'),
-        role: v.union(v.literal('user'), v.literal('assistant'), v.literal('system'), v.literal('tool')),
+        role: v.union(
+            v.literal('user'),
+            v.literal('assistant'),
+            v.literal('system'),
+            v.literal('tool')
+        ),
         content: v.string(),
         tool_calls: v.optional(v.any()),
     },

@@ -20,25 +20,31 @@ const readFallbacks: Record<string, any> = {
 };
 
 function createModelProxy(_name: string) {
-    return new Proxy({}, {
-        get(_target, method) {
-            if (typeof method !== 'string') return undefined;
-            return async (..._args: any[]) => readFallbacks[method] ?? null;
-        },
-    });
+    return new Proxy(
+        {},
+        {
+            get(_target, method) {
+                if (typeof method !== 'string') return undefined;
+                return async (..._args: any[]) => readFallbacks[method] ?? null;
+            },
+        }
+    );
 }
 
-export const prisma = new Proxy({}, {
-    get(_target, prop) {
-        if (typeof prop !== 'string') return undefined;
-        if (prop === '$transaction') {
-            return async (input: any) => {
-                if (typeof input === 'function') return input(prisma);
-                if (Array.isArray(input)) return Promise.all(input);
-                return [];
-            };
-        }
-        if (prop.startsWith('$')) return async () => {};
-        return createModelProxy(prop);
-    },
-}) as any;
+export const prisma = new Proxy(
+    {},
+    {
+        get(_target, prop) {
+            if (typeof prop !== 'string') return undefined;
+            if (prop === '$transaction') {
+                return async (input: any) => {
+                    if (typeof input === 'function') return input(prisma);
+                    if (Array.isArray(input)) return Promise.all(input);
+                    return [];
+                };
+            }
+            if (prop.startsWith('$')) return async () => {};
+            return createModelProxy(prop);
+        },
+    }
+) as any;

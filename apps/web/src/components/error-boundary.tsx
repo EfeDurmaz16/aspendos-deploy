@@ -39,6 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                 An unexpected error occurred. Please refresh the page.
                             </p>
                             <button
+                                type="button"
                                 onClick={() => this.setState({ hasError: false, error: null })}
                                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
                             >

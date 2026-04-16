@@ -72,6 +72,7 @@ export default function YulaPage() {
                                 { id: 'memory', icon: Brain, label: 'Memory' },
                             ].map(({ id, icon: Icon, label }) => (
                                 <button
+                                    type="button"
                                     key={id}
                                     onClick={() => setActiveView(id as ActiveView)}
                                     className={cn(
@@ -97,6 +98,7 @@ export default function YulaPage() {
 
                         {/* Search hint */}
                         <button
+                            type="button"
                             onClick={() => useYulaStore.getState().openOmnibar()}
                             className={cn(
                                 'flex items-center gap-2 rounded-lg px-3 py-1.5',
@@ -109,7 +111,10 @@ export default function YulaPage() {
                         </button>
 
                         {/* Settings */}
-                        <button className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-white/5 hover:text-white">
+                        <button
+                            type="button"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-white/5 hover:text-white"
+                        >
                             <Gear className="h-4 w-4" />
                         </button>
                     </div>
@@ -159,6 +164,7 @@ export default function YulaPage() {
                                             },
                                         ].map(({ icon: Icon, label, color }) => (
                                             <button
+                                                type="button"
                                                 key={label}
                                                 onClick={() => {
                                                     if (label === 'Ask Council')
@@ -241,6 +247,7 @@ export default function YulaPage() {
                                         </span>
                                     </div>
                                     <button
+                                        type="button"
                                         onClick={() => setMemoryCollapsed(true)}
                                         className="text-xs text-zinc-500 hover:text-zinc-300"
                                     >

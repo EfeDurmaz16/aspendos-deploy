@@ -77,6 +77,7 @@ export function MemoryNodeCard({
                     </div>
                     {onClose && (
                         <button
+                            type="button"
                             onClick={onClose}
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
                         >
@@ -104,6 +105,7 @@ export function MemoryNodeCard({
                                 const connectedColors = categoryColors[connected.category];
                                 return (
                                     <button
+                                        type="button"
                                         key={connected.id}
                                         onClick={() => onSelect?.()}
                                         className={cn(

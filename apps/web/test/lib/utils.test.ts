@@ -114,10 +114,12 @@ describe('Validation Utilities', () => {
 
     describe('isValidPassword', () => {
         const isValidPassword = (password: string) => {
-            return password.length >= 8 &&
+            return (
+                password.length >= 8 &&
                 /[A-Z]/.test(password) &&
                 /[a-z]/.test(password) &&
-                /[0-9]/.test(password);
+                /[0-9]/.test(password)
+            );
         };
 
         it('should validate strong passwords', () => {

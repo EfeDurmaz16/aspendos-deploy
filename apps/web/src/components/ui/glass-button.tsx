@@ -24,6 +24,7 @@ export const GlassButton = forwardRef<HTMLButtonElement, GlassButtonProps>(
 
         return (
             <button
+                type="button"
                 ref={ref}
                 className={cn(
                     'inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-white/50 disabled:pointer-events-none disabled:opacity-50',

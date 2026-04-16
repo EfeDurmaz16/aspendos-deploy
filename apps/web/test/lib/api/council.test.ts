@@ -140,9 +140,10 @@ describe('Council API', () => {
         it('should generate synthesis', async () => {
             (global.fetch as any).mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve({
-                    synthesis: 'After considering all perspectives...',
-                }),
+                json: () =>
+                    Promise.resolve({
+                        synthesis: 'After considering all perspectives...',
+                    }),
             });
 
             const response = await fetch('/api/council/sessions/session-123/synthesize', {

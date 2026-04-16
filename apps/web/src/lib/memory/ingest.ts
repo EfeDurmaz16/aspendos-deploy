@@ -2,7 +2,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { createEmbeddings } from '@/lib/ai';
 
 // TODO(phase-a-day-3): Qdrant removed — memory ingest will use Convex + SuperMemory
-const COLLECTIONS = { USER_MEMORIES: 'user_memories', CONVERSATION_EMBEDDINGS: 'conversation_embeddings' } as const;
+const COLLECTIONS = {
+    USER_MEMORIES: 'user_memories',
+    CONVERSATION_EMBEDDINGS: 'conversation_embeddings',
+} as const;
 async function storeMemory(_params: Record<string, unknown>): Promise<void> {}
 const qdrant = { scroll: async () => ({ points: [] }) } as any;
 

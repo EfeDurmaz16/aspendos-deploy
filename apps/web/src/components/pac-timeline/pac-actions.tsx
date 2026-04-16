@@ -28,6 +28,7 @@ export function PACActions({
         return (
             <div className="flex items-center gap-1">
                 <button
+                    type="button"
                     onClick={onApprove}
                     className="flex h-6 w-6 items-center justify-center rounded-md bg-foreground/10 text-foreground/70 transition-colors hover:bg-foreground/20"
                     title="Approve"
@@ -35,6 +36,7 @@ export function PACActions({
                     <Check className="h-3.5 w-3.5" weight="bold" />
                 </button>
                 <button
+                    type="button"
                     onClick={onSnooze1Hour}
                     className="flex h-6 w-6 items-center justify-center rounded-md bg-foreground/10 text-muted-foreground transition-colors hover:bg-foreground/15"
                     title="Snooze 1 hour"
@@ -42,6 +44,7 @@ export function PACActions({
                     <Clock className="h-3.5 w-3.5" />
                 </button>
                 <button
+                    type="button"
                     onClick={onDismiss}
                     className="flex h-6 w-6 items-center justify-center rounded-md bg-foreground/10 text-foreground/50 transition-colors hover:bg-foreground/15"
                     title="Dismiss"
@@ -56,6 +59,7 @@ export function PACActions({
         <div className="flex items-center gap-2">
             {/* Approve button */}
             <button
+                type="button"
                 onClick={onApprove}
                 className={cn(
                     'flex items-center gap-1.5 rounded-lg px-3 py-1.5',
@@ -70,6 +74,7 @@ export function PACActions({
             {/* Snooze dropdown */}
             <div className="relative">
                 <button
+                    type="button"
                     onClick={() => setShowSnoozeOptions(!showSnoozeOptions)}
                     className={cn(
                         'flex items-center gap-1.5 rounded-lg px-3 py-1.5',
@@ -100,6 +105,7 @@ export function PACActions({
                             )}
                         >
                             <button
+                                type="button"
                                 onClick={() => {
                                     onSnooze15Min();
                                     setShowSnoozeOptions(false);
@@ -109,6 +115,7 @@ export function PACActions({
                                 15 minutes
                             </button>
                             <button
+                                type="button"
                                 onClick={() => {
                                     onSnooze1Hour();
                                     setShowSnoozeOptions(false);
@@ -118,6 +125,7 @@ export function PACActions({
                                 1 hour
                             </button>
                             <button
+                                type="button"
                                 onClick={() => {
                                     onSnoozeTomorrow();
                                     setShowSnoozeOptions(false);
@@ -133,6 +141,7 @@ export function PACActions({
 
             {/* Dismiss button */}
             <button
+                type="button"
                 onClick={onDismiss}
                 className={cn(
                     'flex h-7 w-7 items-center justify-center rounded-lg',

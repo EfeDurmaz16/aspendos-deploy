@@ -40,7 +40,7 @@ describe('file.write (undoable)', () => {
     it('executes and creates snapshot', async () => {
         const result = await fileWriteTool.execute(
             { path: '/tmp/test.txt', content: 'hello', existing_content: 'old' },
-            ctx,
+            ctx
         );
         expect(result.success).toBe(true);
         expect((result.data as any).snapshotId).toBeDefined();
@@ -62,7 +62,7 @@ describe('email.send (cancelable_window)', () => {
     it('executes and returns cancel deadline', async () => {
         const result = await emailSendTool.execute(
             { to: 'test@example.com', subject: 'Test', body: 'Hello' },
-            ctx,
+            ctx
         );
         expect(result.success).toBe(true);
         expect((result.data as any).cancelDeadline).toBeDefined();
@@ -78,7 +78,7 @@ describe('calendar.create_event (compensatable)', () => {
     it('executes and returns event ID', async () => {
         const result = await calendarCreateEventTool.execute(
             { title: 'Meeting', start: '2026-04-12T10:00', end: '2026-04-12T11:00' },
-            ctx,
+            ctx
         );
         expect(result.success).toBe(true);
         expect((result.data as any).eventId).toBeDefined();
@@ -95,7 +95,7 @@ describe('db.migrate (approval_only)', () => {
     it('executes migration SQL', async () => {
         const result = await dbMigrateTool.execute(
             { migration_sql: 'ALTER TABLE users ADD COLUMN avatar TEXT' },
-            ctx,
+            ctx
         );
         expect(result.success).toBe(true);
     });
@@ -115,7 +115,7 @@ describe('stripe.charge (threshold-based)', () => {
     it('blocks execution of large charge', async () => {
         const result = await stripeChargeTool.execute(
             { amount: 10000, customer_id: 'cus_123' },
-            ctx,
+            ctx
         );
         expect(result.success).toBe(false);
         expect(result.error).toContain('exceeds');
@@ -124,7 +124,7 @@ describe('stripe.charge (threshold-based)', () => {
     it('executes small charge', async () => {
         const result = await stripeChargeTool.execute(
             { amount: 2500, customer_id: 'cus_123' },
-            ctx,
+            ctx
         );
         expect(result.success).toBe(true);
     });

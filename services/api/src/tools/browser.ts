@@ -1,4 +1,9 @@
-import type { ReversibilityMetadata, ToolContext, ToolDefinition, ToolResult } from '../reversibility/types';
+import type {
+    ReversibilityMetadata,
+    ToolContext,
+    ToolDefinition,
+    ToolResult,
+} from '../reversibility/types';
 
 export const browserTool: ToolDefinition = {
     name: 'browser.navigate',
@@ -18,7 +23,10 @@ export const browserTool: ToolDefinition = {
     },
 
     async execute(args: unknown, ctx: ToolContext): Promise<ToolResult> {
-        const { url, action } = args as { url: string; action?: 'navigate' | 'screenshot' | 'extract' };
+        const { url, action } = args as {
+            url: string;
+            action?: 'navigate' | 'screenshot' | 'extract';
+        };
 
         if (!url) return { success: false, error: 'Missing url' };
 

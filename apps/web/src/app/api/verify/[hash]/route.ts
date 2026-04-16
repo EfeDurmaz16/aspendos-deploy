@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(
-    _request: Request,
-    { params }: { params: Promise<{ hash: string }> },
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ hash: string }> }) {
     const { hash } = await params;
 
     if (!hash || hash.length < 8) {
@@ -18,10 +15,7 @@ export async function GET(
         });
 
         if (!response.ok) {
-            return NextResponse.json(
-                { error: 'Commit not found', hash },
-                { status: 404 },
-            );
+            return NextResponse.json({ error: 'Commit not found', hash }, { status: 404 });
         }
 
         const data = await response.json();
@@ -41,7 +35,7 @@ export async function GET(
                 hash,
                 note: 'Verification service unavailable — commit may still be valid',
             },
-            { status: 503 },
+            { status: 503 }
         );
     }
 }

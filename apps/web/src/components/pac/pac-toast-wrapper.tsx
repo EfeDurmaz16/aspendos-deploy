@@ -77,6 +77,7 @@ export function PACToastWrapper() {
                                 </div>
 
                                 <button
+                                    type="button"
                                     onClick={() => {
                                         dismiss(item.id);
                                         setDismissedLocally((prev) => new Set([...prev, item.id]));

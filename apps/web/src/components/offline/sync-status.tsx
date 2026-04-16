@@ -25,6 +25,7 @@ export function SyncStatus({ authToken, compact = false }: SyncStatusProps) {
     if (compact) {
         return (
             <button
+                type="button"
                 onClick={performFullSync}
                 disabled={!isOnline || isSyncing || !authToken}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
@@ -69,6 +70,7 @@ export function SyncStatus({ authToken, compact = false }: SyncStatusProps) {
                 </div>
 
                 <button
+                    type="button"
                     onClick={performFullSync}
                     disabled={!isOnline || isSyncing || !authToken}
                     className="flex items-center gap-1.5 px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors disabled:opacity-50"

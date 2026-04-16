@@ -60,12 +60,14 @@ export function PromptInputBox({ onSubmit, isGenerating, className }: PromptInpu
                     <div className="flex items-center gap-1">
                         <ModePicker selectedMode={mode} onSelectMode={setMode} />
                         <button
+                            type="button"
                             className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
                             title="Attach file"
                         >
                             <Paperclip className="w-5 h-5" />
                         </button>
                         <button
+                            type="button"
                             className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
                             title="Voice input"
                         >
@@ -74,6 +76,7 @@ export function PromptInputBox({ onSubmit, isGenerating, className }: PromptInpu
                     </div>
 
                     <button
+                        type="button"
                         onClick={() => {
                             if (input.trim() && !isGenerating) {
                                 onSubmit(input, mode);

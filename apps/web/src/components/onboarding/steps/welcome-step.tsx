@@ -111,6 +111,7 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                 transition={{ delay: 0.6 }}
             >
                 <button
+                    type="button"
                     onClick={onNext}
                     className={cn(
                         'flex w-full items-center justify-center gap-2 rounded-xl py-4',
@@ -124,6 +125,7 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                     <ArrowRight className="h-4 w-4" />
                 </button>
                 <button
+                    type="button"
                     onClick={onSkip}
                     className="py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >

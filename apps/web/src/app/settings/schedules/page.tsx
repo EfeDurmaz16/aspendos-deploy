@@ -13,7 +13,8 @@ export default function SchedulesPage() {
             <div className="space-y-3">
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-6 text-center">
                     <p className="text-sm text-neutral-500">
-                        No scheduled actions yet. Ask YULA to remind you about something to get started.
+                        No scheduled actions yet. Ask YULA to remind you about something to get
+                        started.
                     </p>
                 </div>
             </div>

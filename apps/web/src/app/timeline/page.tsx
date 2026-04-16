@@ -44,9 +44,7 @@ function TimelineEntry({ commit }: { commit: any }) {
                     >
                         {commit.status}
                     </span>
-                    {commit.fides_signer_did && (
-                        <span title={commit.fides_signer_did}>signed</span>
-                    )}
+                    {commit.fides_signer_did && <span title={commit.fides_signer_did}>signed</span>}
                 </div>
             </div>
         </div>
@@ -74,9 +72,7 @@ export default function TimelinePage() {
 
             <div className="space-y-3">
                 {!commits && (
-                    <div className="text-center py-12 text-neutral-500">
-                        Loading timeline...
-                    </div>
+                    <div className="text-center py-12 text-neutral-500">Loading timeline...</div>
                 )}
                 {commits?.length === 0 && (
                     <div className="text-center py-12 text-neutral-500">

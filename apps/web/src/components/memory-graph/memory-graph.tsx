@@ -237,6 +237,7 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
 
                     {/* Fullscreen toggle */}
                     <button
+                        type="button"
                         onClick={() => setIsFullscreen(!isFullscreen)}
                         className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
                     >
@@ -258,6 +259,7 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
 
                     return (
                         <button
+                            type="button"
                             key={category}
                             onClick={() => setSelectedCategory(isActive ? null : category)}
                             className={cn(
@@ -318,18 +320,21 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
             {/* Zoom Controls */}
             <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-1">
                 <button
+                    type="button"
                     onClick={handleZoomIn}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/80 text-sm text-zinc-400 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
                 >
                     +
                 </button>
                 <button
+                    type="button"
                     onClick={handleZoomOut}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/80 text-sm text-zinc-400 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
                 >
                     -
                 </button>
                 <button
+                    type="button"
                     onClick={handleResetView}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/80 text-xs text-zinc-400 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
                     title="Reset view"

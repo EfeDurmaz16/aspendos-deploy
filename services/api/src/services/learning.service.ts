@@ -52,9 +52,7 @@ export async function detectPatterns(userId: string): Promise<DetectedPattern[]>
         // Filter to tool_call events in the last 30 days
         const toolCallLogs = logs.filter(
             (l) =>
-                l.event_type === 'tool_call' &&
-                l.timestamp >= thirtyDaysAgo &&
-                l.details?.toolName
+                l.event_type === 'tool_call' && l.timestamp >= thirtyDaysAgo && l.details?.toolName
         );
 
         // Group by sessionId
@@ -152,9 +150,7 @@ export async function getSkillsNeedingRefinement(userId?: string): Promise<strin
 
         // Filter to skill_execution events
         const execLogs = logs.filter(
-            (l) =>
-                l.event_type === 'skill_execution' &&
-                (!userId || l.user_id === (userId as any))
+            (l) => l.event_type === 'skill_execution' && (!userId || l.user_id === (userId as any))
         );
 
         // Group by skillId
@@ -187,9 +183,7 @@ export async function getSkillsNeedingRefinement(userId?: string): Promise<strin
             if (stats.total < 5) continue; // Not enough data
             const successRate = stats.successes / stats.total;
             const avgFeedback =
-                stats.feedbackCount >= 3
-                    ? stats.feedbackSum / stats.feedbackCount
-                    : 5.0; // Default OK
+                stats.feedbackCount >= 3 ? stats.feedbackSum / stats.feedbackCount : 5.0; // Default OK
 
             if (successRate < 0.7 || avgFeedback < 3.0) {
                 needsRefinement.push(skillId);
@@ -214,9 +208,7 @@ export async function refineSkill(skillId: string): Promise<boolean> {
 
         // Find the skill definition
         const skillLog = logs.find(
-            (l) =>
-                l.event_type === 'skill_created' &&
-                l.details?.skillId === skillId
+            (l) => l.event_type === 'skill_created' && l.details?.skillId === skillId
         );
         if (!skillLog) return false;
 

@@ -110,6 +110,7 @@ function ToastMessage({ toast, onClose }: ToastProps) {
                 </div>
             </div>
             <button
+                type="button"
                 onClick={() => onClose(toast.id)}
                 className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 rounded"
                 aria-label="Close toast"

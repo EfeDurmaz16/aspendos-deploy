@@ -13,7 +13,7 @@ export default defineSchema({
             v.literal('pro'),
             v.literal('pro_byok'),
             v.literal('team'),
-            v.literal('team_byok'),
+            v.literal('team_byok')
         ),
         stripe_customer_id: v.optional(v.string()),
         fides_did: v.optional(v.string()),
@@ -35,7 +35,12 @@ export default defineSchema({
     messages: defineTable({
         conversation_id: v.id('conversations'),
         user_id: v.id('users'),
-        role: v.union(v.literal('user'), v.literal('assistant'), v.literal('system'), v.literal('tool')),
+        role: v.union(
+            v.literal('user'),
+            v.literal('assistant'),
+            v.literal('system'),
+            v.literal('tool')
+        ),
         content: v.string(),
         tool_calls: v.optional(v.any()),
         created_at: v.number(),
@@ -62,7 +67,7 @@ export default defineSchema({
             v.literal('pending'),
             v.literal('executed'),
             v.literal('reverted'),
-            v.literal('failed'),
+            v.literal('failed')
         ),
         result: v.optional(v.any()),
         reversibility_class: v.union(
@@ -70,7 +75,7 @@ export default defineSchema({
             v.literal('cancelable_window'),
             v.literal('compensatable'),
             v.literal('approval_only'),
-            v.literal('irreversible_blocked'),
+            v.literal('irreversible_blocked')
         ),
         rollback_strategy: v.optional(v.any()),
         rollback_deadline: v.optional(v.number()),
@@ -95,7 +100,7 @@ export default defineSchema({
             v.literal('pending'),
             v.literal('approved'),
             v.literal('rejected'),
-            v.literal('expired'),
+            v.literal('expired')
         ),
     })
         .index('by_user', ['user_id'])
@@ -120,13 +125,13 @@ export default defineSchema({
             v.literal('pro'),
             v.literal('pro_byok'),
             v.literal('team'),
-            v.literal('team_byok'),
+            v.literal('team_byok')
         ),
         status: v.union(
             v.literal('active'),
             v.literal('past_due'),
             v.literal('canceled'),
-            v.literal('trialing'),
+            v.literal('trialing')
         ),
         current_period_end: v.number(),
         seats: v.optional(v.number()),
@@ -158,11 +163,7 @@ export default defineSchema({
         slug: v.string(),
         owner_id: v.id('users'),
         workos_org_id: v.optional(v.string()),
-        tier: v.union(
-            v.literal('team'),
-            v.literal('team_byok'),
-            v.literal('enterprise'),
-        ),
+        tier: v.union(v.literal('team'), v.literal('team_byok'), v.literal('enterprise')),
         created_at: v.number(),
     })
         .index('by_slug', ['slug'])
@@ -176,7 +177,7 @@ export default defineSchema({
             v.literal('owner'),
             v.literal('admin'),
             v.literal('member'),
-            v.literal('viewer'),
+            v.literal('viewer')
         ),
         joined_at: v.number(),
     })

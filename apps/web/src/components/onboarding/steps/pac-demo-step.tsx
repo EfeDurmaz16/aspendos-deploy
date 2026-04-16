@@ -159,6 +159,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
             {/* Actions */}
             <div className="flex w-full max-w-md items-center justify-between">
                 <button
+                    type="button"
                     onClick={onSkip}
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
@@ -166,6 +167,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                 </button>
                 <div className="flex gap-2">
                     <button
+                        type="button"
                         onClick={onPrev}
                         className={cn(
                             'rounded-lg px-4 py-2 text-sm font-medium',
@@ -176,6 +178,7 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                         Back
                     </button>
                     <button
+                        type="button"
                         onClick={onNext}
                         className={cn(
                             'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
@@ -208,10 +211,16 @@ function NotificationCard({ notification }: { notification: (typeof DEMO_NOTIFIC
                     {notification.message}
                 </div>
                 <div className="mt-2 flex gap-2">
-                    <button className="rounded-md px-3 py-1 text-xs font-medium bg-foreground text-background">
+                    <button
+                        type="button"
+                        className="rounded-md px-3 py-1 text-xs font-medium bg-foreground text-background"
+                    >
                         Reply
                     </button>
-                    <button className="rounded-md px-3 py-1 text-xs text-muted-foreground bg-foreground/5">
+                    <button
+                        type="button"
+                        className="rounded-md px-3 py-1 text-xs text-muted-foreground bg-foreground/5"
+                    >
                         Snooze
                     </button>
                 </div>

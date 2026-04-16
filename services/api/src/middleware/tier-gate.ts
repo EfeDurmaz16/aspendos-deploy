@@ -19,7 +19,7 @@ export function requireProPlus(feature: string) {
                     message: `${feature} requires a Pro or Team plan.`,
                     upgrade_url: '/pricing',
                 },
-                403,
+                403
             );
         }
 
@@ -47,7 +47,7 @@ export function requireTier(minTier: UserTier, feature: string) {
                     message: `${feature} requires ${minTier} plan or higher.`,
                     upgrade_url: '/pricing',
                 },
-                403,
+                403
             );
         }
 

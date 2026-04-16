@@ -80,8 +80,8 @@ export default function PrivacyPage() {
                                 (OpenAI, Anthropic, Google, Groq)
                             </li>
                             <li>
-                                Maintain conversation context using memory embeddings in our
-                                vector database
+                                Maintain conversation context using memory embeddings in our vector
+                                database
                             </li>
                             <li>
                                 Send proactive AI callbacks (PAC notifications) based on your

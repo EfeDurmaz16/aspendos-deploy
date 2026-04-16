@@ -1,10 +1,18 @@
-import React from "react";
-import { View, ScrollView, Text, Image, Pressable } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack, useRouter } from "expo-router";
+import React from 'react';
+import { View, ScrollView, Text, Image, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Stack, useRouter } from 'expo-router';
 
 // Simple Avatar component
-function Avatar({ src, fallback, size = "md" }: { src?: string; fallback: string; size?: "sm" | "md" | "lg" }) {
+function Avatar({
+    src,
+    fallback,
+    size = 'md',
+}: {
+    src?: string;
+    fallback: string;
+    size?: 'sm' | 'md' | 'lg';
+}) {
     const sizeMap = { sm: 32, md: 40, lg: 48 };
     const s = sizeMap[size];
 
@@ -23,37 +31,28 @@ function Avatar({ src, fallback, size = "md" }: { src?: string; fallback: string
 }
 
 // Simple Card component
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-    return (
-        <View className={`rounded-2xl ${className}`}>
-            {children}
-        </View>
-    );
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+    return <View className={`rounded-2xl ${className}`}>{children}</View>;
 }
 
 // Simple Button component
 function Button({
     children,
     onPress,
-    variant = "solid",
-    className = ""
+    variant = 'solid',
+    className = '',
 }: {
     children: React.ReactNode;
     onPress?: () => void;
-    variant?: "solid" | "outline";
+    variant?: 'solid' | 'outline';
     className?: string;
 }) {
-    const baseClass = "px-4 py-3 rounded-xl items-center justify-center";
-    const variantClass = variant === "solid"
-        ? "bg-primary"
-        : "bg-transparent border border-border";
-    const textClass = variant === "solid" ? "text-primary-foreground" : "text-foreground";
+    const baseClass = 'px-4 py-3 rounded-xl items-center justify-center';
+    const variantClass = variant === 'solid' ? 'bg-primary' : 'bg-transparent border border-border';
+    const textClass = variant === 'solid' ? 'text-primary-foreground' : 'text-foreground';
 
     return (
-        <Pressable
-            onPress={onPress}
-            className={`${baseClass} ${variantClass} ${className}`}
-        >
+        <Pressable onPress={onPress} className={`${baseClass} ${variantClass} ${className}`}>
             <Text className={`font-semibold ${textClass}`}>{children}</Text>
         </Pressable>
     );
@@ -84,10 +83,10 @@ export default function LandingPage() {
                 {/* Hero Section */}
                 <View className="mb-12">
                     <Text className="text-5xl font-bold text-foreground leading-tight mb-4">
-                        Your second{"\n"}brain.
+                        Your second{'\n'}brain.
                     </Text>
                     <Text className="text-xl text-muted-foreground">
-                        Everything you need to know,{"\n"}right at your fingertips.
+                        Everything you need to know,{'\n'}right at your fingertips.
                     </Text>
                 </View>
 
@@ -100,9 +99,11 @@ export default function LandingPage() {
                                 <Text className="text-xl">💬</Text>
                             </View>
                             <Text className="text-2xl font-bold text-foreground">Chat</Text>
-                            <Text className="text-muted-foreground mt-1">Talk to your personalized agent.</Text>
+                            <Text className="text-muted-foreground mt-1">
+                                Talk to your personalized agent.
+                            </Text>
                         </View>
-                        <Button onPress={() => router.push("/(tabs)/chats")} className="self-start">
+                        <Button onPress={() => router.push('/(tabs)/chats')} className="self-start">
                             Open Chat
                         </Button>
                     </Card>
@@ -115,7 +116,9 @@ export default function LandingPage() {
                             </View>
                             <View>
                                 <Text className="text-lg font-bold text-foreground">Memory</Text>
-                                <Text className="text-xs text-muted-foreground">Recall anything.</Text>
+                                <Text className="text-xs text-muted-foreground">
+                                    Recall anything.
+                                </Text>
                             </View>
                         </Card>
 
@@ -125,14 +128,18 @@ export default function LandingPage() {
                                 <Text className="text-lg">✅</Text>
                             </View>
                             <View>
-                                <Text className="text-lg font-bold text-primary-foreground">Tasks</Text>
-                                <Text className="text-xs text-primary-foreground/70">Stay on track.</Text>
+                                <Text className="text-lg font-bold text-primary-foreground">
+                                    Tasks
+                                </Text>
+                                <Text className="text-xs text-primary-foreground/70">
+                                    Stay on track.
+                                </Text>
                             </View>
                         </Card>
                     </View>
 
                     {/* Council Card */}
-                    <Pressable onPress={() => router.push("/council")}>
+                    <Pressable onPress={() => router.push('/council')}>
                         <Card className="h-32 p-4 flex-row items-center bg-violet-600">
                             <View className="bg-white/20 w-12 h-12 rounded-full items-center justify-center mr-4">
                                 <Text className="text-2xl">👥</Text>
@@ -144,7 +151,6 @@ export default function LandingPage() {
                         </Card>
                     </Pressable>
                 </View>
-
             </ScrollView>
         </SafeAreaView>
     );

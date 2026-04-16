@@ -1,61 +1,59 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "buildCommand": "bun run build",
-  "installCommand": "bun install",
-  "regions": [
-    "iad1"
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": "nextjs",
+    "buildCommand": "bun run build",
+    "installCommand": "bun install",
+    "regions": ["iad1"],
+    "headers": [
         {
-          "key": "Cache-Control",
-          "value": "no-store, must-revalidate"
+            "source": "/api/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "no-store, must-revalidate"
+                }
+            ]
+        },
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                },
+                {
+                    "key": "X-Frame-Options",
+                    "value": "DENY"
+                },
+                {
+                    "key": "X-XSS-Protection",
+                    "value": "1; mode=block"
+                },
+                {
+                    "key": "Referrer-Policy",
+                    "value": "strict-origin-when-cross-origin"
+                }
+            ]
         }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
+    ],
+    "rewrites": [
         {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
+            "source": "/api/v1/:path*",
+            "destination": "https://api.yula.dev/:path*"
         }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/v1/:path*",
-      "destination": "https://api.yula.dev/:path*"
-    }
-  ],
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 30
+    ],
+    "functions": {
+        "app/api/**/*.ts": {
+            "maxDuration": 30
+        },
+        "app/api/chat/route.ts": {
+            "maxDuration": 60
+        }
     },
-    "app/api/chat/route.ts": {
-      "maxDuration": 60
-    }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/pac",
-      "schedule": "0 0 * * *"
-    }
-  ]
+    "crons": [
+        {
+            "path": "/api/cron/pac",
+            "schedule": "0 0 * * *"
+        }
+    ]
 }

@@ -155,6 +155,7 @@ export function PACNotification({
 
                         {reminder.conversationTitle && onViewConversation && (
                             <button
+                                type="button"
                                 onClick={() => onViewConversation(reminder.conversationId!)}
                                 className="flex items-center gap-1 text-feature-pac hover:underline"
                             >
@@ -166,6 +167,7 @@ export function PACNotification({
                 </div>
 
                 <button
+                    type="button"
                     onClick={() => onDismiss(reminder.id)}
                     className="p-1 rounded-[6px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 >
@@ -206,6 +208,7 @@ export function PACNotification({
                             >
                                 {SNOOZE_OPTIONS.map((option) => (
                                     <button
+                                        type="button"
                                         key={option.minutes}
                                         onClick={() => {
                                             onSnooze(reminder.id, option.minutes);
@@ -326,6 +329,7 @@ export function PACToast({ reminder, onComplete, onDismiss, onSnooze, onExpand }
                     </div>
 
                     <button
+                        type="button"
                         onClick={() => onDismiss(reminder.id)}
                         className="p-1 rounded text-zinc-400 hover:text-zinc-600"
                     >

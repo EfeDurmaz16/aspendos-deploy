@@ -6,7 +6,6 @@
  */
 import { Hono } from 'hono';
 
-
 import { createLogger } from '../lib/logger';
 import { requireAuth } from '../middleware/auth';
 

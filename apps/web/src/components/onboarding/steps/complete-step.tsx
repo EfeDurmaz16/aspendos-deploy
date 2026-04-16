@@ -148,6 +148,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                 transition={{ delay: 0.7 }}
             >
                 <button
+                    type="button"
                     onClick={onComplete}
                     className={cn(
                         'flex w-full items-center justify-center gap-2 rounded-xl py-4',
@@ -161,6 +162,7 @@ export function CompleteStep({ onComplete, onRestart }: CompleteStepProps) {
                     <ArrowRight className="h-4 w-4" />
                 </button>
                 <button
+                    type="button"
                     onClick={onRestart}
                     className="py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >

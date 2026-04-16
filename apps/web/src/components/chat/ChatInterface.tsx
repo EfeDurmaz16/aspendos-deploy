@@ -173,6 +173,7 @@ function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
                                 {file.name}
                             </span>
                             <button
+                                type="button"
                                 onClick={() => removeAttachment(index)}
                                 className="text-zinc-500 hover:text-zinc-300"
                             >
@@ -202,6 +203,7 @@ function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
                         rows={1}
                     />
                     <button
+                        type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={disabled || isLoading}
                         className="absolute right-3 bottom-3 text-zinc-500 hover:text-zinc-300 disabled:opacity-50"

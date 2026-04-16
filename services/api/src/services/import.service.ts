@@ -119,17 +119,14 @@ export async function getImportJob(jobId: string, userId: string) {
 
         // Find the creation event
         const creationLog = logs.find(
-            (l) =>
-                l.event_type === 'import_job_created' && l.details?.jobId === jobId
+            (l) => l.event_type === 'import_job_created' && l.details?.jobId === jobId
         );
         if (!creationLog) return null;
 
         // Find latest status update
         const statusLogs = logs
             .filter(
-                (l) =>
-                    l.event_type === 'import_job_status_updated' &&
-                    l.details?.jobId === jobId
+                (l) => l.event_type === 'import_job_status_updated' && l.details?.jobId === jobId
             )
             .sort((a, b) => b.timestamp - a.timestamp);
 
@@ -137,10 +134,7 @@ export async function getImportJob(jobId: string, userId: string) {
 
         // Find entities
         const entities = logs
-            .filter(
-                (l) =>
-                    l.event_type === 'import_entity_stored' && l.details?.jobId === jobId
-            )
+            .filter((l) => l.event_type === 'import_entity_stored' && l.details?.jobId === jobId)
             .map((l) => l.details);
 
         return {
@@ -666,9 +660,7 @@ export async function getImportStats(userId: string) {
 
         const jobs = logs.filter((l) => l.event_type === 'import_job_created');
         const completedJobs = logs.filter(
-            (l) =>
-                l.event_type === 'import_job_status_updated' &&
-                l.details?.status === 'COMPLETED'
+            (l) => l.event_type === 'import_job_status_updated' && l.details?.status === 'COMPLETED'
         );
 
         // Sum imported items from completed jobs
@@ -734,8 +726,7 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
                     .map((m) => m.content)
                     .join(' ');
 
-                const firstUserMsg =
-                    content.messages.find((m) => m.role === 'user')?.content || '';
+                const firstUserMsg = content.messages.find((m) => m.role === 'user')?.content || '';
                 const summary = `${entity.title || 'Imported conversation'}: ${firstUserMsg.slice(0, 200)}`;
 
                 await client.mutation(api.memories.create, {
@@ -747,12 +738,8 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
                 memoriesCreated++;
 
                 // Extract key topics/themes from longer conversations
-                if (
-                    content.messages.length >= 10 &&
-                    memoriesCreated < maxMemoriesPerImport
-                ) {
-                    const allText =
-                        `${userMessages} ${assistantMessages}`.toLowerCase();
+                if (content.messages.length >= 10 && memoriesCreated < maxMemoriesPerImport) {
+                    const allText = `${userMessages} ${assistantMessages}`.toLowerCase();
                     const technicalPatterns = [
                         /\b(typescript|javascript|python|react|node|api|database|sql)\b/g,
                         /\b(architecture|design|pattern|implementation|algorithm)\b/g,
@@ -774,10 +761,7 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
                     }
                 }
             } catch (error) {
-                console.error(
-                    `Failed to extract memories from entity:`,
-                    error
-                );
+                console.error(`Failed to extract memories from entity:`, error);
                 // Continue with next entity
             }
         }

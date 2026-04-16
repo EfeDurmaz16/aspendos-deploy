@@ -146,7 +146,9 @@ export async function listMemoriesForDashboard(
         if (search) {
             const lower = search.toLowerCase();
             memories = memories.filter(
-                (m: any) => m.content_preview?.toLowerCase().includes(lower) || m.source?.toLowerCase().includes(lower)
+                (m: any) =>
+                    m.content_preview?.toLowerCase().includes(lower) ||
+                    m.source?.toLowerCase().includes(lower)
             );
         }
 
@@ -241,7 +243,13 @@ export async function createMemory(input: CreateMemoryInput): Promise<Memory> {
             content_preview: input.content,
             source: input.source || 'user_input',
         });
-        return { id, userId: input.userId, content: input.content, type: input.type, source: input.source };
+        return {
+            id,
+            userId: input.userId,
+            content: input.content,
+            type: input.type,
+            source: input.source,
+        };
     } catch {
         return null;
     }
@@ -332,7 +340,8 @@ export async function synthesizeMemories(userId: string): Promise<string> {
 
         // Build a narrative from content_preview fields
         const lines = recentMemories.map(
-            (m: any, i: number) => `${i + 1}. ${m.content_preview || '(no preview)'} [source: ${m.source || 'unknown'}]`
+            (m: any, i: number) =>
+                `${i + 1}. ${m.content_preview || '(no preview)'} [source: ${m.source || 'unknown'}]`
         );
 
         return `# Memory Synthesis for User ${userId}\n\n${lines.join('\n')}`;

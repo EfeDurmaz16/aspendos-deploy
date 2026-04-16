@@ -1,4 +1,9 @@
-import type { ReversibilityMetadata, ToolContext, ToolDefinition, ToolResult } from '../reversibility/types';
+import type {
+    ReversibilityMetadata,
+    ToolContext,
+    ToolDefinition,
+    ToolResult,
+} from '../reversibility/types';
 
 const BLOCK_THRESHOLD_CENTS = 5000;
 

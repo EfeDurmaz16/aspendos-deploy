@@ -9,7 +9,6 @@
  *   GET/POST/DELETE /messaging/connections → PlatformConnection CRUD
  */
 
-
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';

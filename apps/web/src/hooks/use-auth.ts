@@ -3,7 +3,13 @@
 import { useEffect, useState } from 'react';
 
 interface AuthState {
-    user: { id: string; email: string; firstName: string | null; lastName: string | null; profilePictureUrl: string | null } | null;
+    user: {
+        id: string;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        profilePictureUrl: string | null;
+    } | null;
     loading: boolean;
 }
 
@@ -57,7 +63,8 @@ export function useUser() {
                   id: state.user.id,
                   firstName: state.user.firstName,
                   lastName: state.user.lastName,
-                  fullName: [state.user.firstName, state.user.lastName].filter(Boolean).join(' ') || null,
+                  fullName:
+                      [state.user.firstName, state.user.lastName].filter(Boolean).join(' ') || null,
                   emailAddresses: state.user.email ? [{ emailAddress: state.user.email }] : [],
                   primaryEmailAddress: state.user.email ? { emailAddress: state.user.email } : null,
                   imageUrl: state.user.profilePictureUrl,

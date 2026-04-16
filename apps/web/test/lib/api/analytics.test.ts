@@ -139,7 +139,10 @@ describe('Analytics API', () => {
             expect(response.ok).toBe(true);
             const data = await response.json();
             expect(data.data).toHaveLength(4);
-            expect(data.data.reduce((sum: number, m: any) => sum + m.percentage, 0)).toBeCloseTo(100, 0);
+            expect(data.data.reduce((sum: number, m: any) => sum + m.percentage, 0)).toBeCloseTo(
+                100,
+                0
+            );
         });
     });
 });

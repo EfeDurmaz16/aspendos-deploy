@@ -191,6 +191,7 @@ export default function CouncilHistoryPage() {
                             transition={{ delay: index * 0.03 }}
                         >
                             <button
+                                type="button"
                                 onClick={() => handleExpand(session.id)}
                                 className={cn(
                                     'w-full text-left rounded-xl border border-border p-4 transition-all',

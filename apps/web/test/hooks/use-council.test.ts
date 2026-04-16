@@ -70,10 +70,11 @@ describe('useCouncil Hook', () => {
         it('should call API to create council session', async () => {
             (global.fetch as any).mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve({
-                    sessionId: 'test-session',
-                    streamUrl: '/api/council/sessions/test-session/stream',
-                }),
+                json: () =>
+                    Promise.resolve({
+                        sessionId: 'test-session',
+                        streamUrl: '/api/council/sessions/test-session/stream',
+                    }),
             });
 
             const { result } = renderHook(() => useCouncil());

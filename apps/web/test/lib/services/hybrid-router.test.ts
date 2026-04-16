@@ -24,9 +24,16 @@ vi.mock('@/lib/services/anthropic', () => ({
 }));
 
 // Import after mocking
-import { executeHybridRoute, createUnifiedStreamingCompletion, AVAILABLE_TOOLS } from '@/lib/services/hybrid-router';
+import {
+    executeHybridRoute,
+    createUnifiedStreamingCompletion,
+    AVAILABLE_TOOLS,
+} from '@/lib/services/hybrid-router';
 import { routeUserMessage } from '@/lib/services/groq';
-import { createStreamingChatCompletion as createOpenAIStream, createEmbedding } from '@/lib/services/openai';
+import {
+    createStreamingChatCompletion as createOpenAIStream,
+    createEmbedding,
+} from '@/lib/services/openai';
 import { createAnthropicStreamingCompletion } from '@/lib/services/anthropic';
 
 describe('Hybrid Router', () => {
@@ -147,9 +154,12 @@ describe('Hybrid Router', () => {
                 }
             }
 
-            expect(createOpenAIStream).toHaveBeenCalledWith(messages, expect.objectContaining({
-                model: 'gpt-4o-mini',
-            }));
+            expect(createOpenAIStream).toHaveBeenCalledWith(
+                messages,
+                expect.objectContaining({
+                    model: 'gpt-4o-mini',
+                })
+            );
             expect(chunks).toEqual(['Hello', ' there!']);
         });
 
@@ -207,7 +217,7 @@ describe('Hybrid Router', () => {
             }
 
             // Should have fallback notification
-            const fallbackChunk = results.find(r => r.type === 'fallback');
+            const fallbackChunk = results.find((r) => r.type === 'fallback');
             expect(fallbackChunk).toBeDefined();
             expect(fallbackChunk?.content).toContain('claude-3-5-sonnet-20241022');
         });
@@ -234,7 +244,7 @@ describe('Hybrid Router', () => {
                 results.push(chunk);
             }
 
-            const errorChunk = results.find(r => r.type === 'error');
+            const errorChunk = results.find((r) => r.type === 'error');
             expect(errorChunk).toBeDefined();
             expect(errorChunk?.content).toContain('All models failed');
         });

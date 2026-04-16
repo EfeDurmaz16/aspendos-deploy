@@ -13,7 +13,6 @@
  * Backed by Convex memories table for ownership tracking and fallback.
  */
 
-
 import { Supermemory as SuperMemory } from 'supermemory';
 import { getConvexClient, api } from '../lib/convex';
 import { breakers } from '../lib/circuit-breaker';
@@ -247,9 +246,7 @@ export async function searchMemories(
                         m.source &&
                         (m.source === 'import_pending' || m.source === 'supermemory_fallback') &&
                         m.content_preview &&
-                        queryWords.some((w) =>
-                            m.content_preview!.toLowerCase().includes(w)
-                        )
+                        queryWords.some((w) => m.content_preview!.toLowerCase().includes(w))
                 );
 
                 const existingContents = new Set(
@@ -424,7 +421,9 @@ export async function verifyMemoryOwnership(memoryId: string, userId: string): P
             user_id: userId as any,
             limit: 500,
         });
-        return memories.some((m) => (m._id as any as string) === memoryId || m.supermemory_id === memoryId);
+        return memories.some(
+            (m) => (m._id as any as string) === memoryId || m.supermemory_id === memoryId
+        );
     } catch {
         return false;
     }

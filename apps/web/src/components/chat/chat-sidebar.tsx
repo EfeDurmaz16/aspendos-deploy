@@ -196,6 +196,7 @@ export function ChatSidebar({
                                             }}
                                         >
                                             <button
+                                                type="button"
                                                 onClick={() => onSelectChat?.(chat.id)}
                                                 className={cn(
                                                     'w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors group',

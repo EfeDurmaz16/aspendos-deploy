@@ -69,7 +69,9 @@ async function runEndpointTest(config: EndpointConfig): Promise<LoadTestResult> 
 
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...(config.requiresAuth && AUTH_TOKEN ? { Cookie: `better-auth.session_token=${AUTH_TOKEN}` } : {}),
+        ...(config.requiresAuth && AUTH_TOKEN
+            ? { Cookie: `better-auth.session_token=${AUTH_TOKEN}` }
+            : {}),
         ...(config.headers || {}),
     };
 
@@ -165,7 +167,9 @@ async function main() {
         process.stdout.write(`Testing ${endpoint.method} ${endpoint.path}...`);
         const result = await runEndpointTest(endpoint);
         results.push(result);
-        console.log(` ${result.requestsPerSecond} req/s (p95: ${result.p95LatencyMs}ms, err: ${result.errorRate}%)`);
+        console.log(
+            ` ${result.requestsPerSecond} req/s (p95: ${result.p95LatencyMs}ms, err: ${result.errorRate}%)`
+        );
     }
 
     // Summary table
@@ -198,11 +202,15 @@ async function main() {
     // Overall stats
     const totalReqs = results.reduce((s, r) => s + r.totalRequests, 0);
     const totalErrors = results.reduce((s, r) => s + r.errorCount, 0);
-    const avgRps = Math.round(results.reduce((s, r) => s + r.requestsPerSecond, 0) / results.length);
+    const avgRps = Math.round(
+        results.reduce((s, r) => s + r.requestsPerSecond, 0) / results.length
+    );
     const maxP95 = Math.max(...results.map((r) => r.p95LatencyMs));
 
     console.log(`Total requests: ${totalReqs}`);
-    console.log(`Total errors:   ${totalErrors} (${Math.round((totalErrors / totalReqs) * 10000) / 100}%)`);
+    console.log(
+        `Total errors:   ${totalErrors} (${Math.round((totalErrors / totalReqs) * 10000) / 100}%)`
+    );
     console.log(`Avg RPS:        ${avgRps}`);
     console.log(`Max p95:        ${maxP95}ms`);
 
@@ -223,10 +231,14 @@ async function main() {
             failures.push(`${r.endpoint}: p95 ${r.p95LatencyMs}ms > ${PASS_CRITERIA.maxP95Ms}ms`);
         }
         if (r.errorRate > PASS_CRITERIA.maxErrorRate) {
-            failures.push(`${r.endpoint}: error rate ${r.errorRate}% > ${PASS_CRITERIA.maxErrorRate}%`);
+            failures.push(
+                `${r.endpoint}: error rate ${r.errorRate}% > ${PASS_CRITERIA.maxErrorRate}%`
+            );
         }
         if (r.requestsPerSecond < PASS_CRITERIA.minRps) {
-            failures.push(`${r.endpoint}: ${r.requestsPerSecond} rps < ${PASS_CRITERIA.minRps} rps`);
+            failures.push(
+                `${r.endpoint}: ${r.requestsPerSecond} rps < ${PASS_CRITERIA.minRps} rps`
+            );
         }
     }
 

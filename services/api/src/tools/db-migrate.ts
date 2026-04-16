@@ -1,4 +1,9 @@
-import type { ReversibilityMetadata, ToolContext, ToolDefinition, ToolResult } from '../reversibility/types';
+import type {
+    ReversibilityMetadata,
+    ToolContext,
+    ToolDefinition,
+    ToolResult,
+} from '../reversibility/types';
 
 export const dbMigrateTool: ToolDefinition = {
     name: 'db.migrate',
@@ -9,7 +14,8 @@ export const dbMigrateTool: ToolDefinition = {
             reversibility_class: 'approval_only',
             approval_required: true,
             rollback_strategy: { kind: 'none' },
-            human_explanation: 'Database migration requires human approval before execution. Provide a reverse migration manually.',
+            human_explanation:
+                'Database migration requires human approval before execution. Provide a reverse migration manually.',
         };
     },
 

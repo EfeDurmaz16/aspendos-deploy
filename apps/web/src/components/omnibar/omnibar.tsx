@@ -146,6 +146,7 @@ export function Omnibar() {
                                         <span>K</span>
                                     </kbd>
                                     <button
+                                        type="button"
                                         onClick={close}
                                         className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-white/5 hover:text-zinc-300"
                                     >

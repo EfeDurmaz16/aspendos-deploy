@@ -105,9 +105,10 @@ describe('Billing API', () => {
         it('should redirect to checkout', async () => {
             (global.fetch as any).mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve({
-                    checkoutUrl: 'https://polar.sh/checkout/abc123',
-                }),
+                json: () =>
+                    Promise.resolve({
+                        checkoutUrl: 'https://polar.sh/checkout/abc123',
+                    }),
             });
 
             const response = await fetch('/api/checkout?plan=pro', {
@@ -124,9 +125,10 @@ describe('Billing API', () => {
         it('should redirect to customer portal', async () => {
             (global.fetch as any).mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve({
-                    portalUrl: 'https://polar.sh/portal/abc123',
-                }),
+                json: () =>
+                    Promise.resolve({
+                        portalUrl: 'https://polar.sh/portal/abc123',
+                    }),
             });
 
             const response = await fetch('/api/portal', {

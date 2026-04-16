@@ -87,7 +87,9 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                         }
                         try {
                             const sm = await import('supermemory');
-                            const client = new sm.default({ apiKey: process.env.SUPERMEMORY_API_KEY });
+                            const client = new sm.default({
+                                apiKey: process.env.SUPERMEMORY_API_KEY,
+                            });
                             const results = await client.search.execute({
                                 q: query,
                                 containerTags: ['user_default'],
@@ -110,7 +112,9 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                         }
                         try {
                             const sm = await import('supermemory');
-                            const client = new sm.default({ apiKey: process.env.SUPERMEMORY_API_KEY });
+                            const client = new sm.default({
+                                apiKey: process.env.SUPERMEMORY_API_KEY,
+                            });
                             await client.memories.create({
                                 content,
                                 containerTags: ['user_default'],

@@ -81,6 +81,7 @@ export function ChatInput({
                 />
 
                 <button
+                    type="button"
                     onClick={handleSubmit}
                     disabled={disabled || !value.trim()}
                     className="p-2 rounded-lg bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"

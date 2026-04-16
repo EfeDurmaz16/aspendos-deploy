@@ -41,7 +41,7 @@ export function createApprovalCard(
     humanExplanation: string,
     reversibilityClass: ReversibilityClass,
     args: unknown,
-    expiresAt?: string,
+    expiresAt?: string
 ): ApprovalCard {
     return {
         commitHash,

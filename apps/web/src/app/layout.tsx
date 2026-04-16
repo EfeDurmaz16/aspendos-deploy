@@ -106,17 +106,17 @@ export default async function RootLayout({
                 <SkipLink />
 
                 <ConvexClientProvider>
-                <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
-                    <OfflineBanner />
-                    <ErrorBoundary>
-                        <main id="main-content" tabIndex={-1}>
-                            {children}
-                        </main>
-                    </ErrorBoundary>
-                    <InstallPrompt />
-                    <UpdatePrompt />
-                    <CookieConsent />
-                </ThemeProvider>
+                    <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
+                        <OfflineBanner />
+                        <ErrorBoundary>
+                            <main id="main-content" tabIndex={-1}>
+                                {children}
+                            </main>
+                        </ErrorBoundary>
+                        <InstallPrompt />
+                        <UpdatePrompt />
+                        <CookieConsent />
+                    </ThemeProvider>
                 </ConvexClientProvider>
             </body>
         </html>

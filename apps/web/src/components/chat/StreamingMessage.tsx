@@ -72,6 +72,7 @@ function MessageActions({
         <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border opacity-0 group-hover:opacity-100 transition-opacity">
             {/* Copy button */}
             <button
+                type="button"
                 onClick={handleCopy}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
                 aria-label={copied ? 'Copied to clipboard' : 'Copy message'}
@@ -97,6 +98,7 @@ function MessageActions({
                 aria-label="Response feedback"
             >
                 <button
+                    type="button"
                     onClick={() => handleFeedback('up')}
                     className={`p-1.5 rounded-lg transition-all ${
                         feedback === 'up'
@@ -113,6 +115,7 @@ function MessageActions({
                     />
                 </button>
                 <button
+                    type="button"
                     onClick={() => handleFeedback('down')}
                     className={`p-1.5 rounded-lg transition-all ${
                         feedback === 'down'
@@ -162,6 +165,7 @@ function MemoriesUsedSection({ memories }: { memories: MemoryUsed[] }) {
     return (
         <div className="mt-3 pt-2 border-t border-border">
             <button
+                type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
             >
@@ -227,6 +231,7 @@ function DecisionSection({ decision }: { decision: MemoryDecision }) {
     return (
         <div className="mt-3 pt-2 border-t border-border">
             <button
+                type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
             >

@@ -5,7 +5,6 @@
  * All endpoints require admin authentication.
  */
 
-
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { requireAuth } from '../middleware/auth';

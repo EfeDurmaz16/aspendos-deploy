@@ -66,6 +66,7 @@ export function InstallPrompt() {
                     </div>
 
                     <button
+                        type="button"
                         onClick={handleDismiss}
                         className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
                         aria-label="Dismiss"
@@ -76,12 +77,14 @@ export function InstallPrompt() {
 
                 <div className="mt-3 flex gap-2">
                     <button
+                        type="button"
                         onClick={handleDismiss}
                         className="flex-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                         Not now
                     </button>
                     <button
+                        type="button"
                         onClick={handleInstall}
                         className="flex-1 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
                     >

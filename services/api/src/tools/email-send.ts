@@ -1,7 +1,16 @@
-import type { ReversibilityMetadata, ReverseResult, ToolContext, ToolDefinition, ToolResult } from '../reversibility/types';
+import type {
+    ReversibilityMetadata,
+    ReverseResult,
+    ToolContext,
+    ToolDefinition,
+    ToolResult,
+} from '../reversibility/types';
 
 const CANCEL_WINDOW_MS = 30_000;
-const pendingEmails = new Map<string, { to: string; subject: string; deadline: number; canceled: boolean }>();
+const pendingEmails = new Map<
+    string,
+    { to: string; subject: string; deadline: number; canceled: boolean }
+>();
 
 export const emailSendTool: ToolDefinition = {
     name: 'email.send',
@@ -39,7 +48,12 @@ export const emailSendTool: ToolDefinition = {
 
         return {
             success: true,
-            data: { emailId, to, subject, cancelDeadline: new Date(Date.now() + CANCEL_WINDOW_MS).toISOString() },
+            data: {
+                emailId,
+                to,
+                subject,
+                cancelDeadline: new Date(Date.now() + CANCEL_WINDOW_MS).toISOString(),
+            },
         };
     },
 

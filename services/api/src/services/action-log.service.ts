@@ -120,9 +120,7 @@ export async function getSessionActions(
         });
 
         // Filter by sessionId in JS (Convex action_log doesn't have sessionId index)
-        const filtered = (all || []).filter(
-            (a: any) => a.details?.sessionId === sessionId
-        );
+        const filtered = (all || []).filter((a: any) => a.details?.sessionId === sessionId);
 
         const offset = options?.offset ?? 0;
         return filtered.slice(offset, offset + (options?.limit ?? 100));
@@ -220,9 +218,7 @@ export async function getRecentActions(
 
         // Filter by toolName in JS if requested
         if (options?.toolName) {
-            actions = actions.filter(
-                (a: any) => a.details?.toolName === options.toolName
-            );
+            actions = actions.filter((a: any) => a.details?.toolName === options.toolName);
         }
 
         return actions;

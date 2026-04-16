@@ -11,8 +11,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
-        button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button {...props}>{children}</button>,
+        div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+            <div {...props}>{children}</div>
+        ),
+        button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+            <button {...props}>{children}</button>
+        ),
     },
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -66,9 +70,7 @@ function MockChatInterface({
                 ))}
             </div>
 
-            {isStreaming && (
-                <div data-testid="streaming-indicator">Thinking...</div>
-            )}
+            {isStreaming && <div data-testid="streaming-indicator">Thinking...</div>}
 
             <form onSubmit={handleSubmit} data-testid="chat-form">
                 <input
@@ -78,7 +80,11 @@ function MockChatInterface({
                     placeholder="Type a message..."
                     data-testid="chat-input"
                 />
-                <button type="submit" data-testid="send-button" disabled={!input.trim() || isStreaming}>
+                <button
+                    type="submit"
+                    data-testid="send-button"
+                    disabled={!input.trim() || isStreaming}
+                >
                     Send
                 </button>
             </form>
@@ -108,7 +114,12 @@ describe('ChatInterface Component', () => {
 
         it('should render assistant messages correctly', () => {
             const messages = [
-                { id: '1', role: 'assistant' as const, content: 'Hi there!', createdAt: new Date() },
+                {
+                    id: '1',
+                    role: 'assistant' as const,
+                    content: 'Hi there!',
+                    createdAt: new Date(),
+                },
             ];
 
             render(<MockChatInterface messages={messages} />);
@@ -120,7 +131,12 @@ describe('ChatInterface Component', () => {
         it('should render multiple messages in order', () => {
             const messages = [
                 { id: '1', role: 'user' as const, content: 'First message', createdAt: new Date() },
-                { id: '2', role: 'assistant' as const, content: 'Second message', createdAt: new Date() },
+                {
+                    id: '2',
+                    role: 'assistant' as const,
+                    content: 'Second message',
+                    createdAt: new Date(),
+                },
                 { id: '3', role: 'user' as const, content: 'Third message', createdAt: new Date() },
             ];
 
@@ -248,7 +264,7 @@ describe('Streaming Message Display', () => {
         // Simulate streaming
         for (const chunk of chunks) {
             displayedText += chunk;
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise((resolve) => setTimeout(resolve, 10));
         }
 
         expect(displayedText).toBe('Hello world!');

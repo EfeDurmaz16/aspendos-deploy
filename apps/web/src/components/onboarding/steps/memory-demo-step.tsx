@@ -196,6 +196,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
             {/* Actions */}
             <div className="flex w-full max-w-md items-center justify-between">
                 <button
+                    type="button"
                     onClick={onSkip}
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
@@ -203,6 +204,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                 </button>
                 <div className="flex gap-2">
                     <button
+                        type="button"
                         onClick={onPrev}
                         className={cn(
                             'rounded-lg px-4 py-2 text-sm font-medium',
@@ -213,6 +215,7 @@ export function MemoryDemoStep({ onNext, onPrev, onSkip }: MemoryDemoStepProps) 
                         Back
                     </button>
                     <button
+                        type="button"
                         onClick={onNext}
                         className={cn(
                             'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',

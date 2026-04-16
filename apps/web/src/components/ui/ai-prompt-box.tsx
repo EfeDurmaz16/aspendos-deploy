@@ -164,6 +164,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         };
         return (
             <button
+                type="button"
                 className={cn(
                     'inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
                     variantClasses[variant],
@@ -641,6 +642,7 @@ export const PromptInputBox = React.forwardRef(
                                                 className="h-full w-full object-cover"
                                             />
                                             <button
+                                                type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleRemoveFile(index);
@@ -693,6 +695,7 @@ export const PromptInputBox = React.forwardRef(
                         >
                             <PromptInputAction tooltip="Upload image">
                                 <button
+                                    type="button"
                                     onClick={() => uploadInputRef.current?.click()}
                                     className="flex h-8 w-8 text-[#9CA3AF] cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-gray-600/30 hover:text-[#D1D5DB]"
                                     disabled={isRecording}

@@ -154,11 +154,7 @@ bot.onAction(async (action) => {
 // CORE MESSAGE HANDLER
 // ============================================
 
-async function handleSlashCommand(
-    thread: any,
-    command: string,
-    userId: string,
-): Promise<boolean> {
+async function handleSlashCommand(thread: any, command: string, userId: string): Promise<boolean> {
     if (command === '/undo') {
         const { handleUndoCommand } = await import('../audit/undo');
         const result = await handleUndoCommand(userId);

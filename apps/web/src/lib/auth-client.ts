@@ -14,15 +14,21 @@ export async function signOut(): Promise<void> {
 }
 
 export const signIn = {
-    email: async () => { window.location.href = '/login'; },
+    email: async () => {
+        window.location.href = '/login';
+    },
     social: async ({ provider }: { provider: string; callbackURL?: string }) => {
         window.location.href = `/login?provider=${provider}`;
     },
-    passkey: async () => { window.location.href = '/login'; },
+    passkey: async () => {
+        window.location.href = '/login';
+    },
 };
 
 export const signUp = {
-    email: async () => { window.location.href = '/signup'; },
+    email: async () => {
+        window.location.href = '/signup';
+    },
 };
 
 export async function checkout(_opts: any): Promise<void> {

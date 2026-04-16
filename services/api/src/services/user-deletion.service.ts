@@ -344,7 +344,9 @@ export async function getDataSummary(userId: string): Promise<DataSummary> {
                     conversation_id: conv._id,
                 });
                 messageCount += msgs.length;
-            } catch { /* continue */ }
+            } catch {
+                /* continue */
+            }
         }
 
         const councilSessionCount = actionLogs.filter(
@@ -498,7 +500,9 @@ export async function anonymizeUser(userId: string): Promise<void> {
         for (const memory of memories) {
             try {
                 await client.mutation(api.memories.remove, { id: memory._id });
-            } catch { /* continue */ }
+            } catch {
+                /* continue */
+            }
         }
 
         // Delete all conversations and messages
@@ -514,7 +518,9 @@ export async function anonymizeUser(userId: string): Promise<void> {
                     await client.mutation(api.messages.remove, { id: msg._id });
                 }
                 await client.mutation(api.conversations.remove, { id: conv._id });
-            } catch { /* continue */ }
+            } catch {
+                /* continue */
+            }
         }
     } catch (error) {
         console.error('[GDPR] anonymizeUser failed:', error);

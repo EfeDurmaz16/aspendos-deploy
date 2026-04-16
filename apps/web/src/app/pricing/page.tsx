@@ -243,6 +243,7 @@ function PricingContent() {
                     <div className="inline-flex p-1 rounded-lg border bg-muted">
                         {(['weekly', 'monthly', 'annual'] as const).map((period) => (
                             <button
+                                type="button"
                                 key={period}
                                 onClick={() => setBillingPeriod(period)}
                                 className={cn(

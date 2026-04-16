@@ -10,7 +10,6 @@
  * 3. SuperMemory search fails -> searchFallback() uses PostgreSQL ILIKE text search
  */
 
-
 import { breakers } from './circuit-breaker';
 
 /**

@@ -8,9 +8,7 @@ import AxeBuilder from '@axe-core/playwright';
  * These tests ensure the app is accessible to users with disabilities.
  */
 test.describe('Accessibility (WCAG 2.1 AA)', () => {
-    test('landing page should have no critical accessibility violations', async ({
-        page,
-    }) => {
+    test('landing page should have no critical accessibility violations', async ({ page }) => {
         await page.goto('/');
 
         const accessibilityScanResults = await new AxeBuilder({ page })
@@ -25,9 +23,7 @@ test.describe('Accessibility (WCAG 2.1 AA)', () => {
         expect(criticalViolations).toEqual([]);
     });
 
-    test('login page should have no critical accessibility violations', async ({
-        page,
-    }) => {
+    test('login page should have no critical accessibility violations', async ({ page }) => {
         await page.goto('/login');
 
         const accessibilityScanResults = await new AxeBuilder({ page })
@@ -41,9 +37,7 @@ test.describe('Accessibility (WCAG 2.1 AA)', () => {
         expect(criticalViolations).toEqual([]);
     });
 
-    test('signup page should have no critical accessibility violations', async ({
-        page,
-    }) => {
+    test('signup page should have no critical accessibility violations', async ({ page }) => {
         await page.goto('/signup');
 
         const accessibilityScanResults = await new AxeBuilder({ page })
@@ -57,9 +51,7 @@ test.describe('Accessibility (WCAG 2.1 AA)', () => {
         expect(criticalViolations).toEqual([]);
     });
 
-    test('pricing page should have no critical accessibility violations', async ({
-        page,
-    }) => {
+    test('pricing page should have no critical accessibility violations', async ({ page }) => {
         await page.goto('/pricing');
 
         const accessibilityScanResults = await new AxeBuilder({ page })
@@ -125,9 +117,7 @@ test.describe('Accessibility (WCAG 2.1 AA)', () => {
                 const hasAriaLabelledBy = await button.getAttribute('aria-labelledby');
 
                 const hasAccessibleName =
-                    (hasText && hasText.trim().length > 0) ||
-                    hasAriaLabel ||
-                    hasAriaLabelledBy;
+                    (hasText && hasText.trim().length > 0) || hasAriaLabel || hasAriaLabelledBy;
 
                 expect(hasAccessibleName).toBeTruthy();
             }
@@ -161,11 +151,7 @@ test.describe('Accessibility (WCAG 2.1 AA)', () => {
                     hasLabel = (await label.count()) > 0;
                 }
 
-                const hasAccessibleLabel =
-                    hasLabel ||
-                    ariaLabel ||
-                    ariaLabelledBy ||
-                    placeholder; // placeholder is fallback, not ideal
+                const hasAccessibleLabel = hasLabel || ariaLabel || ariaLabelledBy || placeholder; // placeholder is fallback, not ideal
 
                 expect(hasAccessibleLabel).toBeTruthy();
             }

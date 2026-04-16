@@ -348,9 +348,7 @@ export async function getPACSettings(userId: string) {
             user_id: userId as any,
             limit: 100,
         });
-        const settingsLog = (logs || []).find(
-            (l: any) => l.event_type === 'pac_settings'
-        );
+        const settingsLog = (logs || []).find((l: any) => l.event_type === 'pac_settings');
         if (settingsLog) return settingsLog.details;
     } catch {
         // fall through to defaults
@@ -460,9 +458,15 @@ export async function getPACStats(userId: string) {
 
         const total = reminders.length;
         const pending = reminders.filter((r: any) => r.details?.status === 'PENDING').length;
-        const completed = responses.filter((r: any) => r.details?.responseType === 'acknowledged').length;
-        const snoozed = (logs || []).filter((l: any) => l.event_type === 'pac_reminder_snooze').length;
-        const dismissed = responses.filter((r: any) => r.details?.responseType === 'dismissed').length;
+        const completed = responses.filter(
+            (r: any) => r.details?.responseType === 'acknowledged'
+        ).length;
+        const snoozed = (logs || []).filter(
+            (l: any) => l.event_type === 'pac_reminder_snooze'
+        ).length;
+        const dismissed = responses.filter(
+            (r: any) => r.details?.responseType === 'dismissed'
+        ).length;
 
         const effectiveness = await computeEffectiveness(userId);
 

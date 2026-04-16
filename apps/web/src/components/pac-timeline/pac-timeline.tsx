@@ -38,6 +38,7 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
                 )}
             >
                 <button
+                    type="button"
                     onClick={onToggleCollapse}
                     className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-muted-foreground/10 text-muted-foreground transition-colors hover:bg-muted-foreground/20"
                 >
@@ -88,6 +89,7 @@ export function PACTimeline({ className, collapsed = false, onToggleCollapse }: 
                     </div>
                 </div>
                 <button
+                    type="button"
                     onClick={onToggleCollapse}
                     className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-white/5 hover:text-white"
                 >

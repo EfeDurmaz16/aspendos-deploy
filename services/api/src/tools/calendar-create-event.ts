@@ -1,4 +1,10 @@
-import type { ReversibilityMetadata, ReverseResult, ToolContext, ToolDefinition, ToolResult } from '../reversibility/types';
+import type {
+    ReversibilityMetadata,
+    ReverseResult,
+    ToolContext,
+    ToolDefinition,
+    ToolResult,
+} from '../reversibility/types';
 
 const createdEvents = new Map<string, { title: string; start: string; end: string }>();
 

@@ -10,13 +10,13 @@ export const upsertFromStripe = mutation({
             v.literal('pro'),
             v.literal('pro_byok'),
             v.literal('team'),
-            v.literal('team_byok'),
+            v.literal('team_byok')
         ),
         status: v.union(
             v.literal('active'),
             v.literal('past_due'),
             v.literal('canceled'),
-            v.literal('trialing'),
+            v.literal('trialing')
         ),
         current_period_end: v.number(),
         seats: v.optional(v.number()),
@@ -25,7 +25,9 @@ export const upsertFromStripe = mutation({
     handler: async (ctx, args) => {
         const existing = await ctx.db
             .query('subscriptions')
-            .withIndex('by_stripe_id', (q) => q.eq('stripe_subscription_id', args.stripe_subscription_id))
+            .withIndex('by_stripe_id', (q) =>
+                q.eq('stripe_subscription_id', args.stripe_subscription_id)
+            )
             .first();
 
         if (existing) {

@@ -310,6 +310,7 @@ function ConversationItem({
                 {/* Expand Button */}
                 {conversation.preview && (
                     <button
+                        type="button"
                         onClick={(e) => {
                             e.stopPropagation();
                             onToggleExpand();

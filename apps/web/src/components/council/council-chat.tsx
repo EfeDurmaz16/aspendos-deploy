@@ -232,6 +232,7 @@ export function CouncilChat({ className, onClose }: CouncilChatProps) {
                             )}
                         />
                         <button
+                            type="button"
                             onClick={handleSubmit}
                             disabled={!question.trim()}
                             className={cn(

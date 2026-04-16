@@ -423,6 +423,7 @@ export default function MemoryDashboardPage() {
                         {/* View Toggle */}
                         <div className="flex items-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 p-0.5">
                             <button
+                                type="button"
                                 onClick={() => setViewMode('list')}
                                 className={cn(
                                     'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
@@ -435,6 +436,7 @@ export default function MemoryDashboardPage() {
                                 List
                             </button>
                             <button
+                                type="button"
                                 onClick={() => setViewMode('graph')}
                                 className={cn(
                                     'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',

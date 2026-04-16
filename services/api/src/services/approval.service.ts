@@ -35,7 +35,13 @@ export async function createApproval(params: CreateApprovalParams) {
         });
         return { id, commitHash, toolName: params.toolName, status: 'pending' as const, expiresAt };
     } catch {
-        return { id: commitHash, commitHash, toolName: params.toolName, status: 'pending' as const, expiresAt };
+        return {
+            id: commitHash,
+            commitHash,
+            toolName: params.toolName,
+            status: 'pending' as const,
+            expiresAt,
+        };
     }
 }
 
@@ -80,7 +86,7 @@ export async function getApproval(commitHash: string) {
 export async function addToAllowlist(
     userId: string,
     toolName: string,
-    _scope: 'session' | 'permanent',
+    _scope: 'session' | 'permanent'
 ) {
     try {
         const client = getConvexClient();
@@ -108,7 +114,9 @@ export async function isToolAllowed(userId: string, toolName: string): Promise<b
 export async function removeFromAllowlist(userId: string, toolName: string) {
     try {
         const client = getConvexClient();
-        const entries = await client.query(api.toolAllowlist.listByUser, { user_id: userId as any });
+        const entries = await client.query(api.toolAllowlist.listByUser, {
+            user_id: userId as any,
+        });
         const entry = (entries as any[]).find((e: any) => e.tool_name === toolName);
         if (entry) {
             await client.mutation(api.toolAllowlist.revoke, { id: entry._id });

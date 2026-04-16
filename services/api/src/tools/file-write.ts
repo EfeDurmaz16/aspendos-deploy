@@ -1,4 +1,10 @@
-import type { ReversibilityMetadata, ReverseResult, ToolContext, ToolDefinition, ToolResult } from '../reversibility/types';
+import type {
+    ReversibilityMetadata,
+    ReverseResult,
+    ToolContext,
+    ToolDefinition,
+    ToolResult,
+} from '../reversibility/types';
 
 const snapshots = new Map<string, { path: string; content: string }>();
 
@@ -11,7 +17,8 @@ export const fileWriteTool: ToolDefinition = {
             reversibility_class: 'undoable',
             approval_required: false,
             rollback_strategy: { kind: 'snapshot_restore', snapshot_id: '' },
-            human_explanation: 'File will be written. A snapshot of the previous content is stored for undo.',
+            human_explanation:
+                'File will be written. A snapshot of the previous content is stored for undo.',
         };
     },
 

@@ -70,7 +70,7 @@ export const updateTier = mutation({
             v.literal('pro'),
             v.literal('pro_byok'),
             v.literal('team'),
-            v.literal('team_byok'),
+            v.literal('team_byok')
         ),
     },
     handler: async (ctx, args) => {

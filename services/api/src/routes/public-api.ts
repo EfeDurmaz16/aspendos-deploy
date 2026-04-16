@@ -32,7 +32,11 @@ publicApi.post('/tools/:name/execute', async (c) => {
 
     return c.json({
         tool: name,
-        status: result.blocked ? 'blocked' : result.awaitingApproval ? 'awaiting_approval' : 'executed',
+        status: result.blocked
+            ? 'blocked'
+            : result.awaitingApproval
+              ? 'awaiting_approval'
+              : 'executed',
         commitHash: result.commitHash,
         reversibilityClass: result.metadata.reversibility_class,
         result: result.result,

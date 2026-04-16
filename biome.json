@@ -6,7 +6,8 @@
         "useIgnoreFile": true
     },
     "files": {
-        "ignoreUnknown": true
+        "ignoreUnknown": true,
+        "includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json"]
     },
     "formatter": {
         "enabled": true,
@@ -22,7 +23,8 @@
                 "noUnusedImports": "warn",
                 "noUnusedVariables": "warn",
                 "useExhaustiveDependencies": "warn",
-                "useParseIntRadix": "warn"
+                "useParseIntRadix": "warn",
+                "noUnusedFunctionParameters": "warn"
             },
             "style": {
                 "noNonNullAssertion": "off",
@@ -36,7 +38,12 @@
                 "noLabelWithoutControl": "warn",
                 "noSvgWithoutTitle": "warn",
                 "useButtonType": "warn",
-                "useSemanticElements": "warn"
+                "useSemanticElements": "warn",
+                "noStaticElementInteractions": "warn",
+                "useAriaPropsSupportedByRole": "warn",
+                "useKeyWithClickEvents": "warn",
+                "useValidAnchor": "warn",
+                "useAnchorContent": "warn"
             },
             "performance": {
                 "noImgElement": "warn"

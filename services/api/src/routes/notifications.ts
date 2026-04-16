@@ -4,7 +4,6 @@
  * Provides SSE stream, push subscription management, and notification preferences.
  */
 
-
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';

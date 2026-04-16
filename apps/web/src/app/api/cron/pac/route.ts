@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 async function searchConversations(
     _userId: string,
     _embedding: number[],
-    _limit: number,
+    _limit: number
 ): Promise<Array<{ content: string }>> {
     return [];
 }

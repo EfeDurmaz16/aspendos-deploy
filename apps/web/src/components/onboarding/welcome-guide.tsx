@@ -65,6 +65,7 @@ export function WelcomeGuide({ forceShow = false, onClose }: WelcomeGuideProps) 
                 >
                     {/* Close button */}
                     <button
+                        type="button"
                         onClick={handleClose}
                         className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
@@ -131,6 +132,7 @@ export function WelcomeGuide({ forceShow = false, onClose }: WelcomeGuideProps) 
                                     {/* Actions */}
                                     <div className="flex w-full flex-col gap-2">
                                         <button
+                                            type="button"
                                             onClick={handleStartTour}
                                             className={cn(
                                                 'flex w-full items-center justify-center gap-2 rounded-lg py-3',
@@ -142,6 +144,7 @@ export function WelcomeGuide({ forceShow = false, onClose }: WelcomeGuideProps) 
                                             Take the Tour
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={handleClose}
                                             className="py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                                         >
@@ -173,6 +176,7 @@ export function WelcomeGuideTrigger({ className }: { className?: string }) {
     return (
         <>
             <button
+                type="button"
                 onClick={() => setShowGuide(true)}
                 className={cn(
                     'flex items-center gap-2 rounded-lg px-3 py-2',

@@ -36,9 +36,7 @@ export async function deliverNotification(options: DeliveryOptions): Promise<Del
         });
 
         // Find PAC settings
-        const settingsLog = (logs || []).find(
-            (l: any) => l.event_type === 'pac_settings'
-        );
+        const settingsLog = (logs || []).find((l: any) => l.event_type === 'pac_settings');
         settings = settingsLog?.details || null;
 
         // Find platform connections

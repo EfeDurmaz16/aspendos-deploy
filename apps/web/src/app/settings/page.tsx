@@ -227,6 +227,7 @@ export default function SettingsPage() {
                         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-2">
                             {sections.map((section) => (
                                 <button
+                                    type="button"
                                     key={section.id}
                                     onClick={() => setActiveSection(section.id)}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
@@ -282,6 +283,7 @@ export default function SettingsPage() {
                                     </CardHeader>
                                     <CardContent>
                                         <button
+                                            type="button"
                                             onClick={handleSignOut}
                                             className="flex items-center gap-2 px-4 py-2 text-foreground dark:text-foreground/70 hover:bg-muted dark:hover:bg-muted/20 rounded-lg transition-colors"
                                         >
@@ -358,6 +360,7 @@ export default function SettingsPage() {
                                                 ] as const
                                             ).map((theme) => (
                                                 <button
+                                                    type="button"
                                                     key={theme.id}
                                                     onClick={() =>
                                                         updateSettings(
@@ -489,6 +492,7 @@ export default function SettingsPage() {
                                     </CardHeader>
                                     <CardContent>
                                         <button
+                                            type="button"
                                             onClick={handleDataExport}
                                             className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
                                         >
@@ -525,6 +529,7 @@ export default function SettingsPage() {
                                                     </p>
                                                     {!showDeleteConfirm ? (
                                                         <button
+                                                            type="button"
                                                             onClick={() =>
                                                                 setShowDeleteConfirm(true)
                                                             }
@@ -539,12 +544,14 @@ export default function SettingsPage() {
                                                     ) : (
                                                         <div className="flex gap-2">
                                                             <button
+                                                                type="button"
                                                                 onClick={handleDeleteAccount}
                                                                 className="px-4 py-2 bg-foreground text-background rounded-lg font-medium hover:bg-foreground/90 transition-colors"
                                                             >
                                                                 Yes, Delete My Account
                                                             </button>
                                                             <button
+                                                                type="button"
                                                                 onClick={() =>
                                                                     setShowDeleteConfirm(false)
                                                                 }

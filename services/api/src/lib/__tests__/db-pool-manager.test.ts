@@ -7,7 +7,6 @@ vi.mock('@aspendos/db', () => ({
     },
 }));
 
-
 import {
     _forTestingReset,
     getPoolHealth,

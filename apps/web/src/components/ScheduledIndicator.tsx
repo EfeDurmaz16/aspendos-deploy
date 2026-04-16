@@ -107,6 +107,7 @@ export function ScheduledIndicator({
                             disabled={isLoading}
                         />
                         <button
+                            type="button"
                             onClick={handleReschedule}
                             disabled={isLoading || !newTime}
                             className="p-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-50"
@@ -121,6 +122,7 @@ export function ScheduledIndicator({
             <div className="flex items-center gap-1">
                 {onReschedule && !isEditing && (
                     <button
+                        type="button"
                         onClick={() => setIsEditing(true)}
                         disabled={isLoading}
                         className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
@@ -131,6 +133,7 @@ export function ScheduledIndicator({
                 )}
                 {onCancel && (
                     <button
+                        type="button"
                         onClick={handleCancel}
                         disabled={isLoading}
                         className="p-1.5 text-zinc-400 hover:text-foreground transition-colors"
@@ -204,13 +207,18 @@ export function ScheduledToast({ task, onDismiss, onCancel }: ScheduledToastProp
                 <div className="flex items-center gap-1">
                     {onCancel && (
                         <button
+                            type="button"
                             onClick={handleCancel}
                             className="text-xs text-zinc-500 hover:text-foreground transition-colors"
                         >
                             Cancel
                         </button>
                     )}
-                    <button onClick={onDismiss} className="p-1 text-zinc-400 hover:text-zinc-600">
+                    <button
+                        type="button"
+                        onClick={onDismiss}
+                        className="p-1 text-zinc-400 hover:text-zinc-600"
+                    >
                         <X className="w-4 h-4" />
                     </button>
                 </div>

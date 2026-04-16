@@ -192,9 +192,7 @@ export async function getCouncilSession(sessionId: string, userId: string) {
         });
 
         const sessionLog = logs.find(
-            (l) =>
-                l.event_type === 'council_session_created' &&
-                l.details?.sessionId === sessionId
+            (l) => l.event_type === 'council_session_created' && l.details?.sessionId === sessionId
         );
         if (!sessionLog) return null;
 
@@ -208,7 +206,7 @@ export async function getCouncilSession(sessionId: string, userId: string) {
             .sort((a, b) => a.timestamp - b.timestamp);
 
         // Deduplicate responses by persona (take latest)
-        const latestByPersona = new Map<string, typeof responses[0]>();
+        const latestByPersona = new Map<string, (typeof responses)[0]>();
         for (const r of responses) {
             if (r.details?.persona) {
                 latestByPersona.set(r.details.persona, r);
@@ -286,7 +284,9 @@ export async function* streamPersonaResponse(
             event_type: 'council_response_updated',
             details: { sessionId, persona, status: 'STREAMING' },
         });
-    } catch { /* non-blocking */ }
+    } catch {
+        /* non-blocking */
+    }
 
     try {
         // Use centralized provider with circuit breaker fallback
@@ -339,7 +339,9 @@ export async function* streamPersonaResponse(
                     latencyMs,
                 },
             });
-        } catch { /* non-blocking */ }
+        } catch {
+            /* non-blocking */
+        }
 
         yield {
             type: 'done',
@@ -364,7 +366,9 @@ export async function* streamPersonaResponse(
                     content: 'Failed to generate response',
                 },
             });
-        } catch { /* non-blocking */ }
+        } catch {
+            /* non-blocking */
+        }
 
         yield { type: 'error', content: 'Failed to generate response' };
     }
@@ -478,9 +482,7 @@ export async function generateSynthesis(sessionId: string) {
         const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
 
         const sessionLog = logs.find(
-            (l) =>
-                l.event_type === 'council_session_created' &&
-                l.details?.sessionId === sessionId
+            (l) => l.event_type === 'council_session_created' && l.details?.sessionId === sessionId
         );
         if (!sessionLog) throw new Error('Session not found');
 
@@ -493,7 +495,7 @@ export async function generateSynthesis(sessionId: string) {
         );
 
         // Deduplicate by persona
-        const latestByPersona = new Map<string, typeof responses[0]>();
+        const latestByPersona = new Map<string, (typeof responses)[0]>();
         for (const r of responses) {
             if (r.details?.persona) {
                 latestByPersona.set(r.details.persona, r);
@@ -552,7 +554,11 @@ Please synthesize these perspectives into a balanced recommendation.`,
             },
         };
     } catch (error) {
-        if (error instanceof Error && (error.message === 'Session not found' || error.message === 'No completed responses to synthesize')) {
+        if (
+            error instanceof Error &&
+            (error.message === 'Session not found' ||
+                error.message === 'No completed responses to synthesize')
+        ) {
             throw error;
         }
         console.error('[Council] generateSynthesis failed:', error);
@@ -593,7 +599,10 @@ export async function getCouncilStats(userId: string) {
         const latencies = completedResponses
             .map((r) => r.details?.latencyMs as number)
             .filter((l) => l > 0);
-        const avgMs = latencies.length > 0 ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0;
+        const avgMs =
+            latencies.length > 0
+                ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
+                : 0;
         const minMs = latencies.length > 0 ? Math.min(...latencies) : 0;
         const maxMs = latencies.length > 0 ? Math.max(...latencies) : 0;
 

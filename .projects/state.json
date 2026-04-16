@@ -1,15 +1,15 @@
 {
-  "version": 1,
-  "providers": {
-    "neon": {
-      "name": "Neon"
+    "version": 1,
+    "providers": {
+        "neon": {
+            "name": "Neon"
+        }
+    },
+    "resources": {
+        "neon-postgres": {
+            "name": "neon-postgres",
+            "providerName": "Neon",
+            "serviceId": "postgres"
+        }
     }
-  },
-  "resources": {
-    "neon-postgres": {
-      "name": "neon-postgres",
-      "providerName": "Neon",
-      "serviceId": "postgres"
-    }
-  }
 }

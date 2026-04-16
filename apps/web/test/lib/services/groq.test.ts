@@ -76,9 +76,7 @@ describe('Groq Router Service', () => {
                 ],
             });
 
-            const result = await routeUserMessage(
-                'What did I say about my travel plans to Paris?'
-            );
+            const result = await routeUserMessage('What did I say about my travel plans to Paris?');
 
             expect(result.type).toBe('rag_search');
             if (result.type === 'rag_search') {
@@ -172,7 +170,10 @@ describe('Groq Router Service', () => {
             });
 
             await routeUserMessage('What do you think about that?', {
-                recentMessages: ['User: I have a complex coding problem', 'Assistant: Tell me more'],
+                recentMessages: [
+                    'User: I have a complex coding problem',
+                    'Assistant: Tell me more',
+                ],
             });
 
             // Verify context was included in the call

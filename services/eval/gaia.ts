@@ -22,7 +22,7 @@ export interface GaiaResult {
 
 export async function runGaiaTask(
     task: GaiaTask,
-    model = 'anthropic/claude-sonnet-4.6',
+    model = 'anthropic/claude-sonnet-4.6'
 ): Promise<GaiaResult> {
     const start = Date.now();
 

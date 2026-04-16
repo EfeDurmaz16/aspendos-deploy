@@ -88,6 +88,7 @@ export function LocalAIModelSelector() {
                             </span>
                         </div>
                         <button
+                            type="button"
                             onClick={unloadModel}
                             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
                         >
@@ -109,6 +110,7 @@ export function LocalAIModelSelector() {
                     <div className="grid gap-2">
                         {availableModels.map((model) => (
                             <button
+                                type="button"
                                 key={model.id}
                                 onClick={() => loadModel(model.id as ModelId)}
                                 disabled={isLoading}

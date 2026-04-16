@@ -118,12 +118,14 @@ export function FeatureTour({ currentStep, onNext, onSkip, totalSteps }: Feature
             {/* Actions */}
             <div className="flex items-center gap-3">
                 <button
+                    type="button"
                     onClick={onSkip}
                     className="px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                     Skip tour
                 </button>
                 <button
+                    type="button"
                     onClick={onNext}
                     className={cn(
                         'flex items-center gap-2 rounded-lg px-5 py-2.5',

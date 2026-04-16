@@ -162,6 +162,7 @@ export function PACNotifications({
     if (collapsed) {
         return (
             <button
+                type="button"
                 onClick={onToggleCollapse}
                 className={cn(
                     'flex flex-col items-center gap-2 p-2 border-r border-zinc-800 bg-zinc-900/50',
@@ -189,6 +190,7 @@ export function PACNotifications({
             <div className="p-3 border-b border-zinc-800">
                 <div className="flex items-center justify-between">
                     <button
+                        type="button"
                         onClick={() => setIsExpanded(!isExpanded)}
                         className="flex items-center gap-2 text-sm font-medium text-white"
                     >
@@ -206,6 +208,7 @@ export function PACNotifications({
                         )}
                     </button>
                     <button
+                        type="button"
                         onClick={onToggleCollapse}
                         className="text-xs text-zinc-500 hover:text-zinc-300"
                     >

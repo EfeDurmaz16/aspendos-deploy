@@ -11,7 +11,7 @@ const card = createApprovalCard(
     'Database migration requires approval',
     'approval_only',
     { migration_sql: 'ALTER TABLE users ADD COLUMN avatar TEXT' },
-    '2026-04-12T12:00:00Z',
+    '2026-04-12T12:00:00Z'
 );
 
 const greenCard = createApprovalCard(
@@ -19,7 +19,7 @@ const greenCard = createApprovalCard(
     'file.write',
     'File will be written with snapshot for undo',
     'undoable',
-    { path: '/tmp/test.txt' },
+    { path: '/tmp/test.txt' }
 );
 
 describe('Slack approval card', () => {

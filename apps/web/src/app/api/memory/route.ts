@@ -10,7 +10,7 @@ async function searchMemories(
     _userId: string,
     _embedding: number[],
     _limit: number,
-    _type?: string,
+    _type?: string
 ): Promise<Array<{ content: string; score: number }>> {
     return [];
 }

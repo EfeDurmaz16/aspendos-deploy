@@ -36,7 +36,6 @@ vi.mock('../../services/council.service', () => ({
     },
 }));
 
-
 import { searchMemories } from '../../services/memory-router.service';
 import { parseTimeExpression } from '../../services/scheduler.service';
 import { breakers } from '../circuit-breaker';

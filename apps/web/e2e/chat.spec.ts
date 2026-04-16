@@ -16,7 +16,7 @@ test.describe('Chat Interface', () => {
 
         // Either redirected to login or shows auth requirement
         const isRedirected = currentUrl.includes('login') || currentUrl.includes('signin');
-        const hasAuthPrompt = await page.locator('text=/sign in|log in|login/i').count() > 0;
+        const hasAuthPrompt = (await page.locator('text=/sign in|log in|login/i').count()) > 0;
 
         expect(isRedirected || hasAuthPrompt).toBeTruthy();
     });
@@ -28,7 +28,7 @@ test.describe('Chat Interface', () => {
         const currentUrl = page.url();
 
         const isRedirected = currentUrl.includes('login') || currentUrl.includes('signin');
-        const hasAuthPrompt = await page.locator('text=/sign in|log in|login/i').count() > 0;
+        const hasAuthPrompt = (await page.locator('text=/sign in|log in|login/i').count()) > 0;
 
         expect(isRedirected || hasAuthPrompt).toBeTruthy();
     });
@@ -40,7 +40,7 @@ test.describe('Chat Interface', () => {
         const currentUrl = page.url();
 
         const isRedirected = currentUrl.includes('login') || currentUrl.includes('signin');
-        const hasAuthPrompt = await page.locator('text=/sign in|log in|login/i').count() > 0;
+        const hasAuthPrompt = (await page.locator('text=/sign in|log in|login/i').count()) > 0;
 
         expect(isRedirected || hasAuthPrompt).toBeTruthy();
     });

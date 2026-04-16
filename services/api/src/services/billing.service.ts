@@ -434,11 +434,25 @@ export async function getCostSummary(userId: string): Promise<{
 
     const byModelMap = new Map<
         string,
-        { model: string; tokensIn: number; tokensOut: number; totalTokens: number; usdCost: number; requestCount: number }
+        {
+            model: string;
+            tokensIn: number;
+            tokensOut: number;
+            totalTokens: number;
+            usdCost: number;
+            requestCount: number;
+        }
     >();
     const byDayMap = new Map<
         string,
-        { date: string; tokensIn: number; tokensOut: number; totalTokens: number; usdCost: number; requestCount: number }
+        {
+            date: string;
+            tokensIn: number;
+            tokensOut: number;
+            totalTokens: number;
+            usdCost: number;
+            requestCount: number;
+        }
     >();
 
     let totalUsdCost = 0;
@@ -453,7 +467,14 @@ export async function getCostSummary(userId: string): Promise<{
         totalUsdCost += usdCost;
 
         if (!byModelMap.has(model)) {
-            byModelMap.set(model, { model, tokensIn: 0, tokensOut: 0, totalTokens: 0, usdCost: 0, requestCount: 0 });
+            byModelMap.set(model, {
+                model,
+                tokensIn: 0,
+                tokensOut: 0,
+                totalTokens: 0,
+                usdCost: 0,
+                requestCount: 0,
+            });
         }
         const ms = byModelMap.get(model)!;
         ms.tokensIn += tokensIn;
@@ -464,7 +485,14 @@ export async function getCostSummary(userId: string): Promise<{
 
         const date = new Date(log.timestamp).toISOString().split('T')[0];
         if (!byDayMap.has(date)) {
-            byDayMap.set(date, { date, tokensIn: 0, tokensOut: 0, totalTokens: 0, usdCost: 0, requestCount: 0 });
+            byDayMap.set(date, {
+                date,
+                tokensIn: 0,
+                tokensOut: 0,
+                totalTokens: 0,
+                usdCost: 0,
+                requestCount: 0,
+            });
         }
         const ds = byDayMap.get(date)!;
         ds.tokensIn += tokensIn;

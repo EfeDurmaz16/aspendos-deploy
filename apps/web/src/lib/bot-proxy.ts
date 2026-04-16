@@ -19,7 +19,10 @@ async function proxyWebhook(platform: string, req: Request): Promise<Response> {
 
         const response = await fetch(`${API_URL}/webhooks/${platform}`, {
             method: 'POST',
-            headers: { ...headers, 'Content-Type': req.headers.get('Content-Type') || 'application/json' },
+            headers: {
+                ...headers,
+                'Content-Type': req.headers.get('Content-Type') || 'application/json',
+            },
             body,
         });
 

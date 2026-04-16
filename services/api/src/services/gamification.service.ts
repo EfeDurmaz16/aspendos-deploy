@@ -262,8 +262,7 @@ async function reconstructProfile(userId: string) {
 
         // Find profile creation event or create default
         const profileLog = logs.find((l) => l.event_type === 'gamification_profile_created');
-        const referralCode =
-            profileLog?.details?.referralCode || nanoid(8).toUpperCase();
+        const referralCode = profileLog?.details?.referralCode || nanoid(8).toUpperCase();
 
         // Sum all XP awards
         let totalXp = 0;
@@ -359,7 +358,9 @@ export async function getOrCreateProfile(userId: string) {
                 details: { referralCode: profile.referralCode },
             });
         }
-    } catch { /* non-blocking */ }
+    } catch {
+        /* non-blocking */
+    }
 
     return profile;
 }
@@ -524,10 +525,14 @@ async function checkAchievementCriteria(
                     return xpLogs.filter((l) => l.details?.action === 'send_message').length >= 100;
                 }
                 if (code === 'prolific') {
-                    return xpLogs.filter((l) => l.details?.action === 'send_message').length >= 1000;
+                    return (
+                        xpLogs.filter((l) => l.details?.action === 'send_message').length >= 1000
+                    );
                 }
                 if (code === 'marathon') {
-                    return xpLogs.filter((l) => l.details?.action === 'send_message').length >= 10000;
+                    return (
+                        xpLogs.filter((l) => l.details?.action === 'send_message').length >= 10000
+                    );
                 }
                 if (code === 'council_master') {
                     return xpLogs.filter((l) => l.details?.action === 'use_council').length >= 50;
@@ -660,7 +665,9 @@ export async function updateStreak(userId: string): Promise<{
                 event_type: 'streak_freeze_used',
                 details: { freezesUsed: profile.freezesUsed + 1 },
             });
-        } catch { /* non-blocking */ }
+        } catch {
+            /* non-blocking */
+        }
     } else {
         // Streak broken
         streakBroken = true;

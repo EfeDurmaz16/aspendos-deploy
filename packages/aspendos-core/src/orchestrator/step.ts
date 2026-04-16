@@ -15,7 +15,7 @@ export interface StepResult {
 export async function runToolStep(
     toolName: string,
     args: unknown,
-    ctx: ToolContext,
+    ctx: ToolContext
 ): Promise<StepResult> {
     const metadata = registry.classify(toolName, args);
 

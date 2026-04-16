@@ -1,8 +1,14 @@
-import type { ReversibilityMetadata, ToolContext, ToolDefinition, ToolResult } from '../reversibility/types';
+import type {
+    ReversibilityMetadata,
+    ToolContext,
+    ToolDefinition,
+    ToolResult,
+} from '../reversibility/types';
 
 export const computerUseTool: ToolDefinition = {
     name: 'computer.use',
-    description: 'Anthropic Computer Use — interact with a virtual desktop in a sandbox (approval_only for destructive actions)',
+    description:
+        'Anthropic Computer Use — interact with a virtual desktop in a sandbox (approval_only for destructive actions)',
 
     classify(args: unknown): ReversibilityMetadata {
         const { action } = args as { action?: string };

@@ -9,7 +9,9 @@ export const grant = mutation({
     handler: async (ctx, args) => {
         const existing = await ctx.db
             .query('tool_allowlist')
-            .withIndex('by_user_tool', (q) => q.eq('user_id', args.user_id).eq('tool_name', args.tool_name))
+            .withIndex('by_user_tool', (q) =>
+                q.eq('user_id', args.user_id).eq('tool_name', args.tool_name)
+            )
             .first();
         if (existing) return existing._id;
 
@@ -36,7 +38,9 @@ export const isAllowed = query({
     handler: async (ctx, args) => {
         const entry = await ctx.db
             .query('tool_allowlist')
-            .withIndex('by_user_tool', (q) => q.eq('user_id', args.user_id).eq('tool_name', args.tool_name))
+            .withIndex('by_user_tool', (q) =>
+                q.eq('user_id', args.user_id).eq('tool_name', args.tool_name)
+            )
             .first();
         return !!entry;
     },

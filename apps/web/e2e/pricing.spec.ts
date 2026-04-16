@@ -55,14 +55,12 @@ test.describe('Pricing Page', () => {
 
     test('should have toggle for billing period', async ({ page }) => {
         // Look for monthly/annual toggle
-        const billingToggle = page.locator(
-            'button, [role="switch"], [role="tab"]'
-        ).filter({
+        const billingToggle = page.locator('button, [role="switch"], [role="tab"]').filter({
             hasText: /monthly|annual|yearly/i,
         });
 
         // This is optional, not all pricing pages have it
-        if (await billingToggle.count() > 0) {
+        if ((await billingToggle.count()) > 0) {
             await expect(billingToggle.first()).toBeVisible();
         }
     });

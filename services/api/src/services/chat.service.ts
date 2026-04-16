@@ -90,7 +90,12 @@ export async function createChat(input: CreateChatInput): Promise<Chat> {
             user_id: user._id,
             title: input.title || 'New Chat',
         });
-        return { id, userId: input.userId, title: input.title || 'New Chat', modelPreference: input.modelPreference };
+        return {
+            id,
+            userId: input.userId,
+            title: input.title || 'New Chat',
+            modelPreference: input.modelPreference,
+        };
     } catch (err) {
         console.error('[chat.service] createChat error:', err);
         return null;
@@ -274,7 +279,8 @@ export async function getMessages(
 export async function autoGenerateTitle(chatId: string, firstMessage: string) {
     try {
         const client = getConvexClient();
-        const title = firstMessage.length > 50 ? `${firstMessage.substring(0, 47)}...` : firstMessage;
+        const title =
+            firstMessage.length > 50 ? `${firstMessage.substring(0, 47)}...` : firstMessage;
         await client.mutation(api.conversations.updateTitle, {
             id: chatId as any,
             title,
@@ -338,7 +344,9 @@ export async function forkChat(
     // Determine which messages to include
     let messagesToCopy = originalChat.messages;
     if (fromMessageId) {
-        const messageIndex = messagesToCopy.findIndex((m: any) => m._id === fromMessageId || m.id === fromMessageId);
+        const messageIndex = messagesToCopy.findIndex(
+            (m: any) => m._id === fromMessageId || m.id === fromMessageId
+        );
         if (messageIndex === -1) {
             throw new Error('Message not found in chat');
         }

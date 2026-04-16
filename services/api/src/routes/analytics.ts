@@ -4,7 +4,6 @@
  * Provides endpoints for usage analytics, token consumption, and model statistics.
  */
 
-
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 

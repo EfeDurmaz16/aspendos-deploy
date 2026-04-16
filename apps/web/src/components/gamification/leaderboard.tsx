@@ -251,6 +251,7 @@ export function LeaderboardTabs({ activeTab, onChange, className }: LeaderboardT
         <div className={cn('flex items-center gap-1 p-1 rounded-lg bg-muted', className)}>
             {tabs.map((tab) => (
                 <button
+                    type="button"
                     key={tab.id}
                     onClick={() => onChange(tab.id)}
                     className={cn(

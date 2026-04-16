@@ -36,7 +36,7 @@ export class FidesService {
     async signToolCall(
         toolName: string,
         args: unknown,
-        metadata: ReversibilityMetadata,
+        metadata: ReversibilityMetadata
     ): Promise<FidesSignResult> {
         await this.initialize();
 
@@ -51,7 +51,7 @@ export class FidesService {
             const fides = await import('@fides/sdk');
             const signature = fides.sign(
                 new TextEncoder().encode(payload),
-                this.keyPair!.privateKey,
+                this.keyPair!.privateKey
             );
             return {
                 signature: Buffer.from(signature).toString('base64'),
@@ -68,11 +68,7 @@ export class FidesService {
         }
     }
 
-    async verifySignature(
-        payload: string,
-        signature: string,
-        signerDid: string,
-    ): Promise<boolean> {
+    async verifySignature(payload: string, signature: string, signerDid: string): Promise<boolean> {
         try {
             const fides = await import('@fides/sdk');
             const publicKey = fides.parseDID(signerDid);
@@ -81,17 +77,14 @@ export class FidesService {
             return fides.verify(
                 new TextEncoder().encode(payload),
                 Buffer.from(signature, 'base64'),
-                publicKey,
+                publicKey
             );
         } catch {
             return false;
         }
     }
 
-    async counterSignWithUser(
-        commitHash: string,
-        userKeyPair: KeyPair,
-    ): Promise<FidesSignResult> {
+    async counterSignWithUser(commitHash: string, userKeyPair: KeyPair): Promise<FidesSignResult> {
         try {
             const fides = await import('@fides/sdk');
             const payload = new TextEncoder().encode(commitHash);

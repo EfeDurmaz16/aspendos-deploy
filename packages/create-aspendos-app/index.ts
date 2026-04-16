@@ -30,7 +30,7 @@ const template = {
             },
         },
         null,
-        4,
+        4
     ),
     'src/index.ts': `import { Hono } from 'hono';
 import { ToolRegistry, runToolStep, getFides } from '@aspendos/core';
@@ -84,7 +84,7 @@ export const exampleTool: ToolDefinition = {
             include: ['src'],
         },
         null,
-        4,
+        4
     ),
 };
 

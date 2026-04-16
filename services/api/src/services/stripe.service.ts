@@ -19,7 +19,7 @@ export async function createCheckoutSession(
     customerEmail: string,
     tier: StripeTier,
     successUrl: string,
-    cancelUrl: string,
+    cancelUrl: string
 ): Promise<{ url: string }> {
     const stripe = await getStripe();
     const product = STRIPE_PRODUCTS[tier];
@@ -48,7 +48,7 @@ export async function createCheckoutSession(
 
 export async function createPortalSession(
     customerId: string,
-    returnUrl: string,
+    returnUrl: string
 ): Promise<{ url: string }> {
     const stripe = await getStripe();
     const session = await stripe.billingPortal.sessions.create({
@@ -58,10 +58,7 @@ export async function createPortalSession(
     return { url: session.url };
 }
 
-export async function constructWebhookEvent(
-    payload: string,
-    signature: string,
-): Promise<any> {
+export async function constructWebhookEvent(payload: string, signature: string): Promise<any> {
     const stripe = await getStripe();
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!secret) throw new Error('STRIPE_WEBHOOK_SECRET not configured');

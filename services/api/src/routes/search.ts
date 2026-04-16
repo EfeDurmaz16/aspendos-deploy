@@ -4,7 +4,6 @@
  * Unified search across chats and memories with full-text and semantic search.
  */
 
-
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth';
 

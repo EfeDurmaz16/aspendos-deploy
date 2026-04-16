@@ -21,6 +21,7 @@ export function SkyToggle() {
 
     return (
         <button
+            type="button"
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
             className="relative flex items-center justify-center w-10 h-10 rounded-full bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             aria-label="Toggle theme"

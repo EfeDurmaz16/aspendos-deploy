@@ -4,7 +4,7 @@ import { registry } from '../tools/registry';
 export async function dispatchReverse(
     toolName: string,
     metadata: ReversibilityMetadata,
-    ctx: ToolContext,
+    ctx: ToolContext
 ): Promise<ReverseResult> {
     const tool = registry.get(toolName);
     if (!tool) {
@@ -18,7 +18,10 @@ export async function dispatchReverse(
     const { reversibility_class } = metadata;
 
     if (reversibility_class === 'irreversible_blocked') {
-        return { success: false, message: 'Action was blocked and never executed — nothing to reverse' };
+        return {
+            success: false,
+            message: 'Action was blocked and never executed — nothing to reverse',
+        };
     }
 
     if (reversibility_class === 'approval_only') {

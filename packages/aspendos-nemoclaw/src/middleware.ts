@@ -1,6 +1,11 @@
 import type { GovernedResult, NemoClawContext } from './types';
 
-type ReversibilityClass = 'undoable' | 'cancelable_window' | 'compensatable' | 'approval_only' | 'irreversible_blocked';
+type ReversibilityClass =
+    | 'undoable'
+    | 'cancelable_window'
+    | 'compensatable'
+    | 'approval_only'
+    | 'irreversible_blocked';
 
 const BADGE: Record<ReversibilityClass, string> = {
     undoable: '🟢',
@@ -15,7 +20,7 @@ export async function governedToolCall(
     args: unknown,
     ctx: NemoClawContext,
     executeFn: (args: unknown) => Promise<unknown>,
-    classifyFn?: (toolName: string, args: unknown) => ReversibilityClass,
+    classifyFn?: (toolName: string, args: unknown) => ReversibilityClass
 ): Promise<GovernedResult> {
     const cls = classifyFn?.(toolName, args) ?? 'compensatable';
 

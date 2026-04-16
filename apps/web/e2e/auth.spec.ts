@@ -41,8 +41,7 @@ test.describe('Authentication', () => {
             });
 
             // At least one OAuth option should be visible
-            const hasOAuth =
-                (await googleButton.count()) > 0 || (await githubButton.count()) > 0;
+            const hasOAuth = (await googleButton.count()) > 0 || (await githubButton.count()) > 0;
             expect(hasOAuth).toBeTruthy();
         });
 
@@ -53,7 +52,7 @@ test.describe('Authentication', () => {
 
         test('should have forgot password link', async ({ page }) => {
             const forgotLink = page.locator('a[href*="forgot"]');
-            if (await forgotLink.count() > 0) {
+            if ((await forgotLink.count()) > 0) {
                 await expect(forgotLink.first()).toBeVisible();
             }
         });
@@ -118,7 +117,7 @@ test.describe('Authentication', () => {
                 'input[type="checkbox"], a[href*="terms"], a[href*="privacy"]'
             );
             // At least one terms-related element should exist
-            if (await termsElement.count() > 0) {
+            if ((await termsElement.count()) > 0) {
                 await expect(termsElement.first()).toBeVisible();
             }
         });

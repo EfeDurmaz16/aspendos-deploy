@@ -73,6 +73,7 @@ export function HybridEngineToggle({
         <div className={cn('flex items-center gap-3', className)}>
             {/* Toggle switch */}
             <button
+                type="button"
                 onClick={toggleEngineMode}
                 className={cn(
                     'relative flex items-center rounded-full border border-white/10 bg-zinc-900/80 p-1',
@@ -177,6 +178,7 @@ export function EngineSettingsPanel({ className }: { className?: string }) {
 
                     return (
                         <button
+                            type="button"
                             key={modeKey}
                             onClick={() => setEngineMode(modeKey)}
                             className={cn(

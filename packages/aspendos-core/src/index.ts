@@ -22,7 +22,11 @@ export { AgitService, getAgit } from './audit/agit';
 
 export { isDangerous, DANGEROUS_PATTERNS, type DangerousPattern } from './security/dangerous-tools';
 
-export { wrapExternalContent, stripExternalTags, isExternalContent } from './security/external-content';
+export {
+    wrapExternalContent,
+    stripExternalTags,
+    isExternalContent,
+} from './security/external-content';
 
 export {
     type ApprovalCard,

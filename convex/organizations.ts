@@ -54,7 +54,7 @@ export const listByUser = query({
             memberships.map(async (m) => {
                 const org = await ctx.db.get(m.org_id);
                 return org ? { ...org, role: m.role } : null;
-            }),
+            })
         );
 
         return orgs.filter(Boolean);
@@ -70,7 +70,9 @@ export const addMember = mutation({
     handler: async (ctx, args) => {
         const existing = await ctx.db
             .query('org_members')
-            .withIndex('by_org_user', (q) => q.eq('org_id', args.org_id).eq('user_id', args.user_id))
+            .withIndex('by_org_user', (q) =>
+                q.eq('org_id', args.org_id).eq('user_id', args.user_id)
+            )
             .first();
         if (existing) throw new Error('User is already a member');
 
@@ -89,7 +91,9 @@ export const removeMember = mutation({
     handler: async (ctx, args) => {
         const member = await ctx.db
             .query('org_members')
-            .withIndex('by_org_user', (q) => q.eq('org_id', args.org_id).eq('user_id', args.user_id))
+            .withIndex('by_org_user', (q) =>
+                q.eq('org_id', args.org_id).eq('user_id', args.user_id)
+            )
             .first();
         if (!member) return;
         if (member.role === 'owner') throw new Error('Cannot remove the owner');
@@ -106,7 +110,9 @@ export const updateMemberRole = mutation({
     handler: async (ctx, args) => {
         const member = await ctx.db
             .query('org_members')
-            .withIndex('by_org_user', (q) => q.eq('org_id', args.org_id).eq('user_id', args.user_id))
+            .withIndex('by_org_user', (q) =>
+                q.eq('org_id', args.org_id).eq('user_id', args.user_id)
+            )
             .first();
         if (!member) throw new Error('Member not found');
         if (member.role === 'owner') throw new Error('Cannot change owner role');
@@ -126,7 +132,7 @@ export const getMembers = query({
             members.map(async (m) => {
                 const user = await ctx.db.get(m.user_id);
                 return { ...m, user };
-            }),
+            })
         );
     },
 });

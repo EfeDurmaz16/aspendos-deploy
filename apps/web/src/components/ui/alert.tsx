@@ -83,6 +83,7 @@ const AlertClose = React.forwardRef<
     React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, onClick, ...props }, ref) => (
     <button
+        type="button"
         ref={ref}
         className={cn(
             'flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded',

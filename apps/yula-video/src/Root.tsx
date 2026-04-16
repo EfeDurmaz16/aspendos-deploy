@@ -8,15 +8,15 @@ import './styles.css';
 // Transitions overlap by 20 frames each = 4 * 20 = 80 frames
 // Total: (60 * 30) - 80 = 1720 frames ≈ 57.3 seconds
 export const RemotionRoot: React.FC = () => {
-  return (
-    <Composition
-      id="YulaDemo"
-      component={YulaDemo}
-      durationInFrames={1720}
-      fps={30}
-      width={1920}
-      height={1080}
-      defaultProps={{}}
-    />
-  );
+    return (
+        <Composition
+            id="YulaDemo"
+            component={YulaDemo}
+            durationInFrames={1720}
+            fps={30}
+            width={1920}
+            height={1080}
+            defaultProps={{}}
+        />
+    );
 };

@@ -36,10 +36,7 @@ export async function processImportEmbeddings(
 
         // Filter to pending import memories (source starts with 'import')
         const pendingMemories = allMemories.filter(
-            (m) =>
-                m.source &&
-                m.source.startsWith('import') &&
-                m.source !== 'import_synced'
+            (m) => m.source && m.source.startsWith('import') && m.source !== 'import_synced'
         );
 
         if (pendingMemories.length === 0) {

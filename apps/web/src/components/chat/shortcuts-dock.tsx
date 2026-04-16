@@ -30,6 +30,7 @@ export function ShortcutsDock() {
                                 Keyboard Shortcuts
                             </span>
                             <button
+                                type="button"
                                 onClick={() => setIsOpen(false)}
                                 className="text-muted-foreground hover:text-foreground"
                             >
@@ -57,6 +58,7 @@ export function ShortcutsDock() {
             </AnimatePresence>
 
             <button
+                type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center justify-center w-10 h-10 rounded-full bg-background border border-border shadow-lg hover:shadow-xl hover:scale-105 transition-all text-muted-foreground"
                 title="Keyboard Shortcuts"

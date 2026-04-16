@@ -12,7 +12,7 @@ export const store = mutation({
         const existing = await ctx.db
             .query('byok_credentials')
             .withIndex('by_user_provider', (q) =>
-                q.eq('user_id', args.user_id).eq('provider', args.provider),
+                q.eq('user_id', args.user_id).eq('provider', args.provider)
             )
             .first();
 
@@ -41,7 +41,7 @@ export const getByProvider = query({
         return await ctx.db
             .query('byok_credentials')
             .withIndex('by_user_provider', (q) =>
-                q.eq('user_id', args.user_id).eq('provider', args.provider),
+                q.eq('user_id', args.user_id).eq('provider', args.provider)
             )
             .first();
     },

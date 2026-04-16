@@ -30,13 +30,7 @@ const MockCouncilPersona = ({
 
 describe('CouncilPersona Component', () => {
     it('should render persona name and role', () => {
-        render(
-            <MockCouncilPersona
-                name="Scholar"
-                role="The Analyst"
-                color="#3b82f6"
-            />
-        );
+        render(<MockCouncilPersona name="Scholar" role="The Analyst" color="#3b82f6" />);
 
         expect(screen.getByTestId('persona-name')).toHaveTextContent('Scholar');
         expect(screen.getByTestId('persona-role')).toHaveTextContent('The Analyst');
@@ -82,13 +76,7 @@ describe('CouncilPersona Component', () => {
     });
 
     it('should apply the correct color', () => {
-        render(
-            <MockCouncilPersona
-                name="Scholar"
-                role="The Analyst"
-                color="#3b82f6"
-            />
-        );
+        render(<MockCouncilPersona name="Scholar" role="The Analyst" color="#3b82f6" />);
 
         const persona = screen.getByTestId('council-persona');
         expect(persona).toHaveStyle({ borderColor: '#3b82f6' });
