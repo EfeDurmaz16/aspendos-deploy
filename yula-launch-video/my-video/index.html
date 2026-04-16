@@ -5,19 +5,432 @@
     <meta name="viewport" content="width=1920, height=1080" />
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+      :root {
+        --bg: #0a0a0a;
+        --bg-2: #121212;
+        --bg-3: #181818;
+        --border: rgba(255,255,255,0.08);
+        --border-2: rgba(255,255,255,0.14);
+        --text: #f5f5f5;
+        --text-2: #b8b8b8;
+        --text-3: #8a8a8a;
+        --text-4: #9a9a9a;
+        --accent: #4D8CFF;
+        --accent-dim: #2a4d8f;
+        --green: #00E676;
+        --amber: #FFB300;
+        --red: #FF5252;
       }
-      html,
-      body {
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
         margin: 0;
         width: 1920px;
         height: 1080px;
         overflow: hidden;
-        background: #000;
+        background: var(--bg);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
       }
+      .mono { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+      .scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; }
+
+      .grid-bg {
+        position: absolute; inset: 0;
+        background-image:
+          linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+        background-size: 160px 160px;
+        pointer-events: none;
+      }
+
+      /* ═══════════════════ HERO SCENES (0, 1, 2, 7) ═══════════════════ */
+      .hero { padding: 140px 180px; display: flex; flex-direction: column; justify-content: center; }
+      .eyebrow {
+        font-size: 22px; font-weight: 500; letter-spacing: 0.2em;
+        text-transform: uppercase; color: var(--text-3); margin-bottom: 40px;
+      }
+      .eyebrow .accent { color: var(--accent); }
+      .headline {
+        font-size: 140px; font-weight: 800; line-height: 0.98;
+        letter-spacing: -0.035em; color: var(--text);
+      }
+      .headline .accent { color: var(--accent); }
+      .headline .muted { color: var(--text-4); }
+      .sub {
+        font-size: 36px; font-weight: 400; line-height: 1.3; letter-spacing: -0.01em;
+        color: var(--text-3); margin-top: 36px; max-width: 1280px;
+      }
+
+      /* Cold open */
+      #scene-0 { justify-content: center; align-items: center; padding: 0; }
+      #scene-0 .cold-wrap { text-align: center; }
+      #scene-0 .cold-mark {
+        font-size: 200px; font-weight: 800; letter-spacing: -0.05em; color: var(--text);
+      }
+      #scene-0 .cold-mark .dot { color: var(--accent); }
+      #scene-0 .cold-rule {
+        display: block; width: 120px; height: 3px; background: var(--accent);
+        margin: 32px auto;
+      }
+      #scene-0 .cold-tag {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 22px; color: var(--text-3); letter-spacing: 0.2em;
+      }
+
+      /* Hook */
+      #scene-1 .headline { font-size: 120px; }
+      #scene-1 .followup { display: block; margin-top: 16px; color: var(--text-4); font-size: 76px; font-weight: 700; }
+
+      /* Pitch */
+      #scene-2 .headline { font-size: 150px; }
+      #scene-2 .supports { margin-top: 72px; display: flex; gap: 28px; }
+      #scene-2 .chip {
+        padding: 22px 36px; border: 1px solid var(--border-2); background: rgba(255,255,255,0.02);
+        font-family: 'JetBrains Mono', monospace; font-size: 24px; color: var(--text-2);
+        display: flex; align-items: center; gap: 14px;
+      }
+      #scene-2 .chip::before {
+        content: ''; width: 10px; height: 10px; background: var(--green); border-radius: 50%;
+      }
+
+      /* Outro */
+      #scene-7 { justify-content: center; align-items: center; padding: 0; }
+      #scene-7 .wrap { text-align: center; }
+      #scene-7 .mark {
+        font-size: 240px; font-weight: 800; letter-spacing: -0.05em; line-height: 1;
+        color: var(--text);
+      }
+      #scene-7 .mark .dot { color: var(--accent); }
+      #scene-7 .tagline {
+        font-size: 38px; font-weight: 500; color: var(--text-2);
+        letter-spacing: -0.01em; margin-top: 32px;
+      }
+      #scene-7 .rule {
+        display: block; width: 140px; height: 3px; background: var(--accent);
+        margin: 40px auto;
+      }
+      #scene-7 .url {
+        display: inline-block;
+        font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 500;
+        color: var(--accent); padding: 18px 42px; border: 1px solid var(--accent);
+        letter-spacing: 0.04em; margin-top: 12px;
+      }
+      #scene-7 .meta {
+        font-family: 'JetBrains Mono', monospace; font-size: 18px;
+        color: var(--text-3); margin-top: 48px; letter-spacing: 0.15em;
+      }
+
+      /* ═══════════════════ APP SHELL (flows 3, 4, 5, 6) ═══════════════════ */
+      .app { display: grid; grid-template-columns: 340px 1fr 460px; height: 1080px; }
+      .app.wide-main { grid-template-columns: 340px 1fr; }
+
+      /* Sidebar */
+      .sidebar {
+        background: #0e0e0e; border-right: 1px solid var(--border);
+        padding: 32px 24px; display: flex; flex-direction: column; gap: 28px;
+      }
+      .brand { display: flex; align-items: center; gap: 12px; padding: 8px 4px; }
+      .brand-mark { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; color: var(--text); }
+      .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+      .brand-tier {
+        font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        color: var(--text-3); letter-spacing: 0.1em; margin-left: auto;
+      }
+      .side-section-label {
+        font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        letter-spacing: 0.15em; color: var(--text-4); margin-bottom: 12px;
+      }
+      .thread-list { display: flex; flex-direction: column; gap: 4px; }
+      .thread {
+        padding: 12px 14px; border-radius: 6px;
+        font-size: 15px; color: var(--text-2); line-height: 1.3;
+        border-left: 2px solid transparent;
+      }
+      .thread.active {
+        background: rgba(77, 140, 255, 0.08);
+        border-left-color: var(--accent);
+        color: var(--text);
+      }
+      .thread .when {
+        font-family: 'JetBrains Mono', monospace; font-size: 11px;
+        color: var(--text-4); letter-spacing: 0.08em; margin-top: 3px;
+      }
+
+      /* Main area */
+      .main { display: flex; flex-direction: column; background: var(--bg); position: relative; }
+      .topbar {
+        padding: 22px 40px; border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; gap: 16px; height: 76px;
+      }
+      .topbar .title { font-size: 20px; font-weight: 600; color: var(--text); }
+      .topbar .meta {
+        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        color: var(--text-3); letter-spacing: 0.08em; margin-left: auto;
+      }
+      .topbar .status {
+        font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        padding: 4px 10px; border: 1px solid var(--green);
+        color: var(--green); letter-spacing: 0.1em; border-radius: 3px;
+      }
+
+      .msgs { flex: 1; padding: 40px 56px; display: flex; flex-direction: column; gap: 28px; overflow: hidden; }
+      .msg { max-width: 880px; }
+      .msg.user { align-self: flex-end; }
+      .msg.assistant { align-self: flex-start; }
+      .msg .role {
+        font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        letter-spacing: 0.12em; color: var(--text-4); margin-bottom: 10px;
+      }
+      .msg.user .role { color: var(--accent); }
+      .msg .bubble {
+        font-size: 22px; line-height: 1.5; color: var(--text); font-weight: 400;
+      }
+      .msg.user .bubble {
+        background: rgba(77, 140, 255, 0.08); border: 1px solid rgba(77, 140, 255, 0.25);
+        padding: 18px 24px; border-radius: 12px; color: var(--text);
+      }
+
+      .composer {
+        margin: 24px 40px; padding: 20px 24px;
+        border: 1px solid var(--border-2); background: rgba(255,255,255,0.02);
+        border-radius: 12px;
+        font-size: 20px; color: var(--text-4); font-weight: 400;
+        display: flex; align-items: center; gap: 16px;
+      }
+      .composer .caret {
+        display: inline-block; width: 2px; height: 22px; background: var(--accent);
+      }
+      .composer .hint {
+        margin-left: auto;
+        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        color: var(--text-4); letter-spacing: 0.1em;
+      }
+
+      /* Right panel */
+      .right-panel {
+        background: #0d0d0d; border-left: 1px solid var(--border);
+        padding: 28px 26px; display: flex; flex-direction: column; gap: 22px;
+      }
+      .rp-title {
+        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        letter-spacing: 0.15em; color: var(--text-3);
+        padding-bottom: 14px; border-bottom: 1px solid var(--border);
+      }
+
+      /* Approval card */
+      .approval-card {
+        border: 1px solid var(--border-2); background: rgba(255,255,255,0.015);
+        border-radius: 10px; overflow: hidden;
+      }
+      .ap-badge {
+        padding: 12px 18px; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        letter-spacing: 0.12em; display: flex; align-items: center; gap: 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .ap-badge.amber { background: rgba(255, 179, 0, 0.08); color: var(--amber); }
+      .ap-badge.green { background: rgba(0, 230, 118, 0.08); color: var(--green); }
+      .ap-badge.red { background: rgba(255, 82, 82, 0.1); color: var(--red); }
+      .ap-badge::before {
+        content: ''; width: 10px; height: 10px; border-radius: 50%; background: currentColor;
+      }
+      .ap-body { padding: 20px 20px 18px; }
+      .ap-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+      .ap-row:last-child { border-bottom: none; }
+      .ap-row .k {
+        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        letter-spacing: 0.08em; color: var(--text-4); text-transform: uppercase;
+      }
+      .ap-row .v {
+        font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text);
+      }
+      .ap-row .v.accent { color: var(--accent); }
+      .ap-row .v.big { font-size: 20px; font-weight: 600; font-family: 'Inter'; }
+      .ap-actions { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border); }
+      .btn {
+        padding: 12px 20px; border-radius: 6px; font-size: 15px; font-weight: 600;
+        letter-spacing: 0.02em; flex: 1; text-align: center;
+      }
+      .btn.primary { background: var(--accent); color: #0a0a0a; }
+      .btn.secondary {
+        background: transparent; color: var(--text-2); border: 1px solid var(--border-2);
+      }
+      .sig-row {
+        padding: 14px 20px; border-top: 1px solid var(--border);
+        font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        color: var(--text-4); letter-spacing: 0.04em;
+        display: flex; align-items: center; gap: 10px;
+      }
+      .sig-row .sig-hash {
+        color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+
+      /* AGIT log */
+      .log-item {
+        padding: 14px 16px; border: 1px solid var(--border);
+        border-left: 2px solid var(--accent); background: rgba(255,255,255,0.015);
+        border-radius: 6px; display: flex; flex-direction: column; gap: 6px;
+      }
+      .log-item.green { border-left-color: var(--green); }
+      .log-item.red { border-left-color: var(--red); }
+      .log-item .ts {
+        font-family: 'JetBrains Mono', monospace; font-size: 11px;
+        letter-spacing: 0.1em; color: var(--text-4);
+      }
+      .log-item .title { font-size: 15px; font-weight: 500; color: var(--text); }
+      .log-item .meta {
+        font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3);
+      }
+
+      /* ═══════════════════ FLOW-SPECIFIC ═══════════════════ */
+
+      /* IMPORT (scene 3) */
+      #scene-3 .drop-zone {
+        margin: 40px 56px; padding: 72px 40px;
+        border: 2px dashed var(--border-2); border-radius: 16px;
+        background: rgba(255,255,255,0.015);
+        display: flex; flex-direction: column; align-items: center; gap: 24px;
+      }
+      #scene-3 .drop-zone.active {
+        border-color: var(--accent); background: rgba(77, 140, 255, 0.05);
+      }
+      #scene-3 .dz-icon {
+        width: 72px; height: 72px; border: 2px solid var(--accent);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 32px; color: var(--accent); font-weight: 700;
+      }
+      #scene-3 .dz-title { font-size: 28px; font-weight: 600; color: var(--text); }
+      #scene-3 .dz-file {
+        font-family: 'JetBrains Mono', monospace; font-size: 18px;
+        color: var(--text-2); padding: 12px 20px; background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border); border-radius: 6px;
+      }
+      #scene-3 .dz-progress {
+        width: 80%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden;
+      }
+      #scene-3 .dz-progress-bar { height: 100%; background: var(--accent); width: 0%; }
+      #scene-3 .dz-stats {
+        display: flex; gap: 40px; margin-top: 8px;
+        font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--text-3);
+      }
+      #scene-3 .dz-stats .n { color: var(--accent); font-weight: 600; }
+
+      #scene-3 .memory-timeline {
+        padding: 0 56px 40px; display: flex; flex-direction: column; gap: 14px;
+      }
+      #scene-3 .mem-item {
+        display: flex; gap: 20px; align-items: center;
+        padding: 14px 20px; border: 1px solid var(--border);
+        background: rgba(255,255,255,0.015); border-radius: 8px;
+      }
+      #scene-3 .mem-item .mem-date {
+        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        color: var(--text-3); letter-spacing: 0.08em; width: 120px;
+      }
+      #scene-3 .mem-item .mem-text { font-size: 17px; color: var(--text); flex: 1; }
+      #scene-3 .mem-item .mem-tag {
+        font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        padding: 4px 10px; border: 1px solid var(--border-2);
+        color: var(--text-3); letter-spacing: 0.08em; border-radius: 3px;
+      }
+      #scene-3 .mem-item.highlight {
+        border-color: var(--accent); background: rgba(77, 140, 255, 0.06);
+      }
+
+      /* STRIPE (scene 4) — approval gate */
+      #scene-4 .ap-row .value-money { color: var(--amber); font-size: 22px; font-weight: 600; }
+
+      /* EMAIL (scene 5) — cancel window */
+      #scene-5 .countdown-card {
+        border: 1px solid var(--accent); background: rgba(77, 140, 255, 0.06);
+        border-radius: 10px; padding: 24px;
+      }
+      #scene-5 .cd-row { display: flex; justify-content: space-between; align-items: center; }
+      #scene-5 .cd-label {
+        font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        letter-spacing: 0.15em; color: var(--accent); text-transform: uppercase;
+      }
+      #scene-5 .cd-timer {
+        font-family: 'JetBrains Mono', monospace; font-size: 56px; font-weight: 700;
+        color: var(--accent); letter-spacing: -0.02em; margin-top: 14px;
+      }
+      #scene-5 .cd-timer .small { font-size: 22px; color: var(--text-3); margin-left: 8px; }
+      #scene-5 .cd-ring {
+        width: 100%; height: 4px; background: rgba(255,255,255,0.08);
+        border-radius: 2px; overflow: hidden; margin-top: 18px;
+      }
+      #scene-5 .cd-ring-bar {
+        height: 100%; background: var(--accent);
+        width: 100%; transform-origin: left center;
+      }
+      #scene-5 .cd-meta {
+        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        color: var(--text-3); margin-top: 16px; line-height: 1.5;
+      }
+      #scene-5 .cancel-banner {
+        margin-top: 22px; padding: 14px 18px;
+        border: 1px solid var(--red); background: rgba(255, 82, 82, 0.08);
+        color: var(--red); font-family: 'JetBrains Mono', monospace; font-size: 14px;
+        letter-spacing: 0.08em; border-radius: 6px; opacity: 0;
+        display: flex; align-items: center; gap: 10px;
+      }
+      #scene-5 .cancel-banner::before {
+        content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--red);
+      }
+
+      /* COUNCIL (scene 6) — 4 model split */
+      #scene-6 .msgs { padding: 32px 40px; gap: 20px; }
+      #scene-6 .council-prompt {
+        align-self: stretch; max-width: none;
+      }
+      #scene-6 .council-grid {
+        flex: 1;
+        display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+        gap: 18px; padding: 0 40px 24px;
+      }
+      #scene-6 .model-card {
+        border: 1px solid var(--border); border-radius: 10px;
+        background: rgba(255,255,255,0.015); padding: 20px 22px;
+        display: flex; flex-direction: column;
+      }
+      #scene-6 .model-card.best {
+        border-color: var(--green); background: rgba(0, 230, 118, 0.04);
+      }
+      #scene-6 .mc-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 14px;
+      }
+      #scene-6 .mc-model { font-size: 20px; font-weight: 700; color: var(--text); }
+      #scene-6 .mc-vendor {
+        font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        color: var(--text-3); letter-spacing: 0.08em;
+      }
+      #scene-6 .mc-status {
+        font-family: 'JetBrains Mono', monospace; font-size: 11px;
+        padding: 3px 8px; border: 1px solid var(--accent); color: var(--accent);
+        letter-spacing: 0.1em; border-radius: 3px;
+      }
+      #scene-6 .mc-status.done { border-color: var(--green); color: var(--green); }
+      #scene-6 .mc-body { font-size: 15px; line-height: 1.55; color: var(--text-2); flex: 1; }
+      #scene-6 .mc-foot {
+        display: flex; justify-content: space-between; margin-top: 14px;
+        padding-top: 12px; border-top: 1px dashed var(--border);
+        font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-4);
+        letter-spacing: 0.08em;
+      }
+      #scene-6 .mc-foot .best-tag { color: var(--green); }
+
+      /* Blinking cursor */
+      .cursor { display: inline-block; width: 10px; height: 22px; background: var(--accent); vertical-align: text-bottom; margin-left: 4px; }
+
+      /* Chrome bar */
+      .chrome {
+        position: absolute; top: 28px; right: 40px;
+        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        color: var(--text-4); letter-spacing: 0.15em; z-index: 10;
+      }
+      .chrome .dot { color: var(--accent); }
     </style>
   </head>
   <body>
@@ -25,26 +438,608 @@
       id="root"
       data-composition-id="main"
       data-start="0"
-      data-duration="10"
+      data-duration="90"
       data-width="1920"
       data-height="1080"
     >
-      
-      
+      <div class="grid-bg"></div>
+      <div class="chrome mono">YULA <span class="dot">●</span> LAUNCH 2026</div>
 
-      <!--
-        Add your clips here. Example:
-        <div id="title" class="clip" data-start="0" data-duration="5" data-track-index="1"
-             style="font-size: 64px; color: #fff; padding: 40px">
-          Hello World
+      <!-- ═══ SCENE 0: Cold open (0 - 3s) ═══ -->
+      <div class="scene hero" id="scene-0">
+        <div class="cold-wrap">
+          <div class="cold-mark" id="c0-mark">YULA<span class="dot">.</span></div>
+          <span class="cold-rule" id="c0-rule"></span>
+          <div class="cold-tag" id="c0-tag">DETERMINISTIC &nbsp; ·&nbsp; PROVABLE &nbsp; ·&nbsp; OPEN</div>
         </div>
-      -->
+      </div>
+
+      <!-- ═══ SCENE 1: Hook (3 - 9.5s) ═══ -->
+      <div class="scene hero" id="scene-1">
+        <div class="eyebrow"><span class="accent">●</span> 2026 · THE AGENT PROBLEM</div>
+        <div class="headline">
+          Every agent <span class="accent">promises</span> the world.
+          <span class="followup">Then does something you can't verify.</span>
+        </div>
+      </div>
+
+      <!-- ═══ SCENE 2: Pitch (9.5 - 16.8s) ═══ -->
+      <div class="scene hero" id="scene-2">
+        <div class="eyebrow"><span class="accent">●</span> YULA · A NEW CLASS OF AGENT</div>
+        <div class="headline">
+          Deterministic AI agents<br />
+          that <span class="accent">prove what they did</span>.
+        </div>
+        <div class="supports">
+          <div class="chip" id="s2-chip1">structured</div>
+          <div class="chip" id="s2-chip2">signed</div>
+          <div class="chip" id="s2-chip3">reversible</div>
+        </div>
+      </div>
+
+      <!-- ═══ SCENE 3: IMPORT flow (16.8 - 28.8s) ═══ -->
+      <div class="scene" id="scene-3">
+        <div class="app wide-main">
+          <aside class="sidebar">
+            <div class="brand">
+              <div class="brand-dot"></div>
+              <div class="brand-mark">YULA</div>
+              <div class="brand-tier mono">PRO</div>
+            </div>
+            <div>
+              <div class="side-section-label">IMPORT</div>
+              <div class="thread-list">
+                <div class="thread active">
+                  ChatGPT export
+                  <div class="when">importing now</div>
+                </div>
+                <div class="thread">Claude export <div class="when">queued</div></div>
+                <div class="thread">Gemini history <div class="when">queued</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="side-section-label">MEMORY</div>
+              <div class="thread-list">
+                <div class="thread">Indexed threads <span class="mono" style="float:right;color:var(--accent);">0</span></div>
+                <div class="thread">Embeddings <span class="mono" style="float:right;color:var(--text-3);">—</span></div>
+              </div>
+            </div>
+          </aside>
+          <div class="main">
+            <div class="topbar">
+              <div class="title">Import context</div>
+              <div class="status mono">READY</div>
+              <div class="meta mono">· supermemory · pgvector</div>
+            </div>
+            <div class="drop-zone" id="s3-drop">
+              <div class="dz-icon">↑</div>
+              <div class="dz-title">Drop your ChatGPT export</div>
+              <div class="dz-file mono" id="s3-file">conversations.json · 18.4 MB</div>
+              <div class="dz-progress"><div class="dz-progress-bar" id="s3-progress"></div></div>
+              <div class="dz-stats mono">
+                <div><span class="n" id="s3-threads">0</span> threads</div>
+                <div><span class="n" id="s3-msgs">0</span> messages</div>
+                <div><span class="n" id="s3-mems">0</span> memories indexed</div>
+              </div>
+            </div>
+            <div class="memory-timeline">
+              <div class="mem-item" id="s3-mem1">
+                <div class="mem-date mono">2026 · 01 · 14</div>
+                <div class="mem-text">Discussed rate-limit strategy for Edge functions — settled on token bucket with Redis.</div>
+                <div class="mem-tag mono">architecture</div>
+              </div>
+              <div class="mem-item highlight" id="s3-mem2">
+                <div class="mem-date mono">2026 · 01 · 22</div>
+                <div class="mem-text">Debugged the Polar webhook verification — raw body parsing fix lives in <span class="mono" style="color:var(--accent)">billing.service.ts:42</span>.</div>
+                <div class="mem-tag mono">billing</div>
+              </div>
+              <div class="mem-item" id="s3-mem3">
+                <div class="mem-date mono">2026 · 02 · 03</div>
+                <div class="mem-text">Drafted pricing rationale — Pro $50 anchored to Devin floor.</div>
+                <div class="mem-tag mono">gtm</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SCENE 4: STRIPE approval (28.8 - 47.5s) ═══ -->
+      <div class="scene" id="scene-4">
+        <div class="app">
+          <aside class="sidebar">
+            <div class="brand">
+              <div class="brand-dot"></div>
+              <div class="brand-mark">YULA</div>
+              <div class="brand-tier mono">PRO</div>
+            </div>
+            <div>
+              <div class="side-section-label">THREADS</div>
+              <div class="thread-list">
+                <div class="thread active">
+                  Acme Corp · collections
+                  <div class="when">just now</div>
+                </div>
+                <div class="thread">Q2 pipeline review <div class="when">2h ago</div></div>
+                <div class="thread">Weekly payroll <div class="when">yesterday</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="side-section-label">GOVERNANCE</div>
+              <div class="thread-list">
+                <div class="thread">Pending approvals <span class="mono" style="float:right;color:var(--amber);">1</span></div>
+                <div class="thread">AGIT ledger <span class="mono" style="float:right;color:var(--text-3);">↗</span></div>
+                <div class="thread">Trust scores <span class="mono" style="float:right;color:var(--green);">99.1</span></div>
+              </div>
+            </div>
+          </aside>
+
+          <div class="main">
+            <div class="topbar">
+              <div class="title">Acme Corp · collections</div>
+              <div class="status mono">GOVERNED</div>
+              <div class="meta mono">· FIDES on · AGIT on</div>
+            </div>
+            <div class="msgs">
+              <div class="msg user" id="s4-user">
+                <div class="role mono">YOU</div>
+                <div class="bubble">Charge Acme Corp for the outstanding invoice.</div>
+              </div>
+              <div class="msg assistant" id="s4-ast">
+                <div class="role mono">YULA</div>
+                <div class="bubble">
+                  Found unpaid invoice <span class="mono" style="color:var(--accent)">inv_0914</span> for $127.00 USD.<br />
+                  Proposing a Stripe charge. Because this action is <span style="color:var(--amber)">approval-only</span>, I've prepared a card — review before I execute.
+                  <span class="cursor" id="s4-caret"></span>
+                </div>
+              </div>
+            </div>
+            <div class="composer mono">
+              <span class="caret"></span>
+              <span>Follow up on Acme…</span>
+              <span class="hint">⌘↵ send</span>
+            </div>
+          </div>
+
+          <aside class="right-panel">
+            <div class="rp-title">APPROVAL REQUIRED</div>
+            <div class="approval-card" id="s4-ap">
+              <div class="ap-badge amber mono">approval_only · stripe.charge</div>
+              <div class="ap-body">
+                <div class="ap-row">
+                  <div class="k">amount</div>
+                  <div class="v big" style="color:var(--amber);">$127.00</div>
+                </div>
+                <div class="ap-row">
+                  <div class="k">customer</div>
+                  <div class="v">cus_NfS7K · Acme Corp</div>
+                </div>
+                <div class="ap-row">
+                  <div class="k">invoice</div>
+                  <div class="v accent">inv_0914</div>
+                </div>
+                <div class="ap-row">
+                  <div class="k">reversal</div>
+                  <div class="v">refund within 30d</div>
+                </div>
+              </div>
+              <div class="sig-row mono">
+                <span style="color:var(--text-3);">FIDES</span>
+                <span class="sig-hash" id="s4-sig">ed25519 · 9a4c…87f1</span>
+              </div>
+              <div class="ap-actions">
+                <div class="btn secondary">Modify</div>
+                <div class="btn primary" id="s4-btn">Approve</div>
+              </div>
+            </div>
+
+            <div class="rp-title" style="margin-top:20px;">AGIT LEDGER</div>
+            <div class="log-item" id="s4-log1">
+              <div class="ts mono">00 : 00 : 00.021</div>
+              <div class="title">stripe.charge — proposed</div>
+              <div class="meta">by YULA · pre-commit</div>
+            </div>
+            <div class="log-item green" id="s4-log2" style="opacity:0;">
+              <div class="ts mono">00 : 00 : 04.118</div>
+              <div class="title">stripe.charge — approved &amp; signed</div>
+              <div class="meta">counter-sig verified · committed</div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- ═══ SCENE 5: EMAIL cancel window (47.5 - 58.9s) ═══ -->
+      <div class="scene" id="scene-5">
+        <div class="app">
+          <aside class="sidebar">
+            <div class="brand">
+              <div class="brand-dot"></div>
+              <div class="brand-mark">YULA</div>
+              <div class="brand-tier mono">PRO</div>
+            </div>
+            <div>
+              <div class="side-section-label">THREADS</div>
+              <div class="thread-list">
+                <div class="thread active">
+                  Follow-up · John at Pylon
+                  <div class="when">just now</div>
+                </div>
+                <div class="thread">Investor update <div class="when">3h ago</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="side-section-label">OUTBOX</div>
+              <div class="thread-list">
+                <div class="thread">Held actions <span class="mono" style="float:right;color:var(--accent);">1</span></div>
+                <div class="thread">Sent today <span class="mono" style="float:right;color:var(--text-3);">8</span></div>
+              </div>
+            </div>
+          </aside>
+
+          <div class="main">
+            <div class="topbar">
+              <div class="title">Follow-up · John at Pylon</div>
+              <div class="status mono">GOVERNED</div>
+              <div class="meta mono">· SES hold · 30s</div>
+            </div>
+            <div class="msgs">
+              <div class="msg user">
+                <div class="role mono">YOU</div>
+                <div class="bubble">Send John a follow-up, confirming Friday at 3pm.</div>
+              </div>
+              <div class="msg assistant">
+                <div class="role mono">YULA</div>
+                <div class="bubble">
+                  Drafted and handed off to SES. Classed as <span style="color:var(--accent)">cancelable_window</span> — held for 30s before ship. Cancel any time from the panel.
+                </div>
+              </div>
+            </div>
+            <div class="composer mono">
+              <span class="caret"></span>
+              <span>Reply to John…</span>
+              <span class="hint">⌘↵ send</span>
+            </div>
+          </div>
+
+          <aside class="right-panel">
+            <div class="rp-title">HELD ACTION · EMAIL</div>
+            <div class="countdown-card">
+              <div class="cd-row">
+                <div class="cd-label">cancelable_window</div>
+                <div class="mono" style="font-size:12px;color:var(--text-3);letter-spacing:0.1em;">SES · us-east-1</div>
+              </div>
+              <div class="cd-timer mono">
+                <span id="s5-countdown">30</span><span class="small">s until ship</span>
+              </div>
+              <div class="cd-ring"><div class="cd-ring-bar" id="s5-ring"></div></div>
+              <div class="cd-meta">
+                to: john@pylon.com<br />
+                subject: Friday 3pm — confirmed<br />
+                fides_sig: <span style="color:var(--accent);">3f1e…a2b0</span>
+              </div>
+            </div>
+
+            <div class="ap-actions" style="padding:0;border:none;margin-top:14px;">
+              <div class="btn secondary" id="s5-modify">Modify</div>
+              <div class="btn primary" id="s5-cancel" style="background:var(--red);color:#0a0a0a;">Cancel ship</div>
+            </div>
+
+            <div class="cancel-banner mono" id="s5-banner">
+              EMAIL RECALLED · never left SES
+            </div>
+
+            <div class="rp-title" style="margin-top:20px;">AGIT LEDGER</div>
+            <div class="log-item" id="s5-log1">
+              <div class="ts mono">00 : 00 : 00.008</div>
+              <div class="title">email.send — held</div>
+              <div class="meta">SES hold · 30s window</div>
+            </div>
+            <div class="log-item red" id="s5-log2" style="opacity:0;">
+              <div class="ts mono">00 : 00 : 06.340</div>
+              <div class="title">email.send — canceled by user</div>
+              <div class="meta">never dispatched · reversible closed</div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- ═══ SCENE 6: COUNCIL (58.9 - 72.5s) ═══ -->
+      <div class="scene" id="scene-6">
+        <div class="app wide-main">
+          <aside class="sidebar">
+            <div class="brand">
+              <div class="brand-dot"></div>
+              <div class="brand-mark">YULA</div>
+              <div class="brand-tier mono">PRO</div>
+            </div>
+            <div>
+              <div class="side-section-label">COUNCIL · 4 MODELS</div>
+              <div class="thread-list">
+                <div class="thread active">
+                  Migration strategy
+                  <div class="when">asking now</div>
+                </div>
+                <div class="thread">Feature trade-offs <div class="when">yesterday</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="side-section-label">ROUTING</div>
+              <div class="thread-list">
+                <div class="thread">Vercel AI Gateway <span class="mono" style="float:right;color:var(--green);">●</span></div>
+                <div class="thread">Parallel fan-out <span class="mono" style="float:right;color:var(--accent);">4×</span></div>
+              </div>
+            </div>
+          </aside>
+
+          <div class="main">
+            <div class="topbar">
+              <div class="title">Council · 4 minds on one prompt</div>
+              <div class="status mono">STREAMING · 4/4</div>
+              <div class="meta mono">· ai-gateway</div>
+            </div>
+            <div class="msgs">
+              <div class="msg user council-prompt">
+                <div class="role mono">YOU · TO COUNCIL</div>
+                <div class="bubble">Should we ship the data migration behind a feature flag, or do a hard cutover this weekend?</div>
+              </div>
+            </div>
+            <div class="council-grid">
+              <div class="model-card" id="s6-m1">
+                <div class="mc-head">
+                  <div>
+                    <div class="mc-model">Claude Opus 4.7</div>
+                    <div class="mc-vendor mono">anthropic</div>
+                  </div>
+                  <div class="mc-status mono" id="s6-s1">THINKING</div>
+                </div>
+                <div class="mc-body" id="s6-b1">Flag the migration. Rolling reversibility &gt; weekend heroics — if something regresses you can dial back in seconds, not roll the whole DB back.</div>
+                <div class="mc-foot"><span>latency 1.8s</span><span class="best-tag" id="s6-t1">● best reasoning</span></div>
+              </div>
+              <div class="model-card" id="s6-m2">
+                <div class="mc-head">
+                  <div>
+                    <div class="mc-model">GPT-5</div>
+                    <div class="mc-vendor mono">openai</div>
+                  </div>
+                  <div class="mc-status mono" id="s6-s2">THINKING</div>
+                </div>
+                <div class="mc-body" id="s6-b2">Hard cutover — feature flags on migrations double the failure surface. Ship during the low-traffic window and keep a 10-minute rollback snapshot.</div>
+                <div class="mc-foot"><span>latency 2.1s</span><span>●</span></div>
+              </div>
+              <div class="model-card" id="s6-m3">
+                <div class="mc-head">
+                  <div>
+                    <div class="mc-model">Gemini 2.5 Pro</div>
+                    <div class="mc-vendor mono">google</div>
+                  </div>
+                  <div class="mc-status mono" id="s6-s3">THINKING</div>
+                </div>
+                <div class="mc-body" id="s6-b3">Dual-write for a week: new schema in the shadow, old schema authoritative. Flip the read path last. Eliminates cutover risk entirely.</div>
+                <div class="mc-foot"><span>latency 2.4s</span><span>●</span></div>
+              </div>
+              <div class="model-card" id="s6-m4">
+                <div class="mc-head">
+                  <div>
+                    <div class="mc-model">Llama 4 · Groq</div>
+                    <div class="mc-vendor mono">groq</div>
+                  </div>
+                  <div class="mc-status mono" id="s6-s4">THINKING</div>
+                </div>
+                <div class="mc-body" id="s6-b4">Flag + canary to 5% of orgs. Measure, then ramp. If it's truly invariant, you'll know in an hour.</div>
+                <div class="mc-foot"><span>latency 0.6s</span><span>●</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SCENE 7: Outro (72.5 - 90s) ═══ -->
+      <div class="scene hero" id="scene-7">
+        <div class="wrap">
+          <div class="mark" id="s7-mark">YULA<span class="dot">.</span></div>
+          <span class="rule" id="s7-rule"></span>
+          <div class="tagline" id="s7-tag">Deterministic AI agents that prove what they did.</div>
+          <div class="url mono" id="s7-url">yula.dev</div>
+          <div class="meta mono" id="s7-meta">OPEN AGENT OS · FIDES · AGIT · OSP</div>
+        </div>
+      </div>
+
+      <!-- Narration starts at 3s (after cold open) -->
+      <audio
+        id="narration"
+        class="clip"
+        data-start="3"
+        data-duration="78"
+        data-track-index="2"
+        src="narration.wav"
+        data-volume="1"
+      ></audio>
     </div>
 
     <script>
       window.__timelines = window.__timelines || {};
       const tl = gsap.timeline({ paused: true });
-      // Example: tl.from("#title", { opacity: 0, y: -50, duration: 1 }, 0);
+
+      // Scene time anchors (narration starts at 3s; add offset)
+      const OFFSET = 3.0;
+      const S0 = 0.0;                 // Cold open
+      const S1 = 3.0;                 // Hook: "Every AI agent promises..."
+      const S2 = 3.0 + 6.58;          // Pitch: "Yoola is different. Deterministic..."  9.58
+      const S3 = 3.0 + 13.82;         // IMPORT: "Start with your context..."  16.82
+      const S4 = 3.0 + 25.78;         // STRIPE: "Now the key moment..."  28.78
+      const S5 = 3.0 + 44.50;         // EMAIL: "Some actions are reversible..."  47.50
+      const S6 = 3.0 + 55.98;         // COUNCIL: "When the question is hard..."  58.98
+      const S7 = 3.0 + 69.56;         // Outro: "Yoola. The open agent OS..."  72.56
+
+      // Hide all scenes upfront
+      gsap.set(".scene", { autoAlpha: 0 });
+      gsap.set("#s4-log2, #s5-log2, #s5-banner", { opacity: 0 });
+
+      // ═══ SCENE 0: Cold open ═══
+      tl.set("#scene-0", { autoAlpha: 1 }, S0);
+      tl.from("#c0-mark", { y: 40, opacity: 0, duration: 0.6, ease: "expo.out" }, S0 + 0.1);
+      tl.from("#c0-mark .dot", { opacity: 0, scale: 0, transformOrigin: "center", duration: 0.35, ease: "power4.out" }, S0 + 0.7);
+      tl.from("#c0-rule", { scaleX: 0, transformOrigin: "center", duration: 0.5, ease: "expo.out" }, S0 + 0.85);
+      tl.from("#c0-tag", { opacity: 0, duration: 0.5, ease: "power2.out" }, S0 + 1.15);
+      tl.set("#scene-0", { autoAlpha: 0 }, S1);
+
+      // ═══ SCENE 1: Hook ═══
+      tl.set("#scene-1", { autoAlpha: 1 }, S1);
+      tl.from("#scene-1 .eyebrow", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, S1 + 0.1);
+      tl.from("#scene-1 .headline", { y: 40, opacity: 0, duration: 0.7, ease: "expo.out" }, S1 + 0.25);
+      tl.from("#scene-1 .followup", { x: -30, opacity: 0, duration: 0.6, ease: "power4.out" }, S1 + 2.5);
+      tl.set("#scene-1", { autoAlpha: 0 }, S2);
+
+      // ═══ SCENE 2: Pitch ═══
+      tl.set("#scene-2", { autoAlpha: 1 }, S2);
+      tl.from("#scene-2 .eyebrow", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, S2 + 0.1);
+      tl.from("#scene-2 .headline", { y: 50, opacity: 0, duration: 0.8, ease: "expo.out" }, S2 + 0.3);
+      tl.from("#s2-chip1", { y: 30, opacity: 0, duration: 0.5, ease: "power4.out" }, S2 + 3.2);
+      tl.from("#s2-chip2", { y: 30, opacity: 0, duration: 0.5, ease: "power4.out" }, S2 + 4.0);
+      tl.from("#s2-chip3", { y: 30, opacity: 0, duration: 0.5, ease: "power4.out" }, S2 + 4.8);
+      tl.set("#scene-2", { autoAlpha: 0 }, S3);
+
+      // ═══ SCENE 3: IMPORT ═══
+      tl.set("#scene-3", { autoAlpha: 1 }, S3);
+      // Shell entrance
+      tl.from("#scene-3 .sidebar", { x: -60, opacity: 0, duration: 0.55, ease: "power4.out" }, S3 + 0.05);
+      tl.from("#scene-3 .topbar", { y: -30, opacity: 0, duration: 0.5, ease: "power3.out" }, S3 + 0.15);
+      tl.from("#scene-3 .drop-zone", { y: 50, opacity: 0, duration: 0.55, ease: "expo.out" }, S3 + 0.35);
+      // Simulate drop + progress fill (narration: "Drop your ChatGPT export" at ~15.5s → scene time ~2.7s into scene)
+      tl.to("#s3-drop", { borderColor: "#4D8CFF", duration: 0.3, ease: "power2.out" }, S3 + 2.5);
+      tl.to("#s3-progress", { width: "100%", duration: 3.5, ease: "power1.inOut" }, S3 + 2.8);
+      // Stat counters
+      const counters = [
+        { id: "s3-threads", to: 412, start: 2.8, dur: 3.0 },
+        { id: "s3-msgs", to: 18942, start: 2.9, dur: 3.2 },
+        { id: "s3-mems", to: 2106, start: 3.1, dur: 3.2 }
+      ];
+      counters.forEach(c => {
+        const obj = { n: 0 };
+        tl.to(obj, {
+          n: c.to, duration: c.dur, ease: "power1.out",
+          onUpdate: () => {
+            const el = document.getElementById(c.id);
+            if (el) el.textContent = Math.round(obj.n).toLocaleString();
+          }
+        }, S3 + c.start);
+      });
+      // Memory timeline reveals (narration: "conversation from three months ago" at ~21s → scene time ~8.2s)
+      tl.from("#s3-mem1", { y: 30, opacity: 0, duration: 0.45, ease: "power4.out" }, S3 + 7.2);
+      tl.from("#s3-mem2", { y: 30, opacity: 0, duration: 0.45, ease: "power4.out" }, S3 + 7.8);
+      tl.from("#s3-mem3", { y: 30, opacity: 0, duration: 0.45, ease: "power4.out" }, S3 + 8.4);
+      tl.fromTo("#s3-mem2", { boxShadow: "0 0 0 rgba(77,140,255,0)" }, { boxShadow: "0 0 0 3px rgba(77,140,255,0.3)", duration: 0.4, ease: "power2.out" }, S3 + 9.0);
+      tl.set("#scene-3", { autoAlpha: 0 }, S4);
+
+      // ═══ SCENE 4: STRIPE approval ═══
+      tl.set("#scene-4", { autoAlpha: 1 }, S4);
+      tl.from("#scene-4 .sidebar", { x: -60, opacity: 0, duration: 0.5, ease: "power4.out" }, S4 + 0.05);
+      tl.from("#scene-4 .topbar", { y: -30, opacity: 0, duration: 0.5, ease: "power3.out" }, S4 + 0.15);
+      tl.from("#scene-4 .right-panel", { x: 60, opacity: 0, duration: 0.55, ease: "power4.out" }, S4 + 0.2);
+      // User message appears (narration: "Ask Yoola to charge a customer" at ~27.1-28.1s → scene time ~1.3-2.3)
+      tl.from("#s4-user", { y: 20, opacity: 0, duration: 0.45, ease: "power3.out" }, S4 + 1.2);
+      // Assistant starts (narration: "Before anything runs, you see the approval card" at ~29-31.7s → scene time ~3.2-5.9)
+      tl.from("#s4-ast", { y: 20, opacity: 0, duration: 0.45, ease: "power3.out" }, S4 + 2.8);
+      tl.to("#s4-caret", { opacity: 0.2, duration: 0.3, ease: "power2.inOut", repeat: 12, yoyo: true }, S4 + 3.3);
+      // Approval card animates in (at same time)
+      tl.from("#s4-ap", { y: 30, opacity: 0, scale: 0.96, duration: 0.6, ease: "expo.out" }, S4 + 3.3);
+      // FIDES signature ticker — deterministic reveal (narration: "FIDES signature" at ~34.2s → scene time ~5.4)
+      const sigFinal = "ed25519 · 9a4c…87f1";
+      const sigObj = { p: 0 };
+      tl.to(sigObj, {
+        p: 1, duration: 0.9, ease: "none",
+        onUpdate: function() {
+          const el = document.getElementById("s4-sig");
+          if (!el) return;
+          const n = Math.ceil(sigObj.p * sigFinal.length);
+          el.textContent = sigFinal.slice(0, n);
+        }
+      }, S4 + 5.2);
+      // Approve button pulse (narration: "You approve" at ~35.3s → scene time ~6.5)
+      tl.to("#s4-btn", { scale: 1.04, duration: 0.22, ease: "power2.inOut", yoyo: true, repeat: 3, overwrite: "auto" }, S4 + 6.2);
+      tl.to("#s4-btn", { background: "#00E676", duration: 0.3, ease: "power2.out", overwrite: "auto" }, S4 + 7.2);
+      // AGIT log entry #2 (narration: "committed to AGIT. Publicly verifiable" at ~38-40.5s → scene time ~9.2-11.7)
+      tl.from("#s4-log1", { x: 20, opacity: 0, duration: 0.45, ease: "power3.out" }, S4 + 0.8);
+      tl.to("#s4-log2", { opacity: 1, duration: 0.5, ease: "power2.out" }, S4 + 8.2);
+      tl.from("#s4-log2", { x: 20, duration: 0.45, ease: "power3.out" }, S4 + 8.2);
+      // Publicly verifiable flourish — pulse the signature row
+      tl.to("#s4-sig", { color: "#00E676", duration: 0.35, ease: "power2.inOut", yoyo: true, repeat: 1 }, S4 + 10.8);
+      tl.set("#scene-4", { autoAlpha: 0 }, S5);
+
+      // ═══ SCENE 5: EMAIL cancel window ═══
+      tl.set("#scene-5", { autoAlpha: 1 }, S5);
+      tl.from("#scene-5 .sidebar", { x: -60, opacity: 0, duration: 0.5, ease: "power4.out" }, S5 + 0.05);
+      tl.from("#scene-5 .topbar", { y: -30, opacity: 0, duration: 0.45, ease: "power3.out" }, S5 + 0.15);
+      tl.from("#scene-5 .right-panel", { x: 60, opacity: 0, duration: 0.55, ease: "power4.out" }, S5 + 0.2);
+      tl.from("#scene-5 .msg.user", { y: 20, opacity: 0, duration: 0.4, ease: "power3.out" }, S5 + 0.6);
+      tl.from("#scene-5 .msg.assistant", { y: 20, opacity: 0, duration: 0.4, ease: "power3.out" }, S5 + 1.3);
+      tl.from("#scene-5 .countdown-card", { y: 20, opacity: 0, scale: 0.97, duration: 0.5, ease: "expo.out" }, S5 + 1.4);
+      tl.from("#scene-5 .ap-actions", { y: 20, opacity: 0, duration: 0.4, ease: "power3.out" }, S5 + 1.8);
+      tl.from("#s5-log1", { x: 20, opacity: 0, duration: 0.4, ease: "power3.out" }, S5 + 2.0);
+      // Countdown — from 30 to 24 over ~5s (narration "thirty seconds. Typo? Wrong recipient?" at ~49-52s → scene time ~4.5-7.5)
+      const cd = { v: 30 };
+      tl.to(cd, {
+        v: 24, duration: 4.5, ease: "none",
+        onUpdate: () => {
+          const el = document.getElementById("s5-countdown");
+          if (el) el.textContent = Math.ceil(cd.v).toString();
+        }
+      }, S5 + 2.0);
+      tl.to("#s5-ring", { scaleX: 0.8, duration: 4.5, ease: "none" }, S5 + 2.0);
+      // Cancel moment (narration: "Cancel" at ~52s → scene time ~7.5)
+      tl.to("#s5-cancel", { scale: 1.06, duration: 0.2, ease: "power2.out", yoyo: true, repeat: 1, overwrite: "auto" }, S5 + 7.0);
+      tl.to("#s5-countdown", { color: "#FF5252", duration: 0.3 }, S5 + 7.3);
+      tl.to("#s5-ring", { backgroundColor: "#FF5252", duration: 0.3 }, S5 + 7.3);
+      tl.fromTo("#s5-banner", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power4.out", overwrite: "auto" }, S5 + 7.5);
+      tl.to("#s5-log2", { opacity: 1, duration: 0.4, ease: "power2.out" }, S5 + 8.0);
+      tl.from("#s5-log2", { x: 20, duration: 0.4, ease: "power3.out" }, S5 + 8.0);
+      tl.set("#scene-5", { autoAlpha: 0 }, S6);
+
+      // ═══ SCENE 6: COUNCIL ═══
+      tl.set("#scene-6", { autoAlpha: 1 }, S6);
+      tl.from("#scene-6 .sidebar", { x: -60, opacity: 0, duration: 0.5, ease: "power4.out" }, S6 + 0.05);
+      tl.from("#scene-6 .topbar", { y: -30, opacity: 0, duration: 0.45, ease: "power3.out", overwrite: "auto" }, S6 + 0.15);
+      tl.from("#scene-6 .council-prompt", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, S6 + 0.5);
+      // Four cards stagger (narration: "Claude. GPT-5. Gemini. Llama." at ~5.5-8.5s into scene)
+      const cards = ["s6-m1", "s6-m2", "s6-m3", "s6-m4"];
+      const statuses = ["s6-s1", "s6-s2", "s6-s3", "s6-s4"];
+      const bodies = ["s6-b1", "s6-b2", "s6-b3", "s6-b4"];
+      cards.forEach((id, i) => {
+        tl.from("#" + id, { y: 40, opacity: 0, scale: 0.97, duration: 0.5, ease: "expo.out" }, S6 + 2.5 + i * 0.9);
+      });
+      bodies.forEach((id, i) => {
+        tl.from("#" + id, { opacity: 0, duration: 0.6, ease: "power2.out" }, S6 + 2.9 + i * 0.9);
+      });
+      // Status flip to DONE
+      statuses.forEach((id, i) => {
+        tl.to("#" + id, { duration: 0.25, ease: "power2.inOut",
+          onStart: () => {
+            const el = document.getElementById(id);
+            if (el) { el.textContent = "DONE"; el.classList.add("done"); }
+          }
+        }, S6 + 6.0 + i * 0.4);
+      });
+      // Highlight best (narration: "Compare reasoning. Pick the best." at ~10-11s into scene)
+      tl.to("#s6-m1", { scale: 1.02, duration: 0.3, ease: "power2.out" }, S6 + 9.5);
+      tl.to("#s6-m1", {
+        duration: 0.1,
+        onStart: () => document.getElementById("s6-m1").classList.add("best")
+      }, S6 + 9.6);
+      tl.to("#s6-t1", { opacity: 1, duration: 0.4 }, S6 + 9.8);
+      tl.set("#scene-6", { autoAlpha: 0 }, S7);
+
+      // ═══ SCENE 7: Outro (final — exits allowed) ═══
+      tl.set("#scene-7", { autoAlpha: 1 }, S7);
+      tl.from("#s7-mark", { y: 60, opacity: 0, duration: 0.8, ease: "expo.out" }, S7 + 0.2);
+      tl.from("#s7-mark .dot", { opacity: 0, scale: 0, transformOrigin: "center", duration: 0.35, ease: "power4.out" }, S7 + 0.95);
+      tl.from("#s7-rule", { scaleX: 0, transformOrigin: "center", duration: 0.55, ease: "expo.out" }, S7 + 1.1);
+      tl.from("#s7-tag", { y: 20, opacity: 0, duration: 0.6, ease: "power3.out" }, S7 + 1.3);
+      tl.from("#s7-url", { y: 20, opacity: 0, duration: 0.55, ease: "power4.out" }, S7 + 1.7);
+      tl.from("#s7-meta", { opacity: 0, duration: 0.6, ease: "power2.out" }, S7 + 2.1);
+
+      // Final fade — chrome + grid
+      tl.to(".chrome", { opacity: 0, duration: 0.8, ease: "power2.out" }, 88.2);
+      tl.to(".grid-bg", { opacity: 0, duration: 1.0, ease: "power2.out" }, 88.0);
+
       window.__timelines["main"] = tl;
     </script>
   </body>

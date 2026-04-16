@@ -1,13 +1,13 @@
-Agents are powerful. And terrifyingly opaque.
+Every AI agent promises the world. Then does something you cannot verify, cannot undo, and bills you for it.
 
-Yoola changes that. Every action signed. Every action reversible. Same task, same outcome, same proof.
+Yoola is different. Deterministic AI agents that prove what they did. Every action — structured, signed, reversible.
 
-Five reversibility classes. From undoable, to cancelable, to blocked — before anything runs.
+Start with your context. Drop in your ChatGPT export. Yoola parses every thread, every memory. Ask about a conversation from three months ago. Yoola answers with the full thread in hand.
 
-Bring your history. ChatGPT. Claude. Everything in one context.
+Now the key moment. Ask Yoola to charge a customer. Before anything runs, you see the approval card. The action. The reversibility class. The FIDES signature. You approve. Yoola executes. Every step is committed to AGIT. Publicly verifiable. A stranger with a public key can audit exactly what happened, and why.
 
-And Yoola reaches out to you. Proactive, not reactive.
+Some actions are reversible with a window. Send an email. Yoola holds it for thirty seconds. Typo? Wrong recipient? Cancel, and it never ships. The agent obeys your hesitation.
 
-Four models. One question. Council mode.
+When the question is hard, ask the council. One prompt. Four models. Claude. GPT-5. Gemini. Llama. Side by side. Compare reasoning. Pick the best. No vendor lock-in.
 
-Yoola. The trustworthy Manus alternative. Built on open infrastructure. Try it at yoola dot dev.
+Yoola. The open agent OS. Deterministic AI agents that prove what they did. Try it at yoola dot dev.
