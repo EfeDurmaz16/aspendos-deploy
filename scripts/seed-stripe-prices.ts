@@ -1,12 +1,8 @@
 /**
- * Seed Stripe with YULA OS products and prices.
+ * Seed Stripe with YULA OS products and prices (weekly, monthly, annual).
  *
  * Usage:
- *   STRIPE_SECRET_KEY=sk_test_... bun run scripts/seed-stripe-prices.ts
- *
- * This creates products + monthly recurring prices with lookup_keys that the
- * checkout route resolves at runtime. Safe to run multiple times — it checks
- * for existing prices by lookup_key before creating.
+ *   STRIPE_SECRET_KEY=sk_live_... bun run scripts/seed-stripe-prices.ts
  */
 
 import Stripe from 'stripe';
@@ -23,7 +19,11 @@ interface TierDef {
     slug: string;
     name: string;
     description: string;
-    monthlyPriceCents: number;
+    prices: {
+        weekly: number;
+        monthly: number;
+        annual: number;
+    };
     isPerSeat: boolean;
 }
 
@@ -32,87 +32,110 @@ const TIERS: TierDef[] = [
         slug: 'personal',
         name: 'Yula Personal',
         description: 'For individuals getting started with AI',
-        monthlyPriceCents: 2500,
+        prices: { weekly: 700, monthly: 2500, annual: 24000 },
         isPerSeat: false,
     },
     {
         slug: 'pro',
         name: 'Yula Pro',
         description: 'For power users who need agent capabilities',
-        monthlyPriceCents: 6000,
+        prices: { weekly: 1700, monthly: 6000, annual: 57600 },
         isPerSeat: false,
     },
     {
         slug: 'pro_byok',
         name: 'Yula Pro BYOK',
         description: 'Pro features with your own API keys',
-        monthlyPriceCents: 3000,
+        prices: { weekly: 900, monthly: 3000, annual: 28800 },
         isPerSeat: false,
     },
     {
         slug: 'team',
         name: 'Yula Team',
         description: 'For teams that need shared governance',
-        monthlyPriceCents: 18000,
+        prices: { weekly: 5000, monthly: 18000, annual: 172800 },
         isPerSeat: true,
     },
     {
         slug: 'team_byok',
         name: 'Yula Team BYOK',
         description: 'Team features with your own API keys',
-        monthlyPriceCents: 10000,
+        prices: { weekly: 2800, monthly: 10000, annual: 96000 },
         isPerSeat: true,
     },
 ];
 
+const INTERVALS: { key: 'weekly' | 'monthly' | 'annual'; stripe: 'week' | 'month' | 'year' }[] = [
+    { key: 'weekly', stripe: 'week' },
+    { key: 'monthly', stripe: 'month' },
+    { key: 'annual', stripe: 'year' },
+];
+
 async function main() {
-    console.log('Seeding Stripe products and prices...\n');
+    console.log('Seeding Stripe products and prices (weekly + monthly + annual)...\n');
 
     for (const tier of TIERS) {
-        const lookupKey = `${tier.slug}_monthly`;
-
-        // Check if a price with this lookup_key already exists
-        const existing = await stripe.prices.list({
-            lookup_keys: [lookupKey],
+        // Find or create product
+        let productId: string;
+        const existingMonthly = await stripe.prices.list({
+            lookup_keys: [`${tier.slug}_monthly`],
             active: true,
             limit: 1,
         });
 
-        if (existing.data.length > 0) {
-            console.log(`[skip] ${tier.name} — price already exists (${existing.data[0].id})`);
-            continue;
+        if (existingMonthly.data.length > 0) {
+            productId = existingMonthly.data[0].product as string;
+            console.log(`[exists] ${tier.name} — product: ${productId}`);
+        } else {
+            const product = await stripe.products.create({
+                name: tier.name,
+                description: tier.description,
+                metadata: {
+                    tier: tier.slug,
+                    is_per_seat: tier.isPerSeat ? 'true' : 'false',
+                },
+            });
+            productId = product.id;
+            console.log(`[created] ${tier.name} — product: ${productId}`);
         }
 
-        // Create product
-        const product = await stripe.products.create({
-            name: tier.name,
-            description: tier.description,
-            metadata: {
-                tier: tier.slug,
-                is_per_seat: tier.isPerSeat ? 'true' : 'false',
-            },
-        });
+        // Create prices for each interval
+        for (const interval of INTERVALS) {
+            const lookupKey = `${tier.slug}_${interval.key}`;
+            const existing = await stripe.prices.list({
+                lookup_keys: [lookupKey],
+                active: true,
+                limit: 1,
+            });
 
-        // Create monthly recurring price with lookup_key
-        const price = await stripe.prices.create({
-            product: product.id,
-            unit_amount: tier.monthlyPriceCents,
-            currency: 'usd',
-            recurring: { interval: 'month' },
-            lookup_key: lookupKey,
-            transfer_lookup_key: true,
-            metadata: {
-                tier: tier.slug,
-            },
-        });
+            if (existing.data.length > 0) {
+                console.log(`  [skip] ${lookupKey} — already exists (${existing.data[0].id})`);
+                continue;
+            }
 
-        console.log(
-            `[created] ${tier.name} — product: ${product.id}, price: ${price.id} ($${(tier.monthlyPriceCents / 100).toFixed(2)}/mo)`
-        );
+            const cents = tier.prices[interval.key];
+            const price = await stripe.prices.create({
+                product: productId,
+                unit_amount: cents,
+                currency: 'usd',
+                recurring: { interval: interval.stripe },
+                lookup_key: lookupKey,
+                transfer_lookup_key: true,
+                metadata: { tier: tier.slug, interval: interval.key },
+            });
+
+            const display =
+                interval.key === 'annual'
+                    ? `$${(cents / 100).toFixed(2)}/yr`
+                    : interval.key === 'weekly'
+                      ? `$${(cents / 100).toFixed(2)}/wk`
+                      : `$${(cents / 100).toFixed(2)}/mo`;
+
+            console.log(`  [created] ${lookupKey} — ${price.id} (${display})`);
+        }
     }
 
-    console.log('\nDone. Prices are identified by lookup_key at runtime.');
-    console.log('Lookup keys:', TIERS.map((t) => `${t.slug}_monthly`).join(', '));
+    console.log('\nDone.');
 }
 
 main().catch((err) => {

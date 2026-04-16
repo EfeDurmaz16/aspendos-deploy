@@ -76,15 +76,17 @@ export const TIER_CONFIG: Record<
     },
 };
 
+export type BillingInterval = 'weekly' | 'monthly' | 'annual';
+
 /**
- * Resolve a Stripe Price ID from a tier slug.
+ * Resolve a Stripe Price ID from a tier slug and billing interval.
  * Uses lookup_key for portability — prices are identified by lookup key, not hardcoded IDs.
  */
-export async function resolvePriceId(slug: TierSlug): Promise<string> {
-    const lookupKey = TIER_PRICE_LOOKUP_KEYS[slug];
-    if (!lookupKey) {
-        throw new Error(`Unknown tier slug: ${slug}`);
-    }
+export async function resolvePriceId(
+    slug: TierSlug,
+    interval: BillingInterval = 'monthly'
+): Promise<string> {
+    const lookupKey = `${slug}_${interval}`;
 
     const prices = await getStripe().prices.list({
         lookup_keys: [lookupKey],
@@ -95,7 +97,7 @@ export async function resolvePriceId(slug: TierSlug): Promise<string> {
     if (prices.data.length === 0) {
         throw new Error(
             `No active Stripe price found for lookup key "${lookupKey}". ` +
-                `Run the seed script or create prices in Stripe Dashboard with this lookup key.`
+                `Run: STRIPE_SECRET_KEY=... bun run scripts/seed-stripe-prices.ts`
         );
     }
 

@@ -156,7 +156,11 @@ function PricingContent() {
             const res = await fetch('/api/billing/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slug, seats: slug.startsWith('team') ? 1 : undefined }),
+                body: JSON.stringify({
+                    slug,
+                    interval: billingPeriod,
+                    seats: slug.startsWith('team') ? 1 : undefined,
+                }),
             });
             const data = await res.json();
             if (!res.ok) {

@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const slug = body.slug as TierSlug;
+        const interval = (body.interval || 'monthly') as 'weekly' | 'monthly' | 'annual';
         const seats = body.seats as number | undefined;
 
         if (!slug || !TIER_CONFIG[slug]) {
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Resolve the Stripe price ID from lookup key
-        const priceId = await resolvePriceId(slug);
+        const priceId = await resolvePriceId(slug, interval);
 
         // Create the checkout session
         const checkoutSession = await getStripe().checkout.sessions.create({
