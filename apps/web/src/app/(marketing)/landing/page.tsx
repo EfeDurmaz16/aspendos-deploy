@@ -2,13 +2,31 @@
 
 import {
     ArrowRight,
-    Brain,
+    ArrowCounterClockwise,
     CaretDown,
     ChatCircleDots,
     Check,
     CloudArrowUp,
+    Fingerprint,
+    GitBranch,
     Lightning,
+    ListChecks,
+    Lock,
+    Prohibit,
+    Question,
+    Seal,
+    SealCheck,
+    ShieldCheck,
+    SignIn,
+    SlackLogo,
     Sparkle,
+    TelegramLogo,
+    DiscordLogo,
+    WhatsappLogo,
+    MicrosoftTeamsLogo,
+    ChatTeardropDots,
+    Envelope,
+    GithubLogo,
 } from '@phosphor-icons/react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import Link from 'next/link';
@@ -19,11 +37,53 @@ import { cn } from '@/lib/utils';
 // CONSTANTS
 // =============================================================================
 
-const FEATURE_COLORS = {
-    import: { accent: 'var(--feature-import)', label: 'Import' },
-    pac: { accent: 'var(--feature-pac)', label: 'PAC' },
-    council: { accent: 'var(--feature-council)', label: 'Council' },
-} as const;
+const REVERSIBILITY_CLASSES = [
+    {
+        level: 'R0',
+        label: 'Fully reversible',
+        color: '#22c55e',
+        bg: 'rgba(34,197,94,0.1)',
+        border: 'rgba(34,197,94,0.25)',
+        example: 'Draft an email',
+        description: 'Action can be fully undone. No side effects leave the system.',
+    },
+    {
+        level: 'R1',
+        label: 'Soft-reversible',
+        color: '#eab308',
+        bg: 'rgba(234,179,8,0.1)',
+        border: 'rgba(234,179,8,0.25)',
+        example: 'Post a Slack message',
+        description: 'Can be retracted, but recipients may have already seen it.',
+    },
+    {
+        level: 'R2',
+        label: 'Partially reversible',
+        color: '#f97316',
+        bg: 'rgba(249,115,22,0.1)',
+        border: 'rgba(249,115,22,0.25)',
+        example: 'Create a calendar event',
+        description: 'Can be deleted, but attendees were already notified.',
+    },
+    {
+        level: 'R3',
+        label: 'Irreversible with cost',
+        color: '#ef4444',
+        bg: 'rgba(239,68,68,0.1)',
+        border: 'rgba(239,68,68,0.25)',
+        example: 'Send an email',
+        description: 'Cannot be recalled. The action has permanent external effects.',
+    },
+    {
+        level: 'R4',
+        label: 'Irreversible',
+        color: '#991b1b',
+        bg: 'rgba(153,27,27,0.1)',
+        border: 'rgba(153,27,27,0.25)',
+        example: 'Execute a payment',
+        description: 'Cannot be undone. Requires explicit human approval before execution.',
+    },
+] as const;
 
 // =============================================================================
 // ANIMATED SECTION WRAPPER
@@ -80,7 +140,6 @@ function Navigation() {
             )}
         >
             <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                {/* Logo */}
                 <Link href="/" className="flex items-center gap-2.5 group">
                     <div className="w-7 h-7 rounded-md bg-foreground flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
                         <span className="text-background text-xs font-bold tracking-tight">Y</span>
@@ -90,10 +149,10 @@ function Navigation() {
                     </span>
                 </Link>
 
-                {/* Nav Links */}
                 <div className="hidden md:flex items-center gap-8">
                     {[
                         { label: 'Features', href: '#features' },
+                        { label: 'Reversibility', href: '#reversibility' },
                         { label: 'Pricing', href: '#pricing' },
                         { label: 'FAQ', href: '#faq' },
                     ].map((item) => (
@@ -107,7 +166,6 @@ function Navigation() {
                     ))}
                 </div>
 
-                {/* CTA */}
                 <div className="flex items-center gap-3">
                     <Link
                         href="/login"
@@ -135,16 +193,7 @@ function Navigation() {
 function HeroSection() {
     return (
         <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
-            {/* Subtle gradient background */}
             <div className="absolute inset-0 bg-background" />
-            <div
-                className="absolute inset-0 opacity-[0.03]"
-                style={{
-                    backgroundImage: `radial-gradient(circle at 30% 40%, var(--feature-import) 0%, transparent 50%),
-                                      radial-gradient(circle at 70% 60%, var(--feature-council) 0%, transparent 50%)`,
-                }}
-            />
-            {/* Grid pattern */}
             <div
                 className="absolute inset-0 opacity-[0.02]"
                 style={{
@@ -162,7 +211,7 @@ function HeroSection() {
                         transition={{ duration: 0.5 }}
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/60 bg-card/50"
                     >
-                        <Sparkle size={14} weight="fill" className="text-pac" />
+                        <ShieldCheck size={14} weight="fill" className="text-foreground/60" />
                         <span className="text-xs text-muted-foreground">
                             Deterministic AI agents
                         </span>
@@ -187,8 +236,8 @@ function HeroSection() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed"
                     >
-                        Every action is structured, signed, and reversible. Same task, same outcome,
-                        same proof — every time. Built on Aspendos, the open agent OS.
+                        A trustworthy AI agent for Slack and web. Every action signed, logged,
+                        approval-aware, and reversible when supported.
                     </motion.p>
 
                     {/* CTAs */}
@@ -206,14 +255,14 @@ function HeroSection() {
                             <ArrowRight size={16} weight="bold" />
                         </Link>
                         <Link
-                            href="#features"
+                            href="#reversibility"
                             className="h-11 px-6 rounded-lg border border-border text-foreground text-sm font-medium flex items-center gap-2 hover:bg-card transition-colors"
                         >
-                            See features
+                            How it works
                         </Link>
                     </motion.div>
 
-                    {/* Social proof */}
+                    {/* Trust signals */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -221,28 +270,32 @@ function HeroSection() {
                         className="flex items-center justify-center gap-6 pt-4 text-xs text-muted-foreground"
                     >
                         <span className="flex items-center gap-1.5">
-                            <Check size={14} weight="bold" className="text-personas" />
-                            Free tier available
+                            <SealCheck size={14} weight="fill" className="text-foreground/40" />
+                            FIDES-signed
                         </span>
                         <span className="flex items-center gap-1.5">
-                            <Check size={14} weight="bold" className="text-personas" />
-                            No credit card required
+                            <ListChecks size={14} weight="bold" className="text-foreground/40" />
+                            AGIT-logged
                         </span>
                         <span className="hidden sm:flex items-center gap-1.5">
-                            <Check size={14} weight="bold" className="text-personas" />
-                            Cancel anytime
+                            <ArrowCounterClockwise
+                                size={14}
+                                weight="bold"
+                                className="text-foreground/40"
+                            />
+                            Reversible
                         </span>
                     </motion.div>
                 </div>
 
-                {/* Hero Product Preview */}
+                {/* Hero Demo */}
                 <motion.div
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.5 }}
                     className="mt-16 md:mt-20 max-w-4xl mx-auto"
                 >
-                    <HeroPreview />
+                    <AgentDemo />
                 </motion.div>
             </div>
         </section>
@@ -250,186 +303,64 @@ function HeroSection() {
 }
 
 // =============================================================================
-// LIVE DEMO - Interactive working chat (Linear-style)
+// AGENT DEMO — Shows agent executing a tool with reversibility badge
 // =============================================================================
 
-interface DemoMessage {
-    id: string;
-    role: 'user' | 'assistant';
+interface DemoStep {
+    id: number;
+    type: 'user' | 'thinking' | 'tool' | 'badge' | 'result';
     content: string;
-    memoryCount?: number;
+    badge?: (typeof REVERSIBILITY_CLASSES)[number];
+    tool?: string;
 }
 
-const DEMO_RESPONSES: Record<string, { text: string; memoryCount: number }> = {
-    default: {
-        text: "I'd be happy to help! Yula remembers your preferences across conversations. Unlike other AI tools, I can pull context from your entire chat history - including imports from ChatGPT and Claude. What would you like to explore?",
-        memoryCount: 3,
+const DEMO_SEQUENCE: DemoStep[] = [
+    { id: 1, type: 'user', content: "Send a summary of today's standup to #engineering on Slack" },
+    { id: 2, type: 'thinking', content: 'Analyzing request... classifying reversibility...' },
+    { id: 3, type: 'tool', content: 'slack.postMessage', tool: 'Slack API' },
+    {
+        id: 4,
+        type: 'badge',
+        content: 'Classified as R1 — Soft-reversible',
+        badge: REVERSIBILITY_CLASSES[1],
     },
-    launch: {
-        text: "Here's a tailored launch strategy:\n\n**Phase 1 - Pre-launch (2 weeks)**\n- Build waitlist with content marketing\n- Reach out to 50 beta users personally\n\n**Phase 2 - Launch day**\n- Product Hunt submission\n- Social media blitz across X and LinkedIn\n\n**Phase 3 - Post-launch (4 weeks)**\n- Outbound to waitlist signups\n- Gather testimonials from beta users\n\nI noticed from your previous conversations that you're building a SaaS product. Want me to tailor this further?",
-        memoryCount: 12,
+    {
+        id: 5,
+        type: 'result',
+        content: 'Message posted to #engineering. You can /undo within 5 minutes to retract it.',
     },
-    code: {
-        text: "Here's a clean React component:\n\n```tsx\nfunction Button({ children, variant = 'primary' }) {\n  return (\n    <button className={styles[variant]}>\n      {children}\n    </button>\n  );\n}\n```\n\nI used the patterns from your earlier conversation about design systems. Should I add more variants?",
-        memoryCount: 5,
-    },
-    write: {
-        text: "Here's a draft based on your writing style:\n\n> We built Yula because we were tired of starting over. Every time you switch AI tools, you lose context. Your preferences, your projects, your history - gone.\n>\n> Yula fixes that. Import everything. Remember everything. One AI that actually knows you.\n\nI matched the concise, direct tone you've used before. Want me to adjust?",
-        memoryCount: 8,
-    },
-};
+];
 
-function matchDemoResponse(input: string): { text: string; memoryCount: number } {
-    const lower = input.toLowerCase();
-    if (lower.includes('launch') || lower.includes('strategy') || lower.includes('plan')) {
-        return DEMO_RESPONSES.launch;
-    }
-    if (
-        lower.includes('code') ||
-        lower.includes('component') ||
-        lower.includes('react') ||
-        lower.includes('debug')
-    ) {
-        return DEMO_RESPONSES.code;
-    }
-    if (
-        lower.includes('write') ||
-        lower.includes('email') ||
-        lower.includes('draft') ||
-        lower.includes('essay')
-    ) {
-        return DEMO_RESPONSES.write;
-    }
-    return DEMO_RESPONSES.default;
-}
+function AgentDemo() {
+    const [visibleSteps, setVisibleSteps] = useState<number[]>([]);
+    const [hasPlayed, setHasPlayed] = useState(false);
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
 
-function HeroPreview() {
-    const [messages, setMessages] = useState<DemoMessage[]>([]);
-    const [inputValue, setInputValue] = useState('');
-    const [isStreaming, setIsStreaming] = useState(false);
-    const [streamedText, setStreamedText] = useState('');
-    const [showSignup, setShowSignup] = useState(false);
-    const [selectedMode, setSelectedMode] = useState('Auto');
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    useEffect(() => {
+        if (!isInView || hasPlayed) return;
+        setHasPlayed(true);
 
-    const messageCountRef = useRef(0);
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        DEMO_SEQUENCE.forEach((step, i) => {
+            timers.push(
+                setTimeout(
+                    () => {
+                        setVisibleSteps((prev) => [...prev, step.id]);
+                    },
+                    (i + 1) * 800
+                )
+            );
+        });
 
-    // No auto-scroll - let user control their own scroll position
-
-    const simulateStream = async (text: string, memoryCount: number) => {
-        setIsStreaming(true);
-        setStreamedText('');
-
-        // Simulate "thinking" delay
-        await new Promise((r) => setTimeout(r, 400 + Math.random() * 300));
-
-        // Stream character by character
-        for (let i = 0; i <= text.length; i++) {
-            setStreamedText(text.slice(0, i));
-            // Variable speed: faster for spaces, slower for punctuation
-            const char = text[i];
-            const delay =
-                char === ' ' ? 8 : char === '\n' ? 30 : char === '.' || char === ',' ? 40 : 15;
-            await new Promise((r) => setTimeout(r, delay));
-        }
-
-        // Finalize
-        setMessages((prev) => [
-            ...prev,
-            { id: `a-${Date.now()}`, role: 'assistant', content: text, memoryCount },
-        ]);
-        setStreamedText('');
-        setIsStreaming(false);
-    };
-
-    const handleSend = async () => {
-        const text = inputValue.trim();
-        if (!text || isStreaming) return;
-
-        messageCountRef.current++;
-
-        // After 3 exchanges, show signup prompt
-        if (messageCountRef.current > 3) {
-            setShowSignup(true);
-            return;
-        }
-
-        setInputValue('');
-        if (textareaRef.current) textareaRef.current.style.height = 'auto';
-
-        // Add user message
-        setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text }]);
-
-        // Get matching response and stream it
-        const response = matchDemoResponse(text);
-        await simulateStream(response.text, response.memoryCount);
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
-
-    const handleSuggestion = async (text: string) => {
-        if (isStreaming) return;
-        messageCountRef.current++;
-        setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text }]);
-        const response = matchDemoResponse(text);
-        await simulateStream(response.text, response.memoryCount);
-    };
+        return () => timers.forEach(clearTimeout);
+    }, [isInView, hasPlayed]);
 
     return (
-        <div className="rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm overflow-hidden shadow-2xl relative">
-            {/* Signup overlay */}
-            <AnimatePresence>
-                {showSignup && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="absolute inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-center px-8"
-                        >
-                            <div className="w-12 h-12 rounded-xl bg-foreground flex items-center justify-center mx-auto mb-4">
-                                <span className="text-background text-lg font-bold">Y</span>
-                            </div>
-                            <h3 className="text-xl font-semibold text-foreground mb-2">
-                                Like what you see?
-                            </h3>
-                            <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-                                Sign up free to unlock unlimited conversations, memory, and all AI
-                                models.
-                            </p>
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                                <Link
-                                    href="/signup"
-                                    className="h-10 px-6 rounded-lg bg-foreground text-background text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
-                                >
-                                    Start free
-                                    <ArrowRight size={14} weight="bold" />
-                                </Link>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowSignup(false);
-                                        messageCountRef.current = 0;
-                                    }}
-                                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                    Continue demo
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
+        <div
+            ref={ref}
+            className="rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm overflow-hidden shadow-2xl"
+        >
             {/* Window chrome */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-card/80">
                 <div className="flex items-center gap-2">
@@ -441,56 +372,30 @@ function HeroPreview() {
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="w-1.5 h-1.5 rounded-full bg-foreground" />
-                    <span>Live Demo</span>
+                    <span>Agent Session</span>
                 </div>
                 <div className="w-16" />
             </div>
 
-            {/* Chat content */}
-            <div className="flex flex-col h-[420px]">
-                {/* Messages area */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                    {messages.length === 0 && !isStreaming && (
-                        <div className="flex flex-col items-center justify-center h-full text-center">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-foreground/5 to-foreground/10 border border-border/50 flex items-center justify-center mb-4">
-                                <span className="text-lg font-bold text-foreground/70">Y</span>
-                            </div>
-                            <p className="text-sm font-medium text-foreground mb-1">
-                                Try Yula right now
-                            </p>
-                            <p className="text-xs text-muted-foreground mb-6">
-                                Type anything or pick a suggestion below
-                            </p>
-                            <div className="flex flex-wrap gap-2 justify-center max-w-md">
-                                {[
-                                    'Help me plan a product launch',
-                                    'Write a short intro email',
-                                    'Debug a React component',
-                                ].map((suggestion) => (
-                                    <button
-                                        type="button"
-                                        key={suggestion}
-                                        onClick={() => handleSuggestion(suggestion)}
-                                        className="text-xs px-3 py-1.5 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/50 transition-all"
-                                    >
-                                        {suggestion}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {messages.map((msg) => (
-                        <div key={msg.id}>
-                            {msg.role === 'user' ? (
+            {/* Demo content */}
+            <div className="p-5 md:p-6 space-y-4 min-h-[300px]">
+                <AnimatePresence mode="popLayout">
+                    {DEMO_SEQUENCE.filter((s) => visibleSteps.includes(s.id)).map((step) => (
+                        <motion.div
+                            key={step.id}
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4 }}
+                        >
+                            {step.type === 'user' && (
                                 <div className="flex justify-end">
                                     <div className="bg-muted rounded-2xl rounded-br-md px-4 py-3 max-w-[75%]">
-                                        <p className="text-sm text-foreground whitespace-pre-wrap">
-                                            {msg.content}
-                                        </p>
+                                        <p className="text-sm text-foreground">{step.content}</p>
                                     </div>
                                 </div>
-                            ) : (
+                            )}
+
+                            {step.type === 'thinking' && (
                                 <div className="flex gap-3">
                                     <div className="w-7 h-7 rounded-lg bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <Sparkle
@@ -499,162 +404,336 @@ function HeroPreview() {
                                             className="text-foreground/60"
                                         />
                                     </div>
-                                    <div className="flex-1 max-w-[85%] space-y-2">
-                                        <div className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                                            {msg.content}
-                                        </div>
-                                        {msg.memoryCount && (
-                                            <div className="flex items-center gap-2 pt-2 border-t border-border/30">
-                                                <Brain size={13} className="text-memory" />
-                                                <span className="text-xs text-muted-foreground">
-                                                    Using context from {msg.memoryCount} memories
-                                                </span>
-                                            </div>
-                                        )}
+                                    <p className="text-sm text-muted-foreground italic py-2">
+                                        {step.content}
+                                    </p>
+                                </div>
+                            )}
+
+                            {step.type === 'tool' && (
+                                <div className="flex gap-3">
+                                    <div className="w-7 h-7 rounded-lg bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <GitBranch size={14} className="text-foreground/60" />
+                                    </div>
+                                    <div className="flex items-center gap-2 py-2">
+                                        <code className="text-xs px-2 py-1 rounded-md bg-muted border border-border/50 font-mono text-foreground/80">
+                                            {step.content}
+                                        </code>
+                                        <span className="text-xs text-muted-foreground">
+                                            via {step.tool}
+                                        </span>
                                     </div>
                                 </div>
                             )}
-                        </div>
+
+                            {step.type === 'badge' && step.badge && (
+                                <div className="flex gap-3">
+                                    <div className="w-7 h-7" />
+                                    <motion.div
+                                        initial={{ scale: 0.9 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+                                        style={{
+                                            backgroundColor: step.badge.bg,
+                                            border: `1px solid ${step.badge.border}`,
+                                            color: step.badge.color,
+                                        }}
+                                    >
+                                        <Seal size={14} weight="fill" />
+                                        {step.badge.level} — {step.badge.label}
+                                    </motion.div>
+                                </div>
+                            )}
+
+                            {step.type === 'result' && (
+                                <div className="flex gap-3">
+                                    <div className="w-7 h-7 rounded-lg bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <Sparkle
+                                            size={14}
+                                            weight="fill"
+                                            className="text-foreground/60"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-foreground/90 leading-relaxed">
+                                            {step.content}
+                                        </p>
+                                        <div className="flex items-center gap-3 pt-1">
+                                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                <SealCheck size={13} weight="fill" />
+                                                FIDES-signed
+                                            </span>
+                                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                <ListChecks size={13} />
+                                                AGIT trace #a7f2
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
                     ))}
+                </AnimatePresence>
 
-                    {/* Streaming message */}
-                    {isStreaming && (
-                        <div className="flex gap-3">
-                            <div className="w-7 h-7 rounded-lg bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <Sparkle size={14} weight="fill" className="text-foreground/60" />
+                {visibleSteps.length === 0 && (
+                    <div className="flex items-center justify-center h-[260px]">
+                        <div className="text-center">
+                            <div className="w-10 h-10 rounded-xl bg-foreground/5 border border-border/50 flex items-center justify-center mx-auto mb-3">
+                                <ShieldCheck size={20} className="text-foreground/40" />
                             </div>
-                            <div className="flex-1 max-w-[85%]">
-                                {streamedText ? (
-                                    <div className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                                        {streamedText}
-                                        <span className="inline-block w-0.5 h-4 bg-foreground/60 ml-0.5 animate-pulse" />
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1.5 py-2">
-                                        <div
-                                            className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce"
-                                            style={{ animationDelay: '0ms' }}
-                                        />
-                                        <div
-                                            className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce"
-                                            style={{ animationDelay: '150ms' }}
-                                        />
-                                        <div
-                                            className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce"
-                                            style={{ animationDelay: '300ms' }}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    <div />
-                </div>
-
-                {/* Input area */}
-                <div className="border-t border-border/40 p-3 bg-card/30">
-                    <div className="flex items-end gap-2 bg-background rounded-xl border border-border/60 focus-within:border-border focus-within:ring-1 focus-within:ring-ring/30 transition-all px-3 py-2">
-                        <textarea
-                            ref={textareaRef}
-                            value={inputValue}
-                            onChange={(e) => {
-                                setInputValue(e.target.value);
-                                e.target.style.height = 'auto';
-                                e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
-                            }}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Ask anything..."
-                            className="flex-1 min-h-[36px] max-h-[100px] bg-transparent resize-none outline-none text-sm text-foreground placeholder:text-muted-foreground py-1.5"
-                            rows={1}
-                            disabled={isStreaming}
-                        />
-                        <div className="flex items-center gap-1.5 pb-1">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const modes = ['Auto', 'Smart', 'Fast', 'Creative'];
-                                    const idx = modes.indexOf(selectedMode);
-                                    setSelectedMode(modes[(idx + 1) % modes.length]);
-                                }}
-                                className="text-xs px-2 py-1 rounded-md bg-muted/80 text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                            >
-                                <Sparkle size={10} weight="fill" />
-                                {selectedMode}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleSend}
-                                disabled={!inputValue.trim() || isStreaming}
-                                className={cn(
-                                    'w-7 h-7 rounded-lg flex items-center justify-center transition-all',
-                                    inputValue.trim() && !isStreaming
-                                        ? 'bg-foreground text-background hover:opacity-90'
-                                        : 'bg-muted text-muted-foreground'
-                                )}
-                            >
-                                <ArrowRight size={14} weight="bold" />
-                            </button>
+                            <p className="text-xs text-muted-foreground">
+                                Scroll down to see the agent in action
+                            </p>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
 }
 
 // =============================================================================
-// FEATURES SECTION
+// REVERSIBILITY MODEL SECTION
+// =============================================================================
+
+function ReversibilitySection() {
+    const [activeClass, setActiveClass] = useState<number>(1);
+
+    return (
+        <AnimatedSection
+            id="reversibility"
+            className="py-24 md:py-32 px-6 border-t border-border/30"
+        >
+            <div className="max-w-6xl mx-auto">
+                <div className="max-w-2xl mb-16">
+                    <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
+                        Reversibility Model
+                    </span>
+                    <h2
+                        className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3"
+                        style={{ textWrap: 'balance' as any }}
+                    >
+                        Every action has a{' '}
+                        <span className="text-muted-foreground">reversibility class</span>
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-4 leading-relaxed max-w-lg">
+                        Before Yula executes any tool, it classifies the action into one of five
+                        reversibility levels. Higher levels require explicit approval.
+                    </p>
+                </div>
+
+                <div className="grid lg:grid-cols-[1fr,1.2fr] gap-8 items-start">
+                    {/* Class list */}
+                    <div className="space-y-2">
+                        {REVERSIBILITY_CLASSES.map((cls, idx) => (
+                            <motion.button
+                                key={cls.level}
+                                type="button"
+                                onClick={() => setActiveClass(idx)}
+                                whileHover={{ x: 4 }}
+                                className={cn(
+                                    'w-full text-left px-4 py-3 rounded-lg border transition-all duration-200',
+                                    activeClass === idx
+                                        ? 'bg-card/80 border-border shadow-sm'
+                                        : 'border-transparent hover:bg-card/40'
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div
+                                        className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-bold font-mono flex-shrink-0"
+                                        style={{
+                                            backgroundColor: cls.bg,
+                                            color: cls.color,
+                                            border: `1px solid ${cls.border}`,
+                                        }}
+                                    >
+                                        {cls.level}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="text-sm font-medium text-foreground">
+                                            {cls.label}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground truncate">
+                                            e.g. {cls.example}
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.button>
+                        ))}
+                    </div>
+
+                    {/* Detail card */}
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeClass}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.25 }}
+                            className="rounded-xl border border-border/60 bg-card/40 p-6 md:p-8"
+                        >
+                            {(() => {
+                                const cls = REVERSIBILITY_CLASSES[activeClass];
+                                return (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className="w-12 h-12 rounded-lg flex items-center justify-center text-base font-bold font-mono"
+                                                style={{
+                                                    backgroundColor: cls.bg,
+                                                    color: cls.color,
+                                                    border: `1px solid ${cls.border}`,
+                                                }}
+                                            >
+                                                {cls.level}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-foreground">
+                                                    {cls.label}
+                                                </h3>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {cls.description}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t border-border/40 pt-5 space-y-3">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <span className="text-muted-foreground w-24 flex-shrink-0">
+                                                    Example
+                                                </span>
+                                                <code className="text-xs px-2 py-1 rounded bg-muted font-mono">
+                                                    {cls.example}
+                                                </code>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <span className="text-muted-foreground w-24 flex-shrink-0">
+                                                    Approval
+                                                </span>
+                                                <span className="text-foreground/80">
+                                                    {activeClass <= 1
+                                                        ? 'Auto-approved'
+                                                        : activeClass <= 2
+                                                          ? 'Logged, approval optional'
+                                                          : 'Requires explicit human approval'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <span className="text-muted-foreground w-24 flex-shrink-0">
+                                                    Undo
+                                                </span>
+                                                <span className="text-foreground/80">
+                                                    {activeClass === 0
+                                                        ? '/undo — instant, full rollback'
+                                                        : activeClass === 1
+                                                          ? '/undo — retract within time window'
+                                                          : activeClass === 2
+                                                            ? '/undo — partial, with side-effect warning'
+                                                            : 'Not available — action is permanent'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+            </div>
+        </AnimatedSection>
+    );
+}
+
+// =============================================================================
+// FEATURES SECTION — FIDES / AGIT / Reversibility + Import / PAC / Council
 // =============================================================================
 
 function FeaturesSection() {
-    const features = [
+    const trustFeatures = [
         {
-            key: 'import' as const,
+            icon: Fingerprint,
+            title: 'FIDES — Signed',
+            description:
+                'Every agent action is cryptographically signed. You can verify who did what, when, and with which model. Tamper-evident by default.',
+        },
+        {
+            icon: ListChecks,
+            title: 'AGIT — Logged',
+            description:
+                'Full causal trace of every decision. See the chain of reasoning, tool calls, and approvals that led to any outcome. Inspect with /timeline.',
+        },
+        {
+            icon: ArrowCounterClockwise,
+            title: 'Reversibility — Classified',
+            description:
+                'Every tool call is classified R0-R4 before execution. Higher-risk actions require approval. Lower-risk actions can be undone with /undo.',
+        },
+    ];
+
+    const productFeatures = [
+        {
             icon: CloudArrowUp,
             title: 'Import Your History',
             description:
-                'Bring your conversations from ChatGPT and Claude. Your context, your memories, all in one place. Never start from zero again.',
-            details: [
-                'ChatGPT export support',
-                'Claude export support',
-                'Preserves full context',
-                'Automatic categorization',
-            ],
+                'Bring your conversations from ChatGPT and Claude. Your context, preferences, and memories transfer with you.',
         },
         {
-            key: 'pac' as const,
             icon: Lightning,
-            title: 'Proactive Reminders',
+            title: 'PAC — AI Writes to You',
             description:
-                'Yula reads between the lines. It detects commitments, deadlines, and follow-ups from your conversations and reminds you before you forget.',
-            details: [
-                'Smart commitment detection',
-                'Configurable schedules',
-                'Context-aware nudges',
-                'Never miss a follow-up',
-            ],
+                'Proactive reminders that detect commitments, deadlines, and follow-ups from your conversations. Yula reaches out before you forget.',
         },
         {
-            key: 'council' as const,
             icon: ChatCircleDots,
-            title: 'AI Council',
+            title: 'Council — Ask 4 AIs',
             description:
-                'Ask GPT-4, Claude, Gemini, and Llama the same question simultaneously. Compare perspectives. Make better decisions with multiple viewpoints.',
-            details: [
-                '4 models in parallel',
-                'Side-by-side comparison',
-                'Consensus synthesis',
-                'Best answer selection',
-            ],
+                'Query GPT-4, Claude, Gemini, and Llama simultaneously. Compare perspectives side-by-side for better decisions.',
         },
     ];
 
     return (
         <AnimatedSection id="features" className="py-24 md:py-32 px-6">
             <div className="max-w-6xl mx-auto">
-                {/* Section header */}
-                <div className="max-w-2xl mb-16">
+                {/* Trust pillars */}
+                <div className="max-w-2xl mb-12">
+                    <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
+                        Trust Infrastructure
+                    </span>
+                    <h2
+                        className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3"
+                        style={{ textWrap: 'balance' as any }}
+                    >
+                        Built on provable trust,{' '}
+                        <span className="text-muted-foreground">not promises</span>
+                    </h2>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6 mb-20">
+                    {trustFeatures.map((feature, i) => (
+                        <motion.div
+                            key={feature.title}
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.1, duration: 0.6 }}
+                            className="group rounded-xl border border-border/50 bg-card/30 p-6 hover:border-border hover:bg-card/60 transition-all duration-300"
+                        >
+                            <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-border/50 flex items-center justify-center mb-5">
+                                <feature.icon size={20} className="text-foreground/70" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-foreground mb-2">
+                                {feature.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                {feature.description}
+                            </p>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* Product features */}
+                <div className="max-w-2xl mb-12">
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         Features
                     </span>
@@ -667,61 +746,87 @@ function FeaturesSection() {
                     </h2>
                 </div>
 
-                {/* Feature cards */}
                 <div className="grid md:grid-cols-3 gap-6">
-                    {features.map((feature, i) => {
-                        const color = FEATURE_COLORS[feature.key];
-                        return (
-                            <motion.div
-                                key={feature.key}
-                                initial={{ opacity: 0, y: 24 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1, duration: 0.6 }}
-                                className="group rounded-xl border border-border/50 bg-card/30 p-6 hover:border-border hover:bg-card/60 transition-all duration-300"
-                            >
-                                {/* Icon */}
-                                <div
-                                    className="w-10 h-10 rounded-lg flex items-center justify-center mb-5"
-                                    style={{
-                                        backgroundColor: `color-mix(in srgb, ${color.accent} 12%, transparent)`,
-                                    }}
-                                >
-                                    <feature.icon
-                                        size={20}
-                                        weight="duotone"
-                                        style={{ color: color.accent }}
-                                    />
-                                </div>
+                    {productFeatures.map((feature, i) => (
+                        <motion.div
+                            key={feature.title}
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.1, duration: 0.6 }}
+                            className="group rounded-xl border border-border/50 bg-card/30 p-6 hover:border-border hover:bg-card/60 transition-all duration-300"
+                        >
+                            <div className="w-10 h-10 rounded-lg bg-foreground/5 border border-border/50 flex items-center justify-center mb-5">
+                                <feature.icon size={20} className="text-foreground/70" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-foreground mb-2">
+                                {feature.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                {feature.description}
+                            </p>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        </AnimatedSection>
+    );
+}
 
-                                {/* Content */}
-                                <h3 className="text-lg font-semibold text-foreground mb-2">
-                                    {feature.title}
-                                </h3>
-                                <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                                    {feature.description}
-                                </p>
+// =============================================================================
+// SURFACES SECTION — "Works everywhere"
+// =============================================================================
 
-                                {/* Details */}
-                                <ul className="space-y-2">
-                                    {feature.details.map((detail) => (
-                                        <li
-                                            key={detail}
-                                            className="flex items-center gap-2 text-xs text-muted-foreground"
-                                        >
-                                            <Check
-                                                size={14}
-                                                weight="bold"
-                                                style={{ color: color.accent }}
-                                                className="flex-shrink-0"
-                                            />
-                                            {detail}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </motion.div>
-                        );
-                    })}
+function SurfacesSection() {
+    const surfaces = [
+        { name: 'Slack', icon: SlackLogo },
+        { name: 'Telegram', icon: TelegramLogo },
+        { name: 'Discord', icon: DiscordLogo },
+        { name: 'WhatsApp', icon: WhatsappLogo },
+        { name: 'Teams', icon: MicrosoftTeamsLogo },
+        { name: 'Google Chat', icon: ChatTeardropDots },
+        { name: 'iMessage', icon: Envelope },
+        { name: 'Signal', icon: Lock },
+    ];
+
+    return (
+        <AnimatedSection className="py-24 md:py-32 px-6 border-t border-border/30">
+            <div className="max-w-6xl mx-auto text-center">
+                <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
+                    Surfaces
+                </span>
+                <h2
+                    className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3 mb-4"
+                    style={{ textWrap: 'balance' as any }}
+                >
+                    Works everywhere <span className="text-muted-foreground">you do</span>
+                </h2>
+                <p className="text-sm text-muted-foreground mb-12 max-w-md mx-auto">
+                    One agent, one audit trail, across every platform. Same trust guarantees
+                    regardless of surface.
+                </p>
+
+                <div className="grid grid-cols-4 md:grid-cols-8 gap-4 max-w-3xl mx-auto">
+                    {surfaces.map((surface, i) => (
+                        <motion.div
+                            key={surface.name}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.05, duration: 0.4 }}
+                            className="flex flex-col items-center gap-2 group"
+                        >
+                            <div className="w-12 h-12 rounded-xl border border-border/50 bg-card/30 flex items-center justify-center group-hover:border-border group-hover:bg-card/60 transition-all">
+                                <surface.icon
+                                    size={22}
+                                    className="text-foreground/60 group-hover:text-foreground/80 transition-colors"
+                                />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">
+                                {surface.name}
+                            </span>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
         </AnimatedSection>
@@ -736,34 +841,27 @@ function HowItWorksSection() {
     const steps = [
         {
             number: '01',
-            title: 'Import',
+            title: 'Ask',
             description:
-                'Upload your ChatGPT or Claude export. Yula processes and indexes your entire conversation history.',
+                'Give Yula a task in natural language — from Slack, web, or any connected surface.',
         },
         {
             number: '02',
-            title: 'Chat',
+            title: 'Agent acts',
             description:
-                'Talk naturally. Yula uses your history as context, so every response is personalized.',
+                'Yula classifies the action, shows a reversibility badge, and executes. High-risk actions pause for your approval.',
         },
         {
             number: '03',
-            title: 'Get reminded',
+            title: 'Undo if needed',
             description:
-                'PAC detects your commitments and sends proactive reminders before you forget.',
-        },
-        {
-            number: '04',
-            title: 'Consult the Council',
-            description:
-                'For big decisions, ask multiple AI models at once and compare their perspectives.',
+                'Made a mistake? Run /undo. For R0-R2 actions, Yula rolls back automatically. Every action stays in your AGIT log.',
         },
     ];
 
     return (
         <AnimatedSection className="py-24 md:py-32 px-6 border-t border-border/30">
             <div className="max-w-6xl mx-auto">
-                {/* Section header */}
                 <div className="max-w-2xl mb-16">
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         How it works
@@ -772,12 +870,11 @@ function HowItWorksSection() {
                         className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-3"
                         style={{ textWrap: 'balance' as any }}
                     >
-                        Four steps. <span className="text-muted-foreground">That&apos;s it.</span>
+                        Three steps. <span className="text-muted-foreground">That&apos;s it.</span>
                     </h2>
                 </div>
 
-                {/* Steps */}
-                <div className="grid md:grid-cols-4 gap-8 md:gap-6">
+                <div className="grid md:grid-cols-3 gap-8 md:gap-6">
                     {steps.map((step, i) => (
                         <motion.div
                             key={step.number}
@@ -787,7 +884,6 @@ function HowItWorksSection() {
                             transition={{ delay: i * 0.1, duration: 0.5 }}
                             className="relative"
                         >
-                            {/* Connector line */}
                             {i < steps.length - 1 && (
                                 <div className="hidden md:block absolute top-5 left-[calc(100%+4px)] w-[calc(100%-32px)] h-px bg-border/40" />
                             )}
@@ -815,52 +911,53 @@ function HowItWorksSection() {
 function PricingSection() {
     const plans = [
         {
-            name: 'Free',
-            price: '$0',
+            name: 'Personal',
+            price: '$25',
             period: '/month',
-            description: 'For trying out Yula',
+            description: 'For individuals getting started',
             features: [
-                '50 messages per day',
-                'Import up to 100 conversations',
-                'Basic PAC reminders',
-                'GPT-4o mini access',
+                'All AI models (Claude, GPT, Gemini, Llama)',
+                'FIDES-signed audit trail',
+                'Reversibility + /undo',
+                'Persistent memory',
+                'Web + 4 messaging surfaces',
             ],
             cta: 'Get started',
-            href: '/signup',
+            href: '/signup?plan=personal',
             popular: false,
         },
         {
             name: 'Pro',
-            price: '$20',
+            price: '$60',
             period: '/month',
-            description: 'For power users',
+            description: 'For power users with agent needs',
             features: [
-                'Unlimited messages',
-                'Unlimited imports',
-                'Full PAC with smart detection',
+                'Everything in Personal',
+                'Sandboxed code execution (E2B)',
+                'Browser automation (Steel)',
+                'All 8 messaging surfaces',
+                'Priority model routing',
                 '50 Council sessions/month',
-                'All AI models',
-                'Priority support',
             ],
             cta: 'Start free trial',
             href: '/signup?plan=pro',
             popular: true,
         },
         {
-            name: 'Ultra',
-            price: '$50',
+            name: 'Team',
+            price: '$180',
             period: '/month',
-            description: 'For teams & pros',
+            description: 'For teams with shared governance',
             features: [
                 'Everything in Pro',
-                'Unlimited Council sessions',
-                'API access',
-                'Custom AI personas',
-                'Advanced analytics',
-                'Early access to new features',
+                'Team workspaces + shared approvals',
+                'Org-scoped audit trail',
+                'SSO (SAML, OIDC)',
+                'Admin controls + policy engine',
+                'Priority support',
             ],
-            cta: 'Start free trial',
-            href: '/signup?plan=ultra',
+            cta: 'Start team trial',
+            href: '/signup?plan=team',
             popular: false,
         },
     ];
@@ -868,7 +965,6 @@ function PricingSection() {
     return (
         <AnimatedSection id="pricing" className="py-24 md:py-32 px-6 border-t border-border/30">
             <div className="max-w-6xl mx-auto">
-                {/* Section header */}
                 <div className="text-center mb-16">
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         Pricing
@@ -884,7 +980,6 @@ function PricingSection() {
                     </p>
                 </div>
 
-                {/* Pricing cards */}
                 <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                     {plans.map((plan, i) => (
                         <motion.div
@@ -931,7 +1026,7 @@ function PricingSection() {
                                         <Check
                                             size={16}
                                             weight="bold"
-                                            className="text-personas flex-shrink-0 mt-0.5"
+                                            className="text-foreground/40 flex-shrink-0 mt-0.5"
                                         />
                                         {feature}
                                     </li>
@@ -966,35 +1061,34 @@ function FAQSection() {
 
     const faqs = [
         {
-            q: 'Can I import my ChatGPT conversations?',
-            a: 'Yes. Export your data from ChatGPT settings, then upload the JSON file to Yula. We process and index your entire history, preserving all context and metadata.',
+            q: 'What makes Yula different from ChatGPT or Claude?',
+            a: 'Yula is an agent, not a chatbot. It can take actions on your behalf — send Slack messages, create events, run code — and every action is signed (FIDES), logged (AGIT), and classified by reversibility. You always know what happened, why, and whether you can undo it.',
         },
         {
-            q: 'Which AI models does Yula support?',
-            a: 'Yula supports GPT-4o, Claude 3.5 Sonnet, Gemini Pro, and Llama 3. You can switch between models anytime, or use Council to query all of them simultaneously.',
+            q: 'What is the Reversibility Model?',
+            a: 'Every tool call is classified R0 through R4 based on how reversible it is. R0 actions (like drafting text) are fully reversible. R4 actions (like sending a payment) require explicit human approval. You can /undo any R0-R2 action after execution.',
         },
         {
-            q: 'What is the Council feature?',
-            a: "Council lets you ask a question to multiple AI models at the same time. You see each model's response side-by-side, helping you get diverse perspectives on complex decisions.",
+            q: 'What does FIDES-signed mean?',
+            a: 'FIDES is our signing framework. Every agent action gets a cryptographic signature that includes the action type, timestamp, model used, and your user ID. This creates a tamper-evident audit trail you can inspect at any time.',
         },
         {
-            q: 'How does PAC (Proactive AI Callbacks) work?',
-            a: 'PAC analyzes your conversations for commitments, deadlines, and follow-ups. It automatically creates reminders and proactively reaches out to you before important dates.',
+            q: 'Can I import my ChatGPT or Claude history?',
+            a: 'Yes. Export your data from ChatGPT or Claude settings, then upload the file to Yula. We process and index your entire history, preserving full context and metadata.',
         },
         {
-            q: 'Is my data private and secure?',
-            a: 'Absolutely. Your data is encrypted at rest and in transit. We never use your conversations for training. You can export or delete your data at any time.',
+            q: 'Which platforms does Yula work on?',
+            a: 'Yula works on web, Slack, Telegram, Discord, WhatsApp, Microsoft Teams, Google Chat, and more. The same trust guarantees — signing, logging, reversibility — apply across all surfaces.',
         },
         {
-            q: 'Does Yula work offline?',
-            a: 'Yula is a PWA and works offline for browsing your conversation history. Active AI conversations require an internet connection.',
+            q: 'Is my data private?',
+            a: 'Yes. Your data is encrypted at rest and in transit. We never use your conversations for training. You can export or delete your data at any time. BYOK plans let you use your own API keys so tokens never touch our servers.',
         },
     ];
 
     return (
         <AnimatedSection id="faq" className="py-24 md:py-32 px-6 border-t border-border/30">
             <div className="max-w-2xl mx-auto">
-                {/* Section header */}
                 <div className="mb-12">
                     <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                         FAQ
@@ -1007,7 +1101,6 @@ function FAQSection() {
                     </h2>
                 </div>
 
-                {/* FAQ items */}
                 <div className="space-y-0">
                     {faqs.map((faq, idx) => (
                         <div key={idx} className="border-b border-border/40">
@@ -1062,20 +1155,29 @@ function CTASection() {
                     className="text-3xl md:text-4xl font-bold tracking-tight text-foreground"
                     style={{ textWrap: 'balance' as any }}
                 >
-                    Ready to try a smarter AI?
+                    Ready for AI you can actually trust?
                 </h2>
                 <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
-                    Import your history. Get proactive reminders. Make better decisions with
-                    Council. Start free today.
+                    Signed actions. Causal logs. Reversibility by default. Start free, upgrade when
+                    you need more.
                 </p>
-                <div className="flex items-center justify-center gap-3 mt-8">
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
                     <Link
                         href="/signup"
                         className="h-11 px-6 rounded-lg bg-foreground text-background text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
                     >
-                        Start free
+                        Get started
                         <ArrowRight size={16} weight="bold" />
                     </Link>
+                    <a
+                        href="https://github.com/aspendos"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-11 px-6 rounded-lg border border-border text-foreground text-sm font-medium flex items-center gap-2 hover:bg-card transition-colors"
+                    >
+                        <GithubLogo size={16} />
+                        View on GitHub
+                    </a>
                 </div>
                 <p className="text-xs text-muted-foreground mt-4">
                     14-day free trial &middot; No credit card &middot; Cancel anytime
@@ -1093,13 +1195,16 @@ function Footer() {
     return (
         <footer className="border-t border-border/30 py-8 px-6">
             <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded bg-foreground/10 flex items-center justify-center">
-                        <span className="text-xs font-bold text-foreground/60">Y</span>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded bg-foreground/10 flex items-center justify-center">
+                            <span className="text-xs font-bold text-foreground/60">Y</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                            &copy; {new Date().getFullYear()} Yula
+                        </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                        &copy; {new Date().getFullYear()} Yula AI. All rights reserved.
-                    </span>
+                    <span className="text-xs text-muted-foreground/60">Built on Aspendos</span>
                 </div>
                 <div className="flex items-center gap-6 text-xs text-muted-foreground">
                     <Link href="/terms" className="hover:text-foreground transition-colors">
@@ -1108,6 +1213,14 @@ function Footer() {
                     <Link href="/privacy" className="hover:text-foreground transition-colors">
                         Privacy
                     </Link>
+                    <a
+                        href="https://github.com/aspendos"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-foreground transition-colors"
+                    >
+                        GitHub
+                    </a>
                 </div>
             </div>
         </footer>
@@ -1124,6 +1237,8 @@ export default function LandingPage() {
             <Navigation />
             <HeroSection />
             <FeaturesSection />
+            <ReversibilitySection />
+            <SurfacesSection />
             <HowItWorksSection />
             <PricingSection />
             <FAQSection />
