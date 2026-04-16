@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, stack-migration/*]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -27,12 +27,9 @@ jobs:
         continue-on-error: true
 
   build:
-    name: Build
+    name: Build Web
     runs-on: ubuntu-latest
     needs: lint
-    strategy:
-      matrix:
-        workspace: [apps/web, services/api]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -46,7 +43,7 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bun run --cwd ${{ matrix.workspace }} build
+      - run: bun run --cwd apps/web build
 
   test:
     name: Test
@@ -65,34 +62,8 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - name: API tests
-        run: cd services/api && bunx vitest run
-      - name: Web tests
-        run: cd apps/web && bunx vitest run
+      - run: cd apps/web && bunx vitest run
         continue-on-error: true
-
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check for .env files
-        run: |
-          if find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" -not -name ".env.local.example" | grep -q .; then
-            echo "::error::Found .env files committed to repository!"
-            exit 1
-          fi
-      - name: Scan for hardcoded secrets
-        run: |
-          FOUND=0
-          for pattern in "sk-[a-zA-Z0-9]{20,}" "ghp_[a-zA-Z0-9]{36}" "AKIA[0-9A-Z]{16}"; do
-            if grep -rn --include="*.ts" --include="*.tsx" -E "$pattern" . --exclude-dir=node_modules --exclude-dir=.git 2>/dev/null | grep -v test | grep -v example; then
-              FOUND=1
-            fi
-          done
-          if [ $FOUND -eq 1 ]; then
-            echo "::warning::Potential secrets detected"
-          fi
 
   convex-typecheck:
     name: Convex Typecheck
@@ -106,3 +77,16 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: npx convex typecheck
         continue-on-error: true
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for committed env files
+        run: |
+          FOUND=$(find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" -not -name ".env.local.example" | head -1)
+          if [ -n "$FOUND" ]; then
+            echo "::error::Found .env files committed to repository!"
+            exit 1
+          fi

@@ -62,8 +62,7 @@ export default async function RootLayout({
                 <meta name="apple-mobile-web-app-title" content="Yula" />
                 <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
 
-                {/* DNS prefetch for API and external services */}
-                <link rel="dns-prefetch" href="https://api.yula.dev" />
+                {/* DNS prefetch for external services */}
                 <link rel="dns-prefetch" href="https://api.openai.com" />
                 <link rel="dns-prefetch" href="https://api.anthropic.com" />
 

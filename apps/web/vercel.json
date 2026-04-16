@@ -36,12 +36,7 @@
             ]
         }
     ],
-    "rewrites": [
-        {
-            "source": "/api/v1/:path*",
-            "destination": "https://api.yula.dev/:path*"
-        }
-    ],
+    "rewrites": [],
     "functions": {
         "app/api/**/*.ts": {
             "maxDuration": 30

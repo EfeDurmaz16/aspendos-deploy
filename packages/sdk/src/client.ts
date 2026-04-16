@@ -36,7 +36,7 @@ export class YulaClient {
 
     constructor(config: YulaConfig) {
         this.apiKey = config.apiKey;
-        this.baseUrl = config.baseUrl || 'https://api.yula.dev';
+        this.baseUrl = config.baseUrl || 'https://yula.dev/api';
     }
 
     /**
