@@ -1,5 +1,5 @@
 import { after } from 'next/server';
-import { bot } from '@/lib/messaging/bot';
+import { getBot } from '@/lib/messaging/bot';
 import { verifyWebhook } from '@/lib/messaging/platforms/whatsapp';
 
 /** WhatsApp webhook verification (GET) */
@@ -12,7 +12,8 @@ export async function GET(request: Request) {
 
 /** WhatsApp webhook messages (POST) */
 export async function POST(request: Request) {
-    return bot.webhooks.whatsapp(request, {
+    const b = await getBot();
+    return b.webhooks.whatsapp(request, {
         waitUntil: (task) => after(() => task),
     });
 }

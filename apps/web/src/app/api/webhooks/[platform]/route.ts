@@ -1,5 +1,5 @@
 import { after } from 'next/server';
-import { bot } from '@/lib/messaging/bot';
+import { getBot } from '@/lib/messaging/bot';
 
 type Platform = keyof typeof bot.webhooks;
 

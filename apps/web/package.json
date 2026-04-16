@@ -23,9 +23,16 @@
         "test:e2e:debug": "bunx playwright test --debug"
     },
     "dependencies": {
+        "@ai-sdk/anthropic": "^3.0.69",
         "@ai-sdk/react": "^3.0.41",
         "@anthropic-ai/sdk": "^0.89.0",
         "@auth/core": "^0.34.3",
+        "@chat-adapter/discord": "^4.26.0",
+        "@chat-adapter/gchat": "^4.26.0",
+        "@chat-adapter/slack": "^4.26.0",
+        "@chat-adapter/teams": "^4.26.0",
+        "@chat-adapter/telegram": "^4.26.0",
+        "@chat-adapter/whatsapp": "^4.26.0",
         "@e2b/code-interpreter": "^2.4.0",
         "@mlc-ai/web-llm": "^0.2.80",
         "@opentelemetry/api": "^1.9.0",
@@ -49,6 +56,7 @@
         "@serwist/next": "^9.5.0",
         "ai": "^6.0.49",
         "canvas-confetti": "^1.9.4",
+        "chat": "^4.26.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
@@ -87,6 +95,7 @@
         "tailwindcss-animate": "^1.0.7",
         "use-stick-to-bottom": "^1.1.2",
         "uuid": "^13.0.0",
+        "zlib-sync": "^0.1.10",
         "zod": "^4.3.6",
         "zustand": "^5.0.10"
     },

@@ -10,7 +10,7 @@
  */
 
 import type { ApprovalPayload } from '../types';
-import { BADGE_COLORS, BADGE_EMOJI } from '@aspendos/core/messaging/types';
+import { BADGE_COLORS, BADGE_EMOJI } from '../../messaging/badge-constants';
 
 // ============================================
 // Slack Block Kit Helpers

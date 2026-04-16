@@ -19,6 +19,7 @@ import type * as organizations from '../organizations.js';
 import type * as snapshots from '../snapshots.js';
 import type * as subscriptions from '../subscriptions.js';
 import type * as toolAllowlist from '../toolAllowlist.js';
+import type * as toolRegistry from '../toolRegistry.js';
 import type * as users from '../users.js';
 import type * as workflows from '../workflows.js';
 
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
     snapshots: typeof snapshots;
     subscriptions: typeof subscriptions;
     toolAllowlist: typeof toolAllowlist;
+    toolRegistry: typeof toolRegistry;
     users: typeof users;
     workflows: typeof workflows;
 }>;
