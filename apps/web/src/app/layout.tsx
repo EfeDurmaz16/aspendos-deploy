@@ -25,16 +25,6 @@ import {
 import { ConvexClientProvider } from '@/components/convex-client-provider';
 import { cn } from '@/lib/utils';
 
-function AuthProvider({ children }: { children: React.ReactNode }) {
-    // Clerk requires NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY — skip wrapper if not set
-    if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-        return <>{children}</>;
-    }
-    // Dynamic require to avoid build error when key is missing
-    const { ClerkProvider } = require('@clerk/nextjs');
-    return <ClerkProvider>{children}</ClerkProvider>;
-}
-
 // Comprehensive metadata for SEO and GEO
 export const metadata: Metadata = {
     ...baseMetadata,
@@ -113,21 +103,19 @@ export default async function RootLayout({
             <body className={cn('antialiased min-h-screen bg-background')}>
                 <SkipLink />
 
-                <AuthProvider>
-                    <ConvexClientProvider>
-                        <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
-                            <OfflineBanner />
-                            <ErrorBoundary>
-                                <main id="main-content" tabIndex={-1}>
-                                    {children}
-                                </main>
-                            </ErrorBoundary>
-                            <InstallPrompt />
-                            <UpdatePrompt />
-                            <CookieConsent />
-                        </ThemeProvider>
-                    </ConvexClientProvider>
-                </AuthProvider>
+                <ConvexClientProvider>
+                    <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
+                        <OfflineBanner />
+                        <ErrorBoundary>
+                            <main id="main-content" tabIndex={-1}>
+                                {children}
+                            </main>
+                        </ErrorBoundary>
+                        <InstallPrompt />
+                        <UpdatePrompt />
+                        <CookieConsent />
+                    </ThemeProvider>
+                </ConvexClientProvider>
             </body>
         </html>
     );
