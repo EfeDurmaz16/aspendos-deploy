@@ -21,7 +21,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { useUser } from '@/hooks/use-auth';
-import { checkout } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 
 type BillingPeriod = 'weekly' | 'monthly' | 'annual';
@@ -154,10 +153,35 @@ function PricingContent() {
     const handleCheckout = async (slug: string) => {
         setCheckoutLoading(slug);
         try {
-            await checkout({ slug });
+            const res = await fetch('/api/billing/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug, seats: slug.startsWith('team') ? 1 : undefined }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                console.error('Checkout error:', data.error);
+                setCheckoutLoading(null);
+                return;
+            }
+            window.location.href = data.url;
         } catch (error) {
             console.error('Checkout error:', error);
             setCheckoutLoading(null);
+        }
+    };
+
+    const handlePortal = async () => {
+        try {
+            const res = await fetch('/api/billing/portal', { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) {
+                console.error('Portal error:', data.error);
+                return;
+            }
+            window.location.href = data.url;
+        } catch (error) {
+            console.error('Portal error:', error);
         }
     };
 
@@ -359,11 +383,9 @@ function PricingContent() {
                 {/* Manage subscription link */}
                 {isSignedIn && (
                     <div className="text-center mt-12">
-                        <Button variant="outline" asChild>
-                            <Link href="/portal" className="gap-2">
-                                Manage your subscription
-                                <ArrowRight className="w-4 h-4" />
-                            </Link>
+                        <Button variant="outline" onClick={handlePortal} className="gap-2">
+                            Manage your subscription
+                            <ArrowRight className="w-4 h-4" />
                         </Button>
                     </div>
                 )}
