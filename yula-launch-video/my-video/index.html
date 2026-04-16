@@ -252,7 +252,7 @@
         padding: 12px 20px; border-radius: 6px; font-size: 15px; font-weight: 600;
         letter-spacing: 0.02em; flex: 1; text-align: center;
       }
-      .btn.primary { background: var(--accent); color: #0a0a0a; }
+      .btn.primary { background: #4D8CFF; color: #0a0a0a; }
       .btn.secondary {
         background: transparent; color: var(--text-2); border: 1px solid var(--border-2);
       }
@@ -956,7 +956,6 @@
       }, S4 + 5.2);
       // Approve button pulse (narration: "You approve" at ~35.3s → scene time ~6.5)
       tl.to("#s4-btn", { scale: 1.04, duration: 0.22, ease: "power2.inOut", yoyo: true, repeat: 3, overwrite: "auto" }, S4 + 6.2);
-      tl.to("#s4-btn", { background: "#00E676", duration: 0.3, ease: "power2.out", overwrite: "auto" }, S4 + 7.2);
       // AGIT log entry #2 (narration: "committed to AGIT. Publicly verifiable" at ~38-40.5s → scene time ~9.2-11.7)
       tl.from("#s4-log1", { x: 20, opacity: 0, duration: 0.45, ease: "power3.out" }, S4 + 0.8);
       tl.to("#s4-log2", { opacity: 1, duration: 0.5, ease: "power2.out" }, S4 + 8.2);

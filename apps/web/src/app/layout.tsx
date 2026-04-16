@@ -22,6 +22,7 @@ import {
     softwareAppSchema,
     websiteSchema,
 } from '@/lib/seo/structured-data';
+import { ClerkProvider } from '@clerk/nextjs';
 import { ConvexClientProvider } from '@/components/convex-client-provider';
 import { cn } from '@/lib/utils';
 
@@ -101,22 +102,23 @@ export default async function RootLayout({
                 </Script>
             </head>
             <body className={cn('antialiased min-h-screen bg-background')}>
-                {/* Accessibility: Skip to main content link */}
                 <SkipLink />
 
-                <ConvexClientProvider>
-                    <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
-                        <OfflineBanner />
-                        <ErrorBoundary>
-                            <main id="main-content" tabIndex={-1}>
-                                {children}
-                            </main>
-                        </ErrorBoundary>
-                        <InstallPrompt />
-                        <UpdatePrompt />
-                        <CookieConsent />
-                    </ThemeProvider>
-                </ConvexClientProvider>
+                <ClerkProvider>
+                    <ConvexClientProvider>
+                        <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem>
+                            <OfflineBanner />
+                            <ErrorBoundary>
+                                <main id="main-content" tabIndex={-1}>
+                                    {children}
+                                </main>
+                            </ErrorBoundary>
+                            <InstallPrompt />
+                            <UpdatePrompt />
+                            <CookieConsent />
+                        </ThemeProvider>
+                    </ConvexClientProvider>
+                </ClerkProvider>
             </body>
         </html>
     );

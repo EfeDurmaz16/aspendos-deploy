@@ -1,80 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-interface UserData {
-    id: string;
-    email: string;
-    firstName: string | null;
-    lastName: string | null;
-    profilePictureUrl: string | null;
-}
-
-interface AuthState {
-    user: UserData | null;
-    loading: boolean;
-}
+import { useUser as useClerkUser, useAuth as useClerkAuth } from '@clerk/nextjs';
 
 export function useAuth() {
-    const [state, setState] = useState<AuthState>({ user: null, loading: true });
-
-    useEffect(() => {
-        fetch('/api/user')
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-                setState({
-                    user: data?.user ?? null,
-                    loading: false,
-                });
-            })
-            .catch(() => {
-                setState({ user: null, loading: false });
-            });
-    }, []);
+    const { isLoaded, isSignedIn, userId, sessionId, signOut } = useClerkAuth();
 
     return {
-        isLoaded: !state.loading,
-        isSignedIn: !!state.user,
-        userId: state.user?.id ?? null,
-        sessionId: state.user?.id ?? null,
+        isLoaded,
+        isSignedIn: !!isSignedIn,
+        userId: userId ?? null,
+        sessionId: sessionId ?? null,
         getToken: async () => null,
         signOut: async () => {
-            window.location.href = '/api/auth/logout';
+            await signOut();
         },
     };
 }
 
 export function useUser() {
-    const { isLoaded, isSignedIn } = useAuth();
-    const [state, setState] = useState<AuthState>({ user: null, loading: true });
-
-    useEffect(() => {
-        fetch('/api/user')
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-                setState({
-                    user: data?.user ?? null,
-                    loading: false,
-                });
-            })
-            .catch(() => {
-                setState({ user: null, loading: false });
-            });
-    }, []);
+    const { isLoaded, isSignedIn, user } = useClerkUser();
 
     return {
         isLoaded,
-        isSignedIn,
-        user: state.user
+        isSignedIn: !!isSignedIn,
+        user: user
             ? {
-                  id: state.user.id,
-                  firstName: state.user.firstName,
-                  lastName: state.user.lastName,
-                  fullName:
-                      [state.user.firstName, state.user.lastName].filter(Boolean).join(' ') || null,
-                  emailAddresses: state.user.email ? [{ emailAddress: state.user.email }] : [],
-                  primaryEmailAddress: state.user.email ? { emailAddress: state.user.email } : null,
-                  imageUrl: state.user.profilePictureUrl,
+                  id: user.id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  fullName: user.fullName,
+                  emailAddresses: user.emailAddresses,
+                  primaryEmailAddress: user.primaryEmailAddress,
+                  imageUrl: user.imageUrl,
               }
             : null,
     };

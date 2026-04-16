@@ -1,16 +1,9 @@
 'use client';
 
-export function useSession() {
-    return { data: null, isPending: false, error: null };
-}
+export { useUser, useAuth as useSession, useClerk } from '@clerk/nextjs';
 
 export async function signOut(): Promise<void> {
-    try {
-        const { signOut: workosSignOut } = await import('@workos-inc/authkit-nextjs');
-        await workosSignOut();
-    } catch {
-        window.location.href = '/';
-    }
+    window.location.href = '/login';
 }
 
 export const signIn = {

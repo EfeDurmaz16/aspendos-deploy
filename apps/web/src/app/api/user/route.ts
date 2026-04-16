@@ -1,16 +1,16 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { withAuth } from '@workos-inc/authkit-nextjs';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
-/**
- * GET /api/user
- * Returns the current user from WorkOS session
- */
 export async function GET() {
     try {
-        const { user } = await withAuth();
+        const { userId } = await auth();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
+        const user = await currentUser();
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -18,10 +18,10 @@ export async function GET() {
         return NextResponse.json({
             user: {
                 id: user.id,
-                email: user.email,
+                email: user.emailAddresses[0]?.emailAddress,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                profilePictureUrl: user.profilePictureUrl,
+                profilePictureUrl: user.imageUrl,
             },
         });
     } catch {
