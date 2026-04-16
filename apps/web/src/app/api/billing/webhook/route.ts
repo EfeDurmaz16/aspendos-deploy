@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { stripe, type TierSlug } from '@/lib/stripe';
+import { getStripe, type TierSlug } from '@/lib/stripe';
 import { convexServer } from '@/lib/convex-server';
 import { api } from '../../../../../../../convex/_generated/api';
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     let event: Stripe.Event;
     try {
-        event = stripe.webhooks.constructEvent(body, signature, WEBHOOK_SECRET);
+        event = getStripe().webhooks.constructEvent(body, signature, WEBHOOK_SECRET);
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         console.error(`[Stripe Webhook] Signature verification failed: ${message}`);
@@ -89,7 +89,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
 
     // Retrieve full subscription to get price metadata
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId, {
         expand: ['items.data.price'],
     });
 
@@ -271,7 +271,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     if (!subscriptionId) return;
 
     // Retrieve subscription to get metadata
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
     const workosId = subscription.metadata.workos_id;
 
     if (!workosId) return;

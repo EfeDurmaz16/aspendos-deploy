@@ -86,7 +86,7 @@ export async function resolvePriceId(slug: TierSlug): Promise<string> {
         throw new Error(`Unknown tier slug: ${slug}`);
     }
 
-    const prices = await stripe.prices.list({
+    const prices = await getStripe().prices.list({
         lookup_keys: [lookupKey],
         active: true,
         limit: 1,
@@ -114,7 +114,7 @@ export async function getOrCreateCustomer(opts: {
     if (opts.existingCustomerId) {
         // Verify the customer still exists
         try {
-            const customer = await stripe.customers.retrieve(opts.existingCustomerId);
+            const customer = await getStripe().customers.retrieve(opts.existingCustomerId);
             if (!customer.deleted) {
                 return customer.id;
             }
@@ -123,7 +123,7 @@ export async function getOrCreateCustomer(opts: {
         }
     }
 
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
         email: opts.email,
         name: opts.name,
         metadata: {

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { convexServer } from '@/lib/convex-server';
 import {
-    stripe,
+    getStripe,
     getOrCreateCustomer,
     resolvePriceId,
     TIER_CONFIG,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         const priceId = await resolvePriceId(slug);
 
         // Create the checkout session
-        const checkoutSession = await stripe.checkout.sessions.create({
+        const checkoutSession = await getStripe().checkout.sessions.create({
             mode: 'subscription',
             customer: customerId,
             line_items: [

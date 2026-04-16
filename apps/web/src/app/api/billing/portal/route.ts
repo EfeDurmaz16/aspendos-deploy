@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { convexServer } from '@/lib/convex-server';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { api } from '../../../../../../../convex/_generated/api';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yula.dev';
@@ -36,7 +36,7 @@ export async function POST() {
             );
         }
 
-        const portalSession = await stripe.billingPortal.sessions.create({
+        const portalSession = await getStripe().billingPortal.sessions.create({
             customer: convexUser.stripe_customer_id,
             return_url: `${APP_URL}/pricing`,
         });
