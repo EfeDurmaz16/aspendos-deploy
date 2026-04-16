@@ -1,0 +1,362 @@
+[
+    {
+        "text": "Agents",
+        "start": 0.04,
+        "end": 0.33
+    },
+    {
+        "text": "are",
+        "start": 0.33,
+        "end": 0.51
+    },
+    {
+        "text": "powerful",
+        "start": 0.51,
+        "end": 0.97
+    },
+    {
+        "text": "and",
+        "start": 0.97,
+        "end": 1.1
+    },
+    {
+        "text": "terrifyingly",
+        "start": 1.14,
+        "end": 1.86
+    },
+    {
+        "text": "opaque.",
+        "start": 1.86,
+        "end": 2.64
+    },
+    {
+        "text": "EULA",
+        "start": 2.68,
+        "end": 2.84
+    },
+    {
+        "text": "changes",
+        "start": 2.84,
+        "end": 3.17
+    },
+    {
+        "text": "that,",
+        "start": 3.21,
+        "end": 3.54
+    },
+    {
+        "text": "every",
+        "start": 3.54,
+        "end": 3.8
+    },
+    {
+        "text": "action",
+        "start": 3.86,
+        "end": 4.22
+    },
+    {
+        "text": "signed,",
+        "start": 4.22,
+        "end": 4.6
+    },
+    {
+        "text": "every",
+        "start": 4.64,
+        "end": 4.9
+    },
+    {
+        "text": "action",
+        "start": 4.9,
+        "end": 5.26
+    },
+    {
+        "text": "reversible.",
+        "start": 5.26,
+        "end": 5.98
+    },
+    {
+        "text": "Same",
+        "start": 6.08,
+        "end": 6.26
+    },
+    {
+        "text": "task,",
+        "start": 6.26,
+        "end": 6.58
+    },
+    {
+        "text": "same",
+        "start": 6.6,
+        "end": 6.81
+    },
+    {
+        "text": "outcome,",
+        "start": 6.81,
+        "end": 7.34
+    },
+    {
+        "text": "same",
+        "start": 7.34,
+        "end": 7.55
+    },
+    {
+        "text": "proof,",
+        "start": 7.55,
+        "end": 7.92
+    },
+    {
+        "text": "five",
+        "start": 7.96,
+        "end": 8.14
+    },
+    {
+        "text": "reversibility",
+        "start": 8.14,
+        "end": 8.87
+    },
+    {
+        "text": "classes",
+        "start": 8.87,
+        "end": 9.28
+    },
+    {
+        "text": "from",
+        "start": 9.28,
+        "end": 9.48
+    },
+    {
+        "text": "undoable",
+        "start": 9.48,
+        "end": 9.92
+    },
+    {
+        "text": "to",
+        "start": 9.92,
+        "end": 10.02
+    },
+    {
+        "text": "cancelable",
+        "start": 10.02,
+        "end": 10.56
+    },
+    {
+        "text": "to",
+        "start": 10.6,
+        "end": 10.66
+    },
+    {
+        "text": "blocked",
+        "start": 10.66,
+        "end": 10.99
+    },
+    {
+        "text": "before",
+        "start": 11.06,
+        "end": 11.33
+    },
+    {
+        "text": "anything",
+        "start": 11.44,
+        "end": 11.72
+    },
+    {
+        "text": "runs.",
+        "start": 11.78,
+        "end": 12.16
+    },
+    {
+        "text": "Bring",
+        "start": 12.2,
+        "end": 12.39
+    },
+    {
+        "text": "your",
+        "start": 12.39,
+        "end": 12.57
+    },
+    {
+        "text": "history,",
+        "start": 12.57,
+        "end": 12.93
+    },
+    {
+        "text": "chat",
+        "start": 13.04,
+        "end": 13.26
+    },
+    {
+        "text": "GPT,",
+        "start": 13.3,
+        "end": 13.53
+    },
+    {
+        "text": "Claude,",
+        "start": 13.64,
+        "end": 14.02
+    },
+    {
+        "text": "everything",
+        "start": 14.06,
+        "end": 14.55
+    },
+    {
+        "text": "in",
+        "start": 14.55,
+        "end": 14.65
+    },
+    {
+        "text": "one",
+        "start": 14.65,
+        "end": 14.79
+    },
+    {
+        "text": "context",
+        "start": 14.9,
+        "end": 15.18
+    },
+    {
+        "text": "and",
+        "start": 15.24,
+        "end": 15.36
+    },
+    {
+        "text": "EULA",
+        "start": 15.36,
+        "end": 15.56
+    },
+    {
+        "text": "reaches",
+        "start": 15.56,
+        "end": 15.93
+    },
+    {
+        "text": "out",
+        "start": 16.01,
+        "end": 16.1
+    },
+    {
+        "text": "to",
+        "start": 16.1,
+        "end": 16.18
+    },
+    {
+        "text": "you.",
+        "start": 16.28,
+        "end": 16.4
+    },
+    {
+        "text": "Proactive,",
+        "start": 16.44,
+        "end": 16.93
+    },
+    {
+        "text": "not",
+        "start": 16.97,
+        "end": 17.13
+    },
+    {
+        "text": "reactive,",
+        "start": 17.13,
+        "end": 17.68
+    },
+    {
+        "text": "four",
+        "start": 17.68,
+        "end": 17.92
+    },
+    {
+        "text": "models,",
+        "start": 17.92,
+        "end": 18.3
+    },
+    {
+        "text": "one",
+        "start": 18.3,
+        "end": 18.49
+    },
+    {
+        "text": "question,",
+        "start": 18.49,
+        "end": 19
+    },
+    {
+        "text": "council",
+        "start": 19.04,
+        "end": 19.42
+    },
+    {
+        "text": "mode,",
+        "start": 19.42,
+        "end": 19.77
+    },
+    {
+        "text": "EULA,",
+        "start": 19.77,
+        "end": 20.16
+    },
+    {
+        "text": "the",
+        "start": 20.16,
+        "end": 20.33
+    },
+    {
+        "text": "trustworthy",
+        "start": 20.33,
+        "end": 20.91
+    },
+    {
+        "text": "manus",
+        "start": 20.99,
+        "end": 21.16
+    },
+    {
+        "text": "alternative.",
+        "start": 21.67,
+        "end": 21.92
+    },
+    {
+        "text": "Built",
+        "start": 21.96,
+        "end": 22.22
+    },
+    {
+        "text": "on",
+        "start": 22.22,
+        "end": 22.34
+    },
+    {
+        "text": "open",
+        "start": 22.34,
+        "end": 22.58
+    },
+    {
+        "text": "infrastructure,",
+        "start": 22.58,
+        "end": 23.56
+    },
+    {
+        "text": "try",
+        "start": 23.56,
+        "end": 23.83
+    },
+    {
+        "text": "it",
+        "start": 23.91,
+        "end": 24.06
+    },
+    {
+        "text": "at",
+        "start": 24.06,
+        "end": 24.18
+    },
+    {
+        "text": "EULA,",
+        "start": 24.25,
+        "end": 24.85
+    },
+    {
+        "text": "dev.",
+        "start": 24.85,
+        "end": 25.52
+    }
+]

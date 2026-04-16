@@ -1,0 +1,13 @@
+Agents are powerful. And terrifyingly opaque.
+
+YULA changes that. Every action signed. Every action reversible. Same task, same outcome, same proof.
+
+Five reversibility classes. From undoable, to cancelable, to blocked — before anything runs.
+
+Bring your history. ChatGPT. Claude. Everything in one context.
+
+And YULA reaches out to you. Proactive, not reactive.
+
+Four models. One question. Council mode.
+
+YULA. The trustworthy Manus alternative. Built on open infrastructure. Try it at yula.dev.
