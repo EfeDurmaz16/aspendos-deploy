@@ -1,17 +1,19 @@
 'use client';
 
-export { useUser, useAuth as useSession, useClerk } from '@clerk/nextjs';
+export function useSession() {
+    return { data: null, isPending: false, error: null };
+}
 
 export async function signOut(): Promise<void> {
-    window.location.href = '/login';
+    window.location.href = '/api/auth/logout';
 }
 
 export const signIn = {
     email: async () => {
         window.location.href = '/login';
     },
-    social: async ({ provider }: { provider: string; callbackURL?: string }) => {
-        window.location.href = `/login?provider=${provider}`;
+    social: async ({ provider }: { provider: string }) => {
+        window.location.href = '/login';
     },
     passkey: async () => {
         window.location.href = '/login';

@@ -1,26 +1,21 @@
-import { auth as clerkAuth, currentUser } from '@clerk/nextjs/server';
-
 export async function auth(): Promise<{
     userId: string | null;
     user: any;
     session: any;
 } | null> {
     try {
-        const { userId } = await clerkAuth();
-        if (!userId) return null;
-
-        const user = await currentUser();
+        const { withAuth } = await import('@workos-inc/authkit-nextjs');
+        const { user } = await withAuth();
         if (!user) return null;
-
         return {
             userId: user.id,
             user: {
                 id: user.id,
-                email: user.emailAddresses[0]?.emailAddress,
-                name: [user.firstName, user.lastName].filter(Boolean).join(' '),
-                image: user.imageUrl,
+                email: user.email,
+                name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+                image: user.profilePictureUrl,
             },
-            session: { id: userId },
+            session: { id: user.id },
         };
     } catch {
         return null;
