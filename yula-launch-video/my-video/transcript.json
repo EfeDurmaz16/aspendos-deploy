@@ -262,101 +262,96 @@
     {
         "text": "four",
         "start": 17.68,
-        "end": 17.92
+        "end": 17.77
     },
     {
         "text": "models,",
-        "start": 17.92,
-        "end": 18.3
+        "start": 17.88,
+        "end": 18.28
     },
     {
         "text": "one",
-        "start": 18.3,
-        "end": 18.49
+        "start": 18.28,
+        "end": 18.47
     },
     {
         "text": "question,",
-        "start": 18.49,
+        "start": 18.47,
         "end": 19
     },
     {
         "text": "council",
         "start": 19.04,
-        "end": 19.42
+        "end": 19.39
     },
     {
         "text": "mode,",
-        "start": 19.42,
-        "end": 19.77
+        "start": 19.39,
+        "end": 19.72
     },
     {
         "text": "EULA,",
-        "start": 19.77,
-        "end": 20.16
+        "start": 19.72,
+        "end": 20.05
     },
     {
         "text": "the",
-        "start": 20.16,
-        "end": 20.33
+        "start": 20.05,
+        "end": 20.16
     },
     {
         "text": "trustworthy",
-        "start": 20.33,
-        "end": 20.91
+        "start": 20.22,
+        "end": 20.82
     },
     {
-        "text": "manus",
-        "start": 20.99,
-        "end": 21.16
+        "text": "Manus",
+        "start": 20.82,
+        "end": 21.09
     },
     {
         "text": "alternative.",
-        "start": 21.67,
+        "start": 21.09,
         "end": 21.92
     },
     {
         "text": "Built",
         "start": 21.96,
-        "end": 22.22
+        "end": 22.27
     },
     {
         "text": "on",
-        "start": 22.22,
-        "end": 22.34
+        "start": 22.27,
+        "end": 22.35
     },
     {
         "text": "open",
-        "start": 22.34,
-        "end": 22.58
+        "start": 22.42,
+        "end": 22.69
     },
     {
         "text": "infrastructure,",
-        "start": 22.58,
-        "end": 23.56
-    },
-    {
-        "text": "try",
-        "start": 23.56,
+        "start": 22.69,
         "end": 23.83
     },
     {
+        "text": "try",
+        "start": 23.83,
+        "end": 24.08
+    },
+    {
         "text": "it",
-        "start": 23.91,
-        "end": 24.06
+        "start": 24.18,
+        "end": 24.2
     },
     {
         "text": "at",
-        "start": 24.06,
-        "end": 24.18
+        "start": 24.2,
+        "end": 24.59
     },
     {
-        "text": "EULA,",
-        "start": 24.25,
-        "end": 24.85
-    },
-    {
-        "text": "dev.",
-        "start": 24.85,
-        "end": 25.52
+        "text": "EULA.dev.",
+        "start": 24.59,
+        "end": 25.72
     }
 ]
