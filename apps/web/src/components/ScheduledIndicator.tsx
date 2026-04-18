@@ -66,7 +66,7 @@ export function ScheduledIndicator({
     // Minimal view for inline display
     if (minimal) {
         return (
-            <span className="inline-flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="w-3 h-3" />
                 <span>Follow-up {task.triggerAtFormatted}</span>
             </span>
@@ -74,25 +74,21 @@ export function ScheduledIndicator({
     }
 
     return (
-        <div className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+        <div className="flex items-start gap-3 p-3 bg-muted border border-border rounded-lg">
             {/* Icon */}
-            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-full">
-                <Clock className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-muted rounded-full">
+                <Clock className="w-4 h-4 text-muted-foreground" />
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    Follow-up scheduled
-                </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <p className="text-sm font-medium text-foreground">Follow-up scheduled</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
                     {task.triggerAtFormatted}
                     {task.topic && <span className="ml-1">- {task.topic}</span>}
                 </p>
                 {task.intent && (
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 line-clamp-1">
-                        {task.intent}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{task.intent}</p>
                 )}
 
                 {/* Edit time input */}
@@ -103,14 +99,14 @@ export function ScheduledIndicator({
                             placeholder="e.g., tomorrow, in 3 days"
                             value={newTime}
                             onChange={(e) => setNewTime(e.target.value)}
-                            className="flex-1 px-2 py-1 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded"
+                            className="flex-1 px-2 py-1 text-xs bg-card border border-border rounded"
                             disabled={isLoading}
                         />
                         <button
                             type="button"
                             onClick={handleReschedule}
                             disabled={isLoading || !newTime}
-                            className="p-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-50"
+                            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
                         >
                             <Check className="w-4 h-4" />
                         </button>
@@ -125,7 +121,7 @@ export function ScheduledIndicator({
                         type="button"
                         onClick={() => setIsEditing(true)}
                         disabled={isLoading}
-                        className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                        className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
                         title="Reschedule"
                     >
                         <Edit2 className="w-4 h-4" />
@@ -136,7 +132,7 @@ export function ScheduledIndicator({
                         type="button"
                         onClick={handleCancel}
                         disabled={isLoading}
-                        className="p-1.5 text-zinc-400 hover:text-foreground transition-colors"
+                        className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
                         title="Cancel"
                     >
                         <X className="w-4 h-4" />
@@ -196,20 +192,22 @@ export function ScheduledToast({ task, onDismiss, onCancel }: ScheduledToastProp
 
     return (
         <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
-            <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg max-w-sm">
-                <Clock className="w-5 h-5 text-zinc-500" />
+            <div className="flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg shadow-lg max-w-sm">
+                <Clock className="w-5 h-5 text-muted-foreground" />
                 <div className="flex-1">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    <p className="text-sm font-medium text-foreground">
                         Follow-up scheduled for {task.triggerAtFormatted}
                     </p>
-                    {task.topic && <p className="text-xs text-zinc-500 mt-0.5">{task.topic}</p>}
+                    {task.topic && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{task.topic}</p>
+                    )}
                 </div>
                 <div className="flex items-center gap-1">
                     {onCancel && (
                         <button
                             type="button"
                             onClick={handleCancel}
-                            className="text-xs text-zinc-500 hover:text-foreground transition-colors"
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
                             Cancel
                         </button>
@@ -217,7 +215,7 @@ export function ScheduledToast({ task, onDismiss, onCancel }: ScheduledToastProp
                     <button
                         type="button"
                         onClick={onDismiss}
-                        className="p-1 text-zinc-400 hover:text-zinc-600"
+                        className="p-1 text-muted-foreground hover:text-foreground"
                     >
                         <X className="w-4 h-4" />
                     </button>
