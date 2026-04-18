@@ -18,6 +18,7 @@
         "check": "biome check .",
         "check:fix": "biome check --write .",
         "bench:web-dev": "bash scripts/benchmark_web_dev.sh",
+        "brand:generate": "bun run scripts/generate-brand-assets.ts",
         "release:ready": "bash ./scripts/check_release_readiness.sh",
         "prepare": "husky"
     },
@@ -25,6 +26,8 @@
         "@biomejs/biome": "^2.3.11",
         "husky": "^9.1.0",
         "lint-staged": "^15.2.0",
+        "png-to-ico": "^3.0.1",
+        "sharp": "^0.34.5",
         "stripe": "^22.0.1",
         "turbo": "^2.4.0"
     },
