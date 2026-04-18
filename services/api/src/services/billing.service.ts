@@ -15,14 +15,18 @@ const MODEL_PRICING: Record<string, { promptPer1M: number; completionPer1M: numb
     // Groq - Llama 4 family (all tiers)
     'groq/llama-4-maverick': { promptPer1M: 0.59, completionPer1M: 0.79 },
     'groq/llama-4-scout': { promptPer1M: 0.11, completionPer1M: 0.34 },
-    // ULTRA tier premium models (April 2026 — review before launch)
+    // ULTRA tier premium models (April 2026)
+    // TODO(pricing): verify OpenAI GPT-5.4 rates against official pricing docs before launch
     'openai/gpt-5': { promptPer1M: 2.5, completionPer1M: 10.0 },
     'openai/gpt-5-mini': { promptPer1M: 0.15, completionPer1M: 0.6 },
+    'openai/gpt-5.4-codex': { promptPer1M: 2.5, completionPer1M: 10.0 },
     'anthropic/claude-sonnet-4-6': { promptPer1M: 3.0, completionPer1M: 15.0 },
     'anthropic/claude-opus-4-7': { promptPer1M: 15.0, completionPer1M: 75.0 },
     'anthropic/claude-haiku-4-5': { promptPer1M: 0.8, completionPer1M: 4.0 },
-    'google/gemini-2.5-pro': { promptPer1M: 1.25, completionPer1M: 5.0 },
-    'google/gemini-2.5-flash': { promptPer1M: 0.1, completionPer1M: 0.4 },
+    // Gemini 3 family (verified via ai.google.dev/gemini-api/docs/pricing, April 2026)
+    'google/gemini-3.1-pro-preview': { promptPer1M: 2.0, completionPer1M: 12.0 }, // <=200k prompts tier
+    'google/gemini-3-flash-preview': { promptPer1M: 0.5, completionPer1M: 3.0 },
+    'google/gemini-3.1-flash-lite-preview': { promptPer1M: 0.25, completionPer1M: 1.5 },
 };
 
 /**

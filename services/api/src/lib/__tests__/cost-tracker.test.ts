@@ -8,7 +8,7 @@ describe('Cost Tracker', () => {
             expect(MODEL_PRICING['gpt-5-mini']).toBeDefined();
             expect(MODEL_PRICING['claude-sonnet-4-6']).toBeDefined();
             expect(MODEL_PRICING['claude-haiku-4-5-20251001']).toBeDefined();
-            expect(MODEL_PRICING['gemini-2.5-flash']).toBeDefined();
+            expect(MODEL_PRICING['gemini-3-flash-preview']).toBeDefined();
             expect(MODEL_PRICING['llama-4-maverick']).toBeDefined();
             expect(MODEL_PRICING.default).toBeDefined();
         });
@@ -70,7 +70,7 @@ describe('Cost Tracker', () => {
             // input: (5000/1000) * 0.0001 = 0.0005
             // output: (2000/1000) * 0.0004 = 0.0008
             // total: 0.0013
-            const cost = calculateCost('gemini-2.5-flash', 5000, 2000);
+            const cost = calculateCost('gemini-3-flash-preview', 5000, 2000);
             expect(cost).toBe(0.0013);
         });
 
@@ -161,11 +161,11 @@ describe('Cost Tracker', () => {
                 calculateCost('gpt-5-mini', tokens.in, tokens.out),
                 calculateCost('claude-sonnet-4-6', tokens.in, tokens.out),
                 calculateCost('claude-haiku-4-5-20251001', tokens.in, tokens.out),
-                calculateCost('gemini-2.5-flash', tokens.in, tokens.out),
+                calculateCost('gemini-3-flash-preview', tokens.in, tokens.out),
                 calculateCost('llama-4-maverick', tokens.in, tokens.out),
             ];
 
-            const geminiCost = calculateCost('gemini-2.5-flash', tokens.in, tokens.out);
+            const geminiCost = calculateCost('gemini-3-flash-preview', tokens.in, tokens.out);
             const minCost = Math.min(...costs);
             expect(geminiCost).toBe(minCost);
         });

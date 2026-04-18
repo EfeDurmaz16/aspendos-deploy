@@ -65,13 +65,18 @@ export const MODEL_PRICING_TABLE: Record<string, ModelPricing> = {
     'groq/llama-4-maverick': { input: 0.59, output: 0.79 },
     'groq/llama-4-scout': { input: 0.11, output: 0.34 },
     // ULTRA tier premium models (April 2026 — review before launch)
+    // OpenAI GPT-5.4 family (April 2026)
+    // TODO(pricing): verify against official OpenAI pricing docs before launch
     'openai/gpt-5': { input: 2.5, output: 10.0 },
     'openai/gpt-5-mini': { input: 0.15, output: 0.6 },
+    'openai/gpt-5.4-codex': { input: 2.5, output: 10.0 },
     'anthropic/claude-sonnet-4-6': { input: 3.0, output: 15.0 },
     'anthropic/claude-opus-4-7': { input: 15.0, output: 75.0 },
     'anthropic/claude-haiku-4-5': { input: 0.8, output: 4.0 },
-    'google/gemini-2.5-pro': { input: 1.25, output: 5.0 },
-    'google/gemini-2.5-flash': { input: 0.1, output: 0.4 },
+    // Gemini 3 family (verified via ai.google.dev/gemini-api/docs/pricing, April 2026)
+    'google/gemini-3.1-pro-preview': { input: 2.0, output: 12.0 }, // <=200k prompts tier; >200k: 4.0/18.0
+    'google/gemini-3-flash-preview': { input: 0.5, output: 3.0 },
+    'google/gemini-3.1-flash-lite-preview': { input: 0.25, output: 1.5 },
 };
 
 /**
