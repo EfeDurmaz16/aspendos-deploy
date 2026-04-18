@@ -1165,7 +1165,7 @@ function CTASection() {
                         <ArrowRight size={16} weight="bold" />
                     </a>
                     <a
-                        href="https://github.com/aspendos"
+                        href="https://github.com/EfeDurmaz16/aspendos-deploy"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="h-11 px-6 rounded-lg border border-border text-foreground text-sm font-medium flex items-center gap-2 hover:bg-card transition-colors"
@@ -1209,7 +1209,7 @@ function Footer() {
                         Privacy
                     </Link>
                     <a
-                        href="https://github.com/aspendos"
+                        href="https://github.com/EfeDurmaz16/aspendos-deploy"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:text-foreground transition-colors"
