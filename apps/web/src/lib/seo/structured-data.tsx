@@ -81,9 +81,12 @@ export const organizationSchema: Organization = {
     url: BASE_URL,
     logo: `${BASE_URL}/logo.png`,
     description:
-        'Yula is a unified AI platform providing access to multiple AI models with persistent semantic memory.',
+        'Yula is a deterministic AI agent platform — every action is signed, logged, and reversible.',
     foundingDate: '2024',
-    sameAs: ['https://twitter.com/yaboruAI', 'https://github.com/yula-ai'],
+    sameAs: [
+        'https://twitter.com/efebarandurmaz',
+        'https://github.com/EfeDurmaz16/aspendos-deploy',
+    ],
     contactPoint: {
         '@type': 'ContactPoint',
         contactType: 'customer support',
@@ -98,7 +101,8 @@ export const websiteSchema: WebSite = {
     name: 'Yula',
     alternateName: 'Yula - Unified AI Platform',
     url: BASE_URL,
-    description: 'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory',
+    description:
+        'Deterministic AI agents that prove what they did. Every action signed, logged, reversible.',
     publisher: {
         '@type': 'Organization',
         name: 'Yula',

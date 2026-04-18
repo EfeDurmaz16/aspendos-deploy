@@ -11,23 +11,16 @@ import {
     GitBranch,
     Lightning,
     ListChecks,
-    Lock,
     Prohibit,
     Question,
     Seal,
     SealCheck,
     ShieldCheck,
     SignIn,
-    SlackLogo,
     Sparkle,
-    TelegramLogo,
-    DiscordLogo,
-    WhatsappLogo,
-    MicrosoftTeamsLogo,
-    ChatTeardropDots,
-    Envelope,
     GithubLogo,
 } from '@phosphor-icons/react';
+import { PlatformIcon, type PlatformName } from '@/components/platform-icon';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -778,15 +771,15 @@ function FeaturesSection() {
 // =============================================================================
 
 function SurfacesSection() {
-    const surfaces = [
-        { name: 'Slack', icon: SlackLogo },
-        { name: 'Telegram', icon: TelegramLogo },
-        { name: 'Discord', icon: DiscordLogo },
-        { name: 'WhatsApp', icon: WhatsappLogo },
-        { name: 'Teams', icon: MicrosoftTeamsLogo },
-        { name: 'Google Chat', icon: ChatTeardropDots },
-        { name: 'iMessage', icon: Envelope },
-        { name: 'Signal', icon: Lock },
+    const surfaces: { name: string; key: PlatformName }[] = [
+        { name: 'Slack', key: 'slack' },
+        { name: 'Telegram', key: 'telegram' },
+        { name: 'Discord', key: 'discord' },
+        { name: 'WhatsApp', key: 'whatsapp' },
+        { name: 'Teams', key: 'teams' },
+        { name: 'Google Chat', key: 'googlechat' },
+        { name: 'iMessage', key: 'imessage' },
+        { name: 'Signal', key: 'signal' },
     ];
 
     return (
@@ -817,9 +810,11 @@ function SurfacesSection() {
                             className="flex flex-col items-center gap-2 group"
                         >
                             <div className="w-12 h-12 rounded-xl border border-border/50 bg-card/30 flex items-center justify-center group-hover:border-border group-hover:bg-card/60 transition-all">
-                                <surface.icon
-                                    size={22}
-                                    className="text-foreground/60 group-hover:text-foreground/80 transition-colors"
+                                <PlatformIcon
+                                    name={surface.key}
+                                    size={28}
+                                    theme="dark"
+                                    className="opacity-90 group-hover:opacity-100 transition-opacity"
                                 />
                             </div>
                             <span className="text-[10px] text-muted-foreground">

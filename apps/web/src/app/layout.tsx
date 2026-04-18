@@ -33,8 +33,8 @@ export const metadata: Metadata = {
 // Viewport configuration - Clean neutral theme colors
 export const viewport: Viewport = {
     themeColor: [
-        { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
-        { media: '(prefers-color-scheme: dark)', color: '#0d0d0d' },
+        { media: '(prefers-color-scheme: light)', color: '#0a0a0a' },
+        { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
     ],
     width: 'device-width',
     initialScale: 1,
@@ -60,7 +60,9 @@ export default async function RootLayout({
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
                 <meta name="apple-mobile-web-app-title" content="Yula" />
-                <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+                <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+                <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
                 {/* DNS prefetch for external services */}
                 <link rel="dns-prefetch" href="https://api.openai.com" />
