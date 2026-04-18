@@ -26,7 +26,7 @@ describe('fastRoute', () => {
             expect(result).not.toBeNull();
             expect(result?.type).toBe('direct_reply');
             if (result?.type === 'direct_reply') {
-                expect(result.model).toBe('gpt-4o-mini');
+                expect(result.model).toBe('gpt-5-mini');
             }
             expect(result?.reason).toContain('greeting');
         }
@@ -120,7 +120,7 @@ describe('RouteDecision types', () => {
     it('should have correct structure for direct_reply', () => {
         const decision: RouteDecision = {
             type: 'direct_reply',
-            model: 'gpt-4o-mini',
+            model: 'gpt-5-mini',
             reason: 'Simple question',
         };
         expect(decision.type).toBe('direct_reply');
@@ -131,7 +131,7 @@ describe('RouteDecision types', () => {
         const decision: RouteDecision = {
             type: 'rag_search',
             query: 'user preferences',
-            model: 'gpt-4o',
+            model: 'gpt-5',
             reason: 'Memory query',
         };
         expect(decision.type).toBe('rag_search');
@@ -209,7 +209,7 @@ describe('Model Selection', () => {
         const result = fastRoute('Hi');
         expect(result?.type).toBe('direct_reply');
         if (result?.type === 'direct_reply') {
-            expect(result.model).toBe('gpt-4o-mini');
+            expect(result.model).toBe('gpt-5-mini');
         }
     });
 
@@ -217,7 +217,7 @@ describe('Model Selection', () => {
         const result = fastRoute('What did I say last time?');
         expect(result?.type).toBe('rag_search');
         if (result?.type === 'rag_search') {
-            expect(result.model).toBe('gpt-4o-mini');
+            expect(result.model).toBe('gpt-5-mini');
         }
     });
 });
