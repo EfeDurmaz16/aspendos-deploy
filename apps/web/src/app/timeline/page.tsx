@@ -8,6 +8,7 @@ import type { ReversibilityClass } from '@/lib/reversibility/types';
 import { REVERSIBILITY_SPECS } from '@/lib/reversibility/types';
 import { dispatchRollback } from '@/lib/reversibility/dispatch';
 import type { AgitCommit } from '@/lib/reversibility/types';
+import { useAuth } from '@/hooks/use-auth';
 
 // ── Status indicator dot ─────────────────────────────────────
 
@@ -183,12 +184,19 @@ function FilterBar({
 // ── Main page ────────────────────────────────────────────────
 
 export default function TimelinePage() {
-    // Real-time Convex subscription for commits
-    // TODO: Replace hardcoded user_id once auth context is wired
-    const commits = useQuery(api.commits.listByUser, {
-        user_id: 'placeholder' as any,
-        limit: 200,
-    });
+    const { isLoaded, isSignedIn, userId: workosUserId } = useAuth();
+
+    // Resolve Convex user id from the authenticated WorkOS id
+    const convexUser = useQuery(
+        api.users.getByWorkOSId,
+        workosUserId ? { workos_id: workosUserId } : 'skip'
+    );
+
+    // Real-time Convex subscription for commits, scoped to the authenticated user
+    const commits = useQuery(
+        api.commits.listByUser,
+        convexUser?._id ? { user_id: convexUser._id, limit: 200 } : 'skip'
+    );
 
     const [activeFilters, setActiveFilters] = useState<Set<ReversibilityClass>>(
         new Set(ALL_CLASSES)
@@ -285,6 +293,26 @@ export default function TimelinePage() {
 
     const filteredCommits =
         commits?.filter((c: any) => activeFilters.has(c.reversibility_class)) ?? [];
+
+    // Auth gates — loading and signed-out states
+    if (!isLoaded) {
+        return (
+            <div className="mx-auto max-w-3xl px-4 py-8">
+                <div className="text-center py-12 text-neutral-500">Loading...</div>
+            </div>
+        );
+    }
+
+    if (!isSignedIn) {
+        if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+        }
+        return (
+            <div className="mx-auto max-w-3xl px-4 py-8">
+                <div className="text-center py-12 text-neutral-500">Redirecting to sign in...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="mx-auto max-w-3xl px-4 py-8">
