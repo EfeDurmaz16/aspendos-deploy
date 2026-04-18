@@ -92,6 +92,24 @@ function BillingContent() {
     const [billing, setBilling] = useState<BillingData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [portalLoading, setPortalLoading] = useState(false);
+    const [portalError, setPortalError] = useState<string | null>(null);
+
+    async function openStripePortal() {
+        setPortalLoading(true);
+        setPortalError(null);
+        try {
+            const res = await fetch('/api/billing/portal', { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok || !data?.url) {
+                throw new Error(data?.error || 'Unable to open billing portal');
+            }
+            window.location.href = data.url;
+        } catch (err) {
+            setPortalError(err instanceof Error ? err.message : 'Something went wrong');
+            setPortalLoading(false);
+        }
+    }
 
     useEffect(() => {
         if (isLoaded && user) {
@@ -257,16 +275,30 @@ function BillingContent() {
                         >
                             Change Plan
                         </a>
-                        {/* TODO(stripe-migration): replace with <a href={stripePortalUrl}> once Stripe customer portal is wired up */}
-                        <span
-                            aria-disabled="true"
-                            title="Temporarily disabled during Stripe migration"
-                            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background font-semibold shadow-md transition-all opacity-60 cursor-not-allowed select-none"
+                        <button
+                            type="button"
+                            onClick={openStripePortal}
+                            disabled={portalLoading}
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 hover:from-foreground/90 hover:to-foreground/80 text-background font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            Manage Subscription
-                            <ArrowRight weight="bold" />
-                        </span>
+                            {portalLoading ? (
+                                <>
+                                    <CircleNotch className="w-4 h-4 animate-spin" weight="bold" />
+                                    Opening...
+                                </>
+                            ) : (
+                                <>
+                                    Manage Subscription
+                                    <ArrowRight weight="bold" />
+                                </>
+                            )}
+                        </button>
                     </div>
+                    {portalError && (
+                        <p className="mt-3 text-sm text-red-500" role="alert">
+                            {portalError}
+                        </p>
+                    )}
                 </div>
 
                 {/* Usage Stats */}
