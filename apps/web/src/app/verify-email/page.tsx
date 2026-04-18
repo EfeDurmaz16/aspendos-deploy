@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import { LogoMark } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { sendVerificationEmail, useSession } from '@/lib/auth-client';
 
@@ -206,8 +207,8 @@ export default function VerifyEmailPage() {
                 className="w-full max-w-md space-y-6"
             >
                 <div className="flex items-center justify-center gap-2 mb-8">
-                    <div className="size-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
-                        <span className="text-sm font-bold text-white dark:text-zinc-900">Y</span>
+                    <div className="flex size-7 items-center justify-center text-zinc-900 dark:text-zinc-100">
+                        <LogoMark size={28} variant="mono" />
                     </div>
                     <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Yula</p>
                 </div>

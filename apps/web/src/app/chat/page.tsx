@@ -36,6 +36,7 @@ import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
 import { ModePicker, resolveMode, type YulaMode } from '@/components/chat/model-picker';
 import { VoiceButton } from '@/components/chat/voice-button';
 import { CouncilChatSheet } from '@/components/council/council-chat-sheet';
+import { LogoMark } from '@/components/brand/logo';
 import { IconRail } from '@/components/layout/icon-rail';
 import { PACToastWrapper } from '@/components/pac/pac-toast-wrapper';
 import { useAuth } from '@/hooks/use-auth';
@@ -212,10 +213,8 @@ function EmptyState({ onSubmit }: { onSubmit: (msg: PromptInputMessage) => void 
     return (
         <div className="flex flex-col items-center justify-center h-full py-24 px-4">
             <div className="mb-10">
-                <div className="w-10 h-10 rounded-lg bg-foreground flex items-center justify-center">
-                    <span className="text-background font-semibold text-base tracking-tight">
-                        Y
-                    </span>
+                <div className="flex w-10 h-10 items-center justify-center text-foreground">
+                    <LogoMark size={40} />
                 </div>
             </div>
 

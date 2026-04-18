@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useState } from 'react';
+import { LogoMark } from '@/components/brand/logo';
 import { ContextMenuChat } from '@/components/chat/context-menu-chat';
 import { Button } from '@/components/ui/button';
 import {
@@ -82,8 +83,8 @@ export function ChatSidebar({
             {/* Header */}
             <div className="h-14 flex items-center px-4 border-b border-border">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
-                        <span className="text-background font-bold text-sm">Y</span>
+                    <div className="flex w-8 h-8 items-center justify-center text-foreground">
+                        <LogoMark size={32} />
                     </div>
                     <span className="font-semibold text-foreground tracking-tight">Yula</span>
                 </div>
