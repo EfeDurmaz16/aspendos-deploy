@@ -29,8 +29,8 @@ Analyze the user's message and decide the best approach:
 1. **direct_reply** - For general questions, conversations, creative tasks
    - Use when: Greeting, opinion, explanation, coding help, creative writing
    - Choose model based on complexity:
-     - Simple/fast: "gpt-4o-mini" or "claude-3-haiku-20240307"
-     - Complex/reasoning: "gpt-4o" or "claude-3-5-sonnet-20241022"
+     - Simple/fast: "gpt-5-mini" or "claude-haiku-4-5"
+     - Complex/reasoning: "gpt-5" or "claude-sonnet-4-6"
 
 2. **rag_search** - When the user asks about their past conversations, memories, or specific context
    - Use when: "Remember when...", "What did I say about...", personal history
@@ -67,8 +67,8 @@ interface RoutingContext {
 
 // Tier-aware model selection: don't route to models the user can't access
 const TIER_MODEL_MAP: Record<string, string[]> = {
-    FREE: ['gpt-4o-mini', 'gemini-flash', 'gemini-2.0-flash'],
-    STARTER: ['gpt-4o-mini', 'claude-3-haiku-20240307', 'gemini-flash', 'gemini-2.0-flash'],
+    FREE: ['gpt-5-mini', 'gemini-flash', 'gemini-2.5-flash'],
+    STARTER: ['gpt-5-mini', 'claude-haiku-4-5', 'gemini-flash', 'gemini-2.5-flash'],
     PRO: [], // all models
     ULTRA: [], // all models
 };
@@ -78,7 +78,7 @@ function constrainModelToTier(model: string, tier?: string): string {
     const allowed = TIER_MODEL_MAP[tier];
     if (!allowed || allowed.length === 0) return model; // PRO/ULTRA = all
     if (allowed.includes(model)) return model;
-    return 'gpt-4o-mini'; // Fallback to free-tier model
+    return 'gpt-5-mini'; // Fallback to free-tier model
 }
 
 /**
@@ -183,7 +183,7 @@ export async function routeUserMessage(
         // Default to direct reply with fast model
         return {
             type: 'direct_reply',
-            model: 'gpt-4o-mini',
+            model: 'gpt-5-mini',
             reason: 'Router fallback - defaulting to direct reply',
         };
     }
@@ -233,7 +233,7 @@ export function fastRoute(message: string): RouteDecision | null {
     if (isGreeting(message)) {
         return {
             type: 'direct_reply',
-            model: 'gpt-4o-mini',
+            model: 'gpt-5-mini',
             reason: 'Fast route: simple greeting',
         };
     }
@@ -243,7 +243,7 @@ export function fastRoute(message: string): RouteDecision | null {
         return {
             type: 'rag_search',
             query: message,
-            model: 'gpt-4o-mini',
+            model: 'gpt-5-mini',
             reason: 'Fast route: memory query detected',
         };
     }

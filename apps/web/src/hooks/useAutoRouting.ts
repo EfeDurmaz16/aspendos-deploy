@@ -36,28 +36,28 @@ interface AutoRoutingState {
 
 const MODEL_REGISTRY: ModelInfo[] = [
     {
-        id: 'gpt-4o',
-        name: 'GPT-4o',
+        id: 'gpt-5',
+        name: 'GPT-5.4',
         provider: 'openai',
-        contextWindow: 128000,
+        contextWindow: 400000,
         maxOutput: 16384,
         inputCost: 2.5,
         outputCost: 10.0,
         capabilities: ['text', 'vision', 'function_calling', 'streaming'],
     },
     {
-        id: 'gpt-4o-mini',
-        name: 'GPT-4o Mini',
+        id: 'gpt-5-mini',
+        name: 'GPT-5.4 Mini',
         provider: 'openai',
-        contextWindow: 128000,
+        contextWindow: 400000,
         maxOutput: 16384,
         inputCost: 0.15,
         outputCost: 0.6,
         capabilities: ['text', 'vision', 'function_calling', 'streaming'],
     },
     {
-        id: 'claude-3-5-sonnet-20241022',
-        name: 'Claude 3.5 Sonnet',
+        id: 'claude-sonnet-4-6',
+        name: 'Claude Sonnet 4.6',
         provider: 'anthropic',
         contextWindow: 200000,
         maxOutput: 8192,
@@ -66,8 +66,8 @@ const MODEL_REGISTRY: ModelInfo[] = [
         capabilities: ['text', 'vision', 'streaming'],
     },
     {
-        id: 'claude-3-5-haiku-20241022',
-        name: 'Claude 3.5 Haiku',
+        id: 'claude-haiku-4-5',
+        name: 'Claude Haiku 4.5',
         provider: 'anthropic',
         contextWindow: 200000,
         maxOutput: 8192,
@@ -76,8 +76,8 @@ const MODEL_REGISTRY: ModelInfo[] = [
         capabilities: ['text', 'vision', 'streaming'],
     },
     {
-        id: 'gemini-2.0-flash',
-        name: 'Gemini 2.0 Flash',
+        id: 'gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
         provider: 'google',
         contextWindow: 1000000,
         maxOutput: 8192,
@@ -128,27 +128,27 @@ function selectModel(analysis: TaskAnalysis, tier: 'STARTER' | 'PRO' | 'ULTRA'):
     if (analysis.complexity === 'simple') {
         if (tier === 'STARTER') {
             return {
-                model: 'gpt-4o-mini',
+                model: 'gpt-5-mini',
                 reasoning: 'Simple task, using cost-effective model',
                 confidence: 0.9,
-                fallback: 'gemini-2.0-flash',
+                fallback: 'gemini-2.5-flash',
             };
         }
         return {
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             reasoning: 'Simple task, using fast and cheap Gemini Flash',
             confidence: 0.95,
-            fallback: 'gpt-4o-mini',
+            fallback: 'gpt-5-mini',
         };
     }
 
     // Long context → Gemini
     if (analysis.requiresLongContext) {
         return {
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             reasoning: 'Long context required, Gemini has 1M context window',
             confidence: 0.85,
-            fallback: 'claude-3-5-sonnet-20241022',
+            fallback: 'claude-sonnet-4-6',
         };
     }
 
@@ -156,35 +156,35 @@ function selectModel(analysis: TaskAnalysis, tier: 'STARTER' | 'PRO' | 'ULTRA'):
     if (analysis.complexity === 'complex') {
         if (tier === 'ULTRA') {
             return {
-                model: 'claude-3-5-sonnet-20241022',
+                model: 'claude-sonnet-4-6',
                 reasoning: 'Complex task, using Claude Sonnet for best reasoning',
                 confidence: 0.88,
-                fallback: 'gpt-4o',
+                fallback: 'gpt-5',
             };
         }
         return {
-            model: 'gpt-4o',
-            reasoning: 'Complex task, using GPT-4o for balanced performance',
+            model: 'gpt-5',
+            reasoning: 'Complex task, using GPT-5 for balanced performance',
             confidence: 0.85,
-            fallback: 'claude-3-5-sonnet-20241022',
+            fallback: 'claude-sonnet-4-6',
         };
     }
 
     // Medium complexity → balanced choice
     if (tier === 'STARTER') {
         return {
-            model: 'gpt-4o-mini',
-            reasoning: 'Medium complexity on Starter tier, using GPT-4o-mini',
+            model: 'gpt-5-mini',
+            reasoning: 'Medium complexity on Starter tier, using GPT-5 Mini',
             confidence: 0.8,
-            fallback: 'gemini-2.0-flash',
+            fallback: 'gemini-2.5-flash',
         };
     }
 
     return {
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-haiku-4-5',
         reasoning: 'Medium complexity, using Claude Haiku for fast response',
         confidence: 0.82,
-        fallback: 'gpt-4o-mini',
+        fallback: 'gpt-5-mini',
     };
 }
 
@@ -203,7 +203,7 @@ export interface UseAutoRoutingOptions {
  * Rewritten from omnix with cleaner logic and no external dependencies.
  */
 export function useAutoRouting(options: UseAutoRoutingOptions = {}) {
-    const { tier = 'PRO', defaultModel = 'gpt-4o' } = options;
+    const { tier = 'PRO', defaultModel = 'gpt-5' } = options;
 
     const [state, setState] = useState<AutoRoutingState>({
         isRouting: false,
@@ -255,7 +255,7 @@ export function useAutoRouting(options: UseAutoRoutingOptions = {}) {
     const getAvailableModels = useCallback((): ModelInfo[] => {
         if (tier === 'STARTER') {
             return MODEL_REGISTRY.filter(
-                (m) => m.id === 'gpt-4o-mini' || m.id === 'gemini-2.0-flash'
+                (m) => m.id === 'gpt-5-mini' || m.id === 'gemini-2.5-flash'
             );
         }
         return MODEL_REGISTRY;
