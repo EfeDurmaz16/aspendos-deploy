@@ -28,6 +28,7 @@ import {
     PromptInputSubmit,
     PromptInputTextarea,
     PromptInputTools,
+    usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input';
 import { Reasoning } from '@/components/ai-elements/reasoning';
 import { ContextMenuMessage } from '@/components/chat/context-menu-message';
@@ -246,6 +247,18 @@ function EmptyState({ onSubmit }: { onSubmit: (msg: PromptInputMessage) => void 
 
 /* ─── Shared Chat Input ─── */
 
+function ConditionalAttachmentsHeader() {
+    const attachments = usePromptInputAttachments();
+    if (!attachments.files.length) return null;
+    return (
+        <PromptInputHeader>
+            <PromptInputAttachments>
+                {(attachment) => <PromptInputAttachment data={attachment} />}
+            </PromptInputAttachments>
+        </PromptInputHeader>
+    );
+}
+
 function ChatInputArea({
     mode,
     onModeChange,
@@ -268,16 +281,12 @@ function ChatInputArea({
     resolveMode: (mode: YulaMode) => string | undefined;
 }) {
     return (
-        <div className="p-3 sm:p-4 flex-none z-20 max-w-2xl mx-auto w-full">
+        <div className="px-3 py-2 sm:px-4 sm:py-2 flex-none z-20 max-w-2xl mx-auto w-full">
             <PromptInput
                 onSubmit={onSubmit}
                 className="border border-border rounded-xl bg-background"
             >
-                <PromptInputHeader>
-                    <PromptInputAttachments>
-                        {(attachment) => <PromptInputAttachment data={attachment} />}
-                    </PromptInputAttachments>
-                </PromptInputHeader>
+                <ConditionalAttachmentsHeader />
                 <PromptInputBody>
                     <PromptInputTextarea placeholder="Ask anything..." />
                 </PromptInputBody>
@@ -320,7 +329,7 @@ function ChatInputArea({
                     <PromptInputSubmit status={isStreaming ? 'streaming' : undefined} />
                 </PromptInputFooter>
             </PromptInput>
-            <p className="text-center mt-2 text-[11px] text-muted-foreground/60">
+            <p className="text-center mt-1 text-[11px] text-muted-foreground/60">
                 Yula can make mistakes. Check important info.
             </p>
         </div>

@@ -30,6 +30,7 @@ import {
     PromptInputSubmit,
     PromptInputTextarea,
     PromptInputTools,
+    usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input';
 import { Reasoning } from '@/components/ai-elements/reasoning';
 import { Tool, ToolInput, ToolOutput } from '@/components/ai-elements/tool';
@@ -49,6 +50,18 @@ const REMARK_PLUGINS = [remarkMath] as unknown as NonNullable<MessageResponsePro
 const REHYPE_PLUGINS = [rehypeKatex] as unknown as NonNullable<
     MessageResponseProps['rehypePlugins']
 >;
+
+function ConditionalAttachmentsHeader() {
+    const attachments = usePromptInputAttachments();
+    if (!attachments.files.length) return null;
+    return (
+        <PromptInputHeader>
+            <PromptInputAttachments>
+                {(attachment) => <PromptInputAttachment data={attachment} />}
+            </PromptInputAttachments>
+        </PromptInputHeader>
+    );
+}
 
 type StoredChatMessage = {
     id: string;
@@ -300,16 +313,12 @@ export default function ChatPage() {
                     </Conversation>
                 </div>
 
-                <div className="p-3 sm:p-4 flex-none z-20 max-w-2xl mx-auto w-full">
+                <div className="px-3 py-2 sm:px-4 sm:py-2 flex-none z-20 max-w-2xl mx-auto w-full">
                     <PromptInput
                         onSubmit={handleSubmit}
                         className="border border-border rounded-xl bg-background"
                     >
-                        <PromptInputHeader>
-                            <PromptInputAttachments>
-                                {(attachment) => <PromptInputAttachment data={attachment} />}
-                            </PromptInputAttachments>
-                        </PromptInputHeader>
+                        <ConditionalAttachmentsHeader />
                         <PromptInputBody>
                             <PromptInputTextarea placeholder="Ask anything..." />
                         </PromptInputBody>
@@ -352,7 +361,7 @@ export default function ChatPage() {
                             <PromptInputSubmit status={isStreaming ? 'streaming' : undefined} />
                         </PromptInputFooter>
                     </PromptInput>
-                    <p className="text-center mt-2 text-[11px] text-muted-foreground/60">
+                    <p className="text-center mt-1 text-[11px] text-muted-foreground/60">
                         Yula can make mistakes. Check important info.
                     </p>
                 </div>
