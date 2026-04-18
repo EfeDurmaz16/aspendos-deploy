@@ -21,6 +21,7 @@ import {
     GithubLogo,
 } from '@phosphor-icons/react';
 import { PlatformIcon, type PlatformName } from '@/components/platform-icon';
+import { LogoMark } from '@/components/brand/logo';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -136,9 +137,10 @@ function Navigation() {
         >
             <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2.5 group">
-                    <div className="w-7 h-7 rounded-md bg-foreground flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
-                        <span className="text-background text-xs font-bold tracking-tight">Y</span>
-                    </div>
+                    <LogoMark
+                        size={28}
+                        className="text-foreground transition-transform duration-200 group-hover:scale-105"
+                    />
                     <span className="text-sm font-semibold text-foreground tracking-tight">
                         Yula
                     </span>
@@ -1194,9 +1196,7 @@ function Footer() {
             <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded bg-foreground/10 flex items-center justify-center">
-                            <span className="text-xs font-bold text-foreground/60">Y</span>
-                        </div>
+                        <LogoMark size={20} className="text-foreground/60" />
                         <span className="text-xs text-muted-foreground">
                             &copy; {new Date().getFullYear()} Yula
                         </span>
