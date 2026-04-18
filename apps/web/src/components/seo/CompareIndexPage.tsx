@@ -49,8 +49,9 @@ export function CompareIndexPage({ competitors }: CompareIndexPageProps) {
                         Compare Yula with AI Alternatives
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                        See how Yula stacks up against ChatGPT, Claude, Gemini, and more. Discover
-                        why Yula is the best unified AI platform with persistent memory.
+                        See how Yula stacks up against ChatGPT, Claude, Gemini, and more — a
+                        deterministic agent that can prove what it did, with signed actions, audit
+                        logs, and reversible steps where supported.
                     </p>
                 </header>
 
