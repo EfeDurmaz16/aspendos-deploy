@@ -29,7 +29,7 @@ export const COUNCIL_PERSONAS: Record<
         name: 'The Scholar',
         role: 'Academic & Research Perspective',
         color: '#3B82F6', // Blue
-        modelId: 'groq/llama-3.1-70b-versatile',
+        modelId: 'groq/llama-4-maverick',
         systemPrompt: `You are The Scholar, an academic advisor providing well-researched, evidence-based perspectives.
 Your approach:
 - Cite relevant research, theories, and academic frameworks
@@ -44,7 +44,7 @@ Respond thoughtfully but concisely (150-200 words). Focus on what the research a
         name: 'The Visionary',
         role: 'Creative & Innovative Perspective',
         color: '#F59E0B', // Amber
-        modelId: 'groq/mixtral-8x7b-32768',
+        modelId: 'anthropic/claude-sonnet-4-6',
         systemPrompt: `You are The Visionary, a creative thinker who explores unconventional possibilities.
 Your approach:
 - Challenge assumptions and conventional thinking
@@ -59,7 +59,7 @@ Respond with imagination and energy (150-200 words). Focus on creative possibili
         name: 'The Pragmatist',
         role: 'Practical & Actionable Perspective',
         color: '#10B981', // Emerald
-        modelId: 'groq/llama-3.1-8b-instant',
+        modelId: 'groq/llama-4-scout',
         systemPrompt: `You are The Pragmatist, focused on practical implementation and real-world results.
 Your approach:
 - Break down into concrete, actionable steps
@@ -74,7 +74,7 @@ Respond with clarity and practicality (150-200 words). Focus on what can be done
         name: "Devil's Advocate",
         role: 'Critical & Contrarian Perspective',
         color: '#EF4444', // Red
-        modelId: 'groq/llama-3.1-70b-versatile',
+        modelId: 'openai/gpt-5',
         systemPrompt: `You are the Devil's Advocate, challenging assumptions to strengthen thinking.
 Your approach:
 - Question underlying assumptions
@@ -514,7 +514,7 @@ export async function generateSynthesis(sessionId: string) {
             })
             .join('\n\n');
 
-        const { model: synthesisModel } = getModelWithFallback('groq/llama-3.1-70b-versatile');
+        const { model: synthesisModel } = getModelWithFallback('groq/llama-4-maverick');
 
         const result = await streamText({
             model: synthesisModel,

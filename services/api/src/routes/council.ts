@@ -393,7 +393,7 @@ app.post('/sessions/:id/synthesize', validateParams(sessionIdParamSchema), async
                 userId,
                 result.usage.promptTokens,
                 result.usage.completionTokens,
-                'openai/gpt-4o'
+                'openai/gpt-5'
             );
         }
 

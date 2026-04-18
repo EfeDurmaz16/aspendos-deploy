@@ -12,8 +12,8 @@ import { gateway, generateText } from 'ai';
 import { type CommitmentDetectionResult, parseTimeExpression } from './scheduler.service';
 
 // Use Groq for fast, cheap JSON classification tasks
-const DETECTION_MODEL = process.env.COMMITMENT_DETECTION_MODEL || 'groq/llama-3.1-8b-instant';
-const REENGAGEMENT_MODEL = process.env.REENGAGEMENT_MODEL || 'groq/llama-3.1-8b-instant';
+const DETECTION_MODEL = process.env.COMMITMENT_DETECTION_MODEL || 'groq/llama-4-scout';
+const REENGAGEMENT_MODEL = process.env.REENGAGEMENT_MODEL || 'groq/llama-4-scout';
 
 // ============================================
 // COMMITMENT DETECTION

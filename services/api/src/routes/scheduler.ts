@@ -259,7 +259,7 @@ app.post('/execute', validateBody(executeTaskSchema), async (c) => {
         const message = await commitmentService.generateReengagementMessage(task);
 
         // Meter the LLM call for re-engagement generation (~200 input + 150 output tokens)
-        await recordTokenUsage(task.userId, 200, 150, 'groq/llama-3.1-8b-instant');
+        await recordTokenUsage(task.userId, 200, 150, 'groq/llama-4-scout');
 
         // Mark as completed
         await schedulerService.markTaskCompleted(taskId, message, 'pending_delivery');
@@ -315,7 +315,7 @@ app.post('/poll', async (c) => {
             const message = await commitmentService.generateReengagementMessage(task);
 
             // Meter the LLM call for re-engagement generation
-            await recordTokenUsage(task.userId, 200, 150, 'groq/llama-3.1-8b-instant');
+            await recordTokenUsage(task.userId, 200, 150, 'groq/llama-4-scout');
 
             await schedulerService.markTaskCompleted(task.id, message, 'pending_delivery');
 

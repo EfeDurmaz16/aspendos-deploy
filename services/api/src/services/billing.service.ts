@@ -12,16 +12,17 @@ import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
  * Used for actual cost tracking and billing transparency
  */
 const MODEL_PRICING: Record<string, { promptPer1M: number; completionPer1M: number }> = {
-    // Groq - Primary models (all tiers)
-    'groq/llama-3.1-70b-versatile': { promptPer1M: 0.59, completionPer1M: 0.79 },
-    'groq/llama-3.1-8b-instant': { promptPer1M: 0.05, completionPer1M: 0.08 },
-    'groq/mixtral-8x7b-32768': { promptPer1M: 0.24, completionPer1M: 0.24 },
-    'groq/llama3-8b-8192': { promptPer1M: 0.05, completionPer1M: 0.08 },
-    // ULTRA tier premium models
-    'openai/gpt-4o': { promptPer1M: 2.5, completionPer1M: 10.0 },
-    'openai/o1': { promptPer1M: 15.0, completionPer1M: 60.0 },
-    'anthropic/claude-sonnet-4-20250514': { promptPer1M: 3.0, completionPer1M: 15.0 },
-    'anthropic/claude-opus-4-20250514': { promptPer1M: 15.0, completionPer1M: 75.0 },
+    // Groq - Llama 4 family (all tiers)
+    'groq/llama-4-maverick': { promptPer1M: 0.59, completionPer1M: 0.79 },
+    'groq/llama-4-scout': { promptPer1M: 0.11, completionPer1M: 0.34 },
+    // ULTRA tier premium models (April 2026 — review before launch)
+    'openai/gpt-5': { promptPer1M: 2.5, completionPer1M: 10.0 },
+    'openai/gpt-5-mini': { promptPer1M: 0.15, completionPer1M: 0.6 },
+    'anthropic/claude-sonnet-4-6': { promptPer1M: 3.0, completionPer1M: 15.0 },
+    'anthropic/claude-opus-4-7': { promptPer1M: 15.0, completionPer1M: 75.0 },
+    'anthropic/claude-haiku-4-5': { promptPer1M: 0.8, completionPer1M: 4.0 },
+    'google/gemini-2.5-pro': { promptPer1M: 1.25, completionPer1M: 5.0 },
+    'google/gemini-2.5-flash': { promptPer1M: 0.1, completionPer1M: 0.4 },
 };
 
 /**

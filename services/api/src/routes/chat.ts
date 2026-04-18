@@ -265,7 +265,7 @@ app.post(
         }
 
         // Determine model to use
-        const modelId = model_id || chat.modelPreference || 'groq/llama-3.1-70b-versatile';
+        const modelId = model_id || chat.modelPreference || 'groq/llama-4-maverick';
 
         // Apply smart model routing (downgrade expensive models for simple queries)
         const smartModelId = getSmartModelId(modelId, content);
@@ -651,7 +651,7 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
     });
 
     // Model selection
-    const modelId = body.model_id || chat.modelPreference || 'groq/llama-3.1-70b-versatile';
+    const modelId = body.model_id || chat.modelPreference || 'groq/llama-4-maverick';
     const smartModelId = getSmartModelId(modelId, content);
     const { model: resolvedModel, actualModelId } = getModelWithFallback(smartModelId);
 
