@@ -59,7 +59,7 @@ interface ChatMessage {
  * Create a chat completion (non-streaming)
  */
 export async function createChatCompletion(messages: ChatMessage[], options: ChatOptions = {}) {
-    const { model = 'gpt-4o-mini', temperature = 0.7, maxTokens = 4000 } = options;
+    const { model = 'gpt-5-mini', temperature = 0.7, maxTokens = 4000 } = options;
 
     const { text, usage } = await generateText({
         model: gateway(`openai/${model}`),
@@ -82,7 +82,7 @@ export async function* createStreamingChatCompletion(
     messages: ChatMessage[],
     options: ChatOptions = {}
 ): AsyncGenerator<{ type: 'text' | 'done'; content: string }> {
-    const { model = 'gpt-4o-mini', temperature = 0.7, maxTokens = 4000 } = options;
+    const { model = 'gpt-5-mini', temperature = 0.7, maxTokens = 4000 } = options;
 
     const result = streamText({
         model: gateway(`openai/${model}`),
@@ -110,7 +110,7 @@ export async function* createStreamingChatCompletion(
 export async function extractMemoryInsights(conversationText: string): Promise<string[]> {
     try {
         const { text } = await generateText({
-            model: gateway('groq/llama-3.1-8b-instant'),
+            model: gateway('groq/llama-4-scout'),
             system: `You are a memory extraction assistant. Extract 2-4 key facts or insights about the user from the conversation. Focus on:
 - User preferences
 - Important information shared

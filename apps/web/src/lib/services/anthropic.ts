@@ -31,7 +31,7 @@ export async function* createAnthropicStreamingCompletion(
     options: ChatOptions = {}
 ): AsyncGenerator<{ type: 'text' | 'done'; content: string }> {
     const {
-        model = 'claude-3-5-sonnet-20241022',
+        model = 'claude-sonnet-4-6',
         temperature = 0.7,
         maxTokens = 4000,
         systemPrompt = 'You are a helpful AI assistant.',
@@ -62,7 +62,7 @@ export async function createAnthropicCompletion(
     options: ChatOptions = {}
 ) {
     const {
-        model = 'claude-3-5-sonnet-20241022',
+        model = 'claude-sonnet-4-6',
         temperature = 0.7,
         maxTokens = 4000,
         systemPrompt = 'You are a helpful AI assistant.',
