@@ -208,30 +208,30 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
             ref={containerRef}
             className={cn(
                 'relative overflow-hidden rounded-xl',
-                'border border-white/10 bg-zinc-900/50 backdrop-blur-sm',
+                'border border-border bg-card/50 backdrop-blur-sm',
                 isFullscreen && 'fixed inset-4 z-50',
                 className
             )}
         >
             {/* Header Controls */}
-            <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-white/5 bg-zinc-900/80 px-4 py-2 backdrop-blur-sm">
+            <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-border bg-card/80 px-4 py-2 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                     <Brain className="h-4 w-4 text-muted-foreground" weight="fill" />
-                    <span className="text-sm font-medium text-zinc-300">Memory Graph</span>
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-zinc-400">
+                    <span className="text-sm font-medium text-foreground">Memory Graph</span>
+                    <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs text-muted-foreground">
                         {data.nodes.length} nodes
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
                     {/* Search */}
                     <div className="relative">
-                        <MagnifyingGlass className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+                        <MagnifyingGlass className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search..."
-                            className="h-7 w-32 rounded-md border border-white/10 bg-white/5 pl-7 pr-2 text-xs text-white placeholder:text-zinc-500 focus:border-ring focus:outline-none"
+                            className="h-7 w-32 rounded-md border border-border bg-foreground/5 pl-7 pr-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
                         />
                     </div>
 
@@ -239,7 +239,7 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
                     <button
                         type="button"
                         onClick={() => setIsFullscreen(!isFullscreen)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-foreground/5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
                     >
                         {isFullscreen ? (
                             <ArrowsInSimple className="h-3.5 w-3.5" />
@@ -264,13 +264,18 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
                             onClick={() => setSelectedCategory(isActive ? null : category)}
                             className={cn(
                                 'flex h-7 w-7 items-center justify-center rounded-md transition-all duration-200',
-                                isActive ? 'bg-white/15 shadow-lg' : 'bg-white/5 hover:bg-white/10'
+                                isActive
+                                    ? 'bg-foreground/15 shadow-lg'
+                                    : 'bg-foreground/5 hover:bg-foreground/10'
                             )}
                             style={isActive ? { borderColor: colors.bg, borderWidth: 1 } : {}}
                             title={category}
                         >
                             <Icon
-                                className={cn('h-3.5 w-3.5', isActive ? '' : 'text-zinc-500')}
+                                className={cn(
+                                    'h-3.5 w-3.5',
+                                    isActive ? '' : 'text-muted-foreground'
+                                )}
                                 color={isActive ? colors.bg : undefined}
                                 weight={isActive ? 'fill' : 'regular'}
                             />
@@ -322,21 +327,21 @@ export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps
                 <button
                     type="button"
                     onClick={handleZoomIn}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/80 text-sm text-zinc-400 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card/80 text-sm text-muted-foreground backdrop-blur-sm transition-colors hover:bg-foreground/10 hover:text-foreground"
                 >
                     +
                 </button>
                 <button
                     type="button"
                     onClick={handleZoomOut}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/80 text-sm text-zinc-400 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card/80 text-sm text-muted-foreground backdrop-blur-sm transition-colors hover:bg-foreground/10 hover:text-foreground"
                 >
                     -
                 </button>
                 <button
                     type="button"
                     onClick={handleResetView}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/80 text-xs text-zinc-400 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card/80 text-xs text-muted-foreground backdrop-blur-sm transition-colors hover:bg-foreground/10 hover:text-foreground"
                     title="Reset view"
                 >
                     <ArrowsOutSimple className="h-3.5 w-3.5" />

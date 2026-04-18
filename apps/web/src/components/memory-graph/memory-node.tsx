@@ -51,8 +51,8 @@ export function MemoryNodeCard({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
                 className={cn(
-                    'rounded-xl border border-white/10 bg-zinc-900/95 backdrop-blur-xl',
-                    'shadow-xl shadow-black/20',
+                    'rounded-xl border border-border bg-card/95 backdrop-blur-xl',
+                    'shadow-xl shadow-foreground/10',
                     'overflow-hidden'
                 )}
             >
@@ -69,7 +69,7 @@ export function MemoryNodeCard({
                             <Icon className="h-5 w-5 text-white" weight="fill" />
                         </div>
                         <div>
-                            <h3 className="font-semibold text-white">{node.label}</h3>
+                            <h3 className="font-semibold text-foreground">{node.label}</h3>
                             <p className="text-xs" style={{ color: colors.text }}>
                                 {categoryLabels[node.category]}
                             </p>
@@ -79,7 +79,7 @@ export function MemoryNodeCard({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
                         >
                             <X className="h-4 w-4" />
                         </button>
@@ -88,15 +88,15 @@ export function MemoryNodeCard({
 
                 {/* Content */}
                 {node.content && (
-                    <div className="border-t border-white/5 p-4">
-                        <p className="text-sm text-zinc-300">{node.content}</p>
+                    <div className="border-t border-border p-4">
+                        <p className="text-sm text-foreground">{node.content}</p>
                     </div>
                 )}
 
                 {/* Connected Nodes */}
                 {connectedNodes.length > 0 && (
-                    <div className="border-t border-white/5 p-4">
-                        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                    <div className="border-t border-border p-4">
+                        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                             Connected
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -111,7 +111,7 @@ export function MemoryNodeCard({
                                         className={cn(
                                             'flex items-center gap-1.5 rounded-full px-2.5 py-1',
                                             'text-xs transition-colors',
-                                            'border border-white/10 bg-white/5 hover:bg-white/10'
+                                            'border border-border bg-foreground/5 hover:bg-foreground/10'
                                         )}
                                     >
                                         <ConnectedIcon
@@ -119,7 +119,7 @@ export function MemoryNodeCard({
                                             color={connectedColors.bg}
                                             weight="fill"
                                         />
-                                        <span className="text-zinc-300">{connected.label}</span>
+                                        <span className="text-foreground">{connected.label}</span>
                                     </button>
                                 );
                             })}
@@ -140,10 +140,10 @@ export function MemoryNodeCard({
                 'flex items-center gap-2 rounded-lg px-3 py-2',
                 'border transition-all duration-200',
                 isSelected
-                    ? 'border-white/20 bg-white/10 shadow-lg'
+                    ? 'border-border bg-foreground/10 shadow-lg'
                     : isHovered
-                      ? 'border-white/15 bg-white/5'
-                      : 'border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/5'
+                      ? 'border-border bg-foreground/5'
+                      : 'border-border/50 bg-foreground/[0.02] hover:border-border hover:bg-foreground/5'
             )}
         >
             <div
@@ -152,7 +152,9 @@ export function MemoryNodeCard({
             >
                 <Icon className="h-3.5 w-3.5" color={colors.bg} weight="fill" />
             </div>
-            <span className={cn('text-sm', isSelected ? 'text-white' : 'text-zinc-300')}>
+            <span
+                className={cn('text-sm', isSelected ? 'text-foreground' : 'text-muted-foreground')}
+            >
                 {node.label}
             </span>
         </motion.button>
