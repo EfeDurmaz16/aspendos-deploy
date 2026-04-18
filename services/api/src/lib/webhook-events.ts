@@ -31,7 +31,7 @@ const WEBHOOK_EVENTS: WebhookEventDef[] = [
             messageId: 'msg_456',
             role: 'user',
             tokensUsed: 150,
-            modelId: 'gpt-4o',
+            modelId: 'gpt-5',
         },
     },
     {
@@ -44,7 +44,7 @@ const WEBHOOK_EVENTS: WebhookEventDef[] = [
             role: 'assistant',
             tokensIn: 150,
             tokensOut: 300,
-            modelId: 'gpt-4o',
+            modelId: 'gpt-5',
             costUsd: 0.005,
         },
     },
@@ -71,7 +71,7 @@ const WEBHOOK_EVENTS: WebhookEventDef[] = [
         payloadExample: {
             sessionId: 'council_123',
             userId: 'user_123',
-            models: ['gpt-4o', 'claude-sonnet-4-5', 'gemini-2.0-flash'],
+            models: ['gpt-5', 'claude-sonnet-4-6', 'gemini-2.5-flash'],
             totalCostUsd: 0.02,
         },
     },

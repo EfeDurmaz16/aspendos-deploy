@@ -4,12 +4,19 @@ const prisma = null as any;
  * Model pricing per 1K tokens (in USD)
  */
 export const MODEL_PRICING = {
-    'gpt-4o': { input: 0.0025, output: 0.01 },
-    'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
-    'claude-sonnet-4-5-20250929': { input: 0.003, output: 0.015 },
-    'claude-haiku-4-5-20251001': { input: 0.0008, output: 0.004 },
-    'gemini-2.0-flash': { input: 0.0001, output: 0.0004 },
-    'llama-3.3-70b': { input: 0.00059, output: 0.00079 },
+    // OpenAI GPT-5 family (April 2026 — review before launch)
+    'gpt-5': { input: 0.0025, output: 0.01 },
+    'gpt-5-mini': { input: 0.00015, output: 0.0006 },
+    // Anthropic Claude 4.x family
+    'claude-opus-4-7': { input: 0.015, output: 0.075 },
+    'claude-sonnet-4-6': { input: 0.003, output: 0.015 },
+    'claude-haiku-4-5': { input: 0.0008, output: 0.004 },
+    // Google Gemini 2.5 family
+    'gemini-2.5-pro': { input: 0.00125, output: 0.005 },
+    'gemini-2.5-flash': { input: 0.0001, output: 0.0004 },
+    // Groq Llama 4 family
+    'llama-4-maverick': { input: 0.00059, output: 0.00079 },
+    'llama-4-scout': { input: 0.00011, output: 0.00034 },
     default: { input: 0.001, output: 0.002 },
 } as const;
 

@@ -61,16 +61,17 @@ export type Period = 'day' | 'week' | 'month' | 'all';
  * Model pricing table (cost per 1M tokens in USD)
  */
 export const MODEL_PRICING_TABLE: Record<string, ModelPricing> = {
-    // Groq - Primary models (all tiers)
-    'groq/llama-3.1-70b-versatile': { input: 0.59, output: 0.79 },
-    'groq/llama-3.1-8b-instant': { input: 0.05, output: 0.08 },
-    'groq/mixtral-8x7b-32768': { input: 0.24, output: 0.24 },
-    'groq/llama3-8b-8192': { input: 0.05, output: 0.08 },
-    // ULTRA tier premium models
-    'openai/gpt-4o': { input: 2.5, output: 10.0 },
-    'openai/o1': { input: 15.0, output: 60.0 },
-    'anthropic/claude-sonnet-4-20250514': { input: 3.0, output: 15.0 },
-    'anthropic/claude-opus-4-20250514': { input: 15.0, output: 75.0 },
+    // Groq - Llama 4 family (all tiers)
+    'groq/llama-4-maverick': { input: 0.59, output: 0.79 },
+    'groq/llama-4-scout': { input: 0.11, output: 0.34 },
+    // ULTRA tier premium models (April 2026 — review before launch)
+    'openai/gpt-5': { input: 2.5, output: 10.0 },
+    'openai/gpt-5-mini': { input: 0.15, output: 0.6 },
+    'anthropic/claude-sonnet-4-6': { input: 3.0, output: 15.0 },
+    'anthropic/claude-opus-4-7': { input: 15.0, output: 75.0 },
+    'anthropic/claude-haiku-4-5': { input: 0.8, output: 4.0 },
+    'google/gemini-2.5-pro': { input: 1.25, output: 5.0 },
+    'google/gemini-2.5-flash': { input: 0.1, output: 0.4 },
 };
 
 /**

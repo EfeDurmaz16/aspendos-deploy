@@ -55,7 +55,7 @@ export async function compressConversation(
         prompt += `\n\nPrevious summary (update rather than recreate):\nGOAL: ${existingSummary.goal}\nPROGRESS: ${existingSummary.progress}\nDECISIONS:\n${existingSummary.decisions.map((d) => `- ${d}`).join('\n')}\nRESOURCES:\n${existingSummary.resources.map((r) => `- ${r}`).join('\n')}\nNEXT STEPS:\n${existingSummary.nextSteps.map((n) => `- ${n}`).join('\n')}`;
     }
 
-    const model = gateway('groq', { modelId: 'llama-3.1-8b-instant' });
+    const model = gateway('groq', { modelId: 'llama-4-scout' });
 
     const result = await generateText({
         model,
