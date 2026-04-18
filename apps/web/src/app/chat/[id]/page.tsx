@@ -330,6 +330,7 @@ export default function ChatPage() {
                                         <PromptInputActionAddAttachments />
                                     </PromptInputActionMenuContent>
                                 </PromptInputActionMenu>
+                                <span className="w-px h-4 bg-border mx-1" aria-hidden="true" />
                                 <PromptInputButton
                                     variant={webSearch ? 'default' : 'ghost'}
                                     onClick={() => setWebSearch(!webSearch)}
