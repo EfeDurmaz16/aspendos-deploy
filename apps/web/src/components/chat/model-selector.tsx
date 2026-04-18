@@ -48,7 +48,7 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 export function ModelSelector({
-    selectedModel = 'groq/llama-3.1-70b-versatile',
+    selectedModel = 'groq/llama-4-maverick',
     onModelChange,
     disabled = false,
     className,
