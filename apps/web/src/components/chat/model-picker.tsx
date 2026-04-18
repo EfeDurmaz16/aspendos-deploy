@@ -52,7 +52,7 @@ export const YULA_MODES: ModeConfig[] = [
         icon: Lightning,
         _models: {
             primary: 'gpt-5-mini',
-            fallback: 'gemini-2.5-flash',
+            fallback: 'gemini-3-flash-preview',
         },
     },
     {

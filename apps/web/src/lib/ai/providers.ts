@@ -15,13 +15,15 @@ export type ModelId =
     // OpenAI
     | 'gpt-5'
     | 'gpt-5-mini'
+    | 'gpt-5.4-codex'
     // Anthropic
     | 'claude-sonnet-4-6'
     | 'claude-haiku-4-5'
     | 'claude-opus-4-7'
     // Google
-    | 'gemini-2.5-flash'
-    | 'gemini-2.5-pro'
+    | 'gemini-3-flash-preview'
+    | 'gemini-3.1-pro-preview'
+    | 'gemini-3.1-flash-lite-preview'
     // Groq (Fast) — Llama 4 family
     | 'llama-4-maverick'
     | 'llama-4-scout';
@@ -55,6 +57,12 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
         contextWindow: 400000,
         isFast: true,
     },
+    'gpt-5.4-codex': {
+        id: 'gpt-5.4-codex',
+        provider: 'openai',
+        displayName: 'GPT-5.4 Codex',
+        contextWindow: 400000,
+    },
 
     // Anthropic Models
     'claude-sonnet-4-6': {
@@ -78,18 +86,25 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
     },
 
     // Google Models
-    'gemini-2.5-flash': {
-        id: 'gemini-2.5-flash',
+    'gemini-3-flash-preview': {
+        id: 'gemini-3-flash-preview',
         provider: 'google',
-        displayName: 'Gemini 2.5 Flash',
+        displayName: 'Gemini 3 Flash',
         contextWindow: 1000000,
         isFast: true,
     },
-    'gemini-2.5-pro': {
-        id: 'gemini-2.5-pro',
+    'gemini-3.1-pro-preview': {
+        id: 'gemini-3.1-pro-preview',
         provider: 'google',
-        displayName: 'Gemini 2.5 Pro',
+        displayName: 'Gemini 3.1 Pro',
         contextWindow: 1000000,
+    },
+    'gemini-3.1-flash-lite-preview': {
+        id: 'gemini-3.1-flash-lite-preview',
+        provider: 'google',
+        displayName: 'Gemini 3.1 Flash Lite',
+        contextWindow: 1000000,
+        isFast: true,
     },
 
     // Groq Models (Fast inference) — Llama 4 family
@@ -156,11 +171,13 @@ export const FALLBACK_CHAIN: Record<string, ModelId[]> = {
     // Premium (ULTRA) - fall back to Groq
     'gpt-5': ['llama-4-maverick', 'llama-4-scout'],
     'gpt-5-mini': ['llama-4-scout', 'llama-4-maverick'],
+    'gpt-5.4-codex': ['claude-sonnet-4-6', 'llama-4-maverick'],
     'claude-sonnet-4-6': ['llama-4-maverick', 'llama-4-scout'],
     'claude-haiku-4-5': ['llama-4-scout', 'llama-4-maverick'],
     'claude-opus-4-7': ['llama-4-maverick', 'llama-4-scout'],
-    'gemini-2.5-flash': ['llama-4-scout', 'llama-4-maverick'],
-    'gemini-2.5-pro': ['llama-4-maverick', 'llama-4-scout'],
+    'gemini-3-flash-preview': ['llama-4-scout', 'llama-4-maverick'],
+    'gemini-3.1-pro-preview': ['llama-4-maverick', 'llama-4-scout'],
+    'gemini-3.1-flash-lite-preview': ['llama-4-scout', 'llama-4-maverick'],
 };
 
 /**

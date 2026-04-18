@@ -99,22 +99,22 @@ export function AddModelsModal({
 
         // Google (Gemini)
         {
-            id: 'google/gemini-2.5-pro',
-            name: 'Gemini 2.5 Pro',
+            id: 'google/gemini-3.1-pro-preview',
+            name: 'Gemini 3.1 Pro',
             provider: 'google',
-            description: 'Newest Gemini Pro, advanced multimodal.',
+            description: 'Flagship Gemini 3.1, top reasoning & multimodal.',
         },
         {
-            id: 'google/gemini-2.5-flash',
-            name: 'Gemini 2.5 Flash',
+            id: 'google/gemini-3-flash-preview',
+            name: 'Gemini 3 Flash',
             provider: 'google',
-            description: 'Very fast Gemini for low-latency tasks.',
+            description: 'Fast Gemini 3 with Pro-level intelligence.',
         },
         {
-            id: 'google/gemini-2.5-flash-lite',
-            name: 'Gemini 2.5 Flash Lite',
+            id: 'google/gemini-3.1-flash-lite-preview',
+            name: 'Gemini 3.1 Flash Lite',
             provider: 'google',
-            description: 'Extremely cost-efficient Gemini Flash.',
+            description: 'Most cost-efficient Gemini 3, high-volume agentic.',
         },
 
         // Meta (Llama)

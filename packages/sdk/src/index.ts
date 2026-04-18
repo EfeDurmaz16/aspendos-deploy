@@ -34,7 +34,7 @@
  * const councilResponse = await client.council.query('What is the meaning of life?', [
  *   'gpt-5',
  *   'claude-opus-4-7',
- *   'gemini-2.5-pro'
+ *   'gemini-3.1-pro-preview'
  * ]);
  *
  * // Check usage

@@ -21,8 +21,10 @@ const FALLBACK_CHAIN: Record<string, string[]> = {
     'anthropic/claude-haiku-4-5': ['groq/llama-4-scout', 'openai/gpt-5-mini'],
     'openai/gpt-5': ['groq/llama-4-maverick', 'anthropic/claude-sonnet-4-6'],
     'openai/gpt-5-mini': ['groq/llama-4-scout', 'anthropic/claude-haiku-4-5'],
-    'google/gemini-2.5-pro': ['anthropic/claude-sonnet-4-6', 'openai/gpt-5'],
-    'google/gemini-2.5-flash': ['groq/llama-4-scout', 'openai/gpt-5-mini'],
+    'openai/gpt-5.4-codex': ['anthropic/claude-sonnet-4-6', 'groq/llama-4-maverick'],
+    'google/gemini-3.1-pro-preview': ['anthropic/claude-sonnet-4-6', 'openai/gpt-5'],
+    'google/gemini-3-flash-preview': ['groq/llama-4-scout', 'openai/gpt-5-mini'],
+    'google/gemini-3.1-flash-lite-preview': ['groq/llama-4-scout', 'openai/gpt-5-mini'],
 };
 
 /**
@@ -117,12 +119,23 @@ export const SUPPORTED_MODELS = [
         tier: 'PRO',
     },
     {
-        id: 'google/gemini-2.5-pro',
+        id: 'google/gemini-3.1-pro-preview',
         name: 'Long Context (Gemini)',
         provider: 'google',
         tier: 'ULTRA',
     },
-    { id: 'google/gemini-2.5-flash', name: 'Fast Gemini', provider: 'google', tier: 'PRO' },
+    {
+        id: 'google/gemini-3-flash-preview',
+        name: 'Fast Gemini',
+        provider: 'google',
+        tier: 'PRO',
+    },
+    {
+        id: 'google/gemini-3.1-flash-lite-preview',
+        name: 'Gemini Flash Lite',
+        provider: 'google',
+        tier: 'FREE',
+    },
 ] as const;
 
 export type SupportedModelId = (typeof SUPPORTED_MODELS)[number]['id'];
@@ -173,7 +186,9 @@ export function getSmartModelId(requestedModelId: string, userMessage: string): 
         'anthropic/claude-sonnet-4-6': 'groq/llama-4-scout',
         'anthropic/claude-opus-4-7': 'groq/llama-4-maverick',
         'anthropic/claude-haiku-4-5': 'groq/llama-4-scout',
-        'google/gemini-2.5-pro': 'google/gemini-2.5-flash',
+        'google/gemini-3.1-pro-preview': 'google/gemini-3-flash-preview',
+        'google/gemini-3-flash-preview': 'google/gemini-3.1-flash-lite-preview',
+        'openai/gpt-5.4-codex': 'groq/llama-4-scout',
     };
 
     return downgrades[requestedModelId] || requestedModelId;

@@ -67,8 +67,14 @@ interface RoutingContext {
 
 // Tier-aware model selection: don't route to models the user can't access
 const TIER_MODEL_MAP: Record<string, string[]> = {
-    FREE: ['gpt-5-mini', 'gemini-flash', 'gemini-2.5-flash'],
-    STARTER: ['gpt-5-mini', 'claude-haiku-4-5', 'gemini-flash', 'gemini-2.5-flash'],
+    FREE: ['gpt-5-mini', 'gemini-flash', 'gemini-3-flash-preview', 'gemini-3.1-flash-lite-preview'],
+    STARTER: [
+        'gpt-5-mini',
+        'claude-haiku-4-5',
+        'gemini-flash',
+        'gemini-3-flash-preview',
+        'gemini-3.1-flash-lite-preview',
+    ],
     PRO: [], // all models
     ULTRA: [], // all models
 };

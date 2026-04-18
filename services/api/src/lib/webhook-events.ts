@@ -71,7 +71,7 @@ const WEBHOOK_EVENTS: WebhookEventDef[] = [
         payloadExample: {
             sessionId: 'council_123',
             userId: 'user_123',
-            models: ['gpt-5', 'claude-sonnet-4-6', 'gemini-2.5-flash'],
+            models: ['gpt-5', 'claude-sonnet-4-6', 'gemini-3-flash-preview'],
             totalCostUsd: 0.02,
         },
     },

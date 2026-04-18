@@ -181,7 +181,7 @@ describe('Council API', () => {
                 personas: [
                     { id: 'SCHOLAR', name: 'Scholar', model: 'gpt-4o' },
                     { id: 'CREATIVE', name: 'Creative', model: 'claude-3-5-sonnet' },
-                    { id: 'PRACTICAL', name: 'Practical', model: 'gemini-2.0-flash' },
+                    { id: 'PRACTICAL', name: 'Practical', model: 'gemini-3-flash-preview' },
                     { id: 'DEVILS_ADVOCATE', name: "Devil's Advocate", model: 'gpt-4o-mini' },
                 ],
             };

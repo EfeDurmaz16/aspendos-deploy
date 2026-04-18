@@ -76,8 +76,8 @@ const MODEL_REGISTRY: ModelInfo[] = [
         capabilities: ['text', 'vision', 'streaming'],
     },
     {
-        id: 'gemini-2.5-flash',
-        name: 'Gemini 2.5 Flash',
+        id: 'gemini-3-flash-preview',
+        name: 'Gemini 3 Flash',
         provider: 'google',
         contextWindow: 1000000,
         maxOutput: 8192,
@@ -131,11 +131,11 @@ function selectModel(analysis: TaskAnalysis, tier: 'STARTER' | 'PRO' | 'ULTRA'):
                 model: 'gpt-5-mini',
                 reasoning: 'Simple task, using cost-effective model',
                 confidence: 0.9,
-                fallback: 'gemini-2.5-flash',
+                fallback: 'gemini-3-flash-preview',
             };
         }
         return {
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             reasoning: 'Simple task, using fast and cheap Gemini Flash',
             confidence: 0.95,
             fallback: 'gpt-5-mini',
@@ -145,7 +145,7 @@ function selectModel(analysis: TaskAnalysis, tier: 'STARTER' | 'PRO' | 'ULTRA'):
     // Long context → Gemini
     if (analysis.requiresLongContext) {
         return {
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             reasoning: 'Long context required, Gemini has 1M context window',
             confidence: 0.85,
             fallback: 'claude-sonnet-4-6',
@@ -176,7 +176,7 @@ function selectModel(analysis: TaskAnalysis, tier: 'STARTER' | 'PRO' | 'ULTRA'):
             model: 'gpt-5-mini',
             reasoning: 'Medium complexity on Starter tier, using GPT-5 Mini',
             confidence: 0.8,
-            fallback: 'gemini-2.5-flash',
+            fallback: 'gemini-3-flash-preview',
         };
     }
 
@@ -255,7 +255,7 @@ export function useAutoRouting(options: UseAutoRoutingOptions = {}) {
     const getAvailableModels = useCallback((): ModelInfo[] => {
         if (tier === 'STARTER') {
             return MODEL_REGISTRY.filter(
-                (m) => m.id === 'gpt-5-mini' || m.id === 'gemini-2.5-flash'
+                (m) => m.id === 'gpt-5-mini' || m.id === 'gemini-3-flash-preview'
             );
         }
         return MODEL_REGISTRY;

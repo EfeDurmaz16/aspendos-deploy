@@ -111,7 +111,7 @@ export const TIER_CONFIG = {
         monthlyTokens: 5_000_000, // 5M tokens
 
         // Models
-        supportedModels: 'all', // All GPT-4o / Claude / Gemini
+        supportedModels: 'all', // All GPT-5.4 / Claude / Gemini 3
         multiModel: true,
         multiModelLimit: 2, // 2 models side-by-side
 

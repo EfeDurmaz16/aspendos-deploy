@@ -12,8 +12,10 @@ const FALLBACK_CHAINS: Record<string, string[]> = {
     'anthropic/claude-sonnet-4-6': ['groq/llama-4-maverick', 'openai/gpt-5'],
     'anthropic/claude-opus-4-7': ['anthropic/claude-sonnet-4-6', 'groq/llama-4-maverick'],
     'anthropic/claude-haiku-4-5': ['groq/llama-4-scout', 'openai/gpt-5-mini'],
-    'google/gemini-2.5-pro': ['anthropic/claude-sonnet-4-6', 'openai/gpt-5'],
-    'google/gemini-2.5-flash': ['groq/llama-4-scout', 'openai/gpt-5-mini'],
+    'openai/gpt-5.4-codex': ['anthropic/claude-sonnet-4-6', 'groq/llama-4-maverick'],
+    'google/gemini-3.1-pro-preview': ['anthropic/claude-sonnet-4-6', 'openai/gpt-5'],
+    'google/gemini-3-flash-preview': ['groq/llama-4-scout', 'openai/gpt-5-mini'],
+    'google/gemini-3.1-flash-lite-preview': ['groq/llama-4-scout', 'openai/gpt-5-mini'],
 };
 
 export function getFallbackModels(modelId: string): string[] {
