@@ -208,7 +208,7 @@ export const faqSchema: FAQPage = {
             name: 'Which AI models does Yula support?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'Yula supports 12+ AI models including: GPT-5.2, GPT-5 Nano, GPT-4o from OpenAI; Claude 4.5 Opus, Claude 4.5 Sonnet from Anthropic; Gemini 3 Pro from Google; Llama 4, Grok 4.1, DeepSeek V3.2, Mistral, Qwen 3, and more.',
+                text: 'Yula supports 12+ AI models including: GPT-5.4, GPT-5.4 Mini, GPT-5.4 Codex from OpenAI; Claude Opus 4.7, Claude Sonnet 4.6, Claude Haiku 4.5 from Anthropic; Gemini 3.1 Pro, Gemini 3 Flash, Gemini 3.1 Flash Lite from Google; Llama 4 Maverick / Scout, Grok 4.1, DeepSeek V3.2, Mistral, Qwen 3, and more.',
             },
         },
     ],

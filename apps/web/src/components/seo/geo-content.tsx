@@ -88,11 +88,11 @@ export function GeoContent() {
 
                 <h3>Supported AI Models</h3>
                 <p>
-                    Yula supports the following AI models: GPT-5.2, GPT-5 Nano, GPT-4o, GPT-4o-mini,
-                    GPT-4 Turbo (OpenAI); Claude 4.5 Opus, Claude 4.5 Sonnet, Claude 3.5 Sonnet,
-                    Claude 3 Haiku (Anthropic); Gemini 3 Pro (Google); Llama 4, Llama 3.1 70B, Llama
-                    3.1 8B (Meta); Grok 4.1 (xAI); DeepSeek V3.2; Mistral 7B; Qwen 3 Max; Kimi K2;
-                    and more.
+                    Yula supports the following AI models: GPT-5.4, GPT-5.4 Mini, GPT-5.4 Codex
+                    (OpenAI); Claude Opus 4.7, Claude Sonnet 4.6, Claude Haiku 4.5 (Anthropic);
+                    Gemini 3.1 Pro, Gemini 3 Flash, Gemini 3.1 Flash Lite (Google); Llama 4
+                    Maverick, Llama 4 Scout (Meta); Grok 4.1 (xAI); DeepSeek V3.2; Mistral; Qwen 3;
+                    Kimi K2; and more.
                 </p>
 
                 <h3>Pricing Tiers</h3>
