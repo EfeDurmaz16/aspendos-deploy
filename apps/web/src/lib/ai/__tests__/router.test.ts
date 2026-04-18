@@ -205,7 +205,7 @@ describe('routeUserMessage', () => {
 // ============================================
 
 describe('Model Selection', () => {
-    it('fast route should select gpt-4o-mini for simple tasks', () => {
+    it('fast route should select gpt-5-mini for simple tasks', () => {
         const result = fastRoute('Hi');
         expect(result?.type).toBe('direct_reply');
         if (result?.type === 'direct_reply') {
@@ -213,7 +213,7 @@ describe('Model Selection', () => {
         }
     });
 
-    it('fast route should select gpt-4o-mini for memory queries', () => {
+    it('fast route should select gpt-5-mini for memory queries', () => {
         const result = fastRoute('What did I say last time?');
         expect(result?.type).toBe('rag_search');
         if (result?.type === 'rag_search') {
