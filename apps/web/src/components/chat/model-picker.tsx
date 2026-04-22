@@ -32,7 +32,7 @@ export const YULA_MODES: ModeConfig[] = [
         badge: 'Default',
         _models: {
             primary: '__router__',
-            fallback: 'gpt-4o-mini',
+            fallback: 'gpt-5-mini',
         },
     },
     {
@@ -41,8 +41,8 @@ export const YULA_MODES: ModeConfig[] = [
         description: 'Maximum reasoning power for complex tasks.',
         icon: Brain,
         _models: {
-            primary: 'claude-3-5-sonnet-20241022',
-            fallback: 'gpt-4o',
+            primary: 'claude-sonnet-4-6',
+            fallback: 'gpt-5',
         },
     },
     {
@@ -51,8 +51,8 @@ export const YULA_MODES: ModeConfig[] = [
         description: 'Lightning-fast responses for quick questions.',
         icon: Lightning,
         _models: {
-            primary: 'gpt-4o-mini',
-            fallback: 'gemini-2.0-flash',
+            primary: 'gpt-5-mini',
+            fallback: 'gemini-3-flash-preview',
         },
     },
     {
@@ -61,8 +61,8 @@ export const YULA_MODES: ModeConfig[] = [
         description: 'Best for writing, brainstorming, and ideation.',
         icon: Palette,
         _models: {
-            primary: 'gpt-4o',
-            fallback: 'claude-3-5-sonnet-20241022',
+            primary: 'gpt-5',
+            fallback: 'claude-sonnet-4-6',
         },
     },
 ];

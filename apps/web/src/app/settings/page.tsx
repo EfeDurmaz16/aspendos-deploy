@@ -59,7 +59,7 @@ const defaultSettings: UserSettings = {
         showLineNumbers: true,
     },
     ai: {
-        defaultModel: 'gpt-4o',
+        defaultModel: 'gpt-5',
         streamResponses: true,
         saveHistory: true,
         contextMemory: true,
@@ -71,12 +71,16 @@ const defaultSettings: UserSettings = {
 };
 
 const models = [
-    { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI' },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI' },
-    { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
-    { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic' },
-    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'Google' },
-    { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', provider: 'Groq' },
+    { id: 'gpt-5', name: 'GPT-5.4', provider: 'OpenAI' },
+    { id: 'gpt-5-mini', name: 'GPT-5.4 Mini', provider: 'OpenAI' },
+    { id: 'gpt-5.4-codex', name: 'GPT-5.4 Codex', provider: 'OpenAI' },
+    { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', provider: 'Anthropic' },
+    { id: 'claude-opus-4-7', name: 'Claude Opus 4.7', provider: 'Anthropic' },
+    { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5', provider: 'Anthropic' },
+    { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', provider: 'Google' },
+    { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', provider: 'Google' },
+    { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3.1 Flash Lite', provider: 'Google' },
+    { id: 'llama-4-maverick', name: 'Llama 4 Maverick', provider: 'Groq' },
 ];
 
 export default function SettingsPage() {
@@ -195,7 +199,7 @@ export default function SettingsPage() {
     if (!isLoaded || isLoading) {
         return (
             <div className="h-screen flex items-center justify-center bg-background">
-                <CircleNotch className="w-8 h-8 animate-spin text-zinc-400" />
+                <CircleNotch className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
         );
     }
@@ -210,22 +214,18 @@ export default function SettingsPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+        <div className="min-h-screen bg-background">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
-                        Settings
-                    </h1>
-                    <p className="text-zinc-600 dark:text-zinc-400">
-                        Manage your account and preferences
-                    </p>
+                    <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
+                    <p className="text-muted-foreground">Manage your account and preferences</p>
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar */}
                     <nav className="lg:w-64 flex-shrink-0">
-                        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-2">
+                        <div className="bg-card rounded-xl border border-border p-2">
                             {sections.map((section) => (
                                 <button
                                     type="button"
@@ -234,7 +234,7 @@ export default function SettingsPage() {
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                                         activeSection === section.id
                                             ? 'bg-muted dark:bg-muted/20 text-foreground dark:text-foreground/80'
-                                            : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                            : 'text-foreground hover:bg-muted'
                                     }`}
                                 >
                                     <section.icon className="w-5 h-5" weight="duotone" />
@@ -263,10 +263,10 @@ export default function SettingsPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                                <p className="font-semibold text-foreground">
                                                     {user?.fullName || user?.firstName || 'User'}
                                                 </p>
-                                                <p className="text-sm text-zinc-500">
+                                                <p className="text-sm text-muted-foreground">
                                                     {user?.primaryEmailAddress?.emailAddress ||
                                                         'No email'}
                                                 </p>
@@ -349,7 +349,7 @@ export default function SettingsPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div>
-                                        <label className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3 block">
+                                        <label className="text-sm font-medium text-foreground mb-3 block">
                                             Theme
                                         </label>
                                         <div className="flex gap-3">
@@ -373,7 +373,7 @@ export default function SettingsPage() {
                                                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-all ${
                                                         settings.appearance.theme === theme.id
                                                             ? 'border-foreground bg-muted dark:bg-muted/20 text-foreground dark:text-foreground/80'
-                                                            : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                                                            : 'border-border hover:bg-muted'
                                                     }`}
                                                 >
                                                     <theme.icon
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div>
-                                        <label className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3 block">
+                                        <label className="text-sm font-medium text-foreground mb-3 block">
                                             Default Model
                                         </label>
                                         <select
@@ -422,7 +422,7 @@ export default function SettingsPage() {
                                             onChange={(e) =>
                                                 updateSettings('ai', 'defaultModel', e.target.value)
                                             }
-                                            className="w-full px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                                            className="w-full px-4 py-3 rounded-lg border border-border bg-card text-foreground"
                                         >
                                             {models.map((model) => (
                                                 <option key={model.id} value={model.id}>
@@ -495,11 +495,11 @@ export default function SettingsPage() {
                                         <button
                                             type="button"
                                             onClick={handleDataExport}
-                                            className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+                                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                                         >
                                             Request Data Export
                                         </button>
-                                        <p className="text-sm text-zinc-500 mt-2">
+                                        <p className="text-sm text-muted-foreground mt-2">
                                             Download a JSON file containing all your data.
                                         </p>
                                     </CardContent>
@@ -556,7 +556,7 @@ export default function SettingsPage() {
                                                                 onClick={() =>
                                                                     setShowDeleteConfirm(false)
                                                                 }
-                                                                className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg font-medium hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                                                                className="px-4 py-2 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors"
                                                             >
                                                                 Cancel
                                                             </button>
@@ -590,8 +590,8 @@ function SettingRow({
     return (
         <div className="flex items-center justify-between">
             <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">{label}</p>
-                <p className="text-sm text-zinc-500">{description}</p>
+                <p className="font-medium text-foreground">{label}</p>
+                <p className="text-sm text-muted-foreground">{description}</p>
             </div>
             <Switch checked={checked} onCheckedChange={onChange} />
         </div>

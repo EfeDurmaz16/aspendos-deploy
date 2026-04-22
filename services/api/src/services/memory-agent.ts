@@ -146,7 +146,7 @@ const CLASSIFICATION_PATTERNS: { pattern: RegExp; type: QueryType }[] = [
 // ============================================
 
 export class MemoryDecisionAgent {
-    private groqModel = gateway('groq/llama-3.1-8b-instant');
+    private groqModel = gateway('groq/llama-4-scout');
 
     /**
      * Classify query type using LLM when pattern matching fails.
@@ -677,7 +677,7 @@ export async function extractMemoriesFromExchange(
     userMessage: string,
     assistantResponse: string
 ): Promise<{ extracted: string[]; sector: string }[]> {
-    const groqModel = gateway('groq/llama-3.1-8b-instant');
+    const groqModel = gateway('groq/llama-4-scout');
 
     // Skip extraction for very short exchanges
     if (userMessage.length < 20 && assistantResponse.length < 50) return [];

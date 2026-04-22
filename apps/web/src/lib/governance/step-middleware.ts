@@ -13,7 +13,7 @@
  *   const gov = createGovernanceCallbacks({ convex, userId });
  *
  *   const result = await streamText({
- *     model: openai('gpt-4o'),
+ *     model: openai('gpt-5'),
  *     messages,
  *     tools,
  *     onStepFinish: gov.onStepFinish,
@@ -292,7 +292,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
  *   const options = withGovernance({
  *     convex, userId, toolMetadata: { ... }
  *   }, {
- *     model: openai('gpt-4o'),
+ *     model: openai('gpt-5'),
  *     messages,
  *     tools,
  *   });

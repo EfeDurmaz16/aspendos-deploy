@@ -11,23 +11,17 @@ import {
     GitBranch,
     Lightning,
     ListChecks,
-    Lock,
     Prohibit,
     Question,
     Seal,
     SealCheck,
     ShieldCheck,
     SignIn,
-    SlackLogo,
     Sparkle,
-    TelegramLogo,
-    DiscordLogo,
-    WhatsappLogo,
-    MicrosoftTeamsLogo,
-    ChatTeardropDots,
-    Envelope,
     GithubLogo,
 } from '@phosphor-icons/react';
+import { PlatformIcon, type PlatformName } from '@/components/platform-icon';
+import { LogoMark } from '@/components/brand/logo';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -37,49 +31,51 @@ import { cn } from '@/lib/utils';
 // CONSTANTS
 // =============================================================================
 
+// Colors resolved from CSS variables in globals.css (:root + .dark) so the
+// theme can override them. See --r0-* through --r4-* tokens.
 const REVERSIBILITY_CLASSES = [
     {
         level: 'R0',
         label: 'Fully reversible',
-        color: '#22c55e',
-        bg: 'rgba(34,197,94,0.1)',
-        border: 'rgba(34,197,94,0.25)',
+        color: 'var(--r0-color)',
+        bg: 'var(--r0-bg)',
+        border: 'var(--r0-border)',
         example: 'Draft an email',
         description: 'Action can be fully undone. No side effects leave the system.',
     },
     {
         level: 'R1',
         label: 'Soft-reversible',
-        color: '#eab308',
-        bg: 'rgba(234,179,8,0.1)',
-        border: 'rgba(234,179,8,0.25)',
+        color: 'var(--r1-color)',
+        bg: 'var(--r1-bg)',
+        border: 'var(--r1-border)',
         example: 'Post a Slack message',
         description: 'Can be retracted, but recipients may have already seen it.',
     },
     {
         level: 'R2',
         label: 'Partially reversible',
-        color: '#f97316',
-        bg: 'rgba(249,115,22,0.1)',
-        border: 'rgba(249,115,22,0.25)',
+        color: 'var(--r2-color)',
+        bg: 'var(--r2-bg)',
+        border: 'var(--r2-border)',
         example: 'Create a calendar event',
         description: 'Can be deleted, but attendees were already notified.',
     },
     {
         level: 'R3',
         label: 'Irreversible with cost',
-        color: '#ef4444',
-        bg: 'rgba(239,68,68,0.1)',
-        border: 'rgba(239,68,68,0.25)',
+        color: 'var(--r3-color)',
+        bg: 'var(--r3-bg)',
+        border: 'var(--r3-border)',
         example: 'Send an email',
         description: 'Cannot be recalled. The action has permanent external effects.',
     },
     {
         level: 'R4',
         label: 'Irreversible',
-        color: '#991b1b',
-        bg: 'rgba(153,27,27,0.1)',
-        border: 'rgba(153,27,27,0.25)',
+        color: 'var(--r4-color)',
+        bg: 'var(--r4-bg)',
+        border: 'var(--r4-border)',
         example: 'Execute a payment',
         description: 'Cannot be undone. Requires explicit human approval before execution.',
     },
@@ -141,9 +137,10 @@ function Navigation() {
         >
             <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2.5 group">
-                    <div className="w-7 h-7 rounded-md bg-foreground flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
-                        <span className="text-background text-xs font-bold tracking-tight">Y</span>
-                    </div>
+                    <LogoMark
+                        size={28}
+                        className="text-foreground transition-transform duration-200 group-hover:scale-105"
+                    />
                     <span className="text-sm font-semibold text-foreground tracking-tight">
                         Yula
                     </span>
@@ -778,15 +775,15 @@ function FeaturesSection() {
 // =============================================================================
 
 function SurfacesSection() {
-    const surfaces = [
-        { name: 'Slack', icon: SlackLogo },
-        { name: 'Telegram', icon: TelegramLogo },
-        { name: 'Discord', icon: DiscordLogo },
-        { name: 'WhatsApp', icon: WhatsappLogo },
-        { name: 'Teams', icon: MicrosoftTeamsLogo },
-        { name: 'Google Chat', icon: ChatTeardropDots },
-        { name: 'iMessage', icon: Envelope },
-        { name: 'Signal', icon: Lock },
+    const surfaces: { name: string; key: PlatformName }[] = [
+        { name: 'Slack', key: 'slack' },
+        { name: 'Telegram', key: 'telegram' },
+        { name: 'Discord', key: 'discord' },
+        { name: 'WhatsApp', key: 'whatsapp' },
+        { name: 'Teams', key: 'teams' },
+        { name: 'Google Chat', key: 'googlechat' },
+        { name: 'iMessage', key: 'imessage' },
+        { name: 'Signal', key: 'signal' },
     ];
 
     return (
@@ -817,9 +814,11 @@ function SurfacesSection() {
                             className="flex flex-col items-center gap-2 group"
                         >
                             <div className="w-12 h-12 rounded-xl border border-border/50 bg-card/30 flex items-center justify-center group-hover:border-border group-hover:bg-card/60 transition-all">
-                                <surface.icon
-                                    size={22}
-                                    className="text-foreground/60 group-hover:text-foreground/80 transition-colors"
+                                <PlatformIcon
+                                    name={surface.key}
+                                    size={28}
+                                    theme="dark"
+                                    className="opacity-90 group-hover:opacity-100 transition-opacity"
                                 />
                             </div>
                             <span className="text-[10px] text-muted-foreground">
@@ -1170,7 +1169,7 @@ function CTASection() {
                         <ArrowRight size={16} weight="bold" />
                     </a>
                     <a
-                        href="https://github.com/aspendos"
+                        href="https://github.com/EfeDurmaz16/aspendos-deploy"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="h-11 px-6 rounded-lg border border-border text-foreground text-sm font-medium flex items-center gap-2 hover:bg-card transition-colors"
@@ -1197,9 +1196,7 @@ function Footer() {
             <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded bg-foreground/10 flex items-center justify-center">
-                            <span className="text-xs font-bold text-foreground/60">Y</span>
-                        </div>
+                        <LogoMark size={20} className="text-foreground/60" />
                         <span className="text-xs text-muted-foreground">
                             &copy; {new Date().getFullYear()} Yula
                         </span>
@@ -1214,7 +1211,7 @@ function Footer() {
                         Privacy
                     </Link>
                     <a
-                        href="https://github.com/aspendos"
+                        href="https://github.com/EfeDurmaz16/aspendos-deploy"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:text-foreground transition-colors"

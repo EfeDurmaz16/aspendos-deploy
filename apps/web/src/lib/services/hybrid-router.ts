@@ -20,18 +20,15 @@ type ModelProvider = 'openai' | 'anthropic' | 'groq';
 
 const MODEL_PROVIDERS: Record<string, ModelProvider> = {
     // OpenAI models
-    'gpt-4o': 'openai',
-    'gpt-4o-mini': 'openai',
-    'gpt-4-turbo': 'openai',
-    'gpt-3.5-turbo': 'openai',
+    'gpt-5': 'openai',
+    'gpt-5-mini': 'openai',
     // Anthropic models
-    'claude-3-5-sonnet-20241022': 'anthropic',
-    'claude-3-haiku-20240307': 'anthropic',
-    'claude-3-opus-20240229': 'anthropic',
-    // Groq models (fast inference)
-    'llama-3.1-70b-versatile': 'groq',
-    'llama-3.1-8b-instant': 'groq',
-    'mixtral-8x7b-32768': 'groq',
+    'claude-sonnet-4-6': 'anthropic',
+    'claude-haiku-4-5': 'anthropic',
+    'claude-opus-4-7': 'anthropic',
+    // Groq models (fast inference) — Llama 4 family
+    'llama-4-maverick': 'groq',
+    'llama-4-scout': 'groq',
 };
 
 // ============================================
@@ -39,11 +36,13 @@ const MODEL_PROVIDERS: Record<string, ModelProvider> = {
 // ============================================
 
 const FALLBACK_CHAIN: Record<string, string[]> = {
-    'gpt-4o': ['claude-3-5-sonnet-20241022', 'llama-3.1-70b-versatile'],
-    'gpt-4o-mini': ['claude-3-haiku-20240307', 'llama-3.1-8b-instant'],
-    'claude-3-5-sonnet-20241022': ['gpt-4o', 'llama-3.1-70b-versatile'],
-    'claude-3-haiku-20240307': ['gpt-4o-mini', 'llama-3.1-8b-instant'],
-    'llama-3.1-70b-versatile': ['gpt-4o', 'claude-3-5-sonnet-20241022'],
+    'gpt-5': ['claude-sonnet-4-6', 'llama-4-maverick'],
+    'gpt-5-mini': ['claude-haiku-4-5', 'llama-4-scout'],
+    'claude-sonnet-4-6': ['gpt-5', 'llama-4-maverick'],
+    'claude-opus-4-7': ['claude-sonnet-4-6', 'gpt-5'],
+    'claude-haiku-4-5': ['gpt-5-mini', 'llama-4-scout'],
+    'llama-4-maverick': ['gpt-5', 'claude-sonnet-4-6'],
+    'llama-4-scout': ['llama-4-maverick', 'gpt-5-mini'],
 };
 
 // ============================================

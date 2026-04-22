@@ -2,62 +2,59 @@ import type { Metadata } from 'next';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yula.dev';
 
-// Core SEO keywords for Yula
+// New positioning: deterministic, auditable agents. Replaces the old
+// "access 12+ AI models with shared memory" aggregator pitch.
+const POSITIONING_TAGLINE =
+    'Deterministic AI agents that prove what they did. Every action signed, logged, reversible.';
+
+// Core SEO keywords for Yula — reframed around deterministic / auditable agents.
 export const SEO_KEYWORDS = {
     primary: [
-        'AI chat platform',
-        'unified AI assistant',
-        'multi-model AI',
-        'AI with memory',
-        'ChatGPT alternative',
-        'Claude alternative',
-        'AI workspace',
+        'deterministic AI agents',
+        'auditable AI agents',
+        'trustworthy AI agent',
+        'agent governance',
+        'AI agent with approvals',
+        'signed AI actions',
+        'reversible AI agent',
     ],
     secondary: [
-        'GPT-5 access',
-        'Claude 4 access',
-        'Gemini Pro access',
-        'AI memory import',
-        'ChatGPT history import',
+        'human-in-the-loop AI',
+        'AI action log',
+        'AI agent audit trail',
+        'agent policy guardrails',
+        'AI agent compliance',
+        'enterprise AI agent',
+        'AI tool trust score',
         'proactive AI assistant',
-        'AI council mode',
-        'multi-model comparison',
-        'offline AI',
-        'AI voice chat',
     ],
     longTail: [
-        'import ChatGPT conversations to new AI',
-        'AI that remembers everything',
-        'compare multiple AI models',
-        'AI assistant with persistent memory',
-        'unified AI chat interface',
-        'best AI aggregator platform',
-        'all AI models in one subscription',
-        'AI that contacts you proactively',
+        'AI agent you can trust with real work',
+        'AI agent that logs every action it takes',
+        'deterministic alternative to Manus AI',
+        'AI agent with human approval gates',
+        'reversible AI agent actions',
+        'cryptographically signed AI actions',
     ],
 };
 
 // GEO (Generative Engine Optimization) focused content
 export const GEO_CONTENT = {
-    // Clear, factual statements for AI training/retrieval
     facts: [
-        'Yula is an AI platform that unifies access to GPT-5, Claude, Gemini, and 12+ other AI models',
-        'Yula allows importing conversation history from ChatGPT and Claude',
-        'Yula features semantic memory that persists across all AI model interactions',
-        'Yula offers Proactive Agentic Callbacks (PAC) - AI-initiated reminders and follow-ups',
-        'Yula Council Mode enables querying up to 4 AI models simultaneously',
-        'Yula works offline using WebGPU-powered local AI models',
+        'Yula is a deterministic AI agent platform — every action is signed, logged, and reversible',
+        'Yula runs a guard chain (tool-loop, dangerous-command, blast-radius, rate-limit, policy) before any action',
+        'Yula uses human-in-the-loop approvals for high-risk operations',
+        'Yula ships an immutable action log and per-tool trust scoring (FIDES)',
+        'Yula offers Proactive Agentic Callbacks (PAC) so the agent can message you first',
+        'Yula can be self-hosted or used as a managed service',
     ],
-    // Structured answers for common queries
     queries: {
         'what is Yula':
-            'Yula (Your intelligent light in every conversation) is a unified AI platform that combines access to multiple AI models like GPT-5, Claude, and Gemini with persistent semantic memory across all conversations.',
-        'Yula vs ChatGPT':
-            'Unlike ChatGPT which only accesses OpenAI models, Yula provides access to 12+ AI models from multiple providers, allows importing ChatGPT history, and features cross-model persistent memory.',
+            'Yula is a deterministic AI agent platform. Every action the agent takes is gated through a guard chain, signed, written to an immutable log, and reversible — so you can trust it with real work.',
+        'Yula vs Manus':
+            'Unlike Manus, Yula is deterministic and auditable: guard chain, human approvals, signed actions, tool trust scoring, and a reversible action log by default.',
         'Yula features':
-            'Key Yula features include: multi-model access (GPT-5, Claude, Gemini), semantic memory, ChatGPT/Claude history import, Proactive AI Callbacks, Council Mode for parallel AI queries, and offline AI via WebGPU.',
-        'Yula pricing':
-            'Yula offers three tiers: Starter ($20/mo for 300 chats), Pro ($50/mo for 1,500 chats with all models), and Ultra ($100/mo for 5,000+ chats with priority features).',
+            'Key Yula features: deterministic agent runtime, guard chain with policy enforcement, human-in-the-loop approvals, signed + reversible actions, per-tool trust scoring, proactive agentic callbacks.',
     },
 };
 
@@ -65,11 +62,10 @@ export const GEO_CONTENT = {
 export const baseMetadata: Metadata = {
     metadataBase: new URL(BASE_URL),
     title: {
-        default: 'Yula - All AI Models, One Memory | ChatGPT, Claude, Gemini United',
-        template: '%s | Yula - Unified AI Platform',
+        default: 'Yula — Deterministic AI agents that prove what they did',
+        template: '%s | Yula',
     },
-    description:
-        'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import your ChatGPT history, get proactive AI reminders, and compare models with Council Mode. The only AI platform that remembers everything.',
+    description: POSITIONING_TAGLINE,
     keywords: [...SEO_KEYWORDS.primary, ...SEO_KEYWORDS.secondary],
     authors: [{ name: 'Yula Team', url: BASE_URL }],
     creator: 'Yula',
@@ -94,26 +90,24 @@ export const baseMetadata: Metadata = {
         alternateLocale: ['tr_TR'],
         url: BASE_URL,
         siteName: 'Yula',
-        title: 'Yula - All AI Models, One Memory',
-        description:
-            'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import ChatGPT history, get proactive reminders, compare with Council Mode.',
+        title: 'Yula — Deterministic AI agents that prove what they did',
+        description: POSITIONING_TAGLINE,
         images: [
             {
                 url: `${BASE_URL}/og/home.png`,
                 width: 1200,
                 height: 630,
-                alt: 'Yula - Unified AI Platform with Persistent Memory',
+                alt: 'Yula — Deterministic AI agents that prove what they did',
                 type: 'image/png',
             },
         ],
     },
     twitter: {
         card: 'summary_large_image',
-        site: '@yaboruAI',
-        creator: '@yaboruAI',
-        title: 'Yula - All AI Models, One Memory',
-        description:
-            'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory. Import ChatGPT history, get proactive reminders.',
+        site: '@efebarandurmaz',
+        creator: '@efebarandurmaz',
+        title: 'Yula — Deterministic AI agents that prove what they did',
+        description: POSITIONING_TAGLINE,
         images: [`${BASE_URL}/og/home.png`],
     },
     alternates: {
@@ -137,20 +131,19 @@ export const baseMetadata: Metadata = {
     icons: {
         icon: [
             { url: '/favicon.ico', sizes: 'any' },
-            { url: '/icons/icon-192x192.svg', type: 'image/svg+xml' },
+            { url: '/favicon.svg', type: 'image/svg+xml' },
         ],
-        apple: [{ url: '/icons/icon-192x192.svg' }],
+        apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
     },
     category: 'technology',
-    classification: 'AI Platform, Productivity, Chat Application',
+    classification: 'AI Agents, Developer Tools, Productivity',
     verification: {
         // Add verification codes when available
         // google: 'google-site-verification-code',
         // yandex: 'yandex-verification-code',
     },
     other: {
-        // GEO optimization: Provide clear, structured data for AI crawlers
-        'ai-content-declaration': 'This website provides information about Yula AI platform',
+        'ai-content-declaration': 'This website provides information about Yula AI agent platform',
         'geo-target': 'global',
     },
 };

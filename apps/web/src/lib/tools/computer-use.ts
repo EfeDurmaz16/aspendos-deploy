@@ -104,7 +104,7 @@ export const computerAction = tool({
         model: z
             .string()
             .optional()
-            .describe('Anthropic model to use. Default "claude-sonnet-4-20250514".'),
+            .describe('Anthropic model to use. Default "claude-sonnet-4-6".'),
     }),
     execute: async ({ action, displayWidth, displayHeight, model }) => {
         try {
@@ -112,7 +112,7 @@ export const computerAction = tool({
 
             const width = displayWidth ?? DEFAULT_DISPLAY_WIDTH;
             const height = displayHeight ?? DEFAULT_DISPLAY_HEIGHT;
-            const modelId = model ?? 'claude-sonnet-4-20250514';
+            const modelId = model ?? 'claude-sonnet-4-6';
 
             // Build the computer use tool definition for the Anthropic API
             const computerTool = {
@@ -199,7 +199,7 @@ export const computerScreenshot = tool({
             };
 
             const response = await client.messages.create({
-                model: 'claude-sonnet-4-20250514',
+                model: 'claude-sonnet-4-6',
                 max_tokens: 1024,
                 tools: [computerTool],
                 messages: [

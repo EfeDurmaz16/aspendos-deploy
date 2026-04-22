@@ -1,0 +1,16 @@
+<!--
+  04 — Hybrid: Signet + Arc
+  Outer signet ring (proof boundary, FIDES/AGIT guarantee) containing
+  an inner reversibility arc with a signed dot. Combines both concepts:
+  outside = "this is verified / stamped", inside = "and it's reversible".
+  No overlap. Dense enough to feel substantial, clean enough to read
+  at 16px.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round">
+  <!-- Outer signet ring -->
+  <circle cx="32" cy="32" r="26" stroke-width="4" />
+  <!-- Inner reversibility arc — ~260° open at the bottom-right -->
+  <path d="M 42 14.5 A 18 18 0 1 1 46.5 44" stroke-width="4" />
+  <!-- Signed dot at the center -->
+  <circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none" />
+</svg>

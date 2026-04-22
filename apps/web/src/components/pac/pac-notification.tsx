@@ -84,7 +84,7 @@ export function PACNotification({
     const isOverdue = new Date(reminder.triggerAt) < new Date();
 
     const priorityStyles = {
-        LOW: 'border-zinc-200 dark:border-zinc-800',
+        LOW: 'border-border',
         MEDIUM: 'border-feature-pac/30',
         HIGH: 'border-feature-pac ring-1 ring-feature-pac/20',
     };
@@ -95,7 +95,7 @@ export function PACNotification({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, x: -20, scale: 0.95 }}
             className={cn(
-                'rounded-[12px] border bg-white dark:bg-zinc-900 p-4 shadow-sm',
+                'rounded-[12px] border bg-card p-4 shadow-sm',
                 priorityStyles[reminder.priority],
                 isOverdue && 'bg-foreground/5',
                 className
@@ -130,23 +130,19 @@ export function PACNotification({
                             {reminder.type === 'EXPLICIT' ? 'Reminder' : 'Detected'}
                         </span>
                         {reminder.snoozeCount > 0 && (
-                            <span className="text-xs text-zinc-400">
+                            <span className="text-xs text-muted-foreground">
                                 Snoozed {reminder.snoozeCount}x
                             </span>
                         )}
                     </div>
 
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-1">
-                        {reminder.content}
-                    </p>
+                    <p className="text-sm font-medium text-foreground mb-1">{reminder.content}</p>
 
                     <div className="flex items-center gap-3 text-xs">
                         <span
                             className={cn(
                                 'flex items-center gap-1',
-                                isOverdue
-                                    ? 'text-foreground/70'
-                                    : 'text-zinc-500 dark:text-zinc-400'
+                                isOverdue ? 'text-foreground/70' : 'text-muted-foreground'
                             )}
                         >
                             <Clock className="w-3 h-3" />
@@ -169,7 +165,7 @@ export function PACNotification({
                 <button
                     type="button"
                     onClick={() => onDismiss(reminder.id)}
-                    className="p-1 rounded-[6px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    className="p-1 rounded-[6px] text-muted-foreground hover:text-foreground hover:bg-muted"
                 >
                     <X className="w-4 h-4" />
                     <span className="sr-only">Dismiss</span>
@@ -204,7 +200,7 @@ export function PACNotification({
                                 initial={{ opacity: 0, y: 5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 5 }}
-                                className="absolute bottom-full left-0 mb-2 bg-white dark:bg-zinc-900 rounded-[8px] border border-zinc-200 dark:border-zinc-800 shadow-lg py-1 z-10"
+                                className="absolute bottom-full left-0 mb-2 bg-card rounded-[8px] border border-border shadow-lg py-1 z-10"
                             >
                                 {SNOOZE_OPTIONS.map((option) => (
                                     <button
@@ -214,7 +210,7 @@ export function PACNotification({
                                             onSnooze(reminder.id, option.minutes);
                                             setShowSnoozeOptions(false);
                                         }}
-                                        className="w-full px-3 py-1.5 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                                        className="w-full px-3 py-1.5 text-sm text-left hover:bg-muted text-foreground"
                                     >
                                         {option.label}
                                     </button>
@@ -267,11 +263,11 @@ export function PACNotificationList({
     if (reminders.length === 0) {
         return (
             <div className={cn('text-center py-8', className)}>
-                <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-3">
-                    <CalendarClock className="w-6 h-6 text-zinc-400" />
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                    <CalendarClock className="w-6 h-6 text-muted-foreground" />
                 </div>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">No pending reminders</p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                <p className="text-sm text-muted-foreground">No pending reminders</p>
+                <p className="text-xs text-muted-foreground mt-1">
                     Yula will notify you when you make commitments
                 </p>
             </div>
@@ -313,17 +309,17 @@ export function PACToast({ reminder, onComplete, onDismiss, onSnooze, onExpand }
             exit={{ opacity: 0, y: 50 }}
             className="fixed bottom-4 right-4 z-50 max-w-sm"
         >
-            <div className="rounded-[12px] border border-feature-pac/30 bg-white dark:bg-zinc-900 p-4 shadow-lg">
+            <div className="rounded-[12px] border border-feature-pac/30 bg-card p-4 shadow-lg">
                 <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-feature-pac/10 flex items-center justify-center flex-shrink-0">
                         <Bell className="w-4 h-4 text-feature-pac" />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2">
+                        <p className="text-sm font-medium text-foreground line-clamp-2">
                             {reminder.content}
                         </p>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                             {formatRelativeTime(new Date(reminder.triggerAt))}
                         </p>
                     </div>
@@ -331,7 +327,7 @@ export function PACToast({ reminder, onComplete, onDismiss, onSnooze, onExpand }
                     <button
                         type="button"
                         onClick={() => onDismiss(reminder.id)}
-                        className="p-1 rounded text-zinc-400 hover:text-zinc-600"
+                        className="p-1 rounded text-muted-foreground hover:text-foreground"
                     >
                         <X className="w-4 h-4" />
                     </button>

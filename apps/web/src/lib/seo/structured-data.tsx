@@ -81,9 +81,12 @@ export const organizationSchema: Organization = {
     url: BASE_URL,
     logo: `${BASE_URL}/logo.png`,
     description:
-        'Yula is a unified AI platform providing access to multiple AI models with persistent semantic memory.',
+        'Yula is a deterministic AI agent platform — every action is signed, logged, and reversible.',
     foundingDate: '2024',
-    sameAs: ['https://twitter.com/yaboruAI', 'https://github.com/yula-ai'],
+    sameAs: [
+        'https://twitter.com/efebarandurmaz',
+        'https://github.com/EfeDurmaz16/aspendos-deploy',
+    ],
     contactPoint: {
         '@type': 'ContactPoint',
         contactType: 'customer support',
@@ -98,7 +101,8 @@ export const websiteSchema: WebSite = {
     name: 'Yula',
     alternateName: 'Yula - Unified AI Platform',
     url: BASE_URL,
-    description: 'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory',
+    description:
+        'Deterministic AI agents that prove what they did. Every action signed, logged, reversible.',
     publisher: {
         '@type': 'Organization',
         name: 'Yula',
@@ -204,7 +208,7 @@ export const faqSchema: FAQPage = {
             name: 'Which AI models does Yula support?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'Yula supports 12+ AI models including: GPT-5.2, GPT-5 Nano, GPT-4o from OpenAI; Claude 4.5 Opus, Claude 4.5 Sonnet from Anthropic; Gemini 3 Pro from Google; Llama 4, Grok 4.1, DeepSeek V3.2, Mistral, Qwen 3, and more.',
+                text: 'Yula supports 12+ AI models including: GPT-5.4, GPT-5.4 Mini, GPT-5.4 Codex from OpenAI; Claude Opus 4.7, Claude Sonnet 4.6, Claude Haiku 4.5 from Anthropic; Gemini 3.1 Pro, Gemini 3 Flash, Gemini 3.1 Flash Lite from Google; Llama 4 Maverick / Scout, Grok 4.1, DeepSeek V3.2, Mistral, Qwen 3, and more.',
             },
         },
     ],

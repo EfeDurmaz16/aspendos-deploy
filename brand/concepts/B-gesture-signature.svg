@@ -1,0 +1,13 @@
+<!--
+  B · Organic Gesture
+  A single calligraphic stroke suggesting a handwritten signature flourish
+  with a trailing period. Reads as "signed, sealed, done." Human, not
+  geometric. Feels like a mark you'd stamp at the end of an action.
+  Semantic rhyme with FIDES signing, but expressive rather than symbolic.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Single S-curve gesture: starts bottom-left, loops up, swoops back down, tails right -->
+  <path d="M 6 30 C 10 10, 24 6, 30 18 C 34 26, 24 34, 20 28 C 18 24, 30 20, 42 22 C 50 23, 54 28, 54 22" stroke-width="4" />
+  <!-- Signature period dot at end of flourish -->
+  <circle cx="58" cy="22" r="2.8" fill="currentColor" stroke="none" />
+</svg>

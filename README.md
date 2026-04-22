@@ -208,7 +208,7 @@ Content-Type: application/json
 
 {
   "messages": [{ "role": "user", "content": "Hello" }],
-  "model": "gpt-4o"
+  "model": "gpt-5"
 }
 ```
 

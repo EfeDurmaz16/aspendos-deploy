@@ -37,7 +37,7 @@ Tier-3: Ultra - $100/month - 5000+ chats - 4x parallel queries - Priority suppor
 
 Website: https://yula.dev
 Email: support@yula.dev
-Twitter: https://twitter.com/YulaOS
+Twitter: https://twitter.com/efebarandurmaz
 
 # Structured Data URLs
 

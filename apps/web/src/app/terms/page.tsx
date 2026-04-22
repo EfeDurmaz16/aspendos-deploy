@@ -49,8 +49,8 @@ export default function TermsPage() {
                         </p>
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>
-                                Access to multiple AI language models (GPT-4o, Claude, Gemini,
-                                Llama)
+                                Access to multiple AI language models (GPT-5.4, Claude, Gemini 3,
+                                Llama 4)
                             </li>
                             <li>Persistent memory across conversations using semantic search</li>
                             <li>Voice chat capabilities</li>

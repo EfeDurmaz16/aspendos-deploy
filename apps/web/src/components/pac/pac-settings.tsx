@@ -85,10 +85,10 @@ export function PACSettingsPanel({
                         <Bell className="w-5 h-5 text-feature-pac" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                        <h2 className="text-lg font-semibold text-foreground">
                             Proactive AI Callbacks
                         </h2>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                        <p className="text-sm text-muted-foreground">
                             Let Yula remind you about your commitments
                         </p>
                     </div>
@@ -108,9 +108,7 @@ export function PACSettingsPanel({
             <Card
                 className={cn(
                     'border-2 transition-colors',
-                    settings.enabled
-                        ? 'border-feature-pac/30 bg-feature-pac/5'
-                        : 'border-zinc-200 dark:border-zinc-800'
+                    settings.enabled ? 'border-feature-pac/30 bg-feature-pac/5' : 'border-border'
                 )}
             >
                 <CardContent className="p-5">
@@ -121,7 +119,7 @@ export function PACSettingsPanel({
                                     'w-12 h-12 rounded-full flex items-center justify-center',
                                     settings.enabled
                                         ? 'bg-feature-pac text-white'
-                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
+                                        : 'bg-muted text-muted-foreground'
                                 )}
                             >
                                 {settings.enabled ? (
@@ -131,10 +129,8 @@ export function PACSettingsPanel({
                                 )}
                             </div>
                             <div>
-                                <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                                    Enable PAC
-                                </p>
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                <p className="font-medium text-foreground">Enable PAC</p>
+                                <p className="text-sm text-muted-foreground">
                                     {settings.enabled
                                         ? 'Yula will proactively remind you about commitments'
                                         : 'PAC is currently disabled'}
@@ -167,7 +163,7 @@ export function PACSettingsPanel({
                         onChange={(checked) => handleChange('explicitEnabled', checked)}
                         disabled={!settings.enabled}
                     />
-                    <div className="border-t border-zinc-200 dark:border-zinc-800" />
+                    <div className="border-t border-border" />
                     <SettingRow
                         label="Implicit Commitments"
                         description='Detect implied commitments like "I need to..." or "I should..."'
@@ -196,7 +192,7 @@ export function PACSettingsPanel({
                         onChange={(checked) => handleChange('pushEnabled', checked)}
                         disabled={!settings.enabled}
                     />
-                    <div className="border-t border-zinc-200 dark:border-zinc-800" />
+                    <div className="border-t border-border" />
                     <SettingRow
                         icon={<Mail className="w-4 h-4" />}
                         label="Email Notifications"
@@ -236,7 +232,7 @@ export function PACSettingsPanel({
                             <div className="flex items-center gap-2">
                                 <Label
                                     htmlFor="quietStart"
-                                    className="text-sm text-zinc-500 dark:text-zinc-400"
+                                    className="text-sm text-muted-foreground"
                                 >
                                     From
                                 </Label>
@@ -247,14 +243,11 @@ export function PACSettingsPanel({
                                     onChange={(e) =>
                                         handleChange('quietHoursStart', e.target.value)
                                     }
-                                    className="px-2 py-1 rounded-[6px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm"
+                                    className="px-2 py-1 rounded-[6px] border border-border bg-card text-sm"
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                                <Label
-                                    htmlFor="quietEnd"
-                                    className="text-sm text-zinc-500 dark:text-zinc-400"
-                                >
+                                <Label htmlFor="quietEnd" className="text-sm text-muted-foreground">
                                     To
                                 </Label>
                                 <input
@@ -262,13 +255,13 @@ export function PACSettingsPanel({
                                     type="time"
                                     value={settings.quietHoursEnd}
                                     onChange={(e) => handleChange('quietHoursEnd', e.target.value)}
-                                    className="px-2 py-1 rounded-[6px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm"
+                                    className="px-2 py-1 rounded-[6px] border border-border bg-card text-sm"
                                 />
                             </div>
                         </motion.div>
                     )}
 
-                    <div className="border-t border-zinc-200 dark:border-zinc-800" />
+                    <div className="border-t border-border" />
 
                     <SettingRow
                         label="Daily Digest"
@@ -284,10 +277,7 @@ export function PACSettingsPanel({
                             animate={{ opacity: 1, height: 'auto' }}
                             className="ml-6 flex items-center gap-2"
                         >
-                            <Label
-                                htmlFor="digestTime"
-                                className="text-sm text-zinc-500 dark:text-zinc-400"
-                            >
+                            <Label htmlFor="digestTime" className="text-sm text-muted-foreground">
                                 Send at
                             </Label>
                             <input
@@ -295,12 +285,12 @@ export function PACSettingsPanel({
                                 type="time"
                                 value={settings.digestTime}
                                 onChange={(e) => handleChange('digestTime', e.target.value)}
-                                className="px-2 py-1 rounded-[6px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm"
+                                className="px-2 py-1 rounded-[6px] border border-border bg-card text-sm"
                             />
                         </motion.div>
                     )}
 
-                    <div className="border-t border-zinc-200 dark:border-zinc-800" />
+                    <div className="border-t border-border" />
 
                     <SettingRow
                         label="Escalation"
@@ -335,10 +325,10 @@ function SettingRow({
     return (
         <div className={cn('flex items-center justify-between', disabled && 'opacity-50')}>
             <div className="flex items-start gap-3">
-                {icon && <div className="mt-0.5 text-zinc-400 dark:text-zinc-500">{icon}</div>}
+                {icon && <div className="mt-0.5 text-muted-foreground">{icon}</div>}
                 <div>
-                    <p className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">{label}</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{description}</p>
+                    <p className="font-medium text-foreground text-sm">{label}</p>
+                    <p className="text-xs text-muted-foreground">{description}</p>
                 </div>
             </div>
             <Switch

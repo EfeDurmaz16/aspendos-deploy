@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>YULA Logo Concepts</title>
+<style>
+  :root { --fg: #0a0a0a; --bg: #fafafa; --accent: #4D8CFF; }
+  body { margin: 0; font: 15px/1.5 -apple-system, system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+  h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; padding: 40px; margin: 0; border-bottom: 1px solid rgba(0,0,0,0.1); }
+  .desc { padding: 0 40px 20px; color: #555; }
+  section { padding: 48px 40px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+  section h2 { font-size: 20px; font-weight: 700; margin: 0 0 8px; }
+  section p { color: #666; margin: 0 0 32px; max-width: 780px; }
+  .row { display: flex; align-items: center; gap: 56px; flex-wrap: wrap; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .cell label { font: 11px/1 'JetBrains Mono', monospace; color: #888; letter-spacing: 0.1em; }
+  .swatch { padding: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+  .swatch.light { background: #fafafa; color: #0a0a0a; border: 1px solid rgba(0,0,0,0.1); }
+  .swatch.dark { background: #0a0a0a; color: #f5f5f5; border: 1px solid rgba(255,255,255,0.1); }
+  .swatch.accent-light { background: #fafafa; color: #4D8CFF; border: 1px solid rgba(0,0,0,0.1); }
+  .swatch.accent-dark { background: #0a0a0a; color: #4D8CFF; border: 1px solid rgba(255,255,255,0.1); }
+  .wordmark { display: flex; align-items: center; gap: 14px; font-size: 36px; font-weight: 800; letter-spacing: -0.035em; }
+  .wordmark svg { width: 40px; height: 40px; }
+  .sizes { display: flex; gap: 28px; align-items: flex-end; margin-top: 32px; padding: 16px 24px; background: rgba(0,0,0,0.03); border-radius: 8px; }
+  .sizes .sz { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .sizes .sz span { font: 10px/1 'JetBrains Mono', monospace; color: #888; }
+</style>
+</head>
+<body>
+<h1>YULA Logo — Concept Comparison</h1>
+<div class="desc">Three letter-free symbolic marks. Each shown mono (light + dark), accent-color (light + dark), as wordmark pairing, and at 5 sizes down to favicon (16px).</div>
+
+<section>
+  <h2>01 · Reversibility Arc</h2>
+  <p>Two arcs seal a loop around a signature dot. Reads as: <em>every action is signed, and the action can be undone</em>. The gap in each arc is the "rewind affordance". Matches the product's core promise (prove-what-they-did + reversible) without being illustrative.</p>
+  <div class="row">
+    <div class="cell"><label>MONO · LIGHT</label><div class="swatch light"><svg width="96" height="96" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none"/></svg></div></div>
+    <div class="cell"><label>MONO · DARK</label><div class="swatch dark"><svg width="96" height="96" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none"/></svg></div></div>
+    <div class="cell"><label>ACCENT · DARK</label><div class="swatch accent-dark"><svg width="96" height="96" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none"/></svg></div></div>
+    <div class="cell"><label>WORDMARK · DARK</label><div class="swatch dark"><div class="wordmark"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none"/></svg><span>yula</span></div></div></div>
+  </div>
+  <div class="sizes">
+    <div class="sz"><svg width="128" height="128" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none"/></svg><span>128</span></div>
+    <div class="sz"><svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none"/></svg><span>64</span></div>
+    <div class="sz"><svg width="32" height="32" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none"/></svg><span>32</span></div>
+    <div class="sz"><svg width="24" height="24" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none"/></svg><span>24</span></div>
+    <div class="sz"><svg width="16" height="16" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none"/></svg><span>16 (favicon)</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>02 · Signet Seal</h2>
+  <p>Outer ring + three radial marks at 90°/210°/330° + center dot. The three marks represent the trust triad: FIDES · AGIT · Reversibility. Reads as a stamped signet — the thing that makes a letter provable, which is exactly what YULA does for every tool call.</p>
+  <div class="row">
+    <div class="cell"><label>MONO · LIGHT</label><div class="swatch light"><svg width="96" height="96" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="currentColor" stroke="none"/></svg></div></div>
+    <div class="cell"><label>MONO · DARK</label><div class="swatch dark"><svg width="96" height="96" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="currentColor" stroke="none"/></svg></div></div>
+    <div class="cell"><label>ACCENT · DARK</label><div class="swatch accent-dark"><svg width="96" height="96" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="currentColor" stroke="none"/></svg></div></div>
+    <div class="cell"><label>WORDMARK · DARK</label><div class="swatch dark"><div class="wordmark"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="currentColor" stroke="none"/></svg><span>yula</span></div></div></div>
+  </div>
+  <div class="sizes">
+    <div class="sz"><svg width="128" height="128" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="currentColor" stroke="none"/></svg><span>128</span></div>
+    <div class="sz"><svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="currentColor" stroke="none"/></svg><span>64</span></div>
+    <div class="sz"><svg width="32" height="32" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="currentColor" stroke="none"/></svg><span>32</span></div>
+    <div class="sz"><svg width="24" height="24" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="currentColor" stroke="none"/></svg><span>24</span></div>
+    <div class="sz"><svg width="16" height="16" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="currentColor" stroke="none"/></svg><span>16 (favicon)</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>03 · Keystone</h2>
+  <p>The wedge at the apex of an arch — the single stone that locks everything in place. Historical rhyme: the original project name (Aspendos) is the city whose Roman theater's keystone is legendarily perfect. Semantically: trust is the keystone of the agent stack. Bold geometric trapezoid.</p>
+  <div class="row">
+    <div class="cell"><label>MONO · LIGHT</label><div class="swatch light"><svg width="96" height="96" viewBox="0 0 64 64" fill="currentColor"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /><path d="M 22 18 L 42 18" stroke="#fafafa" stroke-width="2.5" stroke-linecap="round"/><path d="M 23 26 L 41 26" stroke="#fafafa" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg></div></div>
+    <div class="cell"><label>MONO · DARK</label><div class="swatch dark"><svg width="96" height="96" viewBox="0 0 64 64" fill="currentColor"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /><path d="M 22 18 L 42 18" stroke="#0a0a0a" stroke-width="2.5" stroke-linecap="round"/><path d="M 23 26 L 41 26" stroke="#0a0a0a" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg></div></div>
+    <div class="cell"><label>ACCENT · DARK</label><div class="swatch accent-dark"><svg width="96" height="96" viewBox="0 0 64 64" fill="currentColor"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /><path d="M 22 18 L 42 18" stroke="#0a0a0a" stroke-width="2.5" stroke-linecap="round"/><path d="M 23 26 L 41 26" stroke="#0a0a0a" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg></div></div>
+    <div class="cell"><label>WORDMARK · DARK</label><div class="swatch dark"><div class="wordmark"><svg viewBox="0 0 64 64" fill="currentColor"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /><path d="M 22 18 L 42 18" stroke="#0a0a0a" stroke-width="2.5" stroke-linecap="round"/><path d="M 23 26 L 41 26" stroke="#0a0a0a" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg><span>yula</span></div></div></div>
+  </div>
+  <div class="sizes">
+    <div class="sz"><svg width="128" height="128" viewBox="0 0 64 64" fill="currentColor"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /><path d="M 22 18 L 42 18" stroke="rgba(0,0,0,0.05)" stroke-width="2.5" stroke-linecap="round"/><path d="M 23 26 L 41 26" stroke="rgba(0,0,0,0.05)" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg><span>128</span></div>
+    <div class="sz"><svg width="64" height="64" viewBox="0 0 64 64" fill="currentColor"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /><path d="M 22 18 L 42 18" stroke="rgba(0,0,0,0.05)" stroke-width="2.5" stroke-linecap="round"/></svg><span>64</span></div>
+    <div class="sz"><svg width="32" height="32" viewBox="0 0 64 64" fill="currentColor"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /></svg><span>32</span></div>
+    <div class="sz"><svg width="24" height="24" viewBox="0 0 64 64" fill="currentColor"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /></svg><span>24</span></div>
+    <div class="sz"><svg width="16" height="16" viewBox="0 0 64 64" fill="currentColor"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /></svg><span>16 (favicon)</span></div>
+  </div>
+</section>
+
+<section style="background:#0a0a0a;color:#f5f5f5">
+  <h2 style="color:#f5f5f5">Side-by-side · dark canvas</h2>
+  <div class="row" style="justify-content:space-around;margin-top:20px">
+    <div class="cell"><label style="color:#888">01 · ARC</label><svg width="120" height="120" viewBox="0 0 64 64" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round"><path d="M 20 10 A 24 24 0 1 1 10 32" /><path d="M 44 54 A 24 24 0 1 1 54 32" /><circle cx="32" cy="32" r="3.5" fill="#f5f5f5" stroke="none"/></svg></div>
+    <div class="cell"><label style="color:#888">02 · SIGNET</label><svg width="120" height="120" viewBox="0 0 64 64" fill="none" stroke="#f5f5f5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="25" stroke-width="5"/><path d="M 32 18 L 32 12" stroke-width="5"/><path d="M 44.12 39 L 49.32 42" stroke-width="5"/><path d="M 19.88 39 L 14.68 42" stroke-width="5"/><circle cx="32" cy="32" r="5" fill="#f5f5f5" stroke="none"/></svg></div>
+    <div class="cell"><label style="color:#888">03 · KEYSTONE</label><svg width="120" height="120" viewBox="0 0 64 64" fill="#f5f5f5"><path d="M 14 10 L 50 10 L 46 54 L 18 54 Z" /><path d="M 22 18 L 42 18" stroke="#0a0a0a" stroke-width="2.5" stroke-linecap="round"/><path d="M 23 26 L 41 26" stroke="#0a0a0a" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg></div>
+  </div>
+</section>
+
+</body>
+</html>

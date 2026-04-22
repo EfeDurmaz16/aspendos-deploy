@@ -13,22 +13,20 @@ import { gateway } from 'ai';
 
 export type ModelId =
     // OpenAI
-    | 'gpt-4o'
-    | 'gpt-4o-mini'
-    | 'gpt-4-turbo'
-    | 'gpt-3.5-turbo'
+    | 'gpt-5'
+    | 'gpt-5-mini'
+    | 'gpt-5.4-codex'
     // Anthropic
-    | 'claude-3-5-sonnet-20241022'
-    | 'claude-3-haiku-20240307'
-    | 'claude-3-opus-20240229'
+    | 'claude-sonnet-4-6'
+    | 'claude-haiku-4-5'
+    | 'claude-opus-4-7'
     // Google
-    | 'gemini-2.0-flash'
-    | 'gemini-2.5-pro-preview-05-06'
-    // Groq (Fast)
-    | 'llama-3.1-70b-versatile'
-    | 'llama-3.1-8b-instant'
-    | 'llama3-8b-8192'
-    | 'mixtral-8x7b-32768';
+    | 'gemini-3-flash-preview'
+    | 'gemini-3.1-pro-preview'
+    | 'gemini-3.1-flash-lite-preview'
+    // Groq (Fast) — Llama 4 family
+    | 'llama-4-maverick'
+    | 'llama-4-scout';
 
 export type ProviderType = 'openai' | 'anthropic' | 'google' | 'groq';
 
@@ -46,96 +44,83 @@ export interface ModelConfig {
  */
 export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
     // OpenAI Models
-    'gpt-4o': {
-        id: 'gpt-4o',
+    'gpt-5': {
+        id: 'gpt-5',
         provider: 'openai',
-        displayName: 'GPT-4o',
-        contextWindow: 128000,
+        displayName: 'GPT-5.4',
+        contextWindow: 400000,
     },
-    'gpt-4o-mini': {
-        id: 'gpt-4o-mini',
+    'gpt-5-mini': {
+        id: 'gpt-5-mini',
         provider: 'openai',
-        displayName: 'GPT-4o Mini',
-        contextWindow: 128000,
+        displayName: 'GPT-5.4 Mini',
+        contextWindow: 400000,
         isFast: true,
     },
-    'gpt-4-turbo': {
-        id: 'gpt-4-turbo',
+    'gpt-5.4-codex': {
+        id: 'gpt-5.4-codex',
         provider: 'openai',
-        displayName: 'GPT-4 Turbo',
-        contextWindow: 128000,
-    },
-    'gpt-3.5-turbo': {
-        id: 'gpt-3.5-turbo',
-        provider: 'openai',
-        displayName: 'GPT-3.5 Turbo',
-        contextWindow: 16385,
-        isFast: true,
+        displayName: 'GPT-5.4 Codex',
+        contextWindow: 400000,
     },
 
     // Anthropic Models
-    'claude-3-5-sonnet-20241022': {
-        id: 'claude-3-5-sonnet-20241022',
+    'claude-sonnet-4-6': {
+        id: 'claude-sonnet-4-6',
         provider: 'anthropic',
-        displayName: 'Claude 3.5 Sonnet',
+        displayName: 'Claude Sonnet 4.6',
         contextWindow: 200000,
     },
-    'claude-3-haiku-20240307': {
-        id: 'claude-3-haiku-20240307',
+    'claude-haiku-4-5': {
+        id: 'claude-haiku-4-5',
         provider: 'anthropic',
-        displayName: 'Claude 3 Haiku',
+        displayName: 'Claude Haiku 4.5',
         contextWindow: 200000,
         isFast: true,
     },
-    'claude-3-opus-20240229': {
-        id: 'claude-3-opus-20240229',
+    'claude-opus-4-7': {
+        id: 'claude-opus-4-7',
         provider: 'anthropic',
-        displayName: 'Claude 3 Opus',
+        displayName: 'Claude Opus 4.7',
         contextWindow: 200000,
     },
 
     // Google Models
-    'gemini-2.0-flash': {
-        id: 'gemini-2.0-flash',
+    'gemini-3-flash-preview': {
+        id: 'gemini-3-flash-preview',
         provider: 'google',
-        displayName: 'Gemini 2.0 Flash',
+        displayName: 'Gemini 3 Flash',
         contextWindow: 1000000,
         isFast: true,
     },
-    'gemini-2.5-pro-preview-05-06': {
-        id: 'gemini-2.5-pro-preview-05-06',
+    'gemini-3.1-pro-preview': {
+        id: 'gemini-3.1-pro-preview',
         provider: 'google',
-        displayName: 'Gemini 2.5 Pro',
+        displayName: 'Gemini 3.1 Pro',
         contextWindow: 1000000,
     },
+    'gemini-3.1-flash-lite-preview': {
+        id: 'gemini-3.1-flash-lite-preview',
+        provider: 'google',
+        displayName: 'Gemini 3.1 Flash Lite',
+        contextWindow: 1000000,
+        isFast: true,
+    },
 
-    // Groq Models (Fast inference)
-    'llama-3.1-70b-versatile': {
-        id: 'llama-3.1-70b-versatile',
+    // Groq Models (Fast inference) — Llama 4 family
+    'llama-4-maverick': {
+        id: 'llama-4-maverick',
         provider: 'groq',
-        displayName: 'Llama 3.1 70B',
+        displayName: 'Llama 4 Maverick',
         contextWindow: 128000,
     },
-    'llama-3.1-8b-instant': {
-        id: 'llama-3.1-8b-instant',
+    'llama-4-scout': {
+        id: 'llama-4-scout',
         provider: 'groq',
-        displayName: 'Llama 3.1 8B',
+        displayName: 'Llama 4 Scout',
         contextWindow: 128000,
         isFast: true,
         isRouter: true,
-    },
-    'llama3-8b-8192': {
-        id: 'llama3-8b-8192',
-        provider: 'groq',
-        displayName: 'Llama 3 8B',
-        contextWindow: 8192,
-        isFast: true,
-    },
-    'mixtral-8x7b-32768': {
-        id: 'mixtral-8x7b-32768',
-        provider: 'groq',
-        displayName: 'Mixtral 8x7B',
-        contextWindow: 32768,
     },
 };
 
@@ -151,8 +136,8 @@ export function getModel(modelId: ModelId | string) {
     const config = MODEL_REGISTRY[modelId as ModelId];
 
     if (!config) {
-        console.warn(`[AI] Unknown model: ${modelId}, defaulting to groq/llama-3.1-70b-versatile`);
-        return gateway('groq/llama-3.1-70b-versatile');
+        console.warn(`[AI] Unknown model: ${modelId}, defaulting to groq/llama-4-maverick`);
+        return gateway('groq/llama-4-maverick');
     }
 
     return gateway(`${config.provider}/${config.id}`);
@@ -162,14 +147,14 @@ export function getModel(modelId: ModelId | string) {
  * Get the router model (fast Groq Llama for decision making)
  */
 export function getRouterModel() {
-    return gateway('groq/llama-3.1-8b-instant');
+    return gateway('groq/llama-4-scout');
 }
 
 /**
  * Get the fallback router model
  */
 export function getFallbackRouterModel() {
-    return gateway('groq/llama3-8b-8192');
+    return gateway('groq/llama-4-scout');
 }
 
 // ============================================
@@ -181,34 +166,32 @@ export function getFallbackRouterModel() {
  */
 export const FALLBACK_CHAIN: Record<string, ModelId[]> = {
     // Groq primary - fall back within Groq ecosystem
-    'llama-3.1-70b-versatile': ['mixtral-8x7b-32768', 'llama-3.1-8b-instant'],
-    'llama-3.1-8b-instant': ['llama3-8b-8192', 'llama-3.1-70b-versatile'],
-    'llama3-8b-8192': ['llama-3.1-8b-instant', 'llama-3.1-70b-versatile'],
-    'mixtral-8x7b-32768': ['llama-3.1-70b-versatile', 'llama-3.1-8b-instant'],
+    'llama-4-maverick': ['llama-4-scout'],
+    'llama-4-scout': ['llama-4-maverick'],
     // Premium (ULTRA) - fall back to Groq
-    'gpt-4o': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
-    'gpt-4o-mini': ['llama-3.1-8b-instant', 'llama3-8b-8192'],
-    'gpt-4-turbo': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
-    'gpt-3.5-turbo': ['llama-3.1-8b-instant', 'llama3-8b-8192'],
-    'claude-3-5-sonnet-20241022': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
-    'claude-3-haiku-20240307': ['llama-3.1-8b-instant', 'llama3-8b-8192'],
-    'claude-3-opus-20240229': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
-    'gemini-2.0-flash': ['llama-3.1-8b-instant', 'llama3-8b-8192'],
-    'gemini-2.5-pro-preview-05-06': ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
+    'gpt-5': ['llama-4-maverick', 'llama-4-scout'],
+    'gpt-5-mini': ['llama-4-scout', 'llama-4-maverick'],
+    'gpt-5.4-codex': ['claude-sonnet-4-6', 'llama-4-maverick'],
+    'claude-sonnet-4-6': ['llama-4-maverick', 'llama-4-scout'],
+    'claude-haiku-4-5': ['llama-4-scout', 'llama-4-maverick'],
+    'claude-opus-4-7': ['llama-4-maverick', 'llama-4-scout'],
+    'gemini-3-flash-preview': ['llama-4-scout', 'llama-4-maverick'],
+    'gemini-3.1-pro-preview': ['llama-4-maverick', 'llama-4-scout'],
+    'gemini-3.1-flash-lite-preview': ['llama-4-scout', 'llama-4-maverick'],
 };
 
 /**
  * Get fallback models for a given model
  */
 export function getFallbackModels(modelId: ModelId | string): ModelId[] {
-    return FALLBACK_CHAIN[modelId] || ['llama-3.1-8b-instant'];
+    return FALLBACK_CHAIN[modelId] || ['llama-4-scout'];
 }
 
 // ============================================
 // DEFAULT CONFIGURATIONS
 // ============================================
 
-export const DEFAULT_MODEL: ModelId = 'llama-3.1-70b-versatile';
-export const DEFAULT_ROUTER_MODEL: ModelId = 'llama-3.1-8b-instant';
-export const DEFAULT_CODING_MODEL: ModelId = 'llama-3.1-70b-versatile';
-export const DEFAULT_FAST_MODEL: ModelId = 'llama-3.1-8b-instant';
+export const DEFAULT_MODEL: ModelId = 'llama-4-maverick';
+export const DEFAULT_ROUTER_MODEL: ModelId = 'llama-4-scout';
+export const DEFAULT_CODING_MODEL: ModelId = 'claude-sonnet-4-6';
+export const DEFAULT_FAST_MODEL: ModelId = 'llama-4-scout';

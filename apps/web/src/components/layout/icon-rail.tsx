@@ -16,6 +16,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { LogoMark } from '@/components/brand/logo';
 import { ContextMenuChat } from '@/components/chat/context-menu-chat';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth, useUser } from '@/hooks/use-auth';
@@ -137,9 +138,10 @@ export function IconRail({ currentChatId, onNewChat, onSelectChat }: IconRailPro
                         onNewChat?.();
                         setChatPanelOpen(false);
                     }}
-                    className="w-9 h-9 rounded-lg bg-foreground flex items-center justify-center mb-3 transition-transform hover:scale-105 active:scale-95"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center mb-3 transition-transform hover:scale-105 active:scale-95 text-foreground"
+                    aria-label="New chat"
                 >
-                    <span className="text-background font-semibold text-sm tracking-tight">Y</span>
+                    <LogoMark size={28} />
                 </button>
 
                 {/* New Chat */}

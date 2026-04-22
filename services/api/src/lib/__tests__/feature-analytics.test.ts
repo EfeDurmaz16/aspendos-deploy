@@ -44,7 +44,7 @@ describe('Feature Analytics', () => {
         });
 
         it('should accept optional metadata', () => {
-            trackFeatureUse('user1', 'chat', { model: 'gpt-4', duration: 150 });
+            trackFeatureUse('user1', 'chat', { model: 'gpt-5', duration: 150 });
 
             const profile = getUserFeatureProfile('user1');
             expect(profile.features).toHaveLength(1);

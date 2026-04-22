@@ -29,7 +29,7 @@ export async function extractMemoryInsights(conversationText: string): Promise<s
                 { role: 'user', content: conversationText },
             ],
             {
-                model: 'gpt-4o-mini',
+                model: 'gpt-5-mini',
                 temperature: 0.3,
                 maxTokens: 500,
             }
@@ -67,7 +67,7 @@ export async function summarizeConversation(messages: string[]): Promise<string>
             { role: 'user', content: conversationText },
         ],
         {
-            model: 'gpt-4o-mini',
+            model: 'gpt-5-mini',
             temperature: 0.3,
             maxTokens: 200,
         }

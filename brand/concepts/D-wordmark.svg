@@ -1,0 +1,14 @@
+<!--
+  D · Custom Wordmark
+  "yula" lowercase, Manrope 800, tight -0.04em, with a signature
+  underline-flourish + terminal period. The underline IS the signature
+  line. No separate mark — the typography is the identity. Strong type-
+  first brand feel (Anthropic / Loops / Stripe lineage).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 44" fill="currentColor">
+  <text x="0" y="32" font-family="Manrope, -apple-system, 'Helvetica Neue', sans-serif" font-weight="800" font-size="34" letter-spacing="-1.2">yula</text>
+  <!-- Signature underline -->
+  <path d="M 2 40 L 92 40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none" />
+  <!-- Terminal signature period -->
+  <circle cx="99" cy="40" r="2.5" />
+</svg>

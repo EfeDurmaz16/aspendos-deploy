@@ -1098,8 +1098,8 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                         model: {
                             type: 'string',
                             description: 'AI model to use',
-                            enum: ['gpt-4', 'claude-3-opus', 'llama-3-70b'],
-                            example: 'gpt-4',
+                            enum: ['gpt-5', 'claude-opus-4-7', 'llama-4-maverick'],
+                            example: 'gpt-5',
                         },
                     },
                 },
@@ -1131,7 +1131,7 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                         },
                         model: {
                             type: 'string',
-                            example: 'gpt-4',
+                            example: 'gpt-5',
                         },
                         createdAt: {
                             type: 'string',
@@ -1158,7 +1158,7 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                         },
                         model: {
                             type: 'string',
-                            example: 'gpt-4',
+                            example: 'gpt-5',
                         },
                         messages: {
                             type: 'array',
@@ -1210,7 +1210,7 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                         },
                         model: {
                             type: 'string',
-                            example: 'claude-3-opus',
+                            example: 'claude-opus-4-7',
                         },
                     },
                 },
@@ -1475,7 +1475,7 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                             description: 'Models to query. Defaults to all available.',
                             items: {
                                 type: 'string',
-                                example: 'gpt-4',
+                                example: 'gpt-5',
                             },
                         },
                     },
@@ -1498,7 +1498,7 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                                 properties: {
                                     model: {
                                         type: 'string',
-                                        example: 'gpt-4',
+                                        example: 'gpt-5',
                                     },
                                     response: {
                                         type: 'string',

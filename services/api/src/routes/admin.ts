@@ -411,7 +411,7 @@ app.get('/system/config', async (c) => {
                 ultra: { requestsPerMinute: 200, chatsPerDay: 5000 },
             },
             models: {
-                defaultModel: 'gpt-4o-mini',
+                defaultModel: 'gpt-5-mini',
                 enabledProviders: ['openai', 'anthropic', 'google', 'groq'],
             },
         };

@@ -32,9 +32,9 @@
  *
  * // Query council (multiple AI models)
  * const councilResponse = await client.council.query('What is the meaning of life?', [
- *   'gpt-4',
- *   'claude-3',
- *   'gemini-pro'
+ *   'gpt-5',
+ *   'claude-opus-4-7',
+ *   'gemini-3.1-pro-preview'
  * ]);
  *
  * // Check usage

@@ -70,8 +70,8 @@ export function FeaturesIndexPage({ features }: FeaturesIndexPageProps) {
                 <header className="text-center mb-16 space-y-4">
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Yula Features</h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                        Discover the features that make Yula the most advanced unified AI platform.
-                        Memory, multi-model access, proactive AI, and more.
+                        A deterministic AI agent that can prove what it did — and why. Every action
+                        signed, logged, approval-aware, and reversible when supported.
                     </p>
                 </header>
 
@@ -126,8 +126,8 @@ export function FeaturesIndexPage({ features }: FeaturesIndexPageProps) {
                 <section className="mt-16 text-center py-12 px-6 rounded-2xl bg-primary/5 border border-primary/20">
                     <h2 className="text-2xl font-semibold mb-4">Ready to Experience Yula?</h2>
                     <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                        Join thousands of users who have upgraded from ChatGPT, Claude, and other AI
-                        assistants to Yula&apos;s unified platform with persistent memory.
+                        An AI agent you can actually trust with real work — because every step is
+                        signed, auditable, and reversible where it matters.
                     </p>
                     <div className="flex flex-wrap justify-center gap-4">
                         <Button size="lg" asChild>

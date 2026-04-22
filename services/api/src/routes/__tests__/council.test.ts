@@ -41,25 +41,25 @@ vi.mock('../../services/council.service', () => ({
             name: 'The Scholar',
             role: 'Academic & Research Perspective',
             color: '#3B82F6',
-            modelId: 'groq/llama-3.1-70b-versatile',
+            modelId: 'groq/llama-4-maverick',
         },
         CREATIVE: {
             name: 'The Visionary',
             role: 'Creative & Innovative Perspective',
             color: '#F59E0B',
-            modelId: 'groq/mixtral-8x7b-32768',
+            modelId: 'groq/llama-4-maverick',
         },
         PRACTICAL: {
             name: 'The Pragmatist',
             role: 'Practical & Actionable Perspective',
             color: '#10B981',
-            modelId: 'groq/llama-3.1-8b-instant',
+            modelId: 'groq/llama-4-scout',
         },
         DEVILS_ADVOCATE: {
             name: "Devil's Advocate",
             role: 'Critical & Contrarian Perspective',
             color: '#EF4444',
-            modelId: 'groq/llama-3.1-70b-versatile',
+            modelId: 'groq/llama-4-maverick',
         },
     },
     createCouncilSession: vi.fn(),
@@ -321,7 +321,7 @@ describe('Council Routes', () => {
                     {
                         id: 'resp-1',
                         persona: 'SCHOLAR',
-                        modelId: 'openai/gpt-4o',
+                        modelId: 'openai/gpt-5',
                         content: 'From an academic perspective...',
                         status: 'COMPLETED',
                         latencyMs: 1200,
@@ -440,7 +440,7 @@ describe('Council Routes', () => {
                 TEST_USER_ID,
                 500,
                 200,
-                'openai/gpt-4o'
+                'openai/gpt-5'
             );
         });
 
@@ -489,7 +489,7 @@ describe('Council Routes', () => {
             expect(scholar.name).toBe('The Scholar');
             expect(scholar.role).toBe('Academic & Research Perspective');
             expect(scholar.color).toBe('#3B82F6');
-            expect(scholar.modelId).toBe('openai/gpt-4o');
+            expect(scholar.modelId).toBe('openai/gpt-5');
         });
     });
 

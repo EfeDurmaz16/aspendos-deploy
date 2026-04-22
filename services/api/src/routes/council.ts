@@ -245,7 +245,7 @@ app.get('/sessions/:id/stream', validateParams(sessionIdParamSchema), async (c) 
         await councilService.updateSessionStatus(sessionId);
 
         // Meter actual token usage per-persona with real model IDs
-        // Each persona maps to a real model (gpt-4o, claude-3-5-sonnet, gemini-flash, gpt-4o-mini)
+        // Each persona maps to a real model (gpt-5, claude-sonnet-4-6, gemini-flash, gpt-5-mini)
         for (const [persona, usage] of perPersonaUsage) {
             const personaDef = councilService.COUNCIL_PERSONAS[persona];
             if (personaDef && (usage.promptTokens > 0 || usage.completionTokens > 0)) {
@@ -379,7 +379,7 @@ app.post('/sessions/:id/synthesize', validateParams(sessionIdParamSchema), async
         return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
     }
 
-    // Check token budget before synthesis (uses gpt-4o)
+    // Check token budget before synthesis (uses gpt-5)
     if (!(await billingService.hasTokens(userId, 2000))) {
         return c.json({ error: 'Insufficient token budget for synthesis' }, 403);
     }
@@ -393,7 +393,7 @@ app.post('/sessions/:id/synthesize', validateParams(sessionIdParamSchema), async
                 userId,
                 result.usage.promptTokens,
                 result.usage.completionTokens,
-                'openai/gpt-4o'
+                'openai/gpt-5'
             );
         }
 

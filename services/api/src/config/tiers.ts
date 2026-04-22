@@ -15,7 +15,7 @@ export const TIER_CONFIG = {
         monthlyTokens: 100_000, // 100K tokens
 
         // Models
-        supportedModels: ['gpt-4o-mini', 'gemini-flash'],
+        supportedModels: ['gpt-5-mini', 'gemini-flash'],
         multiModel: false,
         multiModelLimit: 0,
 
@@ -63,7 +63,7 @@ export const TIER_CONFIG = {
         monthlyTokens: 1_000_000, // 1M tokens
 
         // Models
-        supportedModels: ['gpt-4o-mini', 'claude-3-haiku', 'gemini-flash'],
+        supportedModels: ['gpt-5-mini', 'claude-haiku-4-5', 'gemini-flash'],
         multiModel: false,
         multiModelLimit: 0,
 
@@ -111,7 +111,7 @@ export const TIER_CONFIG = {
         monthlyTokens: 5_000_000, // 5M tokens
 
         // Models
-        supportedModels: 'all', // All GPT-4o / Claude / Gemini
+        supportedModels: 'all', // All GPT-5.4 / Claude / Gemini 3
         multiModel: true,
         multiModelLimit: 2, // 2 models side-by-side
 

@@ -152,7 +152,7 @@ describe('exportToMarkdown', () => {
                 createdAt: '2026-02-13T10:00:00Z',
                 messages: [
                     { role: 'user', content: 'Hello' },
-                    { role: 'assistant', content: 'Hi there!', model: 'gpt-4' },
+                    { role: 'assistant', content: 'Hi there!', model: 'gpt-5' },
                 ],
             },
         ];
