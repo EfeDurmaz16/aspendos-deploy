@@ -1,0 +1,17 @@
+<!--
+  C · Stacked Record (3D / depth)
+  Three offset blocks stacked with decreasing opacity. Reads as a stack
+  of stamped records — each action is a signed document in a growing
+  ledger. Depth-ful without being gradient-heavy. Vercel-prism-adjacent
+  but semantically grounded (audit trail, layered trust).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Bottom block (oldest/ledger base) -->
+  <rect x="8" y="44" width="48" height="12" rx="2" fill="currentColor" opacity="0.28" />
+  <!-- Middle block -->
+  <rect x="12" y="28" width="40" height="12" rx="2" fill="currentColor" opacity="0.58" />
+  <!-- Top block (latest signed action) -->
+  <rect x="16" y="12" width="32" height="12" rx="2" fill="currentColor" />
+  <!-- Top block has a small "signed" dot -->
+  <circle cx="41" cy="18" r="1.8" fill="var(--bg, #0a0a0a)" />
+</svg>

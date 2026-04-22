@@ -1,0 +1,18 @@
+<!--
+  CONCEPT 02 — Signet Seal
+  Meaning: A wax seal. The outer ring is the signature boundary; the inner
+  notched form is the abstract "stamp" — three points representing the three
+  trust primitives (FIDES · AGIT · Reversibility). "Prove what they did" is
+  literally what a signet seal does for a letter.
+  Reads at 16×16 as a bold ringed mark.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Outer signet ring -->
+  <circle cx="32" cy="32" r="25" stroke-width="5" />
+  <!-- Inner notched stamp: three radial marks at 90°, 210°, 330° — trust triad -->
+  <path d="M 32 18 L 32 12" stroke-width="5" />
+  <path d="M 44.12 39 L 49.32 42" stroke-width="5" />
+  <path d="M 19.88 39 L 14.68 42" stroke-width="5" />
+  <!-- Center mark -->
+  <circle cx="32" cy="32" r="5" fill="currentColor" stroke="none" />
+</svg>

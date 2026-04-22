@@ -1,0 +1,16 @@
+<!--
+  CONCEPT 01 — Reversibility Arc
+  Meaning: Two arcs sealing a loop. The gap suggests an action can be undone
+  (rewind), and the center dot is the "sealed proof" — the FIDES signature
+  that makes the action verifiable. Every action in YULA is a closed loop:
+  proposed → signed → reversible.
+  Works mono at 16×16. Scales cleanly to any size.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round">
+  <!-- Outer arc: forward/commit motion (roughly 240°, left-open) -->
+  <path d="M 20 10 A 24 24 0 1 1 10 32" />
+  <!-- Inner arc: reverse/undo (opposite direction, offset) -->
+  <path d="M 44 54 A 24 24 0 1 1 54 32" />
+  <!-- Sealed proof point: the signature dot -->
+  <circle cx="32" cy="32" r="3.5" fill="currentColor" stroke="none" />
+</svg>

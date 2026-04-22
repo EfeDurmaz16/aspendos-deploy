@@ -11,3 +11,19 @@ klaros
 **/node_modules
 **/.turbo
 **/node_modules/.bun
+
+# Untracked in-progress files that reference uninstalled deps
+# (Polar migration + Sentry scaffolding). Not in git; excluded from
+# Vercel CLI deploys so they don't block the build.
+apps/web/src/app/checkout
+apps/web/src/app/portal
+apps/web/src/instrumentation.ts
+apps/web/src/instrumentation-client.ts
+apps/web/sentry.server.config.ts
+apps/web/src/lib/services/qdrant.ts
+apps/web/test/lib/services/qdrant.test.ts
+
+# Concept / local artifacts
+brand/concepts
+yula-launch-video
+.agents

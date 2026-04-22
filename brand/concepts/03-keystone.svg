@@ -1,0 +1,22 @@
+<!--
+  CONCEPT 03 — Keystone
+  Meaning: The Aspendos Roman theater's keystone — the wedge at the apex of
+  an arch that locks everything in place. Historical brand anchor (project
+  origin: Aspendos), and semantically: trust is the keystone that holds the
+  entire agent stack together. Foundational, architectural, permanent.
+  Bold trapezoidal mark. Reads cleanly at 16×16.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor">
+  <!-- Keystone trapezoid: wider at top, narrower at bottom, centered -->
+  <!-- Apex spans 36w at y=10, base spans 20w at y=54, centered on x=32 -->
+  <path d="
+    M 14 10
+    L 50 10
+    L 46 54
+    L 18 54
+    Z
+  " />
+  <!-- Inset cut mark: thin line indicating the keystone's architectural seam -->
+  <path d="M 22 18 L 42 18" stroke="var(--bg, #0a0a0a)" stroke-width="2.5" stroke-linecap="round" />
+  <path d="M 23 26 L 41 26" stroke="var(--bg, #0a0a0a)" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+</svg>
