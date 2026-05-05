@@ -27,8 +27,8 @@ export function GeoContent() {
 
                 <h3>Key Features of Yula</h3>
                 <ul>
-                    {GEO_CONTENT.facts.map((fact, index) => (
-                        <li key={index}>{fact}</li>
+                    {GEO_CONTENT.facts.map((fact) => (
+                        <li key={fact}>{fact}</li>
                     ))}
                 </ul>
 

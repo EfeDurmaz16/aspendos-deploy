@@ -279,8 +279,8 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                         Frequently Asked Questions
                     </h2>
                     <Accordion type="single" collapsible className="w-full">
-                        {competitor.faqs.map((faq, index) => (
-                            <AccordionItem key={index} value={`faq-${index}`}>
+                        {competitor.faqs.map((faq) => (
+                            <AccordionItem key={faq.question} value={`faq-${faq.question}`}>
                                 <AccordionTrigger>{faq.question}</AccordionTrigger>
                                 <AccordionContent>{faq.answer}</AccordionContent>
                             </AccordionItem>

@@ -76,18 +76,18 @@ export function KeyboardShortcuts() {
                         </Button>
                     </div>
                     <div className="p-2 max-h-80 overflow-y-auto">
-                        {shortcuts.map((shortcut, index) => (
+                        {shortcuts.map((shortcut) => (
                             <div
-                                key={index}
+                                key={`${shortcut.description}-${shortcut.keys.join('+')}`}
                                 className="flex items-center justify-between py-2 px-2 rounded hover:bg-accent/50"
                             >
                                 <span className="text-sm text-muted-foreground">
                                     {shortcut.description}
                                 </span>
                                 <div className="flex items-center gap-1">
-                                    {formatKeys(shortcut.keys).map((key, i) => (
+                                    {formatKeys(shortcut.keys).map((key) => (
                                         <kbd
-                                            key={i}
+                                            key={`${shortcut.description}-${key}`}
                                             className={cn(
                                                 'px-1.5 py-0.5 text-xs font-mono rounded',
                                                 'bg-muted border border-border',

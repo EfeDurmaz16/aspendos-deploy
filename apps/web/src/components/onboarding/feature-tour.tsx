@@ -100,9 +100,9 @@ export function FeatureTour({ currentStep, onNext, onSkip, totalSteps }: Feature
 
             {/* Progress dots */}
             <div className="mb-6 flex items-center gap-2">
-                {features.map((_, i) => (
+                {features.map((item, i) => (
                     <div
-                        key={i}
+                        key={item.title}
                         className={cn(
                             'h-1.5 rounded-full transition-all duration-300',
                             i === currentStep

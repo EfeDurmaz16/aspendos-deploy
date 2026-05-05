@@ -221,8 +221,8 @@ export function FeaturePage({ feature }: FeaturePageProps) {
                         Frequently Asked Questions
                     </h2>
                     <Accordion type="single" collapsible className="w-full">
-                        {feature.faqs.map((faq, index) => (
-                            <AccordionItem key={index} value={`faq-${index}`}>
+                        {feature.faqs.map((faq) => (
+                            <AccordionItem key={faq.question} value={`faq-${faq.question}`}>
                                 <AccordionTrigger>{faq.question}</AccordionTrigger>
                                 <AccordionContent>{faq.answer}</AccordionContent>
                             </AccordionItem>
