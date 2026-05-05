@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { getAgit } from '../../audit/agit';
+import { getFides } from '../../governance/fides';
 import type { ToolContext } from '../../reversibility/types';
 import { registerAllTools } from '../../tools/register-all';
 import { runToolStep } from '../step';
@@ -68,5 +70,35 @@ describe('runToolStep', () => {
         );
         expect(result.commitHash).toBeTruthy();
         expect(result.metadata.reversibility_class).toBe('cancelable_window');
+    });
+
+    it('persists a verifiable pre/post action chain with a valid FIDES signature', async () => {
+        const args = { path: '/tmp/provable.txt', content: 'hello', existing_content: 'old' };
+        const chainCtx: ToolContext = { userId: 'provable-flow-user' };
+
+        const result = await runToolStep('file.write', args, chainCtx);
+
+        expect(result.blocked).toBe(false);
+        expect(result.awaitingApproval).toBe(false);
+        expect(result.result.success).toBe(true);
+
+        const agit = getAgit();
+        const history = await agit.historyForUser(chainCtx.userId, 5);
+        expect(history).toHaveLength(2);
+
+        const [postCommit, preCommit] = history;
+        expect(preCommit.hash).toBe(result.commitHash);
+        expect(postCommit.hash).not.toBe(preCommit.hash);
+        await expect(agit.verifyCommit(preCommit.hash)).resolves.toBe(true);
+        await expect(agit.verifyCommit(postCommit.hash)).resolves.toBe(true);
+
+        const fides = getFides();
+        const payload = fides.getToolCallPayload('file.write', args, result.metadata);
+        await expect(
+            fides.verifySignature(payload, preCommit.signature, preCommit.did)
+        ).resolves.toBe(true);
+        await expect(
+            fides.verifySignature(payload, postCommit.signature, postCommit.did)
+        ).resolves.toBe(true);
     });
 });
