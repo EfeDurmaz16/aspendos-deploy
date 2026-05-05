@@ -34,14 +34,8 @@ export async function createApproval(params: CreateApprovalParams) {
             expires_at: expiresAt,
         });
         return { id, commitHash, toolName: params.toolName, status: 'pending' as const, expiresAt };
-    } catch {
-        return {
-            id: commitHash,
-            commitHash,
-            toolName: params.toolName,
-            status: 'pending' as const,
-            expiresAt,
-        };
+    } catch (error) {
+        throw new Error('Failed to persist approval request', { cause: error });
     }
 }
 
@@ -50,8 +44,8 @@ export async function approveRequest(approvalId: string, _decidedBy: string) {
         const client = getConvexClient();
         await client.mutation(api.approvals.approve, { id: approvalId as any });
         return { id: approvalId, status: 'approved' as const };
-    } catch {
-        return { id: approvalId, status: 'approved' as const };
+    } catch (error) {
+        throw new Error('Failed to persist approval decision', { cause: error });
     }
 }
 
@@ -60,8 +54,8 @@ export async function rejectRequest(approvalId: string, _decidedBy: string) {
         const client = getConvexClient();
         await client.mutation(api.approvals.reject, { id: approvalId as any });
         return { id: approvalId, status: 'rejected' as const };
-    } catch {
-        return { id: approvalId, status: 'rejected' as const };
+    } catch (error) {
+        throw new Error('Failed to persist approval decision', { cause: error });
     }
 }
 
