@@ -144,11 +144,22 @@ export function ImportUploader({
     return (
         <div className={cn('space-y-4', className)}>
             {/* Drop Zone */}
-            <div
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_TYPES.join(',')}
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={!canAddMore || isUploading}
+            />
+            <button
+                type="button"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => canAddMore && fileInputRef.current?.click()}
+                disabled={!canAddMore || isUploading}
                 className={cn(
                     'relative rounded-[12px] border-2 border-dashed p-8 transition-all duration-200 cursor-pointer',
                     'flex flex-col items-center justify-center text-center',
@@ -158,16 +169,6 @@ export function ImportUploader({
                     !canAddMore && 'opacity-50 cursor-not-allowed'
                 )}
             >
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept={ACCEPTED_TYPES.join(',')}
-                    multiple
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    disabled={!canAddMore || isUploading}
-                />
-
                 <motion.div
                     initial={false}
                     animate={{ scale: isDragging ? 1.1 : 1 }}
@@ -195,7 +196,7 @@ export function ImportUploader({
                     <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
                     <span>Up to {maxFiles} files</span>
                 </div>
-            </div>
+            </button>
 
             {/* Supported Sources */}
             <div className="flex items-center justify-center gap-4 py-2 flex-wrap">

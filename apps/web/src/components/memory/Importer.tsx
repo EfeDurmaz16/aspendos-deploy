@@ -137,13 +137,14 @@ export function MemoryImporter() {
                     {/* Import Section */}
                     <div>
                         <h4 className="text-sm font-medium mb-2">Import Conversations</h4>
-                        <div
+                        <section
                             onDrop={handleDrop}
                             onDragOver={(e) => {
                                 e.preventDefault();
                                 setDragActive(true);
                             }}
                             onDragLeave={() => setDragActive(false)}
+                            aria-label="Conversation import drop zone"
                             className={cn(
                                 'border-2 border-dashed rounded-lg p-6 text-center transition-colors',
                                 dragActive
@@ -210,7 +211,7 @@ export function MemoryImporter() {
                                     </Button>
                                 </div>
                             ) : null}
-                        </div>
+                        </section>
 
                         {error && (
                             <div className="mt-3 flex items-center gap-2 text-sm text-foreground/60">

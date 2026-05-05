@@ -440,12 +440,17 @@ export function SpotlightOverlay({ children, className }: SpotlightOverlayProps)
                 aria-label="Onboarding tour"
             >
                 {/* Overlay with spotlight cutout */}
-                <div className="absolute inset-0 pointer-events-auto" onClick={skipTour}>
+                <button
+                    type="button"
+                    className="absolute inset-0 pointer-events-auto border-0 bg-transparent p-0"
+                    onClick={skipTour}
+                    aria-label="Skip onboarding tour"
+                >
                     <SpotlightMask
                         spotlight={spotlight}
                         prefersReducedMotion={prefersReducedMotion}
                     />
-                </div>
+                </button>
 
                 {/* Spotlight ring effect (optional visual enhancement) */}
                 {spotlight && (

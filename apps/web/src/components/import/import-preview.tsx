@@ -261,6 +261,14 @@ function ConversationItem({
                 onClick={() =>
                     !disabled && onSelectionChange(conversation.id, !conversation.selected)
                 }
+                onKeyDown={(event) => {
+                    if (disabled || (event.key !== 'Enter' && event.key !== ' ')) return;
+                    event.preventDefault();
+                    onSelectionChange(conversation.id, !conversation.selected);
+                }}
+                aria-pressed={conversation.selected}
+                role="button"
+                tabIndex={disabled ? -1 : 0}
             >
                 {/* Checkbox */}
                 <Checkbox
