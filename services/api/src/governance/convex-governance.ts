@@ -9,6 +9,8 @@ export interface ConvexGovernanceCommitInput {
     metadata: ReversibilityMetadata;
     status?: 'pending' | 'executed' | 'failed';
     result?: ToolResult;
+    fidesSignature?: string;
+    fidesDid?: string;
 }
 
 export interface ConvexGovernanceCommit {
@@ -19,6 +21,10 @@ export interface ConvexGovernanceCommit {
 export async function commitConvexGovernance(
     input: ConvexGovernanceCommitInput
 ): Promise<ConvexGovernanceCommit | null> {
+    if (isProductionRuntime() && (!input.fidesSignature || !input.fidesDid)) {
+        throw new Error('FIDES signature is required for production Convex governance commits');
+    }
+
     if (!isConvexConfigured()) {
         if (isProductionRuntime()) {
             throw new Error('Convex governance is required in production');
@@ -46,6 +52,8 @@ export async function commitConvexGovernance(
                 ? new Date(input.metadata.rollback_deadline).getTime()
                 : undefined,
             human_explanation: input.metadata.human_explanation,
+            fides_signature: input.fidesSignature,
+            fides_signer_did: input.fidesDid,
             status: input.status ?? 'pending',
             result: input.result,
         });

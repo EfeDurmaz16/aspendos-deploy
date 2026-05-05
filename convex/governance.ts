@@ -112,6 +112,8 @@ export const signAndCommit = mutation({
         rollback_strategy: v.optional(v.any()),
         rollback_deadline: v.optional(v.number()),
         human_explanation: v.optional(v.string()),
+        fides_signature: v.optional(v.string()),
+        fides_signer_did: v.optional(v.string()),
         status: v.optional(
             v.union(
                 v.literal('pending'),
@@ -140,7 +142,13 @@ export const signAndCommit = mutation({
 
         const parentHash = latestCommit?.hash ?? null;
 
-        // 3. Build FIDES signature: HMAC-SHA256(agent_did, payload)
+        if (!!args.fides_signature !== !!args.fides_signer_did) {
+            throw new Error('Both fides_signature and fides_signer_did are required together');
+        }
+
+        // 3. Bind a FIDES authority signature to the commit. API callers pass
+        // a real SDK signature; Convex HMAC is kept as an explicitly labeled
+        // fallback for direct local Convex callers.
         const signaturePayload = canonicalJson(
             commitPayload({
                 args: args.args,
@@ -151,7 +159,13 @@ export const signAndCommit = mutation({
                 tool_name: args.tool_name,
             })
         );
-        const fidesSignature = await hmacSha256(agentDid, signaturePayload);
+        const hasExternalFidesSignature = !!args.fides_signature && !!args.fides_signer_did;
+        const fidesSignature =
+            args.fides_signature ?? (await hmacSha256(agentDid, signaturePayload));
+        const fidesSignerDid = args.fides_signer_did ?? agentDid;
+        const fidesSignatureSource = hasExternalFidesSignature
+            ? 'external'
+            : 'convex_hmac_fallback';
 
         // 4. Build AGIT commit hash from the same canonical payload the
         // FIDES signature covers, so status/result mutations invalidate it.
@@ -191,7 +205,8 @@ export const signAndCommit = mutation({
             human_explanation: args.human_explanation,
             payload_hash: payloadHash,
             fides_signature: fidesSignature,
-            fides_signer_did: agentDid,
+            fides_signer_did: fidesSignerDid,
+            fides_signature_source: fidesSignatureSource,
             timestamp: now,
         });
 
@@ -269,20 +284,28 @@ export const verifyCommit = query({
         );
         checks.hash_integrity = expectedHash === commit.hash;
 
-        // Check 2: Verify FIDES signature matches expected HMAC
+        // Check 2: Verify the authority signature binding. External FIDES
+        // signatures are verified by API-side FIDES flows; Convex can only
+        // cryptographically verify its explicitly labeled HMAC fallback.
         if (commit.fides_signature && commit.fides_signer_did) {
-            const signaturePayload = canonicalJson(
-                commitPayload({
-                    args: commit.args,
-                    parent_hash: commit.parent_hash,
-                    result: commit.result,
-                    reversibility_class: commit.reversibility_class,
-                    status: commit.status,
-                    tool_name: commit.tool_name,
-                })
-            );
-            const expectedSig = await hmacSha256(commit.fides_signer_did, signaturePayload);
-            checks.fides_signature = expectedSig === commit.fides_signature;
+            if (commit.fides_signature_source === 'external') {
+                checks.fides_signature =
+                    commit.fides_signer_did.startsWith('did:fides:') &&
+                    commit.fides_signature.length > 0;
+            } else {
+                const signaturePayload = canonicalJson(
+                    commitPayload({
+                        args: commit.args,
+                        parent_hash: commit.parent_hash,
+                        result: commit.result,
+                        reversibility_class: commit.reversibility_class,
+                        status: commit.status,
+                        tool_name: commit.tool_name,
+                    })
+                );
+                const expectedSig = await hmacSha256(commit.fides_signer_did, signaturePayload);
+                checks.fides_signature = expectedSig === commit.fides_signature;
+            }
         } else {
             checks.fides_signature = false;
         }
@@ -414,6 +437,7 @@ export const revertCommit = mutation({
                 payload_hash: payloadHash,
                 fides_signature: cancelSignature,
                 fides_signer_did: agentDid,
+                fides_signature_source: 'convex_hmac_fallback',
                 timestamp: now,
             });
             await ctx.db.insert('action_log', {
@@ -529,6 +553,7 @@ export const revertCommit = mutation({
             payload_hash: payloadHash,
             fides_signature: revertSignature,
             fides_signer_did: agentDid,
+            fides_signature_source: 'convex_hmac_fallback',
             timestamp: now,
         });
 

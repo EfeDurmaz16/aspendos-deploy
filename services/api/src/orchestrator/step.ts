@@ -43,6 +43,8 @@ export async function runToolStep(
         toolName,
         args,
         metadata,
+        fidesSignature: signResult.signature,
+        fidesDid: signResult.did,
         status: 'pending',
     });
     let preCommitHash = convexPreCommit?.commitHash;
@@ -94,6 +96,8 @@ export async function runToolStep(
         toolName,
         args,
         metadata,
+        fidesSignature: signResult.signature,
+        fidesDid: signResult.did,
         status: result.success ? 'executed' : 'failed',
         result,
     });

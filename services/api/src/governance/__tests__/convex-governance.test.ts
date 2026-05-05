@@ -65,8 +65,23 @@ describe('commitConvexGovernance', () => {
                 toolName: 'file.write',
                 args: { path: '/tmp/a' },
                 metadata,
+                fidesSignature: 'fides-sig-1',
+                fidesDid: 'did:fides:agent-1',
             })
         ).rejects.toThrow('Convex governance is required in production');
+    });
+
+    it('fails loud in production when FIDES authority is missing', async () => {
+        process.env.NODE_ENV = 'production';
+
+        await expect(
+            commitConvexGovernance({
+                userId: 'workos-user-1',
+                toolName: 'file.write',
+                args: { path: '/tmp/a' },
+                metadata,
+            })
+        ).rejects.toThrow('FIDES signature is required for production Convex governance commits');
     });
 
     it('persists governance commits through Convex with resolved user ownership', async () => {
@@ -80,6 +95,8 @@ describe('commitConvexGovernance', () => {
                 toolName: 'file.write',
                 args: { path: '/tmp/a' },
                 metadata,
+                fidesSignature: 'fides-sig-1',
+                fidesDid: 'did:fides:agent-1',
                 status: 'executed',
                 result: { success: true },
             })
@@ -99,6 +116,8 @@ describe('commitConvexGovernance', () => {
             rollback_strategy: undefined,
             rollback_deadline: undefined,
             human_explanation: 'Write a file',
+            fides_signature: 'fides-sig-1',
+            fides_signer_did: 'did:fides:agent-1',
             status: 'executed',
             result: { success: true },
         });
