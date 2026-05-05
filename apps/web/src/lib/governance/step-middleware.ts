@@ -5,7 +5,7 @@
  * and AGIT audit trail into every tool invocation:
  *
  *   Pre-step  → check tool trust, create pending commit, FIDES sign
- *   Post-step → update commit with result, store snapshot if undoable
+ *   Post-step → append result commit, store snapshot if undoable
  *
  * Usage:
  *   import { createGovernanceCallbacks } from '@/lib/governance/step-middleware';
@@ -206,16 +206,24 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
     }
 
     // -----------------------------------------------------------------------
-    // Post-step: update the commit with the execution result.
+    // Post-step: append an immutable result commit after tool execution.
     // -----------------------------------------------------------------------
     async function postStep(toolCallId: string, result: unknown, success: boolean): Promise<void> {
         const pending = pendingCommits.get(toolCallId);
         if (!pending) return; // No governance tracking for this call
 
-        await (convex as any).mutation(api.governance.updateCommitResult, {
-            hash: pending.commitHash,
+        await (convex as any).mutation(api.governance.signAndCommit, {
+            user_id: userId,
+            tool_name: pending.toolName,
+            args: {
+                prior_commit_hash: pending.commitHash,
+                outcome: 'tool_result',
+            },
             status: success ? ('executed' as const) : ('failed' as const),
             result,
+            reversibility_class: pending.metadata.reversibility_class,
+            rollback_strategy: pending.metadata.rollback_strategy,
+            human_explanation: `Result for ${pending.metadata.human_explanation}`,
         });
 
         pendingCommits.delete(toolCallId);

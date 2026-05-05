@@ -491,7 +491,10 @@ export const revertCommit = mutation({
 });
 
 // ---------------------------------------------------------------------------
-// updateCommitResult — called after tool execution to record the outcome.
+// updateCommitResult — deprecated.
+// Commit payloads are signed and hash-bound. Mutating result/status after insert
+// would invalidate the audit record, so callers must append a new signAndCommit
+// entry for execution outcomes instead.
 // ---------------------------------------------------------------------------
 
 export const updateCommitResult = mutation({
@@ -501,29 +504,9 @@ export const updateCommitResult = mutation({
         result: v.optional(v.any()),
     },
     handler: async (ctx, args) => {
-        const commit = await ctx.db
-            .query('commits')
-            .withIndex('by_hash', (q) => q.eq('hash', args.hash))
-            .first();
-
-        if (!commit) throw new Error(`Commit ${args.hash} not found`);
-
-        await ctx.db.patch(commit._id, {
-            status: args.status,
-            result: args.result,
-        });
-
-        await ctx.db.insert('action_log', {
-            user_id: commit.user_id,
-            event_type: `governance.commit.${args.status}`,
-            details: {
-                commit_hash: args.hash,
-                tool_name: commit.tool_name,
-            },
-            timestamp: Date.now(),
-        });
-
-        return { hash: args.hash, status: args.status };
+        void ctx;
+        void args;
+        throw new Error('Commit results are append-only; use governance.signAndCommit');
     },
 });
 
