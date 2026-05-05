@@ -8,7 +8,7 @@
  * This worker picks them up and creates embeddings lazily in batches.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 import * as openMemory from './memory-router.service';
 
 const BATCH_SIZE = 10;

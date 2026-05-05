@@ -1,10 +1,9 @@
-import { ToolLoopAgent, tool, stepCountIs } from 'ai';
-import { gateway } from 'ai';
+import { gateway, stepCountIs, ToolLoopAgent, tool } from 'ai';
 import { z } from 'zod';
-import { runToolStep } from './step';
+import type { ToolContext } from '../reversibility/types';
 import { registerAllTools } from '../tools/register-all';
 import { registry } from '../tools/registry';
-import type { ToolContext } from '../reversibility/types';
+import { runToolStep } from './step';
 
 registerAllTools();
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReversibilityClass } from '@/lib/reversibility/types';
 import { REVERSIBILITY_SPECS } from '@/lib/reversibility/types';
 

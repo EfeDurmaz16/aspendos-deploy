@@ -1,11 +1,11 @@
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { convexServer } from '@/lib/convex-server';
 import {
-    getStripe,
     getOrCreateCustomer,
+    getStripe,
     resolvePriceId,
     TIER_CONFIG,
     type TierSlug,

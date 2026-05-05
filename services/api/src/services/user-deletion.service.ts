@@ -10,7 +10,7 @@
  * Backed by Convex for data access.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

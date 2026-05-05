@@ -8,7 +8,7 @@
  * Rollback: snapshot_restore — restores the file to its prior content
  */
 
-import type { ReversibleToolDef, AgitCommit, RollbackStrategy } from '@/lib/reversibility/types';
+import type { AgitCommit, ReversibleToolDef, RollbackStrategy } from '@/lib/reversibility/types';
 
 export const fileWrite: ReversibleToolDef = {
     name: 'file-write',

@@ -4,8 +4,8 @@
  * Generates WhatsApp interactive button messages for approval cards.
  */
 
-import type { ApprovalPayload, PlatformCardRenderer } from '../types';
 import { buildWhatsAppApprovalMessage, buildWhatsAppResolvedMessage } from '../platforms/whatsapp';
+import type { ApprovalPayload, PlatformCardRenderer } from '../types';
 
 export const whatsappCardRenderer: PlatformCardRenderer = {
     renderApprovalCard(payload: ApprovalPayload, _callbackUrl: string) {

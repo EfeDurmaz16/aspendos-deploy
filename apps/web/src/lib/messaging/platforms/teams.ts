@@ -8,8 +8,8 @@
  * Teams uses Adaptive Cards v1.5+ for interactive content.
  */
 
-import type { ApprovalPayload } from '../types';
 import { BADGE_EMOJI } from '../../messaging/badge-constants';
+import type { ApprovalPayload } from '../types';
 
 // ============================================
 // Adaptive Card Types

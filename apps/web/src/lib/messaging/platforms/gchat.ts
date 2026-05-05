@@ -7,8 +7,8 @@
  * Google Chat uses Card v2 JSON for interactive content.
  */
 
-import type { ApprovalPayload } from '../types';
 import { BADGE_EMOJI } from '../../messaging/badge-constants';
+import type { ApprovalPayload } from '../types';
 
 // ============================================
 // Google Chat Card Types

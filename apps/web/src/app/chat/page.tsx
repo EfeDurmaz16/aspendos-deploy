@@ -31,12 +31,12 @@ import {
     usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input';
 import { Reasoning } from '@/components/ai-elements/reasoning';
+import { LogoMark } from '@/components/brand/logo';
 import { ContextMenuMessage } from '@/components/chat/context-menu-message';
 import { KeyboardShortcuts } from '@/components/chat/keyboard-shortcuts';
 import { ModePicker, resolveMode, type YulaMode } from '@/components/chat/model-picker';
 import { VoiceButton } from '@/components/chat/voice-button';
 import { CouncilChatSheet } from '@/components/council/council-chat-sheet';
-import { LogoMark } from '@/components/brand/logo';
 import { IconRail } from '@/components/layout/icon-rail';
 import { PACToastWrapper } from '@/components/pac/pac-toast-wrapper';
 import { useAuth } from '@/hooks/use-auth';

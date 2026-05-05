@@ -9,7 +9,7 @@
  * Rollback: cancel_window — cancel the queued email before deadline
  */
 
-import type { ReversibleToolDef, AgitCommit } from '@/lib/reversibility/types';
+import type { AgitCommit, ReversibleToolDef } from '@/lib/reversibility/types';
 
 const DEFAULT_CANCEL_WINDOW_MS = 30_000; // 30 seconds
 

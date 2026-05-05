@@ -16,6 +16,7 @@ async function searchMemories(
 ): Promise<Array<{ content: string; score: number }>> {
     return [];
 }
+
 import { getFallbackModels, getModel, MODEL_REGISTRY, type ModelId } from './providers';
 import { fastRoute, type RouteDecision, routeUserMessage } from './router';
 

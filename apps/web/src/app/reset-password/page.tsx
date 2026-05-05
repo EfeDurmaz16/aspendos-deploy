@@ -13,8 +13,8 @@ import {
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { LogoMark } from '@/components/brand/logo';
 import { Suspense, useMemo, useState } from 'react';
+import { LogoMark } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

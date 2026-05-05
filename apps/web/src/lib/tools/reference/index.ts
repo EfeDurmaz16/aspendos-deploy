@@ -10,17 +10,17 @@
  *   irreversible_blocked → stripe-charge  (agent refuses >$50)
  */
 
-export { fileWrite } from './file-write';
-export { emailSend } from './email-send';
 export { calendarCreate } from './calendar-create';
 export { dbMigrate } from './db-migrate';
+export { emailSend } from './email-send';
+export { fileWrite } from './file-write';
 export { stripeCharge } from './stripe-charge';
 
 import type { ReversibleToolDef } from '@/lib/reversibility/types';
-import { fileWrite } from './file-write';
-import { emailSend } from './email-send';
 import { calendarCreate } from './calendar-create';
 import { dbMigrate } from './db-migrate';
+import { emailSend } from './email-send';
+import { fileWrite } from './file-write';
 import { stripeCharge } from './stripe-charge';
 
 /** All reference tools indexed by name */

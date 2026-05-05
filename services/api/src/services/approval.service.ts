@@ -5,7 +5,7 @@
  */
 
 import type { BlastRadiusReport } from '../lib/agent-guards';
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 
 const DEFAULT_TTL_MS = 5 * 60 * 1000;
 

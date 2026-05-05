@@ -1,9 +1,9 @@
-import { Chat, Card, CardText, Actions, Button, Divider } from 'chat';
+import { anthropic } from '@ai-sdk/anthropic';
 import { createSlackAdapter } from '@chat-adapter/slack';
 import { createTelegramAdapter } from '@chat-adapter/telegram';
 import { createWhatsAppAdapter } from '@chat-adapter/whatsapp';
 import { streamText } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { Actions, Button, Card, CardText, Chat, Divider } from 'chat';
 
 import type { ApprovalPayload } from './types';
 

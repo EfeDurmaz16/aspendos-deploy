@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { getStripe, type TierSlug } from '@/lib/stripe';
+import { type NextRequest, NextResponse } from 'next/server';
+import type Stripe from 'stripe';
 import { convexServer } from '@/lib/convex-server';
+import { getStripe, type TierSlug } from '@/lib/stripe';
 import { api } from '../../../../../../../convex/_generated/api';
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
@@ -323,8 +323,6 @@ function mapSubscriptionStatus(
             return 'canceled';
         case 'trialing':
             return 'trialing';
-        case 'incomplete':
-        case 'paused':
         default:
             return 'active';
     }

@@ -6,7 +6,7 @@
  */
 
 import { nanoid } from 'nanoid';
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 
 // ==========================================
 // LEVEL SYSTEM

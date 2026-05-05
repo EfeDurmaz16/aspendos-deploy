@@ -5,7 +5,7 @@
  * are stored via action_log entries (Convex schema doesn't have dedicated tables).
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 
 // ============================================
 // TYPES

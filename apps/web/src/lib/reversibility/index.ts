@@ -1,16 +1,15 @@
+export { dispatchRewind, dispatchRollback } from './dispatch';
 export {
-    type ReversibilityClass,
-    type RollbackStrategy,
-    type ReversibilitySpec,
     type AgitCommit,
+    REVERSIBILITY_SPECS,
+    type ReversibilityClass,
+    type ReversibilitySpec,
     type ReversibleToolDef,
-    type ToolExecutionResult,
-    type RollbackResult,
-    type UndoRequest,
-    type UndoResponse,
     type RewindRequest,
     type RewindResponse,
-    REVERSIBILITY_SPECS,
+    type RollbackResult,
+    type RollbackStrategy,
+    type ToolExecutionResult,
+    type UndoRequest,
+    type UndoResponse,
 } from './types';
-
-export { dispatchRollback, dispatchRewind } from './dispatch';

@@ -10,7 +10,7 @@
  * Together: NemoClaw secures the CONTAINER, Aspendos governs the AGENT.
  */
 
-export { FidesService, getFides } from './fides-bridge';
 export { AgitService, getAgit } from './agit-bridge';
+export { FidesService, getFides } from './fides-bridge';
 export { governedToolCall } from './middleware';
 export type { GovernedResult, NemoClawContext } from './types';

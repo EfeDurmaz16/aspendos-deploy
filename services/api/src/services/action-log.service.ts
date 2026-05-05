@@ -6,8 +6,8 @@
  * Adapted from AGIT's hash-chained commit model.
  */
 
-import { getConvexClient, api } from '../lib/convex';
 import type { GuardChainResult } from '../lib/agent-guards';
+import { api, getConvexClient } from '../lib/convex';
 
 // ============================================
 // TYPES

@@ -1,6 +1,6 @@
 import type {
-    ReversibilityMetadata,
     ReverseResult,
+    ReversibilityMetadata,
     ToolContext,
     ToolDefinition,
     ToolResult,

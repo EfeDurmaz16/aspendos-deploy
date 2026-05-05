@@ -9,8 +9,8 @@
  * utilities for Telegram-native features.
  */
 
-import type { ApprovalPayload } from '../types';
 import { BADGE_EMOJI } from '../../messaging/badge-constants';
+import type { ApprovalPayload } from '../types';
 
 const TELEGRAM_API = 'https://api.telegram.org/bot';
 
@@ -191,5 +191,5 @@ export function parseCallbackData(data: string): TelegramCallbackData | null {
  * Escape special characters for Telegram MarkdownV2.
  */
 function escapeMarkdown(text: string): string {
-    return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+    return text.replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
 }

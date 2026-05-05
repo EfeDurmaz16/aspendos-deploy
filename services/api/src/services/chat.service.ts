@@ -4,7 +4,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 
 type Chat = any;
 type Message = any;

@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeEach } from 'vitest';
-import { runToolStep } from '../step';
-import { registerAllTools } from '../../tools/register-all';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { ToolContext } from '../../reversibility/types';
+import { registerAllTools } from '../../tools/register-all';
+import { runToolStep } from '../step';
 
 const ctx: ToolContext = { userId: 'test-user-123' };
 

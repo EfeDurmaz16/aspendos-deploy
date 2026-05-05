@@ -4,8 +4,8 @@
  */
 type BillingAccount = any;
 
-import { getConvexClient, api } from '../lib/convex';
 import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
+import { api, getConvexClient } from '../lib/convex';
 
 /**
  * Per-model pricing in USD per 1M tokens (industry standard)

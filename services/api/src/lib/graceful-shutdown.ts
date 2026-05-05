@@ -11,6 +11,7 @@
  */
 
 import type { Context, Next } from 'hono';
+
 const prisma = null as any;
 
 type ServerStatus = 'running' | 'draining' | 'stopped';

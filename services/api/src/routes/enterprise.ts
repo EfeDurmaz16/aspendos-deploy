@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
+import { api, getConvexClient } from '../lib/convex';
 import { requireAuth } from '../middleware/auth';
 import { requireTier } from '../middleware/tier-gate';
-import { getConvexClient, api } from '../lib/convex';
 
 const enterprise = new Hono();
 

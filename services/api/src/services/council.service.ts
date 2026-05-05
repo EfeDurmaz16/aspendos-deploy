@@ -7,7 +7,7 @@
 
 import { streamText } from 'ai';
 import { getModelWithFallback } from '../lib/ai-providers';
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 import * as openMemory from './memory-router.service';
 
 // Persona types

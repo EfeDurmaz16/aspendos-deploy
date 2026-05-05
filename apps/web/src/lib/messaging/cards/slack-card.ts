@@ -5,8 +5,8 @@
  * Re-exports from the platform adapter for clean imports.
  */
 
-import type { ApprovalPayload, PlatformCardRenderer } from '../types';
 import { buildSlackApprovalBlocks, buildSlackResolvedBlocks } from '../platforms/slack';
+import type { ApprovalPayload, PlatformCardRenderer } from '../types';
 
 export const slackCardRenderer: PlatformCardRenderer = {
     renderApprovalCard(payload: ApprovalPayload, _callbackUrl: string) {

@@ -15,7 +15,7 @@
  * Backed by Convex action_log.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 import * as skillService from './skill.service';
 
 // ============================================

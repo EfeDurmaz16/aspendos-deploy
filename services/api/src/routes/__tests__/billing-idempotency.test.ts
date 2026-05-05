@@ -1,7 +1,7 @@
 /**
  * Tests for webhook idempotency and billing atomic saves (Commits 4.2, 4.3, 7.1)
  */
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Prisma
 const mockFindUnique = vi.fn();

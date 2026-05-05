@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeAll } from 'vitest';
-import { encryptCredential, decryptCredential } from '../byok.service';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { decryptCredential, encryptCredential } from '../byok.service';
 
 describe('BYOK Vault', () => {
     beforeAll(() => {

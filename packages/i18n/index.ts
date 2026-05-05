@@ -2,23 +2,23 @@
 // Re-export config and types
 
 export {
-    locales,
     defaultLocale,
-    localeNames,
-    localeFlags,
-    namespaces,
-    isValidLocale,
     getLocaleFromHeader,
+    isValidLocale,
     type Locale,
+    localeFlags,
+    localeNames,
+    locales,
     type Namespace,
+    namespaces,
 } from './config';
 
+import de from './locales/de';
 // Import all locale messages
 import en from './locales/en';
-import tr from './locales/tr';
 import es from './locales/es';
 import fr from './locales/fr';
-import de from './locales/de';
+import tr from './locales/tr';
 
 export const messages = {
     en,

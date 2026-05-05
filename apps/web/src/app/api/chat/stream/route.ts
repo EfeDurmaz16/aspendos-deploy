@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { streamText, tool, stepCountIs } from 'ai';
-import { gateway } from 'ai';
+import { gateway, stepCountIs, streamText, tool } from 'ai';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 

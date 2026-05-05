@@ -1,12 +1,12 @@
-import { describe, expect, it, beforeEach } from 'vitest';
-import { registry } from '../registry';
-import { fileWriteTool } from '../file-write';
-import { emailSendTool } from '../email-send';
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { ToolContext } from '../../reversibility/types';
 import { calendarCreateEventTool } from '../calendar-create-event';
 import { dbMigrateTool } from '../db-migrate';
-import { stripeChargeTool } from '../stripe-charge';
+import { emailSendTool } from '../email-send';
+import { fileWriteTool } from '../file-write';
 import { registerAllTools } from '../register-all';
-import type { ToolContext } from '../../reversibility/types';
+import { registry } from '../registry';
+import { stripeChargeTool } from '../stripe-charge';
 
 const ctx: ToolContext = { userId: 'test-user-123' };
 

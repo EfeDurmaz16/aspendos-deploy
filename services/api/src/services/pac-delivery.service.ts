@@ -6,7 +6,7 @@
  * Migrated from Prisma to Convex action_log.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 import { type MessageContent, sendToUser } from '../messaging/gateway';
 
 export interface DeliveryOptions {

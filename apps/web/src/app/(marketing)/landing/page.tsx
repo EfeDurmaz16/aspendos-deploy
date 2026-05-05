@@ -1,14 +1,15 @@
 'use client';
 
 import {
-    ArrowRight,
     ArrowCounterClockwise,
+    ArrowRight,
     CaretDown,
     ChatCircleDots,
     Check,
     CloudArrowUp,
     Fingerprint,
     GitBranch,
+    GithubLogo,
     Lightning,
     ListChecks,
     Prohibit,
@@ -18,13 +19,12 @@ import {
     ShieldCheck,
     SignIn,
     Sparkle,
-    GithubLogo,
 } from '@phosphor-icons/react';
-import { PlatformIcon, type PlatformName } from '@/components/platform-icon';
-import { LogoMark } from '@/components/brand/logo';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { LogoMark } from '@/components/brand/logo';
+import { PlatformIcon, type PlatformName } from '@/components/platform-icon';
 import { cn } from '@/lib/utils';
 
 // =============================================================================

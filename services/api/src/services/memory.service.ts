@@ -10,7 +10,7 @@
  * - submitFeedback: Log user feedback via action_log
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 
 type Memory = any;
 type MemoryFeedback = any;

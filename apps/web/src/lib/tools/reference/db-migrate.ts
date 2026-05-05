@@ -9,7 +9,7 @@
  * Rollback: manual — migration rollback must be handled by the user
  */
 
-import type { ReversibleToolDef, AgitCommit } from '@/lib/reversibility/types';
+import type { AgitCommit, ReversibleToolDef } from '@/lib/reversibility/types';
 
 export const dbMigrate: ReversibleToolDef = {
     name: 'db-migrate',

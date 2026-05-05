@@ -13,7 +13,7 @@
  * - Rollback: action reverts a previous action
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 
 // ============================================
 // TYPES

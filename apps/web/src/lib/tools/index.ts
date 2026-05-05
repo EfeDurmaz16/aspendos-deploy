@@ -7,10 +7,10 @@
  * - Tier gating info (for the tools API route)
  */
 
-import { sandboxTools, SANDBOX_TOOL_META } from './sandbox';
-import { browserTools, BROWSER_TOOL_META } from './browser';
-import { computerUseTools, COMPUTER_USE_TOOL_META } from './computer-use';
 import type { ReversibilityClass } from '@/lib/reversibility/types';
+import { BROWSER_TOOL_META, browserTools } from './browser';
+import { COMPUTER_USE_TOOL_META, computerUseTools } from './computer-use';
+import { SANDBOX_TOOL_META, sandboxTools } from './sandbox';
 
 // ── Tier definitions ────────────────────────────────────────────
 export type UserTier = 'free' | 'personal' | 'pro' | 'enterprise';
@@ -99,7 +99,7 @@ export function getToolManifest(tier: UserTier) {
     }));
 }
 
+export { BROWSER_TOOL_META, browserTools } from './browser';
+export { COMPUTER_USE_TOOL_META, computerUseTools } from './computer-use';
 // ── Re-exports ──────────────────────────────────────────────────
-export { sandboxTools, SANDBOX_TOOL_META } from './sandbox';
-export { browserTools, BROWSER_TOOL_META } from './browser';
-export { computerUseTools, COMPUTER_USE_TOOL_META } from './computer-use';
+export { SANDBOX_TOOL_META, sandboxTools } from './sandbox';

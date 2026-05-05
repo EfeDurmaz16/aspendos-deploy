@@ -9,8 +9,8 @@
  * utilities for Slack-native features beyond the SDK.
  */
 
-import type { ApprovalPayload } from '../types';
 import { BADGE_COLORS, BADGE_EMOJI } from '../../messaging/badge-constants';
+import type { ApprovalPayload } from '../types';
 
 // ============================================
 // Slack Block Kit Helpers

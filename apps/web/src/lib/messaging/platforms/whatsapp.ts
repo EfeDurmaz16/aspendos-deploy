@@ -9,8 +9,8 @@
  * utilities for WhatsApp-native interactive message types.
  */
 
-import type { ApprovalPayload } from '../types';
 import { BADGE_EMOJI } from '../../messaging/badge-constants';
+import type { ApprovalPayload } from '../types';
 
 const WHATSAPP_API = 'https://graph.facebook.com/v21.0';
 

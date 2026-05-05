@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import { runToolStep } from '../orchestrator/step';
-import { registry } from '../tools/registry';
 import { getAgit } from '../audit/agit';
+import { runToolStep } from '../orchestrator/step';
 import type { ToolContext } from '../reversibility/types';
+import { registry } from '../tools/registry';
 
 const publicApi = new Hono();
 

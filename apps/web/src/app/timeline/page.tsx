@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useCallback, useTransition } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../../../convex/_generated/api';
+import { useMutation, useQuery } from 'convex/react';
+import { useCallback, useState, useTransition } from 'react';
 import { ReversibilityBadge } from '@/components/reversibility-badge';
-import type { ReversibilityClass } from '@/lib/reversibility/types';
-import { REVERSIBILITY_SPECS } from '@/lib/reversibility/types';
-import { dispatchRollback } from '@/lib/reversibility/dispatch';
-import type { AgitCommit } from '@/lib/reversibility/types';
 import { useAuth } from '@/hooks/use-auth';
+import { dispatchRollback } from '@/lib/reversibility/dispatch';
+import type { AgitCommit, ReversibilityClass } from '@/lib/reversibility/types';
+import { REVERSIBILITY_SPECS } from '@/lib/reversibility/types';
+import { api } from '../../../../../convex/_generated/api';
 
 // ── Status indicator dot ─────────────────────────────────────
 

@@ -9,7 +9,7 @@
  * Rollback: none — financial transactions cannot be automatically reversed
  */
 
-import type { ReversibleToolDef, AgitCommit, ReversibilityClass } from '@/lib/reversibility/types';
+import type { AgitCommit, ReversibilityClass, ReversibleToolDef } from '@/lib/reversibility/types';
 
 const BLOCK_THRESHOLD_CENTS = 5_000; // $50.00
 

@@ -9,7 +9,9 @@ const manrope = Manrope({
     variable: '--font-manrope',
     display: 'swap',
 });
+
 import { SkipLink } from '@/components/accessibility/skip-link';
+import { ConvexClientProvider } from '@/components/convex-client-provider';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { InstallPrompt, OfflineBanner, UpdatePrompt } from '@/components/pwa';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -22,7 +24,6 @@ import {
     softwareAppSchema,
     websiteSchema,
 } from '@/lib/seo/structured-data';
-import { ConvexClientProvider } from '@/components/convex-client-provider';
 import { cn } from '@/lib/utils';
 
 // Comprehensive metadata for SEO and GEO

@@ -69,6 +69,7 @@ initSentry();
 
 // Register governance tools at startup
 import { registerAllTools } from './tools/register-all';
+
 registerAllTools();
 
 type Variables = {

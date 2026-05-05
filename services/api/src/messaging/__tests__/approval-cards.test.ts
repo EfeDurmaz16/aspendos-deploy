@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createApprovalCard } from '../types';
+import { renderDiscordApprovalCard } from '../cards/discord';
 import { renderSlackApprovalCard } from '../cards/slack';
 import { renderTelegramApprovalCard } from '../cards/telegram';
-import { renderDiscordApprovalCard } from '../cards/discord';
 import { renderWhatsAppApprovalCard } from '../cards/whatsapp';
+import { createApprovalCard } from '../types';
 
 const card = createApprovalCard(
     'abc123def456',

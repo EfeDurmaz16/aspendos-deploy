@@ -14,8 +14,8 @@
  */
 
 import { Supermemory as SuperMemory } from 'supermemory';
-import { getConvexClient, api } from '../lib/convex';
 import { breakers } from '../lib/circuit-breaker';
+import { api, getConvexClient } from '../lib/convex';
 import { queueFallbackWrite, searchFallback } from '../lib/memory-fallback';
 import type { MemoryResult, MemoryStats } from './memory-router.service';
 

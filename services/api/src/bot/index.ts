@@ -10,7 +10,7 @@
  *   → streamText() with tools → thread.post(fullStream) → Platform
  */
 
-import { gateway, streamText, stepCountIs } from 'ai';
+import { gateway, stepCountIs, streamText } from 'ai';
 import { getSystemPrompt } from './prompt';
 import { getAgentTools } from './tools';
 

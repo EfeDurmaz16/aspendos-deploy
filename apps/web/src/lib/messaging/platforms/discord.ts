@@ -9,8 +9,8 @@
  * utilities for Discord-native embed + component features.
  */
 
+import { BADGE_EMOJI, BADGE_HEX } from '../../messaging/badge-constants';
 import type { ApprovalPayload } from '../types';
-import { BADGE_HEX, BADGE_EMOJI } from '../../messaging/badge-constants';
 
 // ============================================
 // Discord Embed Types

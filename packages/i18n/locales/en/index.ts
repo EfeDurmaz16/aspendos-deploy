@@ -1,15 +1,15 @@
 // English translations (source of truth)
 
-import common from './common';
 import auth from './auth';
-import onboarding from './onboarding';
-import chat from './chat';
-import importNs from './import';
-import pac from './pac';
-import council from './council';
-import settings from './settings';
 import billing from './billing';
+import chat from './chat';
+import common from './common';
+import council from './council';
 import errors from './errors';
+import importNs from './import';
+import onboarding from './onboarding';
+import pac from './pac';
+import settings from './settings';
 
 export default {
     common,

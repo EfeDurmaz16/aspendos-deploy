@@ -7,7 +7,7 @@
  * Migrated from Prisma to Convex action_log events.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient } from '../lib/convex';
 
 // ============================================
 // TYPES
