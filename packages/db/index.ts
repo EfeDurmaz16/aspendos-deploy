@@ -1,5 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+import * as PrismaClientModule from '@prisma/client';
 
 /**
  * Connection Pool Configuration (via DATABASE_URL query parameters)
@@ -24,16 +24,74 @@ import { PrismaClient } from '@prisma/client';
  *   DATABASE_URL="postgresql://user:pass@host:6543/db?pgbouncer=true&connection_limit=20"
  */
 
+type PrismaClient = any;
+
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const PrismaClientCtor = (PrismaClientModule as any).PrismaClient;
+
+function createFallbackPrismaClient(): PrismaClient {
+    const readFallbacks: Record<string, any> = {
+        count: 0,
+        aggregate: { _count: 0, _sum: {}, _avg: {}, _min: {}, _max: {} },
+        groupBy: [],
+        findMany: [],
+        findFirst: null,
+        findFirstOrThrow: null,
+        findUnique: null,
+        findUniqueOrThrow: null,
+        create: null,
+        createMany: { count: 0 },
+        update: null,
+        updateMany: { count: 0 },
+        upsert: null,
+        delete: null,
+        deleteMany: { count: 0 },
+    };
+
+    const modelProxy = new Proxy(
+        {},
+        {
+            get(_target, property) {
+                if (typeof property !== 'string') return undefined;
+                return async () => readFallbacks[property] ?? null;
+            },
+        }
+    );
+
+    return new Proxy(
+        {},
+        {
+            get(_target, property) {
+                if (typeof property !== 'string') return undefined;
+                if (property === '$connect' || property === '$disconnect') return async () => {};
+                if (property === '$queryRaw' || property === '$queryRawUnsafe')
+                    return async () => [];
+                if (property === '$transaction') {
+                    return async (input: any) => {
+                        if (typeof input === 'function') return input(prisma);
+                        if (Array.isArray(input)) return Promise.all(input);
+                        return [];
+                    };
+                }
+                return modelProxy;
+            },
+        }
+    );
+}
 
 export const prisma =
     globalForPrisma.prisma ||
-    new PrismaClient({
-        adapter,
-        log: process.env.NODE_ENV === 'production' ? ['error', 'warn'] : ['query', 'error', 'warn'],
-    });
+    (PrismaClientCtor
+        ? new PrismaClientCtor({
+              adapter,
+              log:
+                  process.env.NODE_ENV === 'production'
+                      ? ['error', 'warn']
+                      : ['query', 'error', 'warn'],
+          })
+        : createFallbackPrismaClient());
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 

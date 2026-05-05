@@ -7,6 +7,7 @@
 import { Hono } from 'hono';
 
 import { createLogger } from '../lib/logger';
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 
 const log = createLogger({ action: 'billing' });

@@ -3,6 +3,7 @@
  * Tests data export, account deletion, data summary, anonymization, and rate limiting.
  */
 
+import { prisma } from '@aspendos/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Mock @aspendos/db before imports (factory must not reference outer variables) ─

@@ -280,17 +280,12 @@ export type UserTier = 'FREE' | 'STARTER' | 'PRO' | 'ULTRA';
  * Get SuperMemory tools if the backend is supermemory/dual.
  * Returns null if not using SuperMemory.
  */
-async function getSupermemoryTools(
-    userId: string
-): Promise<Record<string, ReturnType<typeof tool>> | null> {
+async function getSupermemoryTools(_userId: string): Promise<Record<string, any> | null> {
     if (!process.env.SUPERMEMORY_API_KEY) return null;
 
     try {
         const { supermemoryTools } = await import('@supermemory/tools/ai-sdk');
-        return supermemoryTools({
-            apiKey: process.env.SUPERMEMORY_API_KEY,
-            containerTags: [`user_${userId}`],
-        });
+        return supermemoryTools(process.env.SUPERMEMORY_API_KEY);
     } catch {
         return null;
     }

@@ -33,7 +33,7 @@ export async function authMiddleware(c: Context, next: Next) {
     return next();
 }
 
-export function requireAuth(c: Context, next: Next) {
+export async function requireAuth(c: Context, next: Next) {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Authentication required' }, 401);
@@ -45,7 +45,7 @@ export function optionalAuth(c: Context, next: Next) {
     return authMiddleware(c, next);
 }
 
-export function requireAdmin(c: Context, next: Next) {
+export async function requireAdmin(c: Context, next: Next) {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Authentication required' }, 401);

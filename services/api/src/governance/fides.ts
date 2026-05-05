@@ -23,8 +23,9 @@ export class FidesService {
 
         try {
             const fides = await import('@fides/sdk');
-            this.keyPair = await fides.generateKeyPair();
-            this.did = fides.generateDID(this.keyPair.publicKey);
+            const keyPair = await fides.generateKeyPair();
+            this.keyPair = keyPair;
+            this.did = fides.generateDID(keyPair.publicKey);
             this.initialized = true;
         } catch {
             this.keyPair = await this.generateFallbackKeyPair();

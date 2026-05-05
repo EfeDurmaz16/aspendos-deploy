@@ -9,11 +9,6 @@
  *   Platform webhook → Chat SDK adapter → bot.onNewMention/onSubscribedMessage
  *   → streamText() with tools → thread.post(fullStream) → Platform
  */
-
-import { gateway, stepCountIs, streamText } from 'ai';
-import { getSystemPrompt } from './prompt';
-import { getAgentTools } from './tools';
-
 // ============================================
 // LAZY INITIALIZATION
 // Chat SDK packages are optional — the API starts without them.
@@ -44,20 +39,21 @@ async function initBot() {
         }
         if (process.env.WHATSAPP_TOKEN) {
             const { WhatsAppAdapter } = await import('@chat-adapter/whatsapp');
-            adapters.whatsapp = new WhatsAppAdapter();
+            adapters.whatsapp = new (WhatsAppAdapter as any)();
         }
 
         let state: any;
         if (process.env.DATABASE_URL) {
             try {
-                const { PostgresState } = await import('@chat-adapter/state-pg');
-                state = new PostgresState({ connectionString: process.env.DATABASE_URL });
+                const statePg = await import('@chat-adapter/state-pg');
+                state = (statePg as any).createPostgresState?.();
             } catch {
                 // State adapter not available
             }
         }
 
-        _bot = new Chat({
+        _bot = new (Chat as any)({
+            userName: process.env.BOT_USERNAME || 'yula',
             adapters,
             ...(state ? { state } : {}),
         });
@@ -112,7 +108,7 @@ export const bot = new Proxy({} as any, {
  * Handle new mentions (first message in a thread).
  * Subscribes the thread for multi-turn conversation.
  */
-bot.onNewMention(async (thread, message) => {
+bot.onNewMention(async (thread: any, message: any) => {
     // Subscribe for multi-turn
     await thread.subscribe();
 
@@ -122,18 +118,18 @@ bot.onNewMention(async (thread, message) => {
 /**
  * Handle messages in subscribed threads (multi-turn).
  */
-bot.onSubscribedMessage(async (thread, message) => {
+bot.onSubscribedMessage(async (thread: any, message: any) => {
     await handleMessage(thread, message);
 });
 
 /**
  * Handle button interactions (approval flow).
  */
-bot.onAction(async (action) => {
+bot.onAction(async (action: any) => {
     const { actionId, value, thread } = action;
 
     if (actionId?.startsWith('yula_approve')) {
-        const { approveRequest, addToAllowlist } = await import('../services/approval.service');
+        const { approveRequest } = await import('../services/approval.service');
         await approveRequest(value, 'system');
         await thread.post('Approved.');
     } else if (actionId?.startsWith('yula_reject')) {
@@ -142,9 +138,9 @@ bot.onAction(async (action) => {
         await thread.post('Rejected.');
     } else if (actionId?.startsWith('yula_always')) {
         const { approveRequest, addToAllowlist } = await import('../services/approval.service');
-        const approval = await approveRequest(value, 'system');
+        const approval = (await approveRequest(value, 'system')) as any;
         if (approval) {
-            await addToAllowlist('system', approval.toolName, 'permanent');
+            await addToAllowlist('system', approval.toolName ?? 'unknown', 'permanent');
         }
         await thread.post('Approved (always allowed).');
     }
@@ -207,7 +203,7 @@ async function handleMessage(
             memoryRouter.supermemory
                 .processConversation(`bot_${thread.id}_${Date.now()}`, userId, [
                     { role: 'user', content: message.text },
-                    { role: 'assistant', content: (await result).text },
+                    { role: 'assistant', content: await result.text },
                 ])
                 .catch(() => {});
         }

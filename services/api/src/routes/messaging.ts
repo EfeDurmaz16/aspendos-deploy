@@ -10,6 +10,7 @@
  */
 
 import { Hono } from 'hono';
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
 import { connectionIdParamSchema, createConnectionSchema } from '../validation/messaging.schema';

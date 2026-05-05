@@ -5,6 +5,7 @@
  */
 
 import { Hono } from 'hono';
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 
 type Variables = {

@@ -11,6 +11,7 @@
  */
 
 import { breakers } from './circuit-breaker';
+import { prisma } from './prisma';
 
 /**
  * Interface retained for test injection compatibility. In production the
