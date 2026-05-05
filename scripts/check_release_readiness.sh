@@ -40,6 +40,12 @@ if [[ ! -f "apps/web/src/instrumentation-client.ts" ]]; then
   fail "Missing apps/web/src/instrumentation-client.ts for Sentry client instrumentation."
 fi
 
+info "Verifying Prisma schema and generated client..."
+if [[ ! -f "packages/db/prisma/schema.prisma" ]]; then
+  fail "Missing packages/db/prisma/schema.prisma. Restore or remove @aspendos/db production paths before release."
+fi
+bun run --cwd packages/db db:generate
+
 info "Running API critical tests..."
 bun run --cwd services/api test \
   src/routes/__tests__/council.test.ts \

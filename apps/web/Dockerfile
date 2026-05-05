@@ -24,8 +24,8 @@ RUN npm install -g bun
 # Copy package files for monorepo
 COPY package.json bun.lock* ./
 COPY apps/web/package.json ./apps/web/
-COPY packages/db/package.json ./packages/db/ 2>/dev/null || true
-COPY packages/shared-types/package.json ./packages/shared-types/ 2>/dev/null || true
+COPY packages/db/package.json ./packages/db/
+COPY packages/shared-types/package.json ./packages/shared-types/
 
 # Install dependencies
 RUN bun install --frozen-lockfile
@@ -42,7 +42,7 @@ RUN npm install -g bun
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules 2>/dev/null || true
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
 # Copy source code
 COPY . .

@@ -37,7 +37,27 @@ try {
     PrismaClientCtor = null;
 }
 
+function missingPrismaClientError(): Error {
+    return new Error(
+        'Prisma client is not generated. Run `bun run --cwd packages/db db:generate` before using @aspendos/db.'
+    );
+}
+
 function createFallbackPrismaClient(): PrismaClient {
+    if (
+        process.env.NODE_ENV === 'production' ||
+        process.env.ASPENDOS_REQUIRE_PRISMA_CLIENT === 'true'
+    ) {
+        return new Proxy(
+            {},
+            {
+                get() {
+                    throw missingPrismaClientError();
+                },
+            }
+        );
+    }
+
     const readFallbacks: Record<string, any> = {
         count: 0,
         aggregate: { _count: 0, _sum: {}, _avg: {}, _min: {}, _max: {} },

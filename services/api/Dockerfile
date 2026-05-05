@@ -21,8 +21,9 @@ RUN bun install --frozen-lockfile
 COPY packages/ ./packages/
 COPY services/api/ ./services/api/
 
-# Generate Prisma client
-RUN cd packages/db && bunx prisma generate || true
+# Generate Prisma client. This must fail loudly; the API uses @aspendos/db on
+# production paths and cannot safely run with the fallback client.
+RUN cd packages/db && bun run db:generate
 
 # Build API
 RUN cd services/api && bun run build
@@ -42,10 +43,9 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 # Copy built application and dependencies
 COPY --from=builder --chown=api:nodejs /app/services/api/package.json ./
-COPY --from=builder --chown=api:nodejs /app/services/api/node_modules ./node_modules
+COPY --from=builder --chown=api:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=api:nodejs /app/packages ./packages
 COPY --from=builder --chown=api:nodejs /app/services/api/dist ./dist
-COPY --from=builder --chown=api:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=api:nodejs /app/packages/db/node_modules/.prisma ./node_modules/.prisma
 
 USER api
 
