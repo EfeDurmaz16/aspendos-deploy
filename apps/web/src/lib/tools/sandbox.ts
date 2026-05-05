@@ -21,6 +21,50 @@ export const SANDBOX_TOOL_META = {
 
 // ── Sandbox instance cache (per-request, keyed by sandboxId) ────
 const sandboxCache = new Map<string, any>();
+const SAFE_PATH_ROOTS = ['/home/user', '/tmp', '/workspace'];
+const SAFE_PACKAGE_NAME = /^(?:@[-a-z0-9._]+\/)?[-a-z0-9._]+$/i;
+const BLOCKED_COMMAND_PATTERNS = [
+    /\brm\s+-rf\s+(?:\/|\*)/i,
+    /\b(?:mkfs|shutdown|reboot|halt|poweroff)\b/i,
+    /\bdd\s+if=/i,
+    /:\s*\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}/,
+    /\bcurl\b.*\|\s*(?:sh|bash|zsh)\b/i,
+    /\bwget\b.*\|\s*(?:sh|bash|zsh)\b/i,
+];
+
+function validateSandboxPath(path: string) {
+    if (!path.startsWith('/')) {
+        throw new Error('Sandbox path must be absolute');
+    }
+    if (path.includes('\0') || path.split('/').includes('..')) {
+        throw new Error('Sandbox path contains unsafe traversal');
+    }
+    if (!SAFE_PATH_ROOTS.some((root) => path === root || path.startsWith(`${root}/`))) {
+        throw new Error(`Sandbox path must be under ${SAFE_PATH_ROOTS.join(', ')}`);
+    }
+}
+
+function validateCommand(command: string) {
+    if (command.length > 4000) {
+        throw new Error('Sandbox command is too long');
+    }
+    for (const pattern of BLOCKED_COMMAND_PATTERNS) {
+        if (pattern.test(command)) {
+            throw new Error('Sandbox command matches a blocked destructive pattern');
+        }
+    }
+}
+
+function validatePackages(packages: string[]) {
+    if (packages.length === 0 || packages.length > 25) {
+        throw new Error('Package install must include 1 to 25 packages');
+    }
+    for (const packageName of packages) {
+        if (!SAFE_PACKAGE_NAME.test(packageName)) {
+            throw new Error(`Unsafe package name: ${packageName}`);
+        }
+    }
+}
 
 async function getOrCreateSandbox(sandboxId?: string) {
     const Sandbox = (await import('e2b')).default;
@@ -103,6 +147,8 @@ export const runCode = tool({
     }),
     execute: async ({ sandboxId, command, cwd, timeoutMs }) => {
         try {
+            validateCommand(command);
+            if (cwd) validateSandboxPath(cwd);
             const sandbox = await getOrCreateSandbox(sandboxId);
             const opts: Record<string, unknown> = {};
             if (cwd) opts.cwd = cwd;
@@ -137,6 +183,7 @@ export const writeFile = tool({
     }),
     execute: async ({ sandboxId, path, content }) => {
         try {
+            validateSandboxPath(path);
             const sandbox = await getOrCreateSandbox(sandboxId);
             await sandbox.files.write(path, content);
             return { success: true, path };
@@ -158,6 +205,7 @@ export const readFile = tool({
     }),
     execute: async ({ sandboxId, path }) => {
         try {
+            validateSandboxPath(path);
             const sandbox = await getOrCreateSandbox(sandboxId);
             const content = await sandbox.files.read(path);
             return { success: true, path, content };
@@ -183,6 +231,7 @@ export const installPackage = tool({
     }),
     execute: async ({ sandboxId, manager, packages }) => {
         try {
+            validatePackages(packages);
             const sandbox = await getOrCreateSandbox(sandboxId);
 
             const cmds: Record<string, string> = {
