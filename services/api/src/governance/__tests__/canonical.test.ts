@@ -113,6 +113,28 @@ describe('canonical governance primitives', () => {
         await expect(agitA.verifyCommit(commitA.hash)).resolves.toBe(true);
     });
 
+    it('keeps local AGIT hashes independent from record timestamps', async () => {
+        const base = {
+            userId: 'timestamp-independent-user',
+            toolName: 'file.write',
+            args: { path: '/tmp/a.txt', content: 'hello' },
+            metadata,
+            fidesSignature: 'sig-1',
+            fidesDid: 'did:fides:test',
+            type: 'pre' as const,
+        };
+
+        vi.spyOn(Date, 'now').mockReturnValueOnce(111).mockReturnValueOnce(222);
+
+        const agit = new AgitService();
+        const first = await agit.commitAction(base);
+        const second = await agit.commitAction(base);
+
+        expect(first.timestamp).toBe(111);
+        expect(second.timestamp).toBe(222);
+        expect(second.hash).toBe(first.hash);
+    });
+
     it('refuses in-memory AGIT commits in production', async () => {
         process.env.NODE_ENV = 'production';
         delete process.env.AGIT_REPO_PATH;

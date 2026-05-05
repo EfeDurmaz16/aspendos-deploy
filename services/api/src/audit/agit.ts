@@ -74,15 +74,18 @@ export class AgitService {
 
         const message = `${opts.type}:${opts.toolName}:${opts.metadata.reversibility_class}`;
         const timestamp = Date.now();
-        const state = {
+        const deterministicState = {
             args: opts.args,
             class: opts.metadata.reversibility_class,
             explanation: opts.metadata.human_explanation,
             result: opts.result,
-            timestamp,
             tool: opts.toolName,
             type: opts.type,
             userId: opts.userId,
+        };
+        const state = {
+            ...deterministicState,
+            timestamp,
         };
 
         if (this.client) {
@@ -113,7 +116,7 @@ export class AgitService {
         const hash = await sha256Hex(
             canonicalJson({
                 message,
-                state,
+                state: deterministicState,
                 signature: opts.fidesSignature,
             })
         );

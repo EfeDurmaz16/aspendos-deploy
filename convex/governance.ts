@@ -38,7 +38,6 @@ function commitPayload(args: {
     result?: unknown;
     reversibility_class: string;
     status: string;
-    timestamp: number;
     tool_name: string;
 }) {
     return {
@@ -47,7 +46,6 @@ function commitPayload(args: {
         result: args.result,
         reversibility_class: args.reversibility_class,
         status: args.status,
-        timestamp: args.timestamp,
         tool_name: args.tool_name,
     };
 }
@@ -58,7 +56,6 @@ async function hashCommitPayload(args: {
     result?: unknown;
     reversibility_class: string;
     status: string;
-    timestamp: number;
     tool_name: string;
 }) {
     return await sha256Hex(canonicalJson(commitPayload(args)));
@@ -151,7 +148,6 @@ export const signAndCommit = mutation({
                 result: args.result,
                 reversibility_class: args.reversibility_class,
                 status,
-                timestamp: now,
                 tool_name: args.tool_name,
             })
         );
@@ -165,7 +161,6 @@ export const signAndCommit = mutation({
             result: args.result,
             reversibility_class: args.reversibility_class,
             status,
-            timestamp: now,
             tool_name: args.tool_name,
         });
         const commitHash = await sha256Hex(`${parentHash ?? 'genesis'}${payloadHash}`);
@@ -265,7 +260,6 @@ export const verifyCommit = query({
             result: commit.result,
             reversibility_class: commit.reversibility_class,
             status: commit.status,
-            timestamp: commit.timestamp,
             tool_name: commit.tool_name,
         });
         checks.payload_integrity = commit.payload_hash === expectedPayloadHash;
@@ -284,7 +278,6 @@ export const verifyCommit = query({
                     result: commit.result,
                     reversibility_class: commit.reversibility_class,
                     status: commit.status,
-                    timestamp: commit.timestamp,
                     tool_name: commit.tool_name,
                 })
             );
@@ -390,7 +383,6 @@ export const revertCommit = mutation({
                 result,
                 reversibility_class: 'undoable',
                 status: 'executed',
-                timestamp: now,
                 tool_name: toolName,
             });
             const signaturePayload = canonicalJson(
@@ -400,7 +392,6 @@ export const revertCommit = mutation({
                     result,
                     reversibility_class: 'undoable',
                     status: 'executed',
-                    timestamp: now,
                     tool_name: toolName,
                 })
             );
@@ -507,7 +498,6 @@ export const revertCommit = mutation({
             result,
             reversibility_class: 'undoable',
             status: 'executed',
-            timestamp: now,
             tool_name: toolName,
         });
         const signaturePayload = canonicalJson(
@@ -517,7 +507,6 @@ export const revertCommit = mutation({
                 result,
                 reversibility_class: 'undoable',
                 status: 'executed',
-                timestamp: now,
                 tool_name: toolName,
             })
         );
@@ -674,7 +663,6 @@ export const verifyChain = query({
                 result: commit.result,
                 reversibility_class: commit.reversibility_class,
                 status: commit.status,
-                timestamp: commit.timestamp,
                 tool_name: commit.tool_name,
             });
             const expectedHash = await sha256Hex(
