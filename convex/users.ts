@@ -1,6 +1,14 @@
 import { v } from 'convex/values';
+import type { QueryCtx } from './_generated/server';
 import { mutation, query } from './_generated/server';
-import { requireAuthenticatedWorkOSId } from './authHelpers';
+
+async function requireAuthenticatedWorkOSId(ctx: QueryCtx) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+        throw new Error('Not authenticated');
+    }
+    return identity.subject;
+}
 
 export const upsertFromWorkOS = mutation({
     args: {

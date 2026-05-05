@@ -1,6 +1,24 @@
 import { v } from 'convex/values';
+import type { QueryCtx } from './_generated/server';
 import { mutation, query } from './_generated/server';
-import { requireAuthenticatedUser } from './authHelpers';
+
+async function requireAuthenticatedUser(ctx: QueryCtx) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+        throw new Error('Not authenticated');
+    }
+
+    const user = await ctx.db
+        .query('users')
+        .withIndex('by_workos_id', (q) => q.eq('workos_id', identity.subject))
+        .first();
+
+    if (!user) {
+        throw new Error('Authenticated user is not provisioned');
+    }
+
+    return user;
+}
 
 export const create = mutation({
     args: {
