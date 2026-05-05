@@ -10,6 +10,22 @@ import { api, getConvexClient, isConvexConfigured } from '../lib/convex';
 type Chat = any;
 type Message = any;
 type User = any;
+type ConvexClient = ReturnType<typeof getConvexClient>;
+
+async function resolveConvexUserId(client: ConvexClient, userId: string) {
+    const user = await client.query(api.users.getByWorkOSId, { workos_id: userId });
+    return user?._id ?? null;
+}
+
+async function getOwnedConversation(client: ConvexClient, chatId: string, userId: string) {
+    const convexUserId = await resolveConvexUserId(client, userId);
+    if (!convexUserId) return null;
+
+    const chat = await client.query(api.conversations.get, { id: chatId as any });
+    if (!chat || chat.user_id !== convexUserId) return null;
+
+    return { chat, convexUserId };
+}
 
 // ============================================
 // USER OPERATIONS
@@ -146,15 +162,15 @@ export async function getChatWithMessages(
 
         const client = getConvexClient();
 
-        const chat = await client.query(api.conversations.get, { id: chatId as any });
-        if (!chat || chat.user_id !== userId) return null;
+        const owned = await getOwnedConversation(client, chatId, userId);
+        if (!owned) return null;
 
         const messages = await client.query(api.messages.listByConversation, {
             conversation_id: chatId as any,
             limit,
         });
 
-        return { ...chat, messages: messages || [] };
+        return { ...owned.chat, messages: messages || [] };
     } catch {
         return null;
     }
@@ -166,9 +182,8 @@ export async function getChatWithMessages(
 export async function getChat(chatId: string, userId: string): Promise<Chat | null> {
     try {
         const client = getConvexClient();
-        const chat = await client.query(api.conversations.get, { id: chatId as any });
-        if (!chat || chat.user_id !== userId) return null;
-        return chat;
+        const owned = await getOwnedConversation(client, chatId, userId);
+        return owned?.chat ?? null;
     } catch {
         return null;
     }
@@ -184,9 +199,8 @@ export async function updateChat(
 ) {
     try {
         const client = getConvexClient();
-        // Verify ownership first
-        const chat = await client.query(api.conversations.get, { id: chatId as any });
-        if (!chat || chat.user_id !== userId) return null;
+        const owned = await getOwnedConversation(client, chatId, userId);
+        if (!owned) return null;
 
         if (data.title) {
             await client.mutation(api.conversations.updateTitle, {
@@ -206,9 +220,8 @@ export async function updateChat(
 export async function deleteChat(chatId: string, userId: string) {
     try {
         const client = getConvexClient();
-        // Verify ownership first
-        const chat = await client.query(api.conversations.get, { id: chatId as any });
-        if (!chat || chat.user_id !== userId) return { count: 0 };
+        const owned = await getOwnedConversation(client, chatId, userId);
+        if (!owned) return { count: 0 };
 
         await client.mutation(api.conversations.remove, { id: chatId as any });
         return { count: 1 };
@@ -239,9 +252,12 @@ export interface CreateMessageInput {
 export async function createMessage(input: CreateMessageInput): Promise<Message> {
     try {
         const client = getConvexClient();
+        const owned = await getOwnedConversation(client, input.chatId, input.userId);
+        if (!owned) return null;
+
         const id = await client.mutation(api.messages.create, {
             conversation_id: input.chatId as any,
-            user_id: input.userId as any,
+            user_id: owned.convexUserId,
             role: input.role,
             content: input.content,
         });
@@ -273,8 +289,8 @@ export async function getMessages(
 
         // Optionally verify ownership
         if (userId) {
-            const chat = await client.query(api.conversations.get, { id: chatId as any });
-            if (!chat || chat.user_id !== userId) return [];
+            const owned = await getOwnedConversation(client, chatId, userId);
+            if (!owned) return [];
         }
 
         const messages = await client.query(api.messages.listByConversation, {
@@ -290,9 +306,13 @@ export async function getMessages(
 /**
  * Auto-generate chat title from first message
  */
-export async function autoGenerateTitle(chatId: string, firstMessage: string) {
+export async function autoGenerateTitle(chatId: string, firstMessage: string, userId?: string) {
     try {
         const client = getConvexClient();
+        if (userId) {
+            const owned = await getOwnedConversation(client, chatId, userId);
+            if (!owned) return null;
+        }
         const title =
             firstMessage.length > 50 ? `${firstMessage.substring(0, 47)}...` : firstMessage;
         await client.mutation(api.conversations.updateTitle, {
@@ -320,13 +340,12 @@ export async function addMessageFeedback(
         const message = await client.query(api.messages.get, { id: messageId as any });
         if (!message) return null;
 
-        // Verify ownership through conversation
-        const chat = await client.query(api.conversations.get, { id: message.conversation_id });
-        if (!chat || chat.user_id !== userId) return null;
+        const owned = await getOwnedConversation(client, message.conversation_id, userId);
+        if (!owned) return null;
 
         // Best-effort: log feedback as action log entry
         await client.mutation(api.actionLog.log, {
-            user_id: userId as any,
+            user_id: owned.convexUserId,
             event_type: 'message_feedback',
             details: { messageId, feedback, feedbackAt: new Date().toISOString() },
         });
@@ -369,10 +388,14 @@ export async function forkChat(
 
     try {
         const client = getConvexClient();
+        const convexUserId = await resolveConvexUserId(client, userId);
+        if (!convexUserId) {
+            throw new Error('User not found');
+        }
 
         // Create new conversation
         const newChatId = await client.mutation(api.conversations.create, {
-            user_id: userId as any,
+            user_id: convexUserId,
             title: `Fork of: ${originalChat.title || 'Untitled'}`,
         });
 
@@ -380,7 +403,7 @@ export async function forkChat(
         for (const msg of messagesToCopy) {
             await client.mutation(api.messages.create, {
                 conversation_id: newChatId,
-                user_id: msg.user_id || (userId as any),
+                user_id: msg.user_id || convexUserId,
                 role: msg.role,
                 content: msg.content,
             });

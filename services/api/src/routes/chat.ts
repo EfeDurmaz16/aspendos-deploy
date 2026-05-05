@@ -392,7 +392,7 @@ app.post(
         // Auto-generate title if this is the first message
         const existingMessages = await chatService.getMessages(chatId, undefined, userId);
         if (existingMessages.length === 1) {
-            await chatService.autoGenerateTitle(chatId, content);
+            await chatService.autoGenerateTitle(chatId, content, userId);
         }
 
         // ========================================
