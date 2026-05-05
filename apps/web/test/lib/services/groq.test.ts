@@ -4,18 +4,17 @@
  * This tests the routing decision engine that determines how to handle user messages.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock the entire groq-sdk module before importing our module
-const mockCreate = vi.fn();
-vi.mock('groq-sdk', () => ({
-    default: class MockGroq {
-        chat = {
-            completions: {
-                create: mockCreate,
-            },
-        };
-    },
+const { mockGenerateText, mockGateway } = vi.hoisted(() => ({
+    mockGenerateText: vi.fn(),
+    mockGateway: vi.fn((modelId: string) => modelId),
+}));
+
+vi.mock('ai', () => ({
+    gateway: mockGateway,
+    generateText: mockGenerateText,
+    streamText: vi.fn(),
 }));
 
 // Import after mocking
@@ -30,30 +29,21 @@ describe('Groq Router Service', () => {
         it('should route simple greetings to direct_reply', async () => {
             const mockResponse: RouteDecision = {
                 type: 'direct_reply',
-                model: 'gpt-4o-mini',
+                model: 'gpt-5-mini',
                 reason: 'Simple greeting, use fast model',
             };
 
-            mockCreate.mockResolvedValueOnce({
-                choices: [
-                    {
-                        message: {
-                            content: JSON.stringify(mockResponse),
-                        },
-                    },
-                ],
-            });
+            mockGenerateText.mockResolvedValueOnce({ text: JSON.stringify(mockResponse) });
 
             const result = await routeUserMessage('Hello!');
 
             expect(result.type).toBe('direct_reply');
             if (result.type === 'direct_reply') {
-                expect(result.model).toBe('gpt-4o-mini');
+                expect(result.model).toBe('gpt-5-mini');
             }
-            expect(mockCreate).toHaveBeenCalledWith(
+            expect(mockGenerateText).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    model: ROUTER_MODEL,
-                    response_format: { type: 'json_object' },
+                    model: `groq/${ROUTER_MODEL}`,
                 })
             );
         });
@@ -66,15 +56,7 @@ describe('Groq Router Service', () => {
                 reason: 'User asking about past conversations',
             };
 
-            mockCreate.mockResolvedValueOnce({
-                choices: [
-                    {
-                        message: {
-                            content: JSON.stringify(mockResponse),
-                        },
-                    },
-                ],
-            });
+            mockGenerateText.mockResolvedValueOnce({ text: JSON.stringify(mockResponse) });
 
             const result = await routeUserMessage('What did I say about my travel plans to Paris?');
 
@@ -92,15 +74,7 @@ describe('Groq Router Service', () => {
                 reason: 'User wants external information',
             };
 
-            mockCreate.mockResolvedValueOnce({
-                choices: [
-                    {
-                        message: {
-                            content: JSON.stringify(mockResponse),
-                        },
-                    },
-                ],
-            });
+            mockGenerateText.mockResolvedValueOnce({ text: JSON.stringify(mockResponse) });
 
             const result = await routeUserMessage('Search the web for latest AI news');
 
@@ -118,15 +92,7 @@ describe('Groq Router Service', () => {
                 reason: 'User wants a reminder',
             };
 
-            mockCreate.mockResolvedValueOnce({
-                choices: [
-                    {
-                        message: {
-                            content: JSON.stringify(mockResponse),
-                        },
-                    },
-                ],
-            });
+            mockGenerateText.mockResolvedValueOnce({ text: JSON.stringify(mockResponse) });
 
             const result = await routeUserMessage('Remind me to call mom at 5pm');
 
@@ -139,15 +105,15 @@ describe('Groq Router Service', () => {
 
         it('should fallback to direct_reply when router fails', async () => {
             // Primary router fails
-            mockCreate.mockRejectedValueOnce(new Error('API Error'));
+            mockGenerateText.mockRejectedValueOnce(new Error('API Error'));
             // Fallback also fails
-            mockCreate.mockRejectedValueOnce(new Error('Fallback Error'));
+            mockGenerateText.mockRejectedValueOnce(new Error('Fallback Error'));
 
             const result = await routeUserMessage('Hello');
 
             expect(result.type).toBe('direct_reply');
             if (result.type === 'direct_reply') {
-                expect(result.model).toBe('gpt-4o-mini');
+                expect(result.model).toBe('gpt-5-mini');
                 expect(result.reason).toContain('fallback');
             }
         });
@@ -155,19 +121,11 @@ describe('Groq Router Service', () => {
         it('should use context when provided', async () => {
             const mockResponse: RouteDecision = {
                 type: 'direct_reply',
-                model: 'gpt-4o',
+                model: 'gpt-5',
                 reason: 'Complex question with context',
             };
 
-            mockCreate.mockResolvedValueOnce({
-                choices: [
-                    {
-                        message: {
-                            content: JSON.stringify(mockResponse),
-                        },
-                    },
-                ],
-            });
+            mockGenerateText.mockResolvedValueOnce({ text: JSON.stringify(mockResponse) });
 
             await routeUserMessage('What do you think about that?', {
                 recentMessages: [
@@ -177,27 +135,18 @@ describe('Groq Router Service', () => {
             });
 
             // Verify context was included in the call
-            expect(mockCreate).toHaveBeenCalledWith(
+            expect(mockGenerateText).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    messages: expect.arrayContaining([
-                        expect.objectContaining({
-                            role: 'user',
-                            content: expect.stringContaining('Recent conversation context'),
-                        }),
-                    ]),
+                    prompt: expect.stringContaining('Recent conversation context'),
                 })
             );
         });
 
         it('should handle empty responses gracefully', async () => {
             // Return empty content
-            mockCreate.mockResolvedValueOnce({
-                choices: [{ message: { content: null } }],
-            });
+            mockGenerateText.mockResolvedValueOnce({ text: '' });
             // Fallback also returns empty
-            mockCreate.mockResolvedValueOnce({
-                choices: [{ message: { content: '' } }],
-            });
+            mockGenerateText.mockResolvedValueOnce({ text: '' });
 
             const result = await routeUserMessage('Test message');
 
@@ -207,25 +156,18 @@ describe('Groq Router Service', () => {
 
         it('should extract JSON from malformed responses', async () => {
             // Primary fails
-            mockCreate.mockRejectedValueOnce(new Error('Primary failed'));
+            mockGenerateText.mockRejectedValueOnce(new Error('Primary failed'));
 
             // Fallback returns JSON embedded in text
-            mockCreate.mockResolvedValueOnce({
-                choices: [
-                    {
-                        message: {
-                            content:
-                                'Here is the decision: {"type": "direct_reply", "model": "gpt-4o-mini", "reason": "Simple query"} done.',
-                        },
-                    },
-                ],
+            mockGenerateText.mockResolvedValueOnce({
+                text: 'Here is the decision: {"type": "direct_reply", "model": "gpt-5-mini", "reason": "Simple query"} done.',
             });
 
             const result = await routeUserMessage('Hello');
 
             expect(result.type).toBe('direct_reply');
             if (result.type === 'direct_reply') {
-                expect(result.model).toBe('gpt-4o-mini');
+                expect(result.model).toBe('gpt-5-mini');
             }
         });
     });

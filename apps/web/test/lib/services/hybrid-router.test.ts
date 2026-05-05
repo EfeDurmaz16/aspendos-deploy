@@ -41,7 +41,7 @@ describe('Hybrid Router', () => {
         vi.resetAllMocks();
         vi.mocked(routeUserMessage).mockResolvedValue({
             type: 'direct_reply',
-            model: 'gpt-4o-mini',
+            model: 'gpt-5-mini',
             reason: 'default',
         });
         vi.mocked(createEmbedding).mockResolvedValue(new Array(1536).fill(0));
@@ -51,7 +51,7 @@ describe('Hybrid Router', () => {
         it('should route a direct_reply decision without memory search', async () => {
             const mockDecision = {
                 type: 'direct_reply' as const,
-                model: 'gpt-4o-mini',
+                model: 'gpt-5-mini',
                 reason: 'Simple greeting',
             };
 
@@ -72,7 +72,7 @@ describe('Hybrid Router', () => {
             const mockDecision = {
                 type: 'rag_search' as const,
                 query: 'travel plans',
-                model: 'gpt-4o',
+                model: 'gpt-5',
                 reason: 'User asking about past plans',
             };
 
@@ -102,7 +102,7 @@ describe('Hybrid Router', () => {
         it('should include recent messages in context', async () => {
             vi.mocked(routeUserMessage).mockResolvedValueOnce({
                 type: 'direct_reply',
-                model: 'gpt-4o-mini',
+                model: 'gpt-5-mini',
                 reason: 'Follow-up question',
             });
             vi.mocked(createEmbedding).mockResolvedValueOnce(new Array(1536).fill(0.1));
@@ -145,7 +145,7 @@ describe('Hybrid Router', () => {
             vi.mocked(createOpenAIStream).mockReturnValueOnce(mockStream);
 
             const messages = [{ role: 'user' as const, content: 'Hi' }];
-            const stream = createUnifiedStreamingCompletion(messages, { model: 'gpt-4o-mini' });
+            const stream = createUnifiedStreamingCompletion(messages, { model: 'gpt-5-mini' });
 
             const chunks: string[] = [];
             for await (const chunk of stream) {
@@ -157,7 +157,7 @@ describe('Hybrid Router', () => {
             expect(createOpenAIStream).toHaveBeenCalledWith(
                 messages,
                 expect.objectContaining({
-                    model: 'gpt-4o-mini',
+                    model: 'gpt-5-mini',
                 })
             );
             expect(chunks).toEqual(['Hello', ' there!']);
@@ -176,7 +176,7 @@ describe('Hybrid Router', () => {
                 { role: 'user' as const, content: 'Hi' },
             ];
             const stream = createUnifiedStreamingCompletion(messages, {
-                model: 'claude-3-5-sonnet-20241022',
+                model: 'claude-sonnet-4-6',
             });
 
             const chunks: string[] = [];
@@ -189,7 +189,7 @@ describe('Hybrid Router', () => {
             expect(createAnthropicStreamingCompletion).toHaveBeenCalledWith(
                 [{ role: 'user', content: 'Hi' }],
                 expect.objectContaining({
-                    model: 'claude-3-5-sonnet-20241022',
+                    model: 'claude-sonnet-4-6',
                     systemPrompt: 'You are helpful',
                 })
             );
@@ -209,7 +209,7 @@ describe('Hybrid Router', () => {
             vi.mocked(createAnthropicStreamingCompletion).mockReturnValueOnce(mockStream);
 
             const messages = [{ role: 'user' as const, content: 'Test' }];
-            const stream = createUnifiedStreamingCompletion(messages, { model: 'gpt-4o' });
+            const stream = createUnifiedStreamingCompletion(messages, { model: 'gpt-5' });
 
             const results: Array<{ type: string; content: string }> = [];
             for await (const chunk of stream) {
@@ -219,7 +219,7 @@ describe('Hybrid Router', () => {
             // Should have fallback notification
             const fallbackChunk = results.find((r) => r.type === 'fallback');
             expect(fallbackChunk).toBeDefined();
-            expect(fallbackChunk?.content).toContain('claude-3-5-sonnet-20241022');
+            expect(fallbackChunk?.content).toContain('claude-sonnet-4-6');
         });
 
         it('should return error when all models fail', async () => {
@@ -237,7 +237,7 @@ describe('Hybrid Router', () => {
             });
 
             const messages = [{ role: 'user' as const, content: 'Test' }];
-            const stream = createUnifiedStreamingCompletion(messages, { model: 'gpt-4o' });
+            const stream = createUnifiedStreamingCompletion(messages, { model: 'gpt-5' });
 
             const results: Array<{ type: string; content: string }> = [];
             for await (const chunk of stream) {

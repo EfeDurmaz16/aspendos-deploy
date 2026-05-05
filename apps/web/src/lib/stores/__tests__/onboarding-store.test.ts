@@ -19,13 +19,14 @@ import {
 // ==========================================
 
 describe('ONBOARDING_STEPS Configuration', () => {
-    it('should have 5 steps defined', () => {
-        expect(Object.keys(ONBOARDING_STEPS)).toHaveLength(5);
+    it('should have 6 steps defined', () => {
+        expect(Object.keys(ONBOARDING_STEPS)).toHaveLength(6);
     });
 
     it('should have all required steps', () => {
         expect(ONBOARDING_STEPS.welcome).toBeDefined();
         expect(ONBOARDING_STEPS['import-demo']).toBeDefined();
+        expect(ONBOARDING_STEPS['memory-demo']).toBeDefined();
         expect(ONBOARDING_STEPS['pac-demo']).toBeDefined();
         expect(ONBOARDING_STEPS['council-demo']).toBeDefined();
         expect(ONBOARDING_STEPS.complete).toBeDefined();
@@ -57,10 +58,14 @@ describe('ONBOARDING_STEPS Configuration', () => {
 
         // Import demo step
         expect(ONBOARDING_STEPS['import-demo'].prev).toBe('welcome');
-        expect(ONBOARDING_STEPS['import-demo'].next).toBe('pac-demo');
+        expect(ONBOARDING_STEPS['import-demo'].next).toBe('memory-demo');
+
+        // Memory demo step
+        expect(ONBOARDING_STEPS['memory-demo'].prev).toBe('import-demo');
+        expect(ONBOARDING_STEPS['memory-demo'].next).toBe('pac-demo');
 
         // PAC demo step
-        expect(ONBOARDING_STEPS['pac-demo'].prev).toBe('import-demo');
+        expect(ONBOARDING_STEPS['pac-demo'].prev).toBe('memory-demo');
         expect(ONBOARDING_STEPS['pac-demo'].next).toBe('council-demo');
 
         // Council demo step
@@ -90,14 +95,15 @@ describe('ONBOARDING_STEPS Configuration', () => {
 // ==========================================
 
 describe('STEP_ORDER Configuration', () => {
-    it('should have 5 steps in order', () => {
-        expect(STEP_ORDER).toHaveLength(5);
+    it('should have 6 steps in order', () => {
+        expect(STEP_ORDER).toHaveLength(6);
     });
 
     it('should have correct step order', () => {
         expect(STEP_ORDER).toEqual([
             'welcome',
             'import-demo',
+            'memory-demo',
             'pac-demo',
             'council-demo',
             'complete',
