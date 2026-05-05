@@ -1,4 +1,5 @@
 export interface NemoClawContext {
+    actionId?: string;
     sandboxId: string;
     userId: string;
     networkPolicy?: string;
