@@ -127,9 +127,8 @@ async function handleSingleUndo(
                 return NextResponse.json(result, { status: 409 });
             }
 
-            await convex.mutation(api.commits.updateCurrentUserStatus, {
-                id: commit._id,
-                status: 'reverted',
+            await appendRevertCommit(convex, commit, {
+                strategy: 'snapshot_restore',
                 result: {
                     reverted_at: Date.now(),
                     restored_from_snapshot: snapshotId,
@@ -166,9 +165,8 @@ async function handleSingleUndo(
                 return NextResponse.json(result, { status: 409 });
             }
 
-            await convex.mutation(api.commits.updateCurrentUserStatus, {
-                id: commit._id,
-                status: 'reverted',
+            await appendRevertCommit(convex, commit, {
+                strategy: 'cancel_window',
                 result: {
                     reverted_at: Date.now(),
                     cancel_method: 'cancel_window',
@@ -187,9 +185,8 @@ async function handleSingleUndo(
             if (tool?.rollback) {
                 const result = await tool.rollback(commit as unknown as AgitCommit);
                 if (result.success) {
-                    await convex.mutation(api.commits.updateCurrentUserStatus, {
-                        id: commit._id,
-                        status: 'reverted',
+                    await appendRevertCommit(convex, commit, {
+                        strategy: 'compensation',
                         result: {
                             reverted_at: Date.now(),
                             compensation_method: compensateTool,
@@ -263,10 +260,12 @@ async function handleRewind(convex: ConvexHttpClient, targetHash: string) {
             try {
                 const result = await tool.rollback(commit as unknown as AgitCommit);
                 if (result.success) {
-                    await convex.mutation(api.commits.updateCurrentUserStatus, {
-                        id: commit._id,
-                        status: 'reverted',
-                        result: { reverted_at: Date.now(), rewind_target: targetHash },
+                    await appendRevertCommit(convex, commit, {
+                        strategy: 'rewind',
+                        result: {
+                            reverted_at: Date.now(),
+                            rewind_target: targetHash,
+                        },
                     });
                     revertedHashes.push(commit.hash);
                     continue;
@@ -293,4 +292,23 @@ async function handleRewind(convex: ConvexHttpClient, targetHash: string) {
         },
         { status: success ? 200 : 207 }
     );
+}
+
+async function appendRevertCommit(
+    convex: ConvexHttpClient,
+    commit: { hash: string; user_id: string; tool_name: string; human_explanation?: string },
+    reversal: { strategy: string; result: Record<string, unknown> }
+) {
+    await convex.mutation(api.governance.signAndCommit, {
+        user_id: commit.user_id as any,
+        tool_name: `revert_${commit.tool_name}`,
+        args: {
+            reverted_hash: commit.hash,
+            strategy: reversal.strategy,
+        },
+        status: 'executed',
+        result: reversal.result,
+        reversibility_class: 'undoable',
+        human_explanation: `Reverted action: ${commit.human_explanation ?? commit.tool_name}`,
+    });
 }
