@@ -4,11 +4,13 @@ import publicApi from '../public-api';
 
 const mocks = vi.hoisted(() => ({
     verifyCommit: vi.fn(),
+    historyForUser: vi.fn(),
     runToolStep: vi.fn(),
 }));
 
 vi.mock('../../audit/agit', () => ({
     getAgit: vi.fn(() => ({
+        historyForUser: mocks.historyForUser,
         verifyCommit: mocks.verifyCommit,
     })),
 }));
@@ -85,6 +87,48 @@ describe('public tool execution route', () => {
                 success: false,
                 error: 'Execution failed',
             },
+        });
+    });
+});
+
+describe('public audit timeline route', () => {
+    it('requires authentication', async () => {
+        const response = await publicApi.request('/audit/user-1/timeline');
+
+        expect(response.status).toBe(401);
+        expect(mocks.historyForUser).not.toHaveBeenCalled();
+    });
+
+    it('does not expose another user timeline', async () => {
+        const app = new Hono();
+        app.use('*', async (c, next) => {
+            c.set('userId', 'user-1');
+            await next();
+        });
+        app.route('/', publicApi);
+
+        const response = await app.request('/audit/user-2/timeline');
+
+        expect(response.status).toBe(404);
+        expect(mocks.historyForUser).not.toHaveBeenCalled();
+    });
+
+    it('returns only the authenticated user timeline', async () => {
+        mocks.historyForUser.mockResolvedValueOnce([{ hash: 'commit-1' }]);
+        const app = new Hono();
+        app.use('*', async (c, next) => {
+            c.set('userId', 'user-1');
+            await next();
+        });
+        app.route('/', publicApi);
+
+        const response = await app.request('/audit/user-1/timeline?limit=10');
+
+        expect(response.status).toBe(200);
+        expect(mocks.historyForUser).toHaveBeenCalledWith('user-1', 10);
+        await expect(response.json()).resolves.toEqual({
+            userId: 'user-1',
+            commits: [{ hash: 'commit-1' }],
         });
     });
 });

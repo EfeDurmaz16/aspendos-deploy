@@ -48,6 +48,14 @@ publicApi.post('/tools/:name/execute', async (c) => {
 
 publicApi.get('/audit/:userId/timeline', async (c) => {
     const { userId } = c.req.param();
+    const currentUserId = c.get('userId');
+    if (!currentUserId) {
+        return c.json({ error: 'Authentication required' }, 401);
+    }
+    if (userId !== currentUserId) {
+        return c.json({ error: 'Timeline not found' }, 404);
+    }
+
     const limit = Number(c.req.query('limit') || '50');
     const agit = getAgit();
     const history = await agit.historyForUser(userId, limit);
