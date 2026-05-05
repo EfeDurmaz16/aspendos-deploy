@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { anthropic } from '@ai-sdk/anthropic';
 import { createSlackAdapter } from '@chat-adapter/slack';
 import { createTelegramAdapter } from '@chat-adapter/telegram';
@@ -89,15 +90,16 @@ function registerActionHandlers(bot: any): void {
         const commitHash = event.action?.value;
         if (!commitHash) return;
         try {
+            const approvalRequest = buildApprovalRequest({
+                commitHash,
+                action: 'approve',
+                platform: detectPlatform(event),
+                platformUserId: event.user?.id || 'unknown',
+            });
             await fetch(`${CALLBACK_BASE}/api/bot/approve`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    commitHash,
-                    action: 'approve',
-                    platform: detectPlatform(event),
-                    platformUserId: event.user?.id || 'unknown',
-                }),
+                headers: approvalRequest.headers,
+                body: approvalRequest.body,
             });
             await event.thread.post(`Approved by ${event.user?.fullName || 'user'}.`);
         } catch {
@@ -109,15 +111,16 @@ function registerActionHandlers(bot: any): void {
         const commitHash = event.action?.value;
         if (!commitHash) return;
         try {
+            const approvalRequest = buildApprovalRequest({
+                commitHash,
+                action: 'reject',
+                platform: detectPlatform(event),
+                platformUserId: event.user?.id || 'unknown',
+            });
             await fetch(`${CALLBACK_BASE}/api/bot/approve`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    commitHash,
-                    action: 'reject',
-                    platform: detectPlatform(event),
-                    platformUserId: event.user?.id || 'unknown',
-                }),
+                headers: approvalRequest.headers,
+                body: approvalRequest.body,
             });
             await event.thread.post(`Rejected by ${event.user?.fullName || 'user'}.`);
         } catch {
@@ -128,6 +131,27 @@ function registerActionHandlers(bot: any): void {
     bot.onAction('retry', async (event: any) => {
         await event.thread.post('Retrying last request...');
     });
+}
+
+function buildApprovalRequest(payload: {
+    commitHash: string;
+    action: 'approve' | 'reject';
+    platform: string;
+    platformUserId: string;
+}) {
+    const body = JSON.stringify(payload);
+    const timestamp = Date.now().toString();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const secret = process.env.BOT_APPROVAL_WEBHOOK_SECRET;
+
+    if (secret) {
+        headers['x-yula-timestamp'] = timestamp;
+        headers['x-yula-signature'] = `sha256=${createHmac('sha256', secret)
+            .update(`${timestamp}.${body}`)
+            .digest('hex')}`;
+    }
+
+    return { body, headers };
 }
 
 // ============================================

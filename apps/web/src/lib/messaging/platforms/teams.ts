@@ -150,7 +150,7 @@ export function buildTeamsResolvedCard(
  */
 export async function handleTeamsWebhook(_req: Request): Promise<Response> {
     return new Response(JSON.stringify({ status: 'teams_not_activated' }), {
-        status: 200,
+        status: 501,
         headers: { 'Content-Type': 'application/json' },
     });
 }

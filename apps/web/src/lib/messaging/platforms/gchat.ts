@@ -195,7 +195,7 @@ export function buildGChatResolvedCard(
  */
 export async function handleGChatWebhook(_req: Request): Promise<Response> {
     return new Response(JSON.stringify({ status: 'gchat_not_activated' }), {
-        status: 200,
+        status: 501,
         headers: { 'Content-Type': 'application/json' },
     });
 }
