@@ -170,6 +170,7 @@ export const signAndCommit = mutation({
         human_explanation: v.optional(v.string()),
         fides_signature: v.optional(v.string()),
         fides_signer_did: v.optional(v.string()),
+        allow_convex_hmac_fallback: v.optional(v.boolean()),
         status: v.optional(
             v.union(
                 v.literal('pending'),
@@ -203,8 +204,8 @@ export const signAndCommit = mutation({
         }
 
         // 3. Bind a FIDES authority signature to the commit. API callers pass
-        // a real SDK signature; Convex HMAC is kept as an explicitly labeled
-        // fallback for direct local Convex callers.
+        // a real SDK signature; Convex HMAC is kept only as an explicitly
+        // requested local fallback for direct Convex callers.
         const signaturePayload = canonicalJson(
             fidesSignaturePayload({
                 args: args.args,
@@ -215,6 +216,11 @@ export const signAndCommit = mutation({
             })
         );
         const hasExternalFidesSignature = !!args.fides_signature && !!args.fides_signer_did;
+        if (!hasExternalFidesSignature && args.allow_convex_hmac_fallback !== true) {
+            throw new Error(
+                'External FIDES signature is required unless allow_convex_hmac_fallback=true'
+            );
+        }
         const fidesSignature =
             args.fides_signature ?? (await hmacSha256(agentDid, signaturePayload));
         const fidesSignerDid = args.fides_signer_did ?? agentDid;
