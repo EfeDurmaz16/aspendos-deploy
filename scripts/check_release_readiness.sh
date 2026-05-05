@@ -50,6 +50,7 @@ info "Building API..."
 bun run --cwd services/api build
 
 info "Building web app..."
+rm -rf apps/web/.next
 bun run --cwd apps/web build
 
 info "Running web typecheck..."

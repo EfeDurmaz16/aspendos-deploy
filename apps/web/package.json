@@ -11,7 +11,7 @@
         "start": "next start",
         "lint": "eslint",
         "clean:next": "/bin/rm -rf .next",
-        "typecheck": "tsc --noEmit --incremental false",
+        "typecheck": "find .next/types -name '* [0-9].ts' -delete 2>/dev/null || true; tsc --noEmit --incremental false",
         "test": "bunx vitest run",
         "test:watch": "bunx vitest",
         "test:ui": "bunx vitest --ui",
