@@ -95,16 +95,18 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                 <div className="mx-6">
                     <div className="flex items-center justify-between pt-4">
                         <a
-                            href="#"
+                            href="/"
                             className="inline-flex items-center justify-center bg-center w-[100px] h-[40px] bg-cover rounded"
                             style={{ backgroundImage: `url(${logoUrl})` }}
-                        />
+                        >
+                            <span className="sr-only">Home</span>
+                        </a>
 
                         <nav className="hidden md:flex items-center gap-2">
                             <div className="flex items-center gap-1 rounded-full bg-white/50 dark:bg-zinc-900/50 px-1 py-1 ring-1 ring-zinc-200 dark:ring-zinc-800 backdrop-blur-md shadow-lg">
-                                {navLinks.map((link, index) => (
+                                {navLinks.map((link) => (
                                     <a
-                                        key={index}
+                                        key={`${link.href}-${link.label}`}
                                         href={link.href}
                                         className={`px-3 py-2 text-sm font-medium hover:text-zinc-900 dark:hover:text-white font-sans transition-colors ${
                                             link.isActive
@@ -121,6 +123,7 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                                 >
                                     {ctaButtonText}
                                     <svg
+                                        aria-hidden="true"
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="24"
                                         height="24"
@@ -131,6 +134,7 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
                                         className="h-4 w-4"
+                                        focusable="false"
                                     >
                                         <path d="M7 7h10v10" />
                                         <path d="M7 17 17 7" />
@@ -147,6 +151,7 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                             aria-label="Toggle menu"
                         >
                             <svg
+                                aria-hidden="true"
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="24"
                                 height="24"
@@ -157,6 +162,7 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 className="h-5 w-5 text-white/90"
+                                focusable="false"
                             >
                                 <path d="M4 5h16" />
                                 <path d="M4 12h16" />
@@ -196,6 +202,7 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                             >
                                 {primaryButtonText}
                                 <svg
+                                    aria-hidden="true"
                                     xmlns="http://www.w3.org/2000/svg"
                                     width="24"
                                     height="24"
@@ -206,6 +213,7 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     className="h-4 w-4"
+                                    focusable="false"
                                 >
                                     <path d="M5 12h14" />
                                     <path d="m12 5 7 7-7 7" />
@@ -217,6 +225,7 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                             >
                                 {secondaryButtonText}
                                 <svg
+                                    aria-hidden="true"
                                     xmlns="http://www.w3.org/2000/svg"
                                     width="16"
                                     height="16"
@@ -227,6 +236,7 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     className="w-4 h-4"
+                                    focusable="false"
                                 >
                                     <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />
                                 </svg>
@@ -239,13 +249,15 @@ const ResponsiveHeroBanner: React.FC<ResponsiveHeroBannerProps> = ({
                             {partnersTitle}
                         </p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 animate-fade-slide-in-2 text-white/70 mt-6 items-center justify-items-center gap-4">
-                            {partners.map((partner, index) => (
+                            {partners.map((partner) => (
                                 <a
-                                    key={index}
+                                    key={`${partner.href}-${partner.logoUrl}`}
                                     href={partner.href}
                                     className="inline-flex items-center justify-center bg-center w-[120px] h-[36px] bg-cover rounded-full opacity-80 hover:opacity-100 transition-opacity"
                                     style={{ backgroundImage: `url(${partner.logoUrl})` }}
-                                />
+                                >
+                                    <span className="sr-only">Partner logo</span>
+                                </a>
                             ))}
                         </div>
                     </div>
