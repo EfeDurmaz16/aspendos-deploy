@@ -6,6 +6,13 @@ import { registry } from '../tools/registry';
 
 const publicApi = new Hono();
 
+function stepStatus(result: Awaited<ReturnType<typeof runToolStep>>) {
+    if (result.blocked) return 'blocked';
+    if (result.awaitingApproval) return 'awaiting_approval';
+    if (!result.result.success) return 'failed';
+    return 'executed';
+}
+
 publicApi.get('/tools', (c) => {
     const tools = registry.list().map((t) => ({
         name: t.name,
@@ -32,11 +39,7 @@ publicApi.post('/tools/:name/execute', async (c) => {
 
     return c.json({
         tool: name,
-        status: result.blocked
-            ? 'blocked'
-            : result.awaitingApproval
-              ? 'awaiting_approval'
-              : 'executed',
+        status: stepStatus(result),
         commitHash: result.commitHash,
         reversibilityClass: result.metadata.reversibility_class,
         result: result.result,
@@ -55,7 +58,11 @@ publicApi.get('/audit/verify/:hash', async (c) => {
     const { hash } = c.req.param();
     const agit = getAgit();
     const verified = await agit.verifyCommit(hash);
-    return c.json({ hash, verified });
+    if (!verified) {
+        return c.json({ hash, verified: false, error: 'Commit verification failed' }, 404);
+    }
+
+    return c.json({ hash, verified: true });
 });
 
 publicApi.get('/health', (c) => {
