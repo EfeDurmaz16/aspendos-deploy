@@ -45,7 +45,7 @@ jobs:
       - run: bun run build:web
       - run: bun run build:api
 
-  typecheck:
+  typecheck-web:
     name: Typecheck Web
     runs-on: ubuntu-latest
     needs: build
@@ -63,6 +63,25 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun run typecheck:web
+
+  typecheck-api:
+    name: Typecheck API
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck:api
 
   test-web:
     name: Test Web
