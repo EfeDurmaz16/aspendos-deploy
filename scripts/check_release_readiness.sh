@@ -21,11 +21,13 @@ fail() {
 
 info "Running release readiness checks for critical capabilities..."
 
-# Guard against accidental duplicate source files (e.g. 'layout 2.tsx')
-DUPLICATE_SOURCE_FILES="$(find apps/web/src -type f | grep -E ' [0-9]+\.(ts|tsx|js|jsx)$' || true)"
+# Guard against accidental duplicate source/release files (e.g. 'layout 2.tsx')
+DUPLICATE_SOURCE_FILES="$(git ls-files apps services packages convex infra docs scripts \
+  | while IFS= read -r path; do [[ -e "$path" ]] && printf '%s\n' "$path"; done \
+  | grep -E ' [0-9]+\.(ts|tsx|js|jsx|css|json|md|toml|ya?ml|sh|py)$' || true)"
 if [[ -n "$DUPLICATE_SOURCE_FILES" ]]; then
   echo "$DUPLICATE_SOURCE_FILES"
-  fail "Duplicate web source files detected. Remove numbered duplicates before release."
+  fail "Duplicate tracked source/release files detected. Remove numbered duplicates before release."
 fi
 
 # Ensure Sentry client config follows Next.js Turbopack-compatible convention
@@ -46,6 +48,9 @@ bun run --cwd services/api test \
 
 info "Building API..."
 bun run --cwd services/api build
+
+info "Building web app..."
+bun run --cwd apps/web build
 
 info "Running web typecheck..."
 bun run --cwd apps/web typecheck
