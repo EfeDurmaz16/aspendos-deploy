@@ -303,13 +303,12 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
             className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}
             role={isUser ? 'listitem' : 'listitem'}
         >
-            <div
+            <article
                 className={`max-w-[85%] rounded-2xl px-4 py-3 transition-all ${
                     isUser
                         ? 'bg-primary text-primary-foreground shadow-md'
                         : 'bg-muted border border-border shadow-sm hover:shadow-md hover:border-border transition-all'
                 }`}
-                role="article"
                 aria-live={message.streaming ? 'polite' : 'off'}
                 aria-atomic="false"
                 aria-label={isUser ? 'Your message' : 'AI response'}
@@ -413,7 +412,7 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
                         />
                     </div>
                 )}
-            </div>
+            </article>
         </div>
     );
 }

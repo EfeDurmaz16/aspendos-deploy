@@ -9,8 +9,7 @@
  * WCAG 2.1 Success Criterion 2.4.1: Bypass Blocks (Level A)
  */
 export function SkipLink() {
-    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault();
+    const handleClick = () => {
         const mainContent = document.getElementById('main-content');
         if (mainContent) {
             mainContent.focus();
@@ -19,8 +18,8 @@ export function SkipLink() {
     };
 
     return (
-        <a
-            href="#main-content"
+        <button
+            type="button"
             onClick={handleClick}
             className="
                 sr-only focus:not-sr-only
@@ -35,6 +34,6 @@ export function SkipLink() {
             aria-label="Skip to main content"
         >
             Skip to main content
-        </a>
+        </button>
     );
 }
