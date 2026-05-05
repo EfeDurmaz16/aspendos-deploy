@@ -8,13 +8,13 @@ import { runToolStep } from './step';
 registerAllTools();
 
 function createAgentTools(userId: string) {
-    const toolDefs: Record<string, ReturnType<typeof tool>> = {};
+    const toolDefs: Record<string, any> = {};
 
     for (const t of registry.list()) {
         toolDefs[t.name] = tool({
             description: t.description,
             inputSchema: z.object({}).passthrough(),
-            execute: async (args) => {
+            execute: async (args: any) => {
                 const ctx: ToolContext = { userId };
                 const result = await runToolStep(t.name, args, ctx);
 
