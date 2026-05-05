@@ -4,6 +4,7 @@
  * Human-in-the-loop approval workflow for sensitive agent operations.
  */
 
+import { canonicalJson, sha256Hex } from '../governance/canonical';
 import type { BlastRadiusReport } from '../lib/agent-guards';
 import { api, getConvexClient } from '../lib/convex';
 
@@ -29,10 +30,26 @@ async function resolveConvexUserId(client: ConvexClient, userId: string) {
     return user._id;
 }
 
+async function createApprovalCommitHash(params: CreateApprovalParams): Promise<string> {
+    const digest = await sha256Hex(
+        canonicalJson({
+            agentId: params.agentId ?? null,
+            blastRadius: params.blastRadius ?? null,
+            reason: params.reason,
+            sessionId: params.sessionId,
+            toolArgs: params.toolArgs,
+            toolName: params.toolName,
+            userId: params.userId,
+        })
+    );
+
+    return `approval_${digest.slice(0, 40)}`;
+}
+
 export async function createApproval(params: CreateApprovalParams) {
     const ttl = params.ttlMs ?? DEFAULT_TTL_MS;
     const expiresAt = Date.now() + ttl;
-    const commitHash = `approval_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const commitHash = await createApprovalCommitHash(params);
 
     try {
         const client = getConvexClient();

@@ -39,6 +39,7 @@ describe('approval service persistence', () => {
     });
 
     it('creates persisted approvals', async () => {
+        vi.spyOn(Date, 'now').mockReturnValue(123_000);
         convexQuery.mockResolvedValueOnce({ _id: 'convex-user-1' });
         convexMutation.mockResolvedValueOnce('approval-1');
 
@@ -58,7 +59,35 @@ describe('approval service persistence', () => {
         expect(convexMutation.mock.calls[0]?.[1]).toMatchObject({
             user_id: 'convex-user-1',
             surface: 'api',
+            expires_at: 423_000,
         });
+        expect(convexMutation.mock.calls[0]?.[1].commit_hash).toMatch(/^approval_[a-f0-9]{40}$/);
+    });
+
+    it('derives approval commit hashes from canonical request content', async () => {
+        vi.spyOn(Date, 'now').mockReturnValueOnce(111).mockReturnValueOnce(222);
+        convexQuery
+            .mockResolvedValueOnce({ _id: 'convex-user-1' })
+            .mockResolvedValueOnce({ _id: 'convex-user-1' });
+        convexMutation.mockResolvedValueOnce('approval-1').mockResolvedValueOnce('approval-2');
+
+        const first = await createApproval({
+            userId: 'user-1',
+            sessionId: 'session-1',
+            toolName: 'file.write',
+            toolArgs: { z: 1, a: 2 },
+            reason: 'Needs write approval',
+        });
+        const second = await createApproval({
+            userId: 'user-1',
+            sessionId: 'session-1',
+            toolName: 'file.write',
+            toolArgs: { a: 2, z: 1 },
+            reason: 'Needs write approval',
+        });
+
+        expect(first.commitHash).toBe(second.commitHash);
+        expect(first.expiresAt).not.toBe(second.expiresAt);
     });
 
     it('does not fake approval creation when persistence fails', async () => {
