@@ -28,13 +28,15 @@ export const getByCommitHash = query({
 });
 
 export const listPendingByUser = query({
-    args: { user_id: v.id('users') },
+    args: { user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        const limit = Math.min(Math.max(args.limit ?? 50, 1), 200);
         return await ctx.db
             .query('approvals')
-            .withIndex('by_user', (q) => q.eq('user_id', args.user_id))
-            .filter((q) => q.eq(q.field('status'), 'pending'))
-            .collect();
+            .withIndex('by_user_and_status', (q) =>
+                q.eq('user_id', args.user_id).eq('status', 'pending')
+            )
+            .take(limit);
     },
 });
 

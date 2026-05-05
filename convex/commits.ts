@@ -52,11 +52,12 @@ export const getByHash = query({
 export const listByUser = query({
     args: { user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        const limit = Math.min(Math.max(args.limit ?? 50, 1), 200);
         const q = ctx.db
             .query('commits')
             .withIndex('by_user_time', (q) => q.eq('user_id', args.user_id))
             .order('desc');
-        return args.limit ? await q.take(args.limit) : await q.collect();
+        return await q.take(limit);
     },
 });
 
@@ -83,14 +84,17 @@ export const listAfterTimestamp = query({
     args: {
         user_id: v.id('users'),
         after_timestamp: v.number(),
+        limit: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const all = await ctx.db
+        const limit = Math.min(Math.max(args.limit ?? 100, 1), 500);
+        return await ctx.db
             .query('commits')
-            .withIndex('by_user_time', (q) => q.eq('user_id', args.user_id))
+            .withIndex('by_user_time', (q) =>
+                q.eq('user_id', args.user_id).gt('timestamp', args.after_timestamp)
+            )
             .order('desc')
-            .collect();
-        return all.filter((c) => c.timestamp > args.after_timestamp);
+            .take(limit);
     },
 });
 

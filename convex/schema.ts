@@ -104,6 +104,7 @@ export default defineSchema({
         ),
     })
         .index('by_user', ['user_id'])
+        .index('by_user_and_status', ['user_id', 'status'])
         .index('by_commit_hash', ['commit_hash'])
         .index('by_status', ['status']),
 
