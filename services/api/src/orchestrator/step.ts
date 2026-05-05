@@ -1,4 +1,5 @@
 import { getAgit } from '../audit/agit';
+import { commitConvexGovernance } from '../governance/convex-governance';
 import { getFides } from '../governance/fides';
 import type { ReversibilityMetadata, ToolContext, ToolResult } from '../reversibility/types';
 import { registry } from '../tools/registry';
@@ -37,21 +38,32 @@ export async function runToolStep(
     const signResult = await fides.signToolCall(toolName, args, metadata);
 
     const agit = getAgit();
-    const preCommit = await agit.commitAction({
+    const convexPreCommit = await commitConvexGovernance({
         userId: ctx.userId,
         toolName,
         args,
         metadata,
-        fidesSignature: signResult.signature,
-        fidesDid: signResult.did,
-        type: 'pre',
+        status: 'pending',
     });
+    let preCommitHash = convexPreCommit?.commitHash;
+    if (!preCommitHash) {
+        const preCommit = await agit.commitAction({
+            userId: ctx.userId,
+            toolName,
+            args,
+            metadata,
+            fidesSignature: signResult.signature,
+            fidesDid: signResult.did,
+            type: 'pre',
+        });
+        preCommitHash = preCommit.hash;
+    }
 
     if (metadata.approval_required) {
         return {
             toolName,
             metadata,
-            commitHash: preCommit.hash,
+            commitHash: preCommitHash,
             result: {
                 success: false,
                 error: 'Awaiting human approval',
@@ -68,7 +80,7 @@ export async function runToolStep(
         try {
             result = await tool.execute(args, {
                 ...ctx,
-                commitHash: preCommit.hash,
+                commitHash: preCommitHash,
             });
         } catch (e: any) {
             result = { success: false, error: e?.message ?? 'Execution failed' };
@@ -77,21 +89,36 @@ export async function runToolStep(
         result = { success: false, error: `Tool ${toolName} not found` };
     }
 
-    await agit.commitAction({
+    const convexPostCommit = await commitConvexGovernance({
         userId: ctx.userId,
         toolName,
         args,
         metadata,
-        fidesSignature: signResult.signature,
-        fidesDid: signResult.did,
-        type: 'post',
+        status: result.success ? 'executed' : 'failed',
         result,
     });
+
+    if (convexPreCommit && !convexPostCommit) {
+        throw new Error('Convex governance post-commit failed after pre-commit');
+    }
+
+    if (!convexPostCommit) {
+        await agit.commitAction({
+            userId: ctx.userId,
+            toolName,
+            args,
+            metadata,
+            fidesSignature: signResult.signature,
+            fidesDid: signResult.did,
+            type: 'post',
+            result,
+        });
+    }
 
     return {
         toolName,
         metadata,
-        commitHash: preCommit.hash,
+        commitHash: preCommitHash,
         result,
         blocked: false,
         awaitingApproval: false,
