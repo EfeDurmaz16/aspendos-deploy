@@ -583,13 +583,18 @@ async function initialize() {
 }
 
 // Don't start server when running tests
-console.log('[Boot] Module loaded, calling initialize...');
+if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+    console.log('[Boot] Module loaded, calling initialize...');
+}
 if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
     initialize().catch(console.error);
 }
 
 // Bun auto-serves this via Bun.serve() when detecting export default with .fetch
-export default {
-    port,
-    fetch: app.fetch,
-};
+// and an optional port. Hono already provides fetch/request; attach port directly
+// so tests keep the Hono app type instead of a production/test union.
+export const server = Object.assign(app, { port });
+
+export { app };
+
+export default server;
