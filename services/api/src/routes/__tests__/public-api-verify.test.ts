@@ -35,6 +35,7 @@ describe('public audit verification route', () => {
             valid: true,
             checks: {
                 hash_integrity: true,
+                payload_integrity: true,
                 fides_signature: true,
                 parent_exists: true,
             },
@@ -54,6 +55,7 @@ describe('public audit verification route', () => {
         await expect(response.json()).resolves.toEqual({
             checks: {
                 hash_integrity: true,
+                payload_integrity: true,
                 fides_signature: true,
                 parent_exists: true,
             },

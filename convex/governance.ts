@@ -14,6 +14,56 @@ function clampVerifyChainLimit(value: number | undefined) {
     return Math.min(Math.max(value ?? DEFAULT_VERIFY_CHAIN_LIMIT, 1), MAX_VERIFY_CHAIN_LIMIT);
 }
 
+function normalizeForHash(value: unknown): unknown {
+    if (value === null || typeof value !== 'object') return value;
+    if (Array.isArray(value)) return value.map((item) => normalizeForHash(item));
+
+    const record = value as Record<string, unknown>;
+    return Object.keys(record)
+        .sort()
+        .reduce<Record<string, unknown>>((acc, key) => {
+            const item = record[key];
+            if (item !== undefined) acc[key] = normalizeForHash(item);
+            return acc;
+        }, {});
+}
+
+function canonicalJson(value: unknown): string {
+    return JSON.stringify(normalizeForHash(value));
+}
+
+function commitPayload(args: {
+    args: unknown;
+    parent_hash?: string;
+    result?: unknown;
+    reversibility_class: string;
+    status: string;
+    timestamp: number;
+    tool_name: string;
+}) {
+    return {
+        args: args.args,
+        parent_hash: args.parent_hash ?? null,
+        result: args.result,
+        reversibility_class: args.reversibility_class,
+        status: args.status,
+        timestamp: args.timestamp,
+        tool_name: args.tool_name,
+    };
+}
+
+async function hashCommitPayload(args: {
+    args: unknown;
+    parent_hash?: string;
+    result?: unknown;
+    reversibility_class: string;
+    status: string;
+    timestamp: number;
+    tool_name: string;
+}) {
+    return await sha256Hex(canonicalJson(commitPayload(args)));
+}
+
 // ---------------------------------------------------------------------------
 // Helpers: FIDES signing + AGIT hashing run inside Convex mutations using
 // the Web Crypto API (available in Convex runtime).
@@ -94,16 +144,31 @@ export const signAndCommit = mutation({
         const parentHash = latestCommit?.hash ?? null;
 
         // 3. Build FIDES signature: HMAC-SHA256(agent_did, payload)
-        const signaturePayload = JSON.stringify({
-            tool_name: args.tool_name,
-            args: args.args,
-            timestamp: now,
-        });
+        const signaturePayload = canonicalJson(
+            commitPayload({
+                args: args.args,
+                parent_hash: parentHash ?? undefined,
+                result: args.result,
+                reversibility_class: args.reversibility_class,
+                status,
+                timestamp: now,
+                tool_name: args.tool_name,
+            })
+        );
         const fidesSignature = await hmacSha256(agentDid, signaturePayload);
 
-        // 4. Build AGIT commit hash: SHA256(parent_hash + tool_name + args + timestamp)
-        const commitInput = `${parentHash ?? 'genesis'}${args.tool_name}${JSON.stringify(args.args)}${now}`;
-        const commitHash = await sha256Hex(commitInput);
+        // 4. Build AGIT commit hash from the same canonical payload the
+        // FIDES signature covers, so status/result mutations invalidate it.
+        const payloadHash = await hashCommitPayload({
+            args: args.args,
+            parent_hash: parentHash ?? undefined,
+            result: args.result,
+            reversibility_class: args.reversibility_class,
+            status,
+            timestamp: now,
+            tool_name: args.tool_name,
+        });
+        const commitHash = await sha256Hex(`${parentHash ?? 'genesis'}${payloadHash}`);
 
         // 5. Build ancestor chain (up to 10 deep for efficient traversal)
         const ancestorChain: string[] = [];
@@ -129,6 +194,7 @@ export const signAndCommit = mutation({
             rollback_strategy: args.rollback_strategy,
             rollback_deadline: args.rollback_deadline,
             human_explanation: args.human_explanation,
+            payload_hash: payloadHash,
             fides_signature: fidesSignature,
             fides_signer_did: agentDid,
             timestamp: now,
@@ -192,18 +258,36 @@ export const verifyCommit = query({
 
         const checks: Record<string, boolean> = {};
 
-        // Check 1: Recompute AGIT hash and verify it matches
-        const expectedInput = `${commit.parent_hash ?? 'genesis'}${commit.tool_name}${JSON.stringify(commit.args)}${commit.timestamp}`;
-        const expectedHash = await sha256Hex(expectedInput);
+        // Check 1: Recompute canonical commit payload and verify it matches
+        const expectedPayloadHash = await hashCommitPayload({
+            args: commit.args,
+            parent_hash: commit.parent_hash,
+            result: commit.result,
+            reversibility_class: commit.reversibility_class,
+            status: commit.status,
+            timestamp: commit.timestamp,
+            tool_name: commit.tool_name,
+        });
+        checks.payload_integrity = commit.payload_hash === expectedPayloadHash;
+
+        const expectedHash = await sha256Hex(
+            `${commit.parent_hash ?? 'genesis'}${expectedPayloadHash}`
+        );
         checks.hash_integrity = expectedHash === commit.hash;
 
         // Check 2: Verify FIDES signature matches expected HMAC
         if (commit.fides_signature && commit.fides_signer_did) {
-            const signaturePayload = JSON.stringify({
-                tool_name: commit.tool_name,
-                args: commit.args,
-                timestamp: commit.timestamp,
-            });
+            const signaturePayload = canonicalJson(
+                commitPayload({
+                    args: commit.args,
+                    parent_hash: commit.parent_hash,
+                    result: commit.result,
+                    reversibility_class: commit.reversibility_class,
+                    status: commit.status,
+                    timestamp: commit.timestamp,
+                    tool_name: commit.tool_name,
+                })
+            );
             const expectedSig = await hmacSha256(commit.fides_signer_did, signaturePayload);
             checks.fides_signature = expectedSig === commit.fides_signature;
         } else {
@@ -519,10 +603,20 @@ export const verifyChain = query({
 
         for (const commit of commits) {
             // Verify hash integrity
-            const expectedInput = `${commit.parent_hash ?? 'genesis'}${commit.tool_name}${JSON.stringify(commit.args)}${commit.timestamp}`;
-            const expectedHash = await sha256Hex(expectedInput);
+            const expectedPayloadHash = await hashCommitPayload({
+                args: commit.args,
+                parent_hash: commit.parent_hash,
+                result: commit.result,
+                reversibility_class: commit.reversibility_class,
+                status: commit.status,
+                timestamp: commit.timestamp,
+                tool_name: commit.tool_name,
+            });
+            const expectedHash = await sha256Hex(
+                `${commit.parent_hash ?? 'genesis'}${expectedPayloadHash}`
+            );
 
-            if (expectedHash !== commit.hash) {
+            if (commit.payload_hash !== expectedPayloadHash || expectedHash !== commit.hash) {
                 results.push({ hash: commit.hash, valid: false, error: 'Hash mismatch' });
                 continue;
             }

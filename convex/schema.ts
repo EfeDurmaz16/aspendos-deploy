@@ -80,6 +80,7 @@ export default defineSchema({
         rollback_strategy: v.optional(v.any()),
         rollback_deadline: v.optional(v.number()),
         human_explanation: v.optional(v.string()),
+        payload_hash: v.optional(v.string()),
         fides_signature: v.optional(v.string()),
         fides_signer_did: v.optional(v.string()),
         counter_signature: v.optional(v.string()),
