@@ -330,7 +330,7 @@ export const verifyCommit = query({
 });
 
 // ---------------------------------------------------------------------------
-// revertCommit — mark a commit as reverted if its reversibility class allows.
+// revertCommit — append a reversal commit if the reversibility class allows.
 // For undoable commits with a snapshot, return the snapshot info for the
 // caller to execute the actual restore.
 // ---------------------------------------------------------------------------
@@ -354,18 +354,82 @@ export const revertCommit = mutation({
             return { success: false, error: 'Unauthorized: commit belongs to a different user' };
         }
 
-        if (commit.status === 'reverted') {
+        const recentReversals = await ctx.db
+            .query('commits')
+            .withIndex('by_user_time', (q) => q.eq('user_id', args.user_id))
+            .order('desc')
+            .take(500);
+        const alreadyReverted = recentReversals.some((candidate) => {
+            const candidateArgs = candidate.args as {
+                reverted_hash?: string;
+                cancelled_hash?: string;
+            };
+            return (
+                candidate.status === 'executed' &&
+                (candidateArgs.reverted_hash === args.hash ||
+                    candidateArgs.cancelled_hash === args.hash)
+            );
+        });
+
+        if (alreadyReverted) {
             return { success: false, error: 'Commit already reverted' };
         }
 
         if (commit.status === 'pending') {
-            // Pending commits can simply be cancelled
-            await ctx.db.patch(commit._id, { status: 'reverted' });
+            const now = Date.now();
+            const user = await ctx.db.get(args.user_id);
+            const agentDid = user?.fides_did ?? `did:yula:agent:${args.user_id}`;
+            const latestCommit = recentReversals[0];
+            const parentHash = latestCommit?.hash ?? null;
+            const toolName = `cancel_${commit.tool_name}`;
+            const cancelArgs = { cancelled_hash: args.hash };
+            const result = { cancelled: true };
+            const payloadHash = await hashCommitPayload({
+                args: cancelArgs,
+                parent_hash: parentHash ?? undefined,
+                result,
+                reversibility_class: 'undoable',
+                status: 'executed',
+                timestamp: now,
+                tool_name: toolName,
+            });
+            const signaturePayload = canonicalJson(
+                commitPayload({
+                    args: cancelArgs,
+                    parent_hash: parentHash ?? undefined,
+                    result,
+                    reversibility_class: 'undoable',
+                    status: 'executed',
+                    timestamp: now,
+                    tool_name: toolName,
+                })
+            );
+            const cancelHash = await sha256Hex(`${parentHash ?? 'genesis'}${payloadHash}`);
+            const cancelSignature = await hmacSha256(agentDid, signaturePayload);
+
+            await ctx.db.insert('commits', {
+                user_id: args.user_id,
+                parent_hash: parentHash ?? undefined,
+                hash: cancelHash,
+                ancestor_chain: parentHash
+                    ? [parentHash, ...(latestCommit?.ancestor_chain ?? []).slice(0, 9)]
+                    : undefined,
+                tool_name: toolName,
+                args: cancelArgs,
+                status: 'executed',
+                result,
+                reversibility_class: 'undoable',
+                human_explanation: `Cancelled action: ${commit.human_explanation ?? commit.tool_name}`,
+                payload_hash: payloadHash,
+                fides_signature: cancelSignature,
+                fides_signer_did: agentDid,
+                timestamp: now,
+            });
             await ctx.db.insert('action_log', {
                 user_id: args.user_id,
                 event_type: 'governance.commit.cancelled',
-                details: { commit_hash: args.hash },
-                timestamp: Date.now(),
+                details: { commit_hash: args.hash, cancel_hash: cancelHash },
+                timestamp: now,
             });
             return { success: true, action: 'cancelled' };
         }
@@ -395,9 +459,6 @@ export const revertCommit = mutation({
                 };
             }
         }
-
-        // Mark commit as reverted
-        await ctx.db.patch(commit._id, { status: 'reverted' });
 
         // Look up snapshot if rollback_strategy references one
         let snapshotData: {
@@ -430,32 +491,53 @@ export const revertCommit = mutation({
             }
         }
 
-        // Create a revert commit in the chain
+        // Create a signed revert commit in the chain without mutating the
+        // original commit's signed payload.
         const now = Date.now();
-        const revertInput = `${commit.hash}revert_${commit.tool_name}${JSON.stringify({ reverted_hash: args.hash })}${now}`;
-        const revertHash = await sha256Hex(revertInput);
-
         const user = await ctx.db.get(args.user_id);
         const agentDid = user?.fides_did ?? `did:yula:agent:${args.user_id}`;
-
-        const revertPayload = JSON.stringify({
-            tool_name: `revert_${commit.tool_name}`,
-            args: { reverted_hash: args.hash },
+        const latestCommit = recentReversals[0];
+        const parentHash = latestCommit?.hash ?? null;
+        const toolName = `revert_${commit.tool_name}`;
+        const revertArgs = { reverted_hash: args.hash };
+        const result = { reverted: true };
+        const payloadHash = await hashCommitPayload({
+            args: revertArgs,
+            parent_hash: parentHash ?? undefined,
+            result,
+            reversibility_class: 'undoable',
+            status: 'executed',
             timestamp: now,
+            tool_name: toolName,
         });
-        const revertSignature = await hmacSha256(agentDid, revertPayload);
+        const signaturePayload = canonicalJson(
+            commitPayload({
+                args: revertArgs,
+                parent_hash: parentHash ?? undefined,
+                result,
+                reversibility_class: 'undoable',
+                status: 'executed',
+                timestamp: now,
+                tool_name: toolName,
+            })
+        );
+        const revertHash = await sha256Hex(`${parentHash ?? 'genesis'}${payloadHash}`);
+        const revertSignature = await hmacSha256(agentDid, signaturePayload);
 
         await ctx.db.insert('commits', {
             user_id: args.user_id,
-            parent_hash: commit.hash,
+            parent_hash: parentHash ?? undefined,
             hash: revertHash,
-            ancestor_chain: [commit.hash, ...(commit.ancestor_chain ?? []).slice(0, 9)],
-            tool_name: `revert_${commit.tool_name}`,
-            args: { reverted_hash: args.hash },
+            ancestor_chain: parentHash
+                ? [parentHash, ...(latestCommit?.ancestor_chain ?? []).slice(0, 9)]
+                : undefined,
+            tool_name: toolName,
+            args: revertArgs,
             status: 'executed',
-            result: { reverted: true },
+            result,
             reversibility_class: 'undoable',
             human_explanation: `Reverted action: ${commit.human_explanation ?? commit.tool_name}`,
+            payload_hash: payloadHash,
             fides_signature: revertSignature,
             fides_signer_did: agentDid,
             timestamp: now,
