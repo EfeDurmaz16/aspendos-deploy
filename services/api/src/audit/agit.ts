@@ -120,12 +120,15 @@ export class AgitService {
         if (this.client) {
             try {
                 const logs = await this.client.log({ limit });
-                return logs.map((l: any) => ({
-                    hash: l.hash,
-                    did: l.metadata?.fidesDid ?? '',
-                    signature: l.metadata?.fidesSignature ?? '',
-                    timestamp: l.timestamp ?? Date.now(),
-                }));
+                return logs
+                    .filter((l: any) => l.metadata?.userId === userId)
+                    .slice(0, limit)
+                    .map((l: any) => ({
+                        hash: l.hash,
+                        did: l.metadata?.fidesDid ?? '',
+                        signature: l.metadata?.fidesSignature ?? '',
+                        timestamp: l.timestamp ?? Date.now(),
+                    }));
             } catch {
                 return [];
             }

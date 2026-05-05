@@ -90,4 +90,40 @@ describe('canonical governance primitives', () => {
             })
         ).rejects.toThrow(/AGIT_REPO_PATH is required in production/);
     });
+
+    it('filters AGIT client history by commit owner metadata', async () => {
+        const agit = new AgitService();
+        (agit as any).initialized = true;
+        (agit as any).client = {
+            log: vi.fn().mockResolvedValue([
+                {
+                    hash: 'other-commit',
+                    metadata: {
+                        fidesDid: 'did:fides:other',
+                        fidesSignature: 'sig-other',
+                        userId: 'user-2',
+                    },
+                    timestamp: 1,
+                },
+                {
+                    hash: 'own-commit',
+                    metadata: {
+                        fidesDid: 'did:fides:user-1',
+                        fidesSignature: 'sig-user-1',
+                        userId: 'user-1',
+                    },
+                    timestamp: 2,
+                },
+            ]),
+        };
+
+        await expect(agit.historyForUser('user-1', 10)).resolves.toEqual([
+            {
+                hash: 'own-commit',
+                did: 'did:fides:user-1',
+                signature: 'sig-user-1',
+                timestamp: 2,
+            },
+        ]);
+    });
 });
