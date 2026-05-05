@@ -38,6 +38,7 @@
         "png-to-ico": "^3.0.1",
         "sharp": "^0.34.5",
         "stripe": "^22.0.1",
+        "typescript": "^5.9.3",
         "turbo": "^2.4.0"
     },
     "lint-staged": {
