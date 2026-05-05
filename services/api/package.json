@@ -23,6 +23,7 @@
         "@chat-adapter/whatsapp": "^4.20.2",
         "@daytona/sdk": "^0.164.0",
         "@e2b/code-interpreter": "^2.4.0",
+        "@fides/sdk": "workspace:*",
         "@google/genai": "^1.37.0",
         "@hono/node-server": "^1.13.7",
         "@supermemory/tools": "^1.4.0",

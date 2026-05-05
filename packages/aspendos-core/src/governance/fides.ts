@@ -125,7 +125,7 @@ export class FidesService {
 
         const fides = await this.loadSdk();
         if (fides && this.keyPair) {
-            const signature = fides.sign(
+            const signature = await fides.sign(
                 new TextEncoder().encode(payload),
                 this.keyPair.privateKey
             );
@@ -149,7 +149,7 @@ export class FidesService {
             const publicKey = fides.parseDID(signerDid);
             if (!publicKey) return false;
 
-            return fides.verify(
+            return await fides.verify(
                 new TextEncoder().encode(payload),
                 Buffer.from(signature, 'base64'),
                 publicKey
@@ -164,7 +164,7 @@ export class FidesService {
         const fides = await this.loadSdk();
         if (fides) {
             const payload = new TextEncoder().encode(commitHash);
-            const signature = fides.sign(payload, userKeyPair.privateKey);
+            const signature = await fides.sign(payload, userKeyPair.privateKey);
             const did = fides.generateDID(userKeyPair.publicKey);
             return {
                 signature: Buffer.from(signature).toString('base64'),
