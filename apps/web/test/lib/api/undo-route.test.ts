@@ -19,6 +19,13 @@ vi.mock('@/lib/auth', () => ({
     auth,
 }));
 
+vi.mock('@/lib/governance/fides', () => ({
+    signGovernanceCommit: vi.fn(async () => ({
+        fides_signature: 'fides-sig-1',
+        fides_signer_did: 'did:fides:web-agent-1',
+    })),
+}));
+
 vi.mock('../../../../convex/_generated/api', () => ({
     api: {
         commits: {
@@ -145,6 +152,8 @@ describe('undo API route authorization', () => {
             status: 'executed',
             reversibility_class: 'undoable',
             human_explanation: 'Reverted action: Write a file',
+            fides_signature: 'fides-sig-1',
+            fides_signer_did: 'did:fides:web-agent-1',
         });
         expect(convexMutation.mock.calls[0]?.[1]?.result).toMatchObject({
             restored_from_snapshot: 'snap-1',

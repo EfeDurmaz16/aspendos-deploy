@@ -24,6 +24,7 @@ import type { ConvexClient } from 'convex/browser';
 import type { ConvexReactClient } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import type { Id } from '../../../../../convex/_generated/dataModel';
+import { signGovernanceCommit } from './fides';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -169,6 +170,13 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
             rollbackDeadline = new Date(rollbackStrategy.deadline).getTime();
         }
 
+        const signature = await signGovernanceCommit({
+            args: toolArgs,
+            reversibility_class: meta.reversibility_class,
+            status: 'pending',
+            tool_name: toolName,
+        });
+
         // Create the signed commit via Convex
         const result = await (convex as any).mutation(api.governance.signAndCommit, {
             user_id: userId,
@@ -179,6 +187,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
             rollback_deadline: rollbackDeadline,
             human_explanation: meta.human_explanation,
             status: 'pending' as const,
+            ...signature,
         });
 
         const commitHash = result.commitHash as string;
@@ -212,6 +221,17 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
         const pending = pendingCommits.get(toolCallId);
         if (!pending) return; // No governance tracking for this call
 
+        const signature = await signGovernanceCommit({
+            args: {
+                prior_commit_hash: pending.commitHash,
+                outcome: 'tool_result',
+            },
+            result,
+            reversibility_class: pending.metadata.reversibility_class,
+            status: success ? 'executed' : 'failed',
+            tool_name: pending.toolName,
+        });
+
         await (convex as any).mutation(api.governance.signAndCommit, {
             user_id: userId,
             tool_name: pending.toolName,
@@ -224,6 +244,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
             reversibility_class: pending.metadata.reversibility_class,
             rollback_strategy: pending.metadata.rollback_strategy,
             human_explanation: `Result for ${pending.metadata.human_explanation}`,
+            ...signature,
         });
 
         pendingCommits.delete(toolCallId);

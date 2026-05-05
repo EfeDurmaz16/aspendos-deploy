@@ -1,6 +1,7 @@
 import { ConvexHttpClient } from 'convex/browser';
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { signGovernanceCommit } from '@/lib/governance/fides';
 import type { AgitCommit, RollbackStrategy } from '@/lib/reversibility/types';
 import { referenceTools } from '@/lib/tools/reference';
 import { api } from '../../../../../../convex/_generated/api';
@@ -299,16 +300,26 @@ async function appendRevertCommit(
     commit: { hash: string; user_id: string; tool_name: string; human_explanation?: string },
     reversal: { strategy: string; result: Record<string, unknown> }
 ) {
+    const args = {
+        reverted_hash: commit.hash,
+        strategy: reversal.strategy,
+    };
+    const signature = await signGovernanceCommit({
+        args,
+        result: reversal.result,
+        reversibility_class: 'undoable',
+        status: 'executed',
+        tool_name: `revert_${commit.tool_name}`,
+    });
+
     await convex.mutation(api.governance.signAndCommit, {
         user_id: commit.user_id as any,
         tool_name: `revert_${commit.tool_name}`,
-        args: {
-            reverted_hash: commit.hash,
-            strategy: reversal.strategy,
-        },
+        args,
         status: 'executed',
         result: reversal.result,
         reversibility_class: 'undoable',
         human_explanation: `Reverted action: ${commit.human_explanation ?? commit.tool_name}`,
+        ...signature,
     });
 }

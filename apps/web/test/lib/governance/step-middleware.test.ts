@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createGovernanceCallbacks } from '../../../src/lib/governance/step-middleware';
 
+vi.mock('../../../src/lib/governance/fides', () => ({
+    signGovernanceCommit: vi.fn(async () => ({
+        fides_signature: 'fides-sig-1',
+        fides_signer_did: 'did:fides:web-agent-1',
+    })),
+}));
+
 describe('governance step middleware', () => {
     it('records tool results by appending a signed commit instead of mutating the pending commit', async () => {
         const convex = {
@@ -38,6 +45,8 @@ describe('governance step middleware', () => {
             result: { success: true },
             reversibility_class: 'undoable',
             rollback_strategy: { kind: 'none' },
+            fides_signature: 'fides-sig-1',
+            fides_signer_did: 'did:fides:web-agent-1',
         });
     });
 });
