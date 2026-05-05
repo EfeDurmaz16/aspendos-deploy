@@ -195,7 +195,6 @@ async function handleSingleUndo(
 
         case 'compensation': {
             const compensateTool = body.compensate_tool as string;
-            const compensateArgs = body.compensate_args as Record<string, unknown>;
 
             // Try to find and execute the compensation tool
             const tool = referenceTools.get(commit.tool_name);
