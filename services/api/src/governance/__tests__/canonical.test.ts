@@ -1,0 +1,93 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AgitService } from '../../audit/agit';
+import type { ReversibilityMetadata } from '../../reversibility/types';
+import { canonicalJson } from '../canonical';
+import { FidesService } from '../fides';
+
+const metadata: ReversibilityMetadata = {
+    reversibility_class: 'undoable',
+    human_explanation: 'Test action',
+};
+
+describe('canonical governance primitives', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete process.env.AGIT_REPO_PATH;
+        delete process.env.FIDES_TEST_SIGNING_SECRET;
+        process.env.NODE_ENV = 'test';
+    });
+
+    it('canonicalizes object keys deterministically', () => {
+        expect(canonicalJson({ b: 2, a: { d: 4, c: 3 } })).toBe(
+            canonicalJson({ a: { c: 3, d: 4 }, b: 2 })
+        );
+    });
+
+    it('signs and verifies canonical tool payloads in explicit test fallback mode', async () => {
+        process.env.FIDES_TEST_SIGNING_SECRET = 'test-secret';
+
+        const fides = new FidesService();
+        const args = { z: 1, a: 2 };
+        const signed = await fides.signToolCall('file.write', args, metadata);
+        const payload = fides.getToolCallPayload('file.write', { a: 2, z: 1 }, metadata);
+
+        expect(signed.did).toBe('did:fides:test-fallback');
+        await expect(fides.verifySignature(payload, signed.signature, signed.did)).resolves.toBe(
+            true
+        );
+    });
+
+    it('refuses FIDES fallback signatures in production', async () => {
+        process.env.NODE_ENV = 'production';
+        delete process.env.FIDES_TEST_SIGNING_SECRET;
+
+        const fides = new FidesService();
+
+        await expect(fides.initialize()).rejects.toThrow(/Refusing to create fallback FIDES/);
+    });
+
+    it('uses deterministic local AGIT hashes outside production fallback paths', async () => {
+        vi.spyOn(Date, 'now').mockReturnValue(123_456);
+
+        const base = {
+            userId: 'user-1',
+            toolName: 'file.write',
+            args: { z: 1, a: 2 },
+            metadata,
+            fidesSignature: 'sig-1',
+            fidesDid: 'did:fides:test',
+            type: 'pre' as const,
+        };
+        const agitA = new AgitService();
+        const agitB = new AgitService();
+
+        const commitA = await agitA.commitAction(base);
+        const commitB = await agitB.commitAction({
+            ...base,
+            args: { a: 2, z: 1 },
+        });
+
+        expect(commitA.hash).toMatch(/^[a-f0-9]{64}$/);
+        expect(commitB.hash).toBe(commitA.hash);
+        await expect(agitA.verifyCommit(commitA.hash)).resolves.toBe(true);
+    });
+
+    it('refuses in-memory AGIT commits in production', async () => {
+        process.env.NODE_ENV = 'production';
+        delete process.env.AGIT_REPO_PATH;
+
+        const agit = new AgitService();
+
+        await expect(
+            agit.commitAction({
+                userId: 'user-1',
+                toolName: 'file.write',
+                args: {},
+                metadata,
+                fidesSignature: 'sig-1',
+                fidesDid: 'did:fides:test',
+                type: 'pre',
+            })
+        ).rejects.toThrow(/AGIT_REPO_PATH is required in production/);
+    });
+});

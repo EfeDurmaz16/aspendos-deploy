@@ -76,6 +76,8 @@ conversations_gpt.json
 landing-2/
 *pitch-deck*
 *audit*
+!services/api/src/audit/
+!services/api/src/audit/**
 # Local tool state
 .omc/
 .claude/plugins/
