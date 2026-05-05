@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { getAgit } from '../audit/agit';
 import { api, getConvexClient } from '../lib/convex';
 import { runToolStep } from '../orchestrator/step';
 import type { ToolContext } from '../reversibility/types';
@@ -58,9 +57,26 @@ publicApi.get('/audit/:userId/timeline', async (c) => {
     }
 
     const limit = Number(c.req.query('limit') || '50');
-    const agit = getAgit();
-    const history = await agit.historyForUser(userId, limit);
-    return c.json({ userId, commits: history });
+
+    try {
+        const client = getConvexClient();
+        const user = await client.query(api.users.getByWorkOSId, { workos_id: userId });
+        if (!user?._id) {
+            return c.json({ error: 'Timeline not found' }, 404);
+        }
+
+        const timeline = await client.query(api.governance.getCommitChain, {
+            user_id: user._id,
+            limit,
+        });
+        return c.json({
+            userId,
+            commits: timeline.commits,
+            nextCursor: timeline.nextCursor,
+        });
+    } catch {
+        return c.json({ error: 'Timeline service unavailable' }, 503);
+    }
 });
 
 publicApi.get('/audit/verify/:hash', async (c) => {

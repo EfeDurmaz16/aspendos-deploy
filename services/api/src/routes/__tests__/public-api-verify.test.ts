@@ -1,23 +1,20 @@
 import { Hono } from 'hono';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import publicApi from '../public-api';
 
 const mocks = vi.hoisted(() => ({
     convexQuery: vi.fn(),
-    historyForUser: vi.fn(),
     runToolStep: vi.fn(),
-}));
-
-vi.mock('../../audit/agit', () => ({
-    getAgit: vi.fn(() => ({
-        historyForUser: mocks.historyForUser,
-    })),
 }));
 
 vi.mock('../../lib/convex', () => ({
     api: {
         governance: {
+            getCommitChain: 'governance.getCommitChain',
             verifyCommit: 'governance.verifyCommit',
+        },
+        users: {
+            getByWorkOSId: 'users.getByWorkOSId',
         },
     },
     getConvexClient: vi.fn(() => ({
@@ -28,6 +25,11 @@ vi.mock('../../lib/convex', () => ({
 vi.mock('../../orchestrator/step', () => ({
     runToolStep: mocks.runToolStep,
 }));
+
+beforeEach(() => {
+    mocks.convexQuery.mockReset();
+    mocks.runToolStep.mockReset();
+});
 
 describe('public audit verification route', () => {
     it('returns 200 only when Convex governance verifies the commit', async () => {
@@ -154,7 +156,7 @@ describe('public audit timeline route', () => {
         const response = await publicApi.request('/audit/user-1/timeline');
 
         expect(response.status).toBe(401);
-        expect(mocks.historyForUser).not.toHaveBeenCalled();
+        expect(mocks.convexQuery).not.toHaveBeenCalled();
     });
 
     it('does not expose another user timeline', async () => {
@@ -168,11 +170,14 @@ describe('public audit timeline route', () => {
         const response = await app.request('/audit/user-2/timeline');
 
         expect(response.status).toBe(404);
-        expect(mocks.historyForUser).not.toHaveBeenCalled();
+        expect(mocks.convexQuery).not.toHaveBeenCalled();
     });
 
-    it('returns only the authenticated user timeline', async () => {
-        mocks.historyForUser.mockResolvedValueOnce([{ hash: 'commit-1' }]);
+    it('returns only the authenticated user timeline from Convex governance', async () => {
+        mocks.convexQuery.mockResolvedValueOnce({ _id: 'convex-user-1' }).mockResolvedValueOnce({
+            commits: [{ hash: 'commit-1', status: 'executed' }],
+            nextCursor: 'commit-0',
+        });
         const app = new Hono();
         app.use('*', async (c, next) => {
             c.set('userId', 'user-1');
@@ -183,10 +188,34 @@ describe('public audit timeline route', () => {
         const response = await app.request('/audit/user-1/timeline?limit=10');
 
         expect(response.status).toBe(200);
-        expect(mocks.historyForUser).toHaveBeenCalledWith('user-1', 10);
+        expect(mocks.convexQuery).toHaveBeenNthCalledWith(1, 'users.getByWorkOSId', {
+            workos_id: 'user-1',
+        });
+        expect(mocks.convexQuery).toHaveBeenNthCalledWith(2, 'governance.getCommitChain', {
+            user_id: 'convex-user-1',
+            limit: 10,
+        });
         await expect(response.json()).resolves.toEqual({
             userId: 'user-1',
-            commits: [{ hash: 'commit-1' }],
+            commits: [{ hash: 'commit-1', status: 'executed' }],
+            nextCursor: 'commit-0',
+        });
+    });
+
+    it('fails closed when Convex timeline is unavailable', async () => {
+        mocks.convexQuery.mockRejectedValueOnce(new Error('convex unavailable'));
+        const app = new Hono();
+        app.use('*', async (c, next) => {
+            c.set('userId', 'user-1');
+            await next();
+        });
+        app.route('/', publicApi);
+
+        const response = await app.request('/audit/user-1/timeline');
+
+        expect(response.status).toBe(503);
+        await expect(response.json()).resolves.toEqual({
+            error: 'Timeline service unavailable',
         });
     });
 });
