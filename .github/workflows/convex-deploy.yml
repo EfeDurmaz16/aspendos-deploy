@@ -16,6 +16,15 @@ jobs:
         with:
           bun-version: '1.1.30'
       - run: bun install --frozen-lockfile
+      - run: bun run convex:typecheck
+      - name: Verify Convex deploy key is configured
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          if [ -z "$CONVEX_DEPLOY_KEY" ]; then
+            echo "::error::CONVEX_DEPLOY_KEY is required for Convex deployment"
+            exit 1
+          fi
       - env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-        run: npx convex deploy
+        run: bunx convex deploy
