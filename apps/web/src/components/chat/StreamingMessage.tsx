@@ -92,11 +92,8 @@ function MessageActions({
             <AudioPlayer text={content} className="ml-1" />
 
             {/* Feedback buttons */}
-            <div
-                className="flex items-center gap-0.5 ml-auto"
-                role="group"
-                aria-label="Response feedback"
-            >
+            <fieldset className="flex items-center gap-0.5 ml-auto">
+                <legend className="sr-only">Response feedback</legend>
                 <button
                     type="button"
                     onClick={() => handleFeedback('up')}
@@ -131,7 +128,7 @@ function MessageActions({
                         aria-hidden="true"
                     />
                 </button>
-            </div>
+            </fieldset>
         </div>
     );
 }
@@ -312,6 +309,7 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
                         ? 'bg-primary text-primary-foreground shadow-md'
                         : 'bg-muted border border-border shadow-sm hover:shadow-md hover:border-border transition-all'
                 }`}
+                role="article"
                 aria-live={message.streaming ? 'polite' : 'off'}
                 aria-atomic="false"
                 aria-label={isUser ? 'Your message' : 'AI response'}
@@ -320,6 +318,7 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
                 {message.error && (
                     <div className="flex items-center gap-2 text-foreground/60 mb-2">
                         <svg
+                            aria-hidden="true"
                             className="w-4 h-4"
                             fill="none"
                             stroke="currentColor"

@@ -48,6 +48,7 @@ function CodeBlock({ language, code }: CodeBlockProps) {
                 >
                     {copied ? (
                         <svg
+                            aria-hidden="true"
                             className="w-4 h-4"
                             fill="none"
                             stroke="currentColor"
@@ -62,6 +63,7 @@ function CodeBlock({ language, code }: CodeBlockProps) {
                         </svg>
                     ) : (
                         <svg
+                            aria-hidden="true"
                             className="w-4 h-4"
                             fill="none"
                             stroke="currentColor"

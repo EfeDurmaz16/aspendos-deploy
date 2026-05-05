@@ -165,7 +165,7 @@ function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
                 <div className="flex flex-wrap gap-2 mb-3">
                     {attachments.map((file, index) => (
                         <div
-                            key={index}
+                            key={`${file.name}-${file.size}-${file.lastModified}`}
                             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 text-xs"
                         >
                             <ImageIcon className="h-4 w-4 text-zinc-400" />

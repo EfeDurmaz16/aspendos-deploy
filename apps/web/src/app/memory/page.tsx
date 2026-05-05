@@ -178,9 +178,9 @@ function MemoryCard({
                     )}
                     {memory.tags?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
-                            {(memory.tags || []).slice(0, 3).map((tag, i) => (
+                            {(memory.tags || []).slice(0, 3).map((tag) => (
                                 <span
-                                    key={i}
+                                    key={tag}
                                     className="text-xs px-2 py-1 bg-muted rounded-lg text-foreground"
                                 >
                                     {tag}
@@ -659,7 +659,10 @@ export default function MemoryDashboardPage() {
                             <h3 className="text-xl font-bold text-foreground">Edit Memory</h3>
                             <div className="space-y-3">
                                 <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                    <label
+                                        htmlFor="edit-content"
+                                        className="text-sm font-medium text-foreground"
+                                    >
                                         Content
                                     </label>
                                     <textarea
@@ -670,7 +673,10 @@ export default function MemoryDashboardPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                    <label
+                                        htmlFor="edit-sector"
+                                        className="text-sm font-medium text-foreground"
+                                    >
                                         Sector
                                     </label>
                                     <select

@@ -348,10 +348,10 @@ export default function SettingsPage() {
                                     <CardDescription>Customize how Yula looks</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
-                                    <div>
-                                        <label className="text-sm font-medium text-foreground mb-3 block">
+                                    <fieldset>
+                                        <legend className="text-sm font-medium text-foreground mb-3 block">
                                             Theme
-                                        </label>
+                                        </legend>
                                         <div className="flex gap-3">
                                             {(
                                                 [
@@ -384,7 +384,7 @@ export default function SettingsPage() {
                                                 </button>
                                             ))}
                                         </div>
-                                    </div>
+                                    </fieldset>
                                     <SettingRow
                                         label="Compact Mode"
                                         description="Use smaller spacing and fonts"
@@ -414,10 +414,14 @@ export default function SettingsPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div>
-                                        <label className="text-sm font-medium text-foreground mb-3 block">
+                                        <label
+                                            htmlFor="default-model"
+                                            className="text-sm font-medium text-foreground mb-3 block"
+                                        >
                                             Default Model
                                         </label>
                                         <select
+                                            id="default-model"
                                             value={settings.ai.defaultModel}
                                             onChange={(e) =>
                                                 updateSettings('ai', 'defaultModel', e.target.value)

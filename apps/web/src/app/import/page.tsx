@@ -588,7 +588,10 @@ export default function ImportPage() {
                                 <div className="flex flex-col items-center justify-center">
                                     <div className="relative w-24 h-24 mb-8">
                                         <div className="absolute inset-0 rounded-full border-4 border-zinc-200 dark:border-zinc-800" />
-                                        <svg className="absolute inset-0 w-24 h-24 -rotate-90">
+                                        <svg
+                                            aria-hidden="true"
+                                            className="absolute inset-0 w-24 h-24 -rotate-90"
+                                        >
                                             <circle
                                                 cx="48"
                                                 cy="48"

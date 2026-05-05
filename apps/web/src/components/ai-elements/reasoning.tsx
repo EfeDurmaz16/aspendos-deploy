@@ -112,7 +112,7 @@ export function ChainOfThought({
 
                 return (
                     <div
-                        key={index}
+                        key={`${step}-${index + 1}`}
                         className={cn(
                             'flex items-start gap-2 p-2 rounded-md text-sm',
                             'transition-all duration-200',
