@@ -1,6 +1,13 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+const DEFAULT_BYOK_CREDENTIAL_LIMIT = 50;
+const MAX_BYOK_CREDENTIAL_LIMIT = 200;
+
+function clampLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_BYOK_CREDENTIAL_LIMIT, 1), MAX_BYOK_CREDENTIAL_LIMIT);
+}
+
 export const store = mutation({
     args: {
         user_id: v.id('users'),
@@ -48,12 +55,13 @@ export const getByProvider = query({
 });
 
 export const listByUser = query({
-    args: { user_id: v.id('users') },
+    args: { user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        const limit = clampLimit(args.limit);
         return await ctx.db
             .query('byok_credentials')
             .withIndex('by_user', (q) => q.eq('user_id', args.user_id))
-            .collect();
+            .take(limit);
     },
 });
 

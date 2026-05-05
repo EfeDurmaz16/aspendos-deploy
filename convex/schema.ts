@@ -212,5 +212,6 @@ export default defineSchema({
         registered_at: v.number(),
     })
         .index('by_name', ['name'])
-        .index('by_reversibility_class', ['reversibility_class']),
+        .index('by_reversibility_class', ['reversibility_class'])
+        .index('by_registered_at', ['registered_at']),
 });

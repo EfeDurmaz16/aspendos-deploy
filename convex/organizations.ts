@@ -1,6 +1,19 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+const DEFAULT_ORGANIZATION_LIMIT = 50;
+const MAX_ORGANIZATION_LIMIT = 200;
+const DEFAULT_MEMBER_LIMIT = 100;
+const MAX_MEMBER_LIMIT = 500;
+
+function clampOrganizationLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_ORGANIZATION_LIMIT, 1), MAX_ORGANIZATION_LIMIT);
+}
+
+function clampMemberLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_MEMBER_LIMIT, 1), MAX_MEMBER_LIMIT);
+}
+
 export const create = mutation({
     args: {
         name: v.string(),
@@ -43,12 +56,13 @@ export const getBySlug = query({
 });
 
 export const listByUser = query({
-    args: { user_id: v.id('users') },
+    args: { user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        const limit = clampOrganizationLimit(args.limit);
         const memberships = await ctx.db
             .query('org_members')
             .withIndex('by_user', (q) => q.eq('user_id', args.user_id))
-            .collect();
+            .take(limit);
 
         const orgs = await Promise.all(
             memberships.map(async (m) => {
@@ -121,12 +135,13 @@ export const updateMemberRole = mutation({
 });
 
 export const getMembers = query({
-    args: { org_id: v.id('organizations') },
+    args: { org_id: v.id('organizations'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        const limit = clampMemberLimit(args.limit);
         const members = await ctx.db
             .query('org_members')
             .withIndex('by_org', (q) => q.eq('org_id', args.org_id))
-            .collect();
+            .take(limit);
 
         return Promise.all(
             members.map(async (m) => {

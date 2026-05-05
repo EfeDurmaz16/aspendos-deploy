@@ -1,6 +1,13 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+const DEFAULT_TOOL_REGISTRY_LIMIT = 100;
+const MAX_TOOL_REGISTRY_LIMIT = 500;
+
+function clampLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_TOOL_REGISTRY_LIMIT, 1), MAX_TOOL_REGISTRY_LIMIT);
+}
+
 /**
  * Register a tool with its reversibility metadata.
  * Upserts: if a tool with the same name exists, it updates the entry.
@@ -64,6 +71,7 @@ export const getToolMetadata = query({
  */
 export const listTools = query({
     args: {
+        limit: v.optional(v.number()),
         reversibility_class: v.optional(
             v.union(
                 v.literal('undoable'),
@@ -75,15 +83,21 @@ export const listTools = query({
         ),
     },
     handler: async (ctx, args) => {
-        if (args.reversibility_class) {
+        const limit = clampLimit(args.limit);
+        const reversibilityClass = args.reversibility_class;
+        if (reversibilityClass) {
             return await ctx.db
                 .query('tool_registry')
                 .withIndex('by_reversibility_class', (q) =>
-                    q.eq('reversibility_class', args.reversibility_class!)
+                    q.eq('reversibility_class', reversibilityClass)
                 )
-                .collect();
+                .take(limit);
         }
-        return await ctx.db.query('tool_registry').collect();
+        return await ctx.db
+            .query('tool_registry')
+            .withIndex('by_registered_at')
+            .order('desc')
+            .take(limit);
     },
 });
 
