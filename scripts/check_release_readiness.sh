@@ -21,10 +21,11 @@ fail() {
 
 info "Running release readiness checks for critical capabilities..."
 
-# Guard against accidental duplicate source/release files (e.g. 'layout 2.tsx')
-DUPLICATE_SOURCE_FILES="$(git ls-files apps services packages convex infra docs scripts \
+# Guard against accidental duplicate source/release files (e.g. 'layout 2.tsx'
+# or macOS conflict copies such as '.env 2.example').
+DUPLICATE_SOURCE_FILES="$(git ls-files \
   | while IFS= read -r path; do [[ -e "$path" ]] && printf '%s\n' "$path"; done \
-  | grep -E ' [0-9]+\.(ts|tsx|js|jsx|css|json|md|toml|ya?ml|sh|py)$' || true)"
+  | grep -E '(^|/)\\.?.+ [0-9]+(\\.[^/]+)?$' || true)"
 if [[ -n "$DUPLICATE_SOURCE_FILES" ]]; then
   echo "$DUPLICATE_SOURCE_FILES"
   fail "Duplicate tracked source/release files detected. Remove numbered duplicates before release."
