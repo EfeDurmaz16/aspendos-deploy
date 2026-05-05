@@ -69,7 +69,7 @@ describe('web verify API route', () => {
                 JSON.stringify({
                     hash: 'abc12345',
                     verified: true,
-                    did: 'did:yula:agent:user-1',
+                    fides_signer_did: 'did:yula:agent:user-1',
                     signature: 'sig-1',
                     timestamp: 123,
                     tool_name: 'file.write',

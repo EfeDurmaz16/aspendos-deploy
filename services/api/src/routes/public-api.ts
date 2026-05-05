@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { getAgit } from '../audit/agit';
+import { api, getConvexClient } from '../lib/convex';
 import { runToolStep } from '../orchestrator/step';
 import type { ToolContext } from '../reversibility/types';
 import { registry } from '../tools/registry';
@@ -64,13 +65,41 @@ publicApi.get('/audit/:userId/timeline', async (c) => {
 
 publicApi.get('/audit/verify/:hash', async (c) => {
     const { hash } = c.req.param();
-    const agit = getAgit();
-    const verified = await agit.verifyCommit(hash);
-    if (!verified) {
-        return c.json({ hash, verified: false, error: 'Commit verification failed' }, 404);
-    }
 
-    return c.json({ hash, verified: true });
+    try {
+        const verification = await getConvexClient().query(api.governance.verifyCommit, { hash });
+        if (!verification.valid) {
+            return c.json(
+                {
+                    hash,
+                    verified: false,
+                    error: verification.error ?? 'Commit verification failed',
+                    checks: verification.checks,
+                },
+                404
+            );
+        }
+
+        return c.json({
+            hash,
+            verified: true,
+            checks: verification.checks,
+            status: verification.commit?.status,
+            fides_signer_did: verification.commit?.fides_signer_did,
+            timestamp: verification.commit?.timestamp,
+            tool_name: verification.commit?.tool_name,
+            reversibility_class: verification.commit?.reversibility_class,
+        });
+    } catch {
+        return c.json(
+            {
+                hash,
+                verified: false,
+                error: 'Verification service unavailable',
+            },
+            503
+        );
+    }
 });
 
 publicApi.get('/health', (c) => {

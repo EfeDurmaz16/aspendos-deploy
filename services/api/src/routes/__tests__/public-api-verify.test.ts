@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import publicApi from '../public-api';
 
 const mocks = vi.hoisted(() => ({
-    verifyCommit: vi.fn(),
+    convexQuery: vi.fn(),
     historyForUser: vi.fn(),
     runToolStep: vi.fn(),
 }));
@@ -11,7 +11,17 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../audit/agit', () => ({
     getAgit: vi.fn(() => ({
         historyForUser: mocks.historyForUser,
-        verifyCommit: mocks.verifyCommit,
+    })),
+}));
+
+vi.mock('../../lib/convex', () => ({
+    api: {
+        governance: {
+            verifyCommit: 'governance.verifyCommit',
+        },
+    },
+    getConvexClient: vi.fn(() => ({
+        query: mocks.convexQuery,
     })),
 }));
 
@@ -20,20 +30,52 @@ vi.mock('../../orchestrator/step', () => ({
 }));
 
 describe('public audit verification route', () => {
-    it('returns 200 only when AGIT verifies the commit', async () => {
-        mocks.verifyCommit.mockResolvedValueOnce(true);
+    it('returns 200 only when Convex governance verifies the commit', async () => {
+        mocks.convexQuery.mockResolvedValueOnce({
+            valid: true,
+            checks: {
+                hash_integrity: true,
+                fides_signature: true,
+                parent_exists: true,
+            },
+            commit: {
+                hash: 'abc12345',
+                status: 'executed',
+                fides_signer_did: 'did:yula:agent:user-1',
+                timestamp: 123,
+                tool_name: 'file.write',
+                reversibility_class: 'undoable',
+            },
+        });
 
         const response = await publicApi.request('/audit/verify/abc12345');
 
         expect(response.status).toBe(200);
         await expect(response.json()).resolves.toEqual({
+            checks: {
+                hash_integrity: true,
+                fides_signature: true,
+                parent_exists: true,
+            },
+            fides_signer_did: 'did:yula:agent:user-1',
             hash: 'abc12345',
+            reversibility_class: 'undoable',
+            status: 'executed',
+            timestamp: 123,
+            tool_name: 'file.write',
             verified: true,
+        });
+        expect(mocks.convexQuery).toHaveBeenCalledWith('governance.verifyCommit', {
+            hash: 'abc12345',
         });
     });
 
-    it('returns 404 when AGIT cannot verify the commit', async () => {
-        mocks.verifyCommit.mockResolvedValueOnce(false);
+    it('returns 404 when Convex governance cannot verify the commit', async () => {
+        mocks.convexQuery.mockResolvedValueOnce({
+            valid: false,
+            error: 'Commit not found',
+            checks: {},
+        });
 
         const response = await publicApi.request('/audit/verify/missing123');
 
@@ -41,7 +83,21 @@ describe('public audit verification route', () => {
         await expect(response.json()).resolves.toEqual({
             hash: 'missing123',
             verified: false,
-            error: 'Commit verification failed',
+            error: 'Commit not found',
+            checks: {},
+        });
+    });
+
+    it('fails closed when Convex governance verification is unavailable', async () => {
+        mocks.convexQuery.mockRejectedValueOnce(new Error('convex unavailable'));
+
+        const response = await publicApi.request('/audit/verify/abc12345');
+
+        expect(response.status).toBe(503);
+        await expect(response.json()).resolves.toEqual({
+            hash: 'abc12345',
+            verified: false,
+            error: 'Verification service unavailable',
         });
     });
 });

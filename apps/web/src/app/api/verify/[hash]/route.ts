@@ -36,7 +36,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ has
         return NextResponse.json({
             verified: true,
             hash,
-            signer_did: data.did,
+            signer_did: data.fides_signer_did ?? data.did,
             signature: data.signature,
             timestamp: data.timestamp,
             tool_name: data.tool_name,
