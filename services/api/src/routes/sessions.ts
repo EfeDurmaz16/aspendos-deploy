@@ -7,9 +7,7 @@
 
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
-
-const prisma = null as any;
-
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 
 const sessionRoutes = new Hono();

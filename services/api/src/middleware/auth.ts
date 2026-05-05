@@ -1,4 +1,5 @@
 import type { Context, Next } from 'hono';
+import { auth } from '../lib/auth';
 
 export interface AuthUser {
     userId: string;
@@ -11,6 +12,7 @@ declare module 'hono' {
     interface ContextVariableMap {
         user: AuthUser | null;
         userId: string | null;
+        session: { id: string; expiresAt?: Date | string } | null;
     }
 }
 
@@ -35,9 +37,23 @@ export async function authMiddleware(c: Context, next: Next) {
 
 export async function requireAuth(c: Context, next: Next) {
     const userId = c.get('userId');
-    if (!userId) {
+    if (userId) {
+        return next();
+    }
+
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    if (!session?.user?.id) {
         return c.json({ error: 'Authentication required' }, 401);
     }
+
+    c.set('user', {
+        userId: session.user.id,
+        email: session.user.email,
+        name: session.user.name ?? undefined,
+        image: session.user.image ?? undefined,
+    });
+    c.set('userId', session.user.id);
+    c.set('session', session.session);
     return next();
 }
 

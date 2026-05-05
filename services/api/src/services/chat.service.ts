@@ -4,7 +4,8 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { api, getConvexClient } from '../lib/convex';
+import { prisma } from '@aspendos/db';
+import { api, getConvexClient, isConvexConfigured } from '../lib/convex';
 
 type Chat = any;
 type Message = any;
@@ -129,8 +130,21 @@ export async function getChatWithMessages(
     options?: { cursor?: string; limit?: number }
 ) {
     try {
-        const client = getConvexClient();
         const limit = Math.min(options?.limit || 50, 200);
+        if (!isConvexConfigured()) {
+            return await prisma.chat.findFirst({
+                where: { id: chatId, userId },
+                include: {
+                    messages: {
+                        orderBy: { createdAt: 'asc' },
+                        take: limit,
+                        ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+                    },
+                },
+            });
+        }
+
+        const client = getConvexClient();
 
         const chat = await client.query(api.conversations.get, { id: chatId as any });
         if (!chat || chat.user_id !== userId) return null;
