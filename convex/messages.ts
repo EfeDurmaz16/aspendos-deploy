@@ -1,6 +1,13 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+const DEFAULT_MESSAGE_LIMIT = 200;
+const MAX_MESSAGE_LIMIT = 500;
+
+function clampLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_MESSAGE_LIMIT, 1), MAX_MESSAGE_LIMIT);
+}
+
 export const create = mutation({
     args: {
         conversation_id: v.id('conversations'),
@@ -30,11 +37,12 @@ export const listByConversation = query({
         limit: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
+        const limit = clampLimit(args.limit);
         const q = ctx.db
             .query('messages')
             .withIndex('by_conversation_time', (q) => q.eq('conversation_id', args.conversation_id))
             .order('asc');
-        return args.limit ? await q.take(args.limit) : await q.collect();
+        return await q.take(limit);
     },
 });
 

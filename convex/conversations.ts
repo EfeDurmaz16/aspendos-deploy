@@ -1,6 +1,13 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+const DEFAULT_CONVERSATION_LIMIT = 50;
+const MAX_CONVERSATION_LIMIT = 200;
+
+function clampLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_CONVERSATION_LIMIT, 1), MAX_CONVERSATION_LIMIT);
+}
+
 export const create = mutation({
     args: {
         user_id: v.id('users'),
@@ -27,11 +34,12 @@ export const get = query({
 export const listByUser = query({
     args: { user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        const limit = clampLimit(args.limit);
         const q = ctx.db
             .query('conversations')
             .withIndex('by_user_recent', (q) => q.eq('user_id', args.user_id))
             .order('desc');
-        return args.limit ? await q.take(args.limit) : await q.collect();
+        return await q.take(limit);
     },
 });
 
