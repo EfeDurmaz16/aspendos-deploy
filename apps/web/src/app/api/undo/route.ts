@@ -1,8 +1,10 @@
 import { ConvexHttpClient } from 'convex/browser';
 import { type NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import type { AgitCommit, RollbackStrategy } from '@/lib/reversibility/types';
 import { referenceTools } from '@/lib/tools/reference';
 import { api } from '../../../../../../convex/_generated/api';
+import type { Id } from '../../../../../../convex/_generated/dataModel';
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL ?? '');
 
@@ -13,6 +15,21 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL ?? '');
 
 export async function POST(req: NextRequest) {
     try {
+        const session = await auth();
+        if (!session?.userId) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
+
+        const currentUser = await convex.query(api.users.getByWorkOSId, {
+            workos_id: session.userId,
+        });
+        if (!currentUser) {
+            return NextResponse.json(
+                { success: false, message: 'Authenticated user is not provisioned.' },
+                { status: 403 }
+            );
+        }
+
         const body = await req.json();
         const { commit_hash, strategy } = body;
 
@@ -25,11 +42,11 @@ export async function POST(req: NextRequest) {
 
         // ── Rewind mode ──────────────────────────────────────
         if (strategy === 'rewind') {
-            return handleRewind(commit_hash);
+            return handleRewind(commit_hash, currentUser._id);
         }
 
         // ── Single undo ──────────────────────────────────────
-        return handleSingleUndo(commit_hash, body);
+        return handleSingleUndo(commit_hash, body, currentUser._id);
     } catch (err) {
         return NextResponse.json(
             {
@@ -43,11 +60,22 @@ export async function POST(req: NextRequest) {
 
 // ── Single undo handler ──────────────────────────────────────
 
-async function handleSingleUndo(commitHash: string, body: Record<string, unknown>) {
+async function handleSingleUndo(
+    commitHash: string,
+    body: Record<string, unknown>,
+    currentUserId: Id<'users'>
+) {
     // Fetch the commit from Convex
     const commit = await convex.query(api.commits.getByHash, { hash: commitHash });
 
     if (!commit) {
+        return NextResponse.json(
+            { success: false, message: `Commit ${commitHash.slice(0, 8)} not found.` },
+            { status: 404 }
+        );
+    }
+
+    if (commit.user_id !== currentUserId) {
         return NextResponse.json(
             { success: false, message: `Commit ${commitHash.slice(0, 8)} not found.` },
             { status: 404 }
@@ -87,6 +115,13 @@ async function handleSingleUndo(commitHash: string, body: Record<string, unknown
             });
 
             if (!snapshot) {
+                return NextResponse.json(
+                    { success: false, message: 'Snapshot not found.' },
+                    { status: 404 }
+                );
+            }
+
+            if (snapshot.user_id !== currentUserId) {
                 return NextResponse.json(
                     { success: false, message: 'Snapshot not found.' },
                     { status: 404 }
@@ -183,7 +218,7 @@ async function handleSingleUndo(commitHash: string, body: Record<string, unknown
 
 // ── Rewind handler ───────────────────────────────────────────
 
-async function handleRewind(targetHash: string) {
+async function handleRewind(targetHash: string, currentUserId: Id<'users'>) {
     // Find the target commit
     const targetCommit = await convex.query(api.commits.getByHash, { hash: targetHash });
 
@@ -194,9 +229,16 @@ async function handleRewind(targetHash: string) {
         );
     }
 
+    if (targetCommit.user_id !== currentUserId) {
+        return NextResponse.json(
+            { success: false, message: `Target commit ${targetHash.slice(0, 8)} not found.` },
+            { status: 404 }
+        );
+    }
+
     // Get all commits after the target timestamp for this user
     const commitsAfter = await convex.query(api.commits.listAfterTimestamp, {
-        user_id: targetCommit.user_id,
+        user_id: currentUserId,
         after_timestamp: targetCommit.timestamp,
     });
 
