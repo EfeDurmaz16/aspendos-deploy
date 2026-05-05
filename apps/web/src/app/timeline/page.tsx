@@ -1,7 +1,7 @@
 'use client';
 
-import { useMutation, useQuery } from 'convex/react';
-import { useCallback, useState, useTransition } from 'react';
+import { useQuery } from 'convex/react';
+import { useCallback, useState } from 'react';
 import { ReversibilityBadge } from '@/components/reversibility-badge';
 import { useAuth } from '@/hooks/use-auth';
 import { dispatchRollback } from '@/lib/reversibility/dispatch';
@@ -183,18 +183,12 @@ function FilterBar({
 // ── Main page ────────────────────────────────────────────────
 
 export default function TimelinePage() {
-    const { isLoaded, isSignedIn, userId: workosUserId } = useAuth();
-
-    // Resolve Convex user id from the authenticated WorkOS id
-    const convexUser = useQuery(
-        api.users.getByWorkOSId,
-        workosUserId ? { workos_id: workosUserId } : 'skip'
-    );
+    const { isLoaded, isSignedIn } = useAuth();
 
     // Real-time Convex subscription for commits, scoped to the authenticated user
     const commits = useQuery(
-        api.commits.listByUser,
-        convexUser?._id ? { user_id: convexUser._id, limit: 200 } : 'skip'
+        api.commits.listCurrentUser,
+        isLoaded && isSignedIn ? { limit: 200 } : 'skip'
     );
 
     const [activeFilters, setActiveFilters] = useState<Set<ReversibilityClass>>(
@@ -205,8 +199,6 @@ export default function TimelinePage() {
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
         null
     );
-    const [isPending, startTransition] = useTransition();
-
     const toggleFilter = useCallback((cls: ReversibilityClass) => {
         setActiveFilters((prev) => {
             const next = new Set(prev);

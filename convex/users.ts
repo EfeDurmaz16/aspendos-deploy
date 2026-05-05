@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { requireAuthenticatedWorkOSId } from './authHelpers';
 
 export const upsertFromWorkOS = mutation({
     args: {
@@ -40,6 +41,17 @@ export const getByWorkOSId = query({
         return await ctx.db
             .query('users')
             .withIndex('by_workos_id', (q) => q.eq('workos_id', args.workos_id))
+            .first();
+    },
+});
+
+export const getCurrent = query({
+    args: {},
+    handler: async (ctx) => {
+        const workosId = await requireAuthenticatedWorkOSId(ctx);
+        return await ctx.db
+            .query('users')
+            .withIndex('by_workos_id', (q) => q.eq('workos_id', workosId))
             .first();
     },
 });

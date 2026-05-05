@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { requireAuthenticatedUser } from './authHelpers';
 
 export const create = mutation({
     args: {
@@ -58,6 +59,19 @@ export const listByUser = query({
             .withIndex('by_user_time', (q) => q.eq('user_id', args.user_id))
             .order('desc');
         return await q.take(limit);
+    },
+});
+
+export const listCurrentUser = query({
+    args: { limit: v.optional(v.number()) },
+    handler: async (ctx, args) => {
+        const user = await requireAuthenticatedUser(ctx);
+        const limit = Math.min(Math.max(args.limit ?? 50, 1), 200);
+        return await ctx.db
+            .query('commits')
+            .withIndex('by_user_time', (q) => q.eq('user_id', user._id))
+            .order('desc')
+            .take(limit);
     },
 });
 
