@@ -46,6 +46,17 @@ export const getByCommitHash = query({
     },
 });
 
+export const getByIdForUser = query({
+    args: { id: v.id('approvals'), user_id: v.id('users') },
+    handler: async (ctx, args) => {
+        const approval = await ctx.db.get(args.id);
+        if (!approval || approval.user_id !== args.user_id) {
+            return null;
+        }
+        return approval;
+    },
+});
+
 export const listPendingByUser = query({
     args: { user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
@@ -60,15 +71,23 @@ export const listPendingByUser = query({
 });
 
 export const approve = mutation({
-    args: { id: v.id('approvals') },
+    args: { id: v.id('approvals'), user_id: v.id('users') },
     handler: async (ctx, args) => {
+        const approval = await ctx.db.get(args.id);
+        if (!approval || approval.user_id !== args.user_id) {
+            throw new Error('Approval not found');
+        }
         await ctx.db.patch(args.id, { status: 'approved' });
     },
 });
 
 export const reject = mutation({
-    args: { id: v.id('approvals') },
+    args: { id: v.id('approvals'), user_id: v.id('users') },
     handler: async (ctx, args) => {
+        const approval = await ctx.db.get(args.id);
+        if (!approval || approval.user_id !== args.user_id) {
+            throw new Error('Approval not found');
+        }
         await ctx.db.patch(args.id, { status: 'rejected' });
     },
 });

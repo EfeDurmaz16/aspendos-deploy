@@ -15,16 +15,10 @@ const approvalRoutes = new Hono();
 type ApprovalView = {
     id?: string;
     _id?: string;
-    userId?: string;
-    user_id?: string;
     status?: string;
     toolName?: string;
     tool_name?: string;
 };
-
-function approvalOwnerId(approval: ApprovalView): string | undefined {
-    return approval.userId ?? approval.user_id;
-}
 
 function approvalStatus(approval: ApprovalView): string | undefined {
     return approval.status?.toLowerCase();
@@ -53,8 +47,8 @@ approvalRoutes.post('/:id/approve', validateParams(approvalIdParamSchema), async
     const userId = c.get('userId') as string;
     const { id: approvalId } = c.get('validatedParams') as { id: string };
 
-    const approval = await approvalService.getApproval(approvalId);
-    if (!approval || approvalOwnerId(approval) !== userId) {
+    const approval = await approvalService.getApprovalForUser(userId, approvalId);
+    if (!approval) {
         return c.json({ error: 'Approval not found' }, 404);
     }
     if (approvalStatus(approval) !== 'pending') {
@@ -81,8 +75,8 @@ approvalRoutes.post('/:id/reject', validateParams(approvalIdParamSchema), async 
     const userId = c.get('userId') as string;
     const { id: approvalId } = c.get('validatedParams') as { id: string };
 
-    const approval = await approvalService.getApproval(approvalId);
-    if (!approval || approvalOwnerId(approval) !== userId) {
+    const approval = await approvalService.getApprovalForUser(userId, approvalId);
+    if (!approval) {
         return c.json({ error: 'Approval not found' }, 404);
     }
     if (approvalStatus(approval) !== 'pending') {

@@ -31,8 +31,12 @@ export const grant = mutation({
 });
 
 export const revoke = mutation({
-    args: { id: v.id('tool_allowlist') },
+    args: { id: v.id('tool_allowlist'), user_id: v.id('users') },
     handler: async (ctx, args) => {
+        const entry = await ctx.db.get(args.id);
+        if (!entry || entry.user_id !== args.user_id) {
+            throw new Error('Tool allowlist entry not found');
+        }
         await ctx.db.delete(args.id);
     },
 });
