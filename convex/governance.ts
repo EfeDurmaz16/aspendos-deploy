@@ -1,6 +1,19 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+const DEFAULT_COMMIT_CHAIN_LIMIT = 25;
+const MAX_COMMIT_CHAIN_LIMIT = 100;
+const DEFAULT_VERIFY_CHAIN_LIMIT = 100;
+const MAX_VERIFY_CHAIN_LIMIT = 500;
+
+function clampCommitChainLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_COMMIT_CHAIN_LIMIT, 1), MAX_COMMIT_CHAIN_LIMIT);
+}
+
+function clampVerifyChainLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_VERIFY_CHAIN_LIMIT, 1), MAX_VERIFY_CHAIN_LIMIT);
+}
+
 // ---------------------------------------------------------------------------
 // Helpers: FIDES signing + AGIT hashing run inside Convex mutations using
 // the Web Crypto API (available in Convex runtime).
@@ -441,13 +454,14 @@ export const getCommitChain = query({
         cursor: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const limit = args.limit ?? 25;
+        const limit = clampCommitChainLimit(args.limit);
 
         // If cursor is provided, start from that commit's timestamp
         if (args.cursor) {
+            const cursor = args.cursor;
             const cursorCommit = await ctx.db
                 .query('commits')
-                .withIndex('by_hash', (q) => q.eq('hash', args.cursor!))
+                .withIndex('by_hash', (q) => q.eq('hash', cursor))
                 .first();
 
             if (!cursorCommit) {
@@ -456,9 +470,10 @@ export const getCommitChain = query({
 
             const commits = await ctx.db
                 .query('commits')
-                .withIndex('by_user_time', (q) => q.eq('user_id', args.user_id))
+                .withIndex('by_user_time', (q) =>
+                    q.eq('user_id', args.user_id).lt('timestamp', cursorCommit.timestamp)
+                )
                 .order('desc')
-                .filter((q) => q.lt(q.field('timestamp'), cursorCommit.timestamp))
                 .take(limit + 1);
 
             const hasMore = commits.length > limit;
@@ -492,7 +507,7 @@ export const verifyChain = query({
         limit: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const limit = args.limit ?? 100;
+        const limit = clampVerifyChainLimit(args.limit);
         const commits = await ctx.db
             .query('commits')
             .withIndex('by_user_time', (q) => q.eq('user_id', args.user_id))
