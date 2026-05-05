@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const convexQuery = vi.fn();
 const convexMutation = vi.fn();
+const convexSetAuth = vi.fn();
 const auth = vi.fn();
 
 vi.mock('convex/browser', () => ({
@@ -9,6 +10,7 @@ vi.mock('convex/browser', () => ({
         return {
             query: convexQuery,
             mutation: convexMutation,
+            setAuth: convexSetAuth,
         };
     }),
 }));
@@ -19,16 +21,13 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('../../../../convex/_generated/api', () => ({
     api: {
-        users: {
-            getByWorkOSId: 'users.getByWorkOSId',
-        },
         commits: {
-            getByHash: 'commits.getByHash',
-            updateStatus: 'commits.updateStatus',
-            listAfterTimestamp: 'commits.listAfterTimestamp',
+            getCurrentUserByHash: 'commits.getCurrentUserByHash',
+            updateCurrentUserStatus: 'commits.updateCurrentUserStatus',
+            listCurrentUserAfterTimestamp: 'commits.listCurrentUserAfterTimestamp',
         },
         snapshots: {
-            getBySnapshotId: 'snapshots.getBySnapshotId',
+            getCurrentUserBySnapshotId: 'snapshots.getCurrentUserBySnapshotId',
         },
     },
 }));
@@ -47,6 +46,7 @@ describe('undo API route authorization', () => {
         auth.mockReset();
         convexQuery.mockReset();
         convexMutation.mockReset();
+        convexSetAuth.mockReset();
     });
 
     it('rejects unauthenticated undo requests before reading commits', async () => {
@@ -60,17 +60,21 @@ describe('undo API route authorization', () => {
         expect(convexMutation).not.toHaveBeenCalled();
     });
 
-    it('does not mutate commits owned by another user', async () => {
+    it('rejects requests without a Convex access token before reading commits', async () => {
         auth.mockResolvedValueOnce({ userId: 'workos-user-1' });
-        convexQuery
-            .mockResolvedValueOnce({ _id: 'user-1' })
-            .mockResolvedValueOnce({
-                _id: 'commit-doc-1',
-                hash: 'commit-1',
-                user_id: 'user-2',
-                status: 'executed',
-                reversibility_class: 'undoable',
-            });
+
+        const { POST } = await import('../../../src/app/api/undo/route');
+        const response = await POST(undoRequest({ commit_hash: 'commit-1' }) as any);
+
+        expect(response.status).toBe(401);
+        expect(convexSetAuth).not.toHaveBeenCalled();
+        expect(convexQuery).not.toHaveBeenCalled();
+        expect(convexMutation).not.toHaveBeenCalled();
+    });
+
+    it('does not mutate commits owned by another user', async () => {
+        auth.mockResolvedValueOnce({ accessToken: 'token-1', userId: 'workos-user-1' });
+        convexQuery.mockResolvedValueOnce(null);
 
         const { POST } = await import('../../../src/app/api/undo/route');
         const response = await POST(
@@ -78,13 +82,13 @@ describe('undo API route authorization', () => {
         );
 
         expect(response.status).toBe(404);
+        expect(convexSetAuth).toHaveBeenCalledWith('token-1');
         expect(convexMutation).not.toHaveBeenCalled();
     });
 
     it('rewinds only after verifying the target commit belongs to the current user', async () => {
-        auth.mockResolvedValueOnce({ userId: 'workos-user-1' });
+        auth.mockResolvedValueOnce({ accessToken: 'token-1', userId: 'workos-user-1' });
         convexQuery
-            .mockResolvedValueOnce({ _id: 'user-1' })
             .mockResolvedValueOnce({
                 _id: 'commit-doc-1',
                 hash: 'commit-1',
@@ -101,16 +105,14 @@ describe('undo API route authorization', () => {
         );
 
         expect(response.status).toBe(200);
-        expect(convexQuery.mock.calls[2]?.[1]).toEqual({
-            user_id: 'user-1',
+        expect(convexQuery.mock.calls[1]?.[1]).toEqual({
             after_timestamp: 100,
         });
     });
 
     it('does not mark compensation reverted without a rollback handler', async () => {
-        auth.mockResolvedValueOnce({ userId: 'workos-user-1' });
+        auth.mockResolvedValueOnce({ accessToken: 'token-1', userId: 'workos-user-1' });
         convexQuery
-            .mockResolvedValueOnce({ _id: 'user-1' })
             .mockResolvedValueOnce({
                 _id: 'commit-doc-1',
                 hash: 'commit-1',
@@ -139,9 +141,8 @@ describe('undo API route authorization', () => {
     });
 
     it('does not generic-revert rewind entries without rollback handlers', async () => {
-        auth.mockResolvedValueOnce({ userId: 'workos-user-1' });
+        auth.mockResolvedValueOnce({ accessToken: 'token-1', userId: 'workos-user-1' });
         convexQuery
-            .mockResolvedValueOnce({ _id: 'user-1' })
             .mockResolvedValueOnce({
                 _id: 'target-doc',
                 hash: 'target-1',

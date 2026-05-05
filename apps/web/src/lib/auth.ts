@@ -2,12 +2,14 @@ export async function auth(): Promise<{
     userId: string | null;
     user: any;
     session: any;
+    accessToken?: string;
 } | null> {
     try {
         const { withAuth } = await import('@workos-inc/authkit-nextjs');
-        const { user } = await withAuth();
+        const { accessToken, user } = await withAuth();
         if (!user) return null;
         return {
+            accessToken,
             userId: user.id,
             user: {
                 id: user.id,

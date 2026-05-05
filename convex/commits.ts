@@ -1,8 +1,8 @@
 import { v } from 'convex/values';
-import type { QueryCtx } from './_generated/server';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 import { mutation, query } from './_generated/server';
 
-async function requireAuthenticatedUser(ctx: QueryCtx) {
+async function requireAuthenticatedUser(ctx: QueryCtx | MutationCtx) {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
         throw new Error('Not authenticated');
@@ -68,6 +68,23 @@ export const getByHash = query({
     },
 });
 
+export const getCurrentUserByHash = query({
+    args: { hash: v.string() },
+    handler: async (ctx, args) => {
+        const user = await requireAuthenticatedUser(ctx);
+        const commit = await ctx.db
+            .query('commits')
+            .withIndex('by_hash', (q) => q.eq('hash', args.hash))
+            .first();
+
+        if (!commit || commit.user_id !== user._id) {
+            return null;
+        }
+
+        return commit;
+    },
+});
+
 export const listByUser = query({
     args: { user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
@@ -112,6 +129,31 @@ export const updateStatus = mutation({
     },
 });
 
+export const updateCurrentUserStatus = mutation({
+    args: {
+        id: v.id('commits'),
+        status: v.union(
+            v.literal('pending'),
+            v.literal('executed'),
+            v.literal('reverted'),
+            v.literal('failed')
+        ),
+        result: v.optional(v.any()),
+    },
+    handler: async (ctx, args) => {
+        const user = await requireAuthenticatedUser(ctx);
+        const commit = await ctx.db.get(args.id);
+        if (!commit || commit.user_id !== user._id) {
+            throw new Error('Commit not found');
+        }
+
+        await ctx.db.patch(args.id, {
+            status: args.status,
+            result: args.result,
+        });
+    },
+});
+
 export const listAfterTimestamp = query({
     args: {
         user_id: v.id('users'),
@@ -124,6 +166,24 @@ export const listAfterTimestamp = query({
             .query('commits')
             .withIndex('by_user_time', (q) =>
                 q.eq('user_id', args.user_id).gt('timestamp', args.after_timestamp)
+            )
+            .order('desc')
+            .take(limit);
+    },
+});
+
+export const listCurrentUserAfterTimestamp = query({
+    args: {
+        after_timestamp: v.number(),
+        limit: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        const user = await requireAuthenticatedUser(ctx);
+        const limit = Math.min(Math.max(args.limit ?? 100, 1), 500);
+        return await ctx.db
+            .query('commits')
+            .withIndex('by_user_time', (q) =>
+                q.eq('user_id', user._id).gt('timestamp', args.after_timestamp)
             )
             .order('desc')
             .take(limit);
