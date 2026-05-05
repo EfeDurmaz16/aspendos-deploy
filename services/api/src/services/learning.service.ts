@@ -136,7 +136,11 @@ export async function createSkillFromPattern(
         createdBy: userId,
     });
 
-    return skill.id;
+    if (!skill) {
+        throw new Error('Failed to create skill from detected pattern');
+    }
+
+    return skill;
 }
 
 /**

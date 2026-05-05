@@ -44,6 +44,22 @@ function containerTag(userId: string): string {
     return `user_${userId}`;
 }
 
+type SupermemoryMetadata = Record<string, string | number | boolean | Array<string>>;
+
+function toSupermemoryMetadata(metadata?: Record<string, unknown>): SupermemoryMetadata {
+    const result: SupermemoryMetadata = {};
+    for (const [key, value] of Object.entries(metadata || {})) {
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            result[key] = value;
+        } else if (Array.isArray(value)) {
+            result[key] = value
+                .filter((item): item is string => typeof item === 'string')
+                .slice(0, 100);
+        }
+    }
+    return result;
+}
+
 /**
  * Apply recency boost to search results (same logic as openmemory.service).
  */
@@ -98,14 +114,14 @@ export async function addMemory(
     try {
         const sm = getClient();
         const result = await breakers.supermemory.execute(async () =>
-            sm.memories.create({
+            sm.memories.add({
                 content,
                 containerTags: [containerTag(userId)],
-                metadata: {
+                metadata: toSupermemoryMetadata({
                     sector: options?.sector || 'semantic',
                     ...options?.metadata,
                     tags: options?.tags,
-                },
+                }),
             })
         );
 
@@ -214,7 +230,16 @@ export async function searchMemories(
             })
         );
 
-        const mapped = (results.results || []).map((r: any) => ({
+        const mapped: Array<{
+            id: string;
+            content: string;
+            sector: string;
+            salience: number;
+            score: number;
+            createdAt?: string;
+            metadata?: Record<string, unknown>;
+            trace?: { recall_reason: string };
+        }> = (results.results || []).map((r: any) => ({
             id: r.id || crypto.randomUUID(),
             content: r.content || r.chunk || '',
             sector: r.metadata?.sector || 'semantic',
@@ -263,7 +288,6 @@ export async function searchMemories(
                             score: 0.5,
                             createdAt: new Date(pg.created_at).toISOString(),
                             metadata: { source: pg.source },
-                            trace: undefined,
                         });
                         existingContents.add(preview.slice(0, 100));
                     }
@@ -311,15 +335,15 @@ export async function listMemories(
     const sm = getClient();
     const results = await withSupermemoryFallback(
         async () =>
-            sm.documents.list({
+            sm.memories.list({
                 containerTags: [containerTag(userId)],
                 limit: options?.limit || 50,
-                offset: options?.offset || 0,
+                page: Math.floor((options?.offset || 0) / (options?.limit || 50)) + 1,
             }),
-        { documents: [], pagination: { total: 0, limit: 50, offset: 0, hasMore: false } }
+        { memories: [], pagination: { currentPage: 1, totalItems: 0, totalPages: 0 } }
     );
 
-    return (results.documents || []).map((r: any) => ({
+    return (results.memories || []).map((r: any) => ({
         id: r.id,
         content: r.content || r.title || '',
         sector: r.metadata?.sector || 'semantic',
@@ -347,10 +371,10 @@ export async function updateMemory(
     await breakers.supermemory.execute(async () =>
         sm.documents.update(id, {
             ...(content ? { content } : {}),
-            metadata: {
+            metadata: toSupermemoryMetadata({
                 ...options?.metadata,
                 ...(options?.sector ? { sector: options.sector } : {}),
-            },
+            }),
         })
     );
 }
@@ -394,7 +418,7 @@ export async function getMemoryStats(userId: string): Promise<MemoryStats> {
         });
 
         const bySector: Record<string, number> = {};
-        for (const m of memories) {
+        for (const _m of memories) {
             const sector = 'semantic'; // Convex memories table doesn't have sector field
             bySector[sector] = (bySector[sector] || 0) + 1;
         }
@@ -451,14 +475,16 @@ export async function getUserProfile(
     try {
         const profile = await breakers.supermemory.execute(async () =>
             sm.profile({
-                containerTags: [containerTag(userId)],
+                containerTag: containerTag(userId),
                 ...(query ? { q: query } : {}),
             })
         );
         return {
-            static: profile.static || [],
-            dynamic: profile.dynamic || [],
-            searchResults: profile.searchResults,
+            static: profile.profile.static || [],
+            dynamic: profile.profile.dynamic || [],
+            searchResults: profile.searchResults?.results?.map((result) =>
+                typeof result === 'string' ? result : JSON.stringify(result)
+            ),
         };
     } catch (error) {
         console.warn('[SuperMemory] getUserProfile failed:', error);
@@ -477,13 +503,14 @@ export async function processConversation(
     const sm = getClient();
     try {
         await breakers.supermemory.execute(async () =>
-            sm.conversations.create({
-                conversationId,
+            sm.memories.add({
+                content: messages.map((m) => `${m.role}: ${m.content}`).join('\n\n'),
                 containerTags: [containerTag(userId)],
-                messages: messages.map((m) => ({
-                    role: m.role as 'user' | 'assistant' | 'system',
-                    content: m.content,
-                })),
+                customId: conversationId,
+                metadata: toSupermemoryMetadata({
+                    conversationId,
+                    source: 'conversation',
+                }),
             })
         );
     } catch (error) {
@@ -501,9 +528,9 @@ export async function forgetMemory(
     const sm = getClient();
     await breakers.supermemory.execute(async () =>
         sm.memories.forget({
-            containerTags: [containerTag(userId)],
-            ...(options.memoryId ? { memoryId: options.memoryId } : {}),
-            ...(options.memoryContent ? { memoryContent: options.memoryContent } : {}),
+            containerTag: containerTag(userId),
+            ...(options.memoryId ? { id: options.memoryId } : {}),
+            ...(options.memoryContent ? { content: options.memoryContent } : {}),
             ...(options.reason ? { reason: options.reason } : {}),
         })
     );

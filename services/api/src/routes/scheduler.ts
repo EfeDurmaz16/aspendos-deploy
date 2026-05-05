@@ -151,6 +151,7 @@ app.post('/tasks', requireAuth, validateBody(createScheduledTaskSchema), async (
 app.get('/tasks/:id', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const taskId = c.req.param('id');
+    if (!taskId) return c.json({ error: 'Task id is required' }, 400);
 
     const task = await schedulerService.getTaskById(taskId);
 
@@ -179,6 +180,7 @@ app.get('/tasks/:id', requireAuth, async (c) => {
 app.delete('/tasks/:id', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const taskId = c.req.param('id');
+    if (!taskId) return c.json({ error: 'Task id is required' }, 400);
 
     const task = await schedulerService.cancelScheduledTask(taskId, userId);
 
@@ -193,6 +195,7 @@ app.delete('/tasks/:id', requireAuth, async (c) => {
 app.patch('/tasks/:id', requireAuth, validateBody(rescheduleTaskSchema), async (c) => {
     const userId = c.get('userId')!;
     const taskId = c.req.param('id');
+    if (!taskId) return c.json({ error: 'Task id is required' }, 400);
     const validated = c.get('validatedBody') as { triggerAt: string };
 
     // Parse new triggerAt

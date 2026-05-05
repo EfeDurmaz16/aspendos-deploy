@@ -164,13 +164,19 @@ app.get('/usage/summary', requireAuth, async (c) => {
 
         // Calculate total cost for billing period
         const totalCostThisPeriod = billingPeriodMessages.reduce(
-            (sum, msg) => sum + msg.costUsd,
+            (sum: number, msg: any) => sum + msg.costUsd,
             0
         );
 
         // Calculate total tokens for billing period
-        const totalTokensIn = billingPeriodMessages.reduce((sum, msg) => sum + msg.tokensIn, 0);
-        const totalTokensOut = billingPeriodMessages.reduce((sum, msg) => sum + msg.tokensOut, 0);
+        const totalTokensIn = billingPeriodMessages.reduce(
+            (sum: number, msg: any) => sum + msg.tokensIn,
+            0
+        );
+        const totalTokensOut = billingPeriodMessages.reduce(
+            (sum: number, msg: any) => sum + msg.tokensOut,
+            0
+        );
 
         // Find most used model
         const modelCounts = new Map<string, number>();

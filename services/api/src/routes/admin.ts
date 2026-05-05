@@ -121,7 +121,7 @@ app.get('/users', async (c) => {
 
         // Get last active time for each user
         const usersWithStats = await Promise.all(
-            users.map(async (user) => {
+            users.map(async (user: any) => {
                 const lastMessage = await prisma.message.findFirst({
                     where: { userId: user.id },
                     orderBy: { createdAt: 'desc' },
@@ -341,7 +341,7 @@ app.get('/system', async (c) => {
                         createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
                     },
                 })
-                .then((r) => r.length),
+                .then((r: any[]) => r.length),
             prisma.message
                 .groupBy({
                     by: ['userId'],
@@ -349,7 +349,7 @@ app.get('/system', async (c) => {
                         createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
                     },
                 })
-                .then((r) => r.length),
+                .then((r: any[]) => r.length),
             prisma.message.aggregate({
                 where: { role: 'assistant' },
                 _sum: { tokensIn: true, tokensOut: true, costUsd: true },
@@ -466,8 +466,8 @@ app.get('/metrics/summary', async (c) => {
                     where: { createdAt: { gte: startDate }, role: 'assistant' },
                     _sum: { costUsd: true },
                 })
-                .then((r) =>
-                    r.map((item) => ({
+                .then((r: any[]) =>
+                    r.map((item: any) => ({
                         model: item.modelUsed || 'unknown',
                         costUsd: item._sum.costUsd || 0,
                     }))
@@ -543,15 +543,15 @@ app.get('/audit-log', async (c) => {
         ]);
 
         // Enrich with user info
-        const userIds = [...new Set(logs.map((log) => log.userId))];
+        const userIds = [...new Set(logs.map((log: any) => log.userId))];
         const users = await prisma.user.findMany({
             where: { id: { in: userIds } },
             select: { id: true, email: true, name: true },
         });
 
-        const userMap = new Map(users.map((u) => [u.id, u]));
+        const userMap = new Map(users.map((u: any) => [u.id, u]));
 
-        const enrichedLogs = logs.map((log) => ({
+        const enrichedLogs = logs.map((log: any) => ({
             ...log,
             user: userMap.get(log.userId),
         }));

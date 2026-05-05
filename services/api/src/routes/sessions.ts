@@ -45,7 +45,7 @@ sessionRoutes.get('/', async (c) => {
             orderBy: { updatedAt: 'desc' },
         });
 
-        const result = sessions.map((s) => ({
+        const result = sessions.map((s: any) => ({
             id: s.id,
             userAgent: s.userAgent,
             ipAddress: s.ipAddress,

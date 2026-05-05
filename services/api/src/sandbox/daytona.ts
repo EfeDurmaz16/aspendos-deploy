@@ -15,14 +15,20 @@ export class DaytonaSandboxService implements SandboxService {
         if (!this.apiKey) throw new Error('DAYTONA_API_KEY not configured');
 
         const { Daytona } = await import('@daytona/sdk');
-        const daytona = new Daytona();
-        const sandbox = await daytona.create({
+        const daytona = new Daytona({ apiKey: this.apiKey });
+        const baseParams = {
             language: opts.language ?? 'typescript',
             name: opts.name,
-            resources: opts.resources,
             ephemeral: opts.ephemeral ?? true,
             autoStopInterval: 15,
-        });
+        };
+        const sandbox = opts.resources
+            ? await daytona.create({
+                  ...baseParams,
+                  image: process.env.DAYTONA_SANDBOX_IMAGE ?? 'node:20',
+                  resources: opts.resources,
+              })
+            : await daytona.create(baseParams);
         return sandbox.id;
     }
 
@@ -30,7 +36,7 @@ export class DaytonaSandboxService implements SandboxService {
         if (!this.apiKey) throw new Error('DAYTONA_API_KEY not configured');
 
         const { Daytona } = await import('@daytona/sdk');
-        const daytona = new Daytona();
+        const daytona = new Daytona({ apiKey: this.apiKey });
         const sandbox = await daytona.get(sandboxId);
         const result = await sandbox.process.executeCommand(cmd);
         return {
@@ -44,7 +50,7 @@ export class DaytonaSandboxService implements SandboxService {
         if (!this.apiKey) throw new Error('DAYTONA_API_KEY not configured');
 
         const { Daytona } = await import('@daytona/sdk');
-        const daytona = new Daytona();
+        const daytona = new Daytona({ apiKey: this.apiKey });
         const sandbox = await daytona.get(sandboxId);
         await sandbox.process.executeCommand(
             `cat > ${path} << 'SANDBOX_EOF'\n${content}\nSANDBOX_EOF`
@@ -62,7 +68,7 @@ export class DaytonaSandboxService implements SandboxService {
         if (!this.apiKey) throw new Error('DAYTONA_API_KEY not configured');
 
         const { Daytona } = await import('@daytona/sdk');
-        const daytona = new Daytona();
+        const daytona = new Daytona({ apiKey: this.apiKey });
         const sandbox = await daytona.get(sandboxId);
         await sandbox.delete();
     }

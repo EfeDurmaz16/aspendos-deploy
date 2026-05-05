@@ -272,7 +272,7 @@ app.get('/sessions', async (c) => {
     const userId = c.get('userId')!;
     const limit = Math.min(parseInt(c.req.query('limit') || '20', 10) || 20, 50);
 
-    const sessions = await councilService.listCouncilSessions(userId, limit);
+    const sessions = (await councilService.listCouncilSessions(userId, limit)) as any[];
 
     return c.json({
         sessions: sessions.map((s) => ({
@@ -281,7 +281,7 @@ app.get('/sessions', async (c) => {
             status: s.status,
             selectedPersona: s.selectedPersona,
             createdAt: s.createdAt,
-            responses: s.responses.map((r) => ({
+            responses: (s.responses || []).map((r: any) => ({
                 persona: r.persona,
                 status: r.status,
                 latencyMs: r.latencyMs,
@@ -297,7 +297,7 @@ app.get('/sessions/:id', validateParams(sessionIdParamSchema), async (c) => {
     const userId = c.get('userId')!;
     const { id: sessionId } = c.get('validatedParams') as { id: string };
 
-    const session = await councilService.getCouncilSession(sessionId, userId);
+    const session = (await councilService.getCouncilSession(sessionId, userId)) as any;
 
     if (!session) {
         return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
@@ -312,7 +312,7 @@ app.get('/sessions/:id', validateParams(sessionIdParamSchema), async (c) => {
             synthesis: session.synthesis,
             createdAt: session.createdAt,
         },
-        responses: session.responses.map((r) => ({
+        responses: (session.responses || []).map((r: any) => ({
             id: r.id,
             persona: r.persona,
             personaName: councilService.COUNCIL_PERSONAS[r.persona as PersonaType]?.name,

@@ -113,7 +113,18 @@ export async function getUsageSummary(userId: string, startDate?: Date, endDate?
     });
 
     const groupedByReason = logs.reduce(
-        (acc, log) => {
+        (
+            acc: Record<
+                string,
+                {
+                    count: number;
+                    totalCost: number;
+                    totalTokensIn: number;
+                    totalTokensOut: number;
+                }
+            >,
+            log: any
+        ) => {
             const reason = log.reason || 'unknown';
             if (!acc[reason]) {
                 acc[reason] = {
@@ -149,7 +160,10 @@ export async function getUsageSummary(userId: string, startDate?: Date, endDate?
         >
     );
 
-    const totalCost = logs.reduce((sum, log) => sum + Math.abs(log.amount) / 1_000_000, 0);
+    const totalCost = logs.reduce(
+        (sum: number, log: any) => sum + Math.abs(log.amount) / 1_000_000,
+        0
+    );
 
     return {
         totalCost,

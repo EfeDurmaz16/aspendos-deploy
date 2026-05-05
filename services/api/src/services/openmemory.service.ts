@@ -9,6 +9,8 @@ import { prisma } from '@aspendos/db';
 import { breakers } from '../lib/circuit-breaker';
 import { queueFallbackWrite, searchFallback } from '../lib/memory-fallback';
 
+const memoryBreaker = breakers.supermemory;
+
 // Lazy-initialize OpenMemory client (dynamic import avoids blocking module load)
 let _mem: any = null;
 async function getMem() {
@@ -25,7 +27,7 @@ async function getMem() {
  */
 async function withQdrantFallback<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
     try {
-        return await breakers.qdrant.execute(fn);
+        return await memoryBreaker.execute(fn);
     } catch (error) {
         console.warn(
             '[Qdrant] Service unavailable, using fallback:',
@@ -105,7 +107,7 @@ export async function addMemory(
     }
 ): Promise<MemoryResult> {
     try {
-        const result = await breakers.qdrant.execute(
+        const result = await memoryBreaker.execute(
             async () =>
                 await (await getMem()).add(content, {
                     user_id: userId,
@@ -214,7 +216,7 @@ export async function searchMemories(
     }
 ): Promise<MemoryResult[]> {
     try {
-        const results = await breakers.qdrant.execute(
+        const results = await memoryBreaker.execute(
             async () =>
                 await (await getMem()).search(query, {
                     user_id: userId,

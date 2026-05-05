@@ -124,7 +124,8 @@ async function deliverToPlatform(
 async function deliverPush(options: DeliveryOptions, report: DeliveryReport): Promise<void> {
     try {
         const { sendNotification } = await import('./notification.service');
-        await sendNotification(options.userId, {
+        await sendNotification({
+            userId: options.userId,
             title: options.type === 'approval_request' ? 'Approval Required' : 'YULA',
             body: options.content.slice(0, 200),
             data: options.approvalId ? { approvalId: options.approvalId } : undefined,

@@ -67,6 +67,7 @@ app.post('/export', requireAuth, async (c) => {
 app.get('/export/:jobId', requireAuth, async (c) => {
     const userId = c.get('userId')!;
     const jobId = c.req.param('jobId');
+    if (!jobId) return c.json({ error: 'Export job id is required' }, 400);
 
     // Verify the job belongs to this user
     const owner = userDeletionService.getExportJobOwner(jobId);

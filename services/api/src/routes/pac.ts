@@ -26,6 +26,73 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+type ReminderDetails = {
+    content?: string;
+    type?: string;
+    status?: string;
+    priority?: string | number;
+    triggerAt?: number | string | Date;
+    snoozeCount?: number;
+    chatId?: string;
+};
+
+type ReminderLog = {
+    _id?: string;
+    id?: string;
+    _creationTime?: number;
+    createdAt?: string | number | Date;
+    timestamp?: number;
+    details?: ReminderDetails;
+};
+
+type ReminderResponse = {
+    id: string;
+    content?: string;
+    type?: string;
+    status?: string;
+    priority?: string | number;
+    triggerAt?: number | string | Date;
+    snoozeCount?: number;
+    chatId?: string;
+    createdAt?: string | number | Date;
+};
+
+function reminderId(value: unknown): string {
+    return typeof value === 'string' ? value : '';
+}
+
+function reminderFromLog(log: ReminderLog): ReminderResponse {
+    const details = log.details ?? {};
+    return {
+        id: log.id ?? log._id ?? '',
+        content: details.content,
+        type: details.type,
+        status: details.status,
+        priority: details.priority,
+        triggerAt: details.triggerAt,
+        snoozeCount: details.snoozeCount,
+        chatId: details.chatId,
+        createdAt: log.createdAt ?? log.timestamp ?? log._creationTime,
+    };
+}
+
+function reminderFromCommitment(
+    id: unknown,
+    commitment: pacService.DetectedCommitment,
+    conversationId?: string
+): ReminderResponse {
+    return {
+        id: reminderId(id),
+        content: commitment.content,
+        type: commitment.type,
+        status: 'PENDING',
+        priority: commitment.priority,
+        triggerAt: commitment.triggerAt,
+        chatId: conversationId,
+        createdAt: Date.now(),
+    };
+}
+
 // All routes require authentication
 app.use('*', requireAuth);
 
@@ -61,10 +128,10 @@ app.post(
         });
 
         // Create reminders for detected commitments
-        const createdReminders = [];
+        const createdReminders: ReminderResponse[] = [];
         for (const commitment of filteredCommitments) {
-            const reminder = await pacService.createReminder(userId, commitment, conversationId);
-            createdReminders.push(reminder);
+            const reminderId = await pacService.createReminder(userId, commitment, conversationId);
+            createdReminders.push(reminderFromCommitment(reminderId, commitment, conversationId));
         }
 
         return c.json({
@@ -91,17 +158,20 @@ app.get('/reminders', async (c) => {
     const reminders = await pacService.getPendingReminders(userId, limit);
 
     return c.json({
-        reminders: reminders.map((r) => ({
-            id: r.id,
-            content: r.content,
-            type: r.type,
-            status: r.status,
-            priority: r.priority,
-            triggerAt: r.triggerAt,
-            snoozeCount: r.snoozeCount,
-            conversationId: r.chatId,
-            createdAt: r.createdAt,
-        })),
+        reminders: reminders.map((raw) => {
+            const r = reminderFromLog(raw);
+            return {
+                id: r.id,
+                content: r.content,
+                type: r.type,
+                status: r.status,
+                priority: r.priority,
+                triggerAt: r.triggerAt,
+                snoozeCount: r.snoozeCount,
+                conversationId: r.chatId,
+                createdAt: r.createdAt,
+            };
+        }),
     });
 });
 
@@ -130,8 +200,19 @@ app.post('/reminders', validateBody(createReminderSchema), async (c) => {
         return c.json({ error: 'triggerAt must be in the future' }, 400);
     }
 
-    const reminder = await pacService.createReminder(
+    const reminderId = await pacService.createReminder(
         userId,
+        {
+            content,
+            type,
+            priority: type === 'EXPLICIT' ? 'MEDIUM' : 'LOW',
+            triggerAt: parsedDate,
+            confidence: type === 'EXPLICIT' ? 0.95 : 0.7,
+        },
+        conversationId
+    );
+    const reminder = reminderFromCommitment(
+        reminderId,
         {
             content,
             type,

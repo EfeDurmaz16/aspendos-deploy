@@ -26,7 +26,7 @@ accountRoutes.delete('/', async (c) => {
         const openMemory = await import('../services/memory-router.service');
 
         // Delete all user data in dependency order
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             // Delete PAC data
             const reminders = await tx.pACReminder.findMany({
                 where: { userId },
@@ -187,7 +187,7 @@ accountRoutes.get('/export', async (c) => {
             exportedAt: new Date().toISOString(),
             gdprArticle: '20',
             user,
-            chats: chats.map((chat) => ({
+            chats: chats.map((chat: any) => ({
                 title: chat.title,
                 model: chat.modelPreference,
                 createdAt: chat.createdAt,
@@ -197,7 +197,7 @@ accountRoutes.get('/export', async (c) => {
             billing: billingAccount,
             pacReminders,
             pacSettings,
-            councilSessions: councilSessions.map((s) => ({
+            councilSessions: councilSessions.map((s: any) => ({
                 query: s.query,
                 responses: s.responses,
                 createdAt: s.createdAt,

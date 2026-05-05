@@ -234,7 +234,7 @@ app.post(
                         totalItems: jobWithEntities!.totalItems,
                         fileName: jobWithEntities!.fileName,
                     },
-                    preview: jobWithEntities!.entities.map((e) => ({
+                    preview: jobWithEntities!.entities.map((e: any) => ({
                         id: e.id,
                         externalId: e.externalId,
                         title: e.title,
@@ -303,7 +303,7 @@ app.get('/jobs/:id', validateParams(jobIdParamSchema), async (c) => {
             createdAt: job.createdAt,
             completedAt: job.completedAt,
         },
-        entities: job.entities.map((e) => ({
+        entities: job.entities.map((e: any) => ({
             id: e.id,
             externalId: e.externalId,
             title: e.title,

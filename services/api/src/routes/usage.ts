@@ -149,7 +149,7 @@ app.get('/admin/costs', requireAdmin, async (c) => {
             },
         });
 
-        const userMap = new Map(users.map((u) => [u.id, u]));
+        const userMap = new Map<string, any>(users.map((u: any) => [u.id, u]));
 
         const enrichedSpenders = topSpenders.map((spender) => {
             const user = userMap.get(spender.userId);

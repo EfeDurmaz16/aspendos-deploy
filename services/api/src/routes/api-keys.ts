@@ -55,7 +55,7 @@ app.get('/', requireAuth, async (c) => {
     });
 
     return c.json({
-        keys: apiKeys.map((key) => ({
+        keys: apiKeys.map((key: any) => ({
             id: key.id,
             name: key.name,
             key: `${key.keyPrefix}...${key.keyPrefix.slice(-4)}`, // Show prefix and last 4 chars

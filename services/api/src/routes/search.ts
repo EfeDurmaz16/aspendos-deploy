@@ -154,7 +154,7 @@ async function searchChats(
         orderBy: { updatedAt: 'desc' },
     });
 
-    return chats.map((chat) => {
+    return chats.map((chat: any) => {
         // Calculate relevance score
         let score = 0;
 
@@ -232,7 +232,7 @@ async function searchMemories(
         orderBy: [{ importance: 'desc' }, { lastAccessedAt: 'desc' }],
     });
 
-    return memories.map((memory) => {
+    return memories.map((memory: any) => {
         // Calculate relevance score
         let score = 0;
 
@@ -255,7 +255,9 @@ async function searchMemories(
         }
 
         // Tag match
-        const matchingTags = memory.tags.filter((tag) => tag.toLowerCase().includes(queryLower));
+        const matchingTags = memory.tags.filter((tag: string) =>
+            tag.toLowerCase().includes(queryLower)
+        );
         score += matchingTags.length * 5;
 
         // Importance boost
@@ -319,7 +321,7 @@ app.get('/suggest', async (c) => {
                 take: limit,
             });
 
-            suggestions.push(...popularChats.map((c) => c.title));
+            suggestions.push(...popularChats.map((c: any) => c.title));
         } else {
             // Return matching chat titles and memory tags
             const [matchingChats, matchingMemories] = await Promise.all([
@@ -342,7 +344,7 @@ app.get('/suggest', async (c) => {
                 }),
             ]);
 
-            suggestions.push(...matchingChats.map((c) => c.title));
+            suggestions.push(...matchingChats.map((c: any) => c.title));
 
             // Add unique tags from memories
             const tags = new Set<string>();

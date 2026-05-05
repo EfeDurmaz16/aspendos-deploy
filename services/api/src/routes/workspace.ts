@@ -55,6 +55,7 @@ app.get('/', async (c) => {
 app.get('/:id', async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
+    if (!workspaceId) return c.json({ error: 'Workspace id is required' }, 400);
 
     try {
         const result = await workspaceService.getWorkspace(workspaceId);
@@ -80,6 +81,7 @@ app.get('/:id', async (c) => {
 app.patch('/:id', async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
+    if (!workspaceId) return c.json({ error: 'Workspace id is required' }, 400);
 
     try {
         const body = await c.req.json();
@@ -116,6 +118,7 @@ app.patch('/:id', async (c) => {
 app.delete('/:id', async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
+    if (!workspaceId) return c.json({ error: 'Workspace id is required' }, 400);
 
     try {
         // Check if user is the owner
@@ -141,6 +144,7 @@ app.delete('/:id', async (c) => {
 app.post('/:id/members', validateBody(addMemberSchema), async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
+    if (!workspaceId) return c.json({ error: 'Workspace id is required' }, 400);
 
     try {
         const { userId: newUserId, role } = c.get('validatedBody') as {
@@ -178,6 +182,9 @@ app.delete('/:id/members/:userId', async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
     const memberUserId = c.req.param('userId');
+    if (!workspaceId || !memberUserId) {
+        return c.json({ error: 'Workspace id and user id are required' }, 400);
+    }
 
     try {
         // Check if user has admin permission
@@ -207,6 +214,9 @@ app.patch('/:id/members/:userId', validateBody(updateMemberRoleSchema), async (c
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
     const memberUserId = c.req.param('userId');
+    if (!workspaceId || !memberUserId) {
+        return c.json({ error: 'Workspace id and user id are required' }, 400);
+    }
 
     try {
         const { role } = c.get('validatedBody') as { role: 'member' | 'admin' };

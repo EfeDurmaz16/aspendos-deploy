@@ -43,7 +43,7 @@ app.get('/profile', async (c) => {
             description:
                 gamificationService.XP_ACTIONS[log.action as gamificationService.XPAction]
                     ?.description || log.action,
-            createdAt: log.createdAt,
+            createdAt: log.timestamp,
         })),
     });
 });

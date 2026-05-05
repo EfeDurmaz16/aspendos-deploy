@@ -110,7 +110,9 @@ export class WhatsAppGateway implements MessagingGateway {
         if (!event?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) return null;
 
         const change = event.entry[0].changes[0].value;
-        const msg = change.messages[0];
+        const messages = change.messages;
+        if (!messages?.[0]) return null;
+        const msg = messages[0];
 
         // Handle text messages
         if (msg.type === 'text' && msg.text?.body) {

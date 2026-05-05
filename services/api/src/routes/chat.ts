@@ -4,11 +4,13 @@
  * Uses OpenMemory for cognitive memory retrieval.
  */
 
+import type { LanguageModelUsage, UIMessage } from 'ai';
 import {
     convertToModelMessages,
     createUIMessageStream,
     createUIMessageStreamResponse,
     generateText,
+    stepCountIs,
     streamText,
 } from 'ai';
 import { Hono } from 'hono';
@@ -51,6 +53,63 @@ import {
 interface Message {
     role: 'user' | 'assistant' | 'system';
     content: string;
+}
+
+type ChatMessageRecord = {
+    id?: string;
+    _id?: string;
+    role?: string;
+    content?: string;
+};
+
+type ChatRecord = {
+    title?: string;
+    modelPreference?: string;
+    model_preference?: string;
+    createdAt?: string | number;
+    created_at?: string | number;
+    messages?: ChatMessageRecord[];
+};
+
+type StreamRequestBody = {
+    messages?: unknown;
+    model_id?: string;
+};
+
+type LegacyContentUIMessage = UIMessage & {
+    content?: string;
+};
+
+function messageCursorId(message: ChatMessageRecord | undefined): string | undefined {
+    return message?.id ?? message?._id;
+}
+
+function chatModelPreference(chat: ChatRecord): string | undefined {
+    return chat.modelPreference ?? chat.model_preference;
+}
+
+function chatCreatedAt(chat: ChatRecord): string | number | undefined {
+    return chat.createdAt ?? chat.created_at;
+}
+
+function tokenUsagePair(usage: LanguageModelUsage | undefined): {
+    inputTokens: number;
+    outputTokens: number;
+} {
+    return {
+        inputTokens: usage?.inputTokens ?? 0,
+        outputTokens: usage?.outputTokens ?? 0,
+    };
+}
+
+function textFromUIMessage(message: UIMessage | undefined): string {
+    if (!message) return '';
+    const legacyContent = (message as LegacyContentUIMessage).content;
+    if (legacyContent) return legacyContent;
+    return message.parts
+        .filter((part) => part.type === 'text')
+        .map((part) => part.text)
+        .join('');
 }
 
 type Variables = {
@@ -157,7 +216,8 @@ app.get('/:id', validateParams(chatIdParamSchema), async (c) => {
 
     // Include pagination metadata
     const messages = chat.messages || [];
-    const nextCursor = messages.length === limit ? messages[messages.length - 1]?.id : undefined;
+    const nextCursor =
+        messages.length === limit ? messageCursorId(messages[messages.length - 1]) : undefined;
 
     return c.json({
         ...chat,
@@ -265,7 +325,7 @@ app.post(
         }
 
         // Determine model to use
-        const modelId = model_id || chat.modelPreference || 'groq/llama-4-maverick';
+        const modelId = model_id || chatModelPreference(chat) || 'groq/llama-4-maverick';
 
         // Apply smart model routing (downgrade expensive models for simple queries)
         const smartModelId = getSmartModelId(modelId, content);
@@ -415,9 +475,8 @@ app.post(
                 if (useSupermemoryWrapper) {
                     try {
                         const { withSupermemory } = await import('@supermemory/tools/ai-sdk');
-                        streamModel = withSupermemory(resolvedModel, {
-                            apiKey: process.env.SUPERMEMORY_API_KEY!,
-                            containerTags: [`user_${userId}`],
+                        streamModel = withSupermemory(resolvedModel, `user_${userId}`, {
+                            apiKey: process.env.SUPERMEMORY_API_KEY,
                         });
                     } catch (smError) {
                         log.error('SuperMemory wrapper failed, using base model', {
@@ -432,7 +491,7 @@ app.post(
                     system: systemPrompt,
                     messages: history,
                     tools: allTools,
-                    maxSteps: 5, // Allow up to 5 tool call rounds
+                    stopWhen: stepCountIs(5), // Allow up to 5 tool call rounds
                     temperature: 0.7,
                     onFinish: async ({ text, usage }) => {
                         const requestId = c.get('requestId') || 'unknown';
@@ -559,7 +618,7 @@ app.post(
                 system: systemPrompt,
                 messages: history,
                 tools: allTools,
-                maxSteps: 5,
+                stopWhen: stepCountIs(5),
                 temperature: 0.7,
             });
 
@@ -613,13 +672,12 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
     const chatId = (c.get('validatedParams') as { id: string }).id;
 
     // Parse AI SDK transport body: { id, messages, trigger, messageId }
-    const body = await c.req.json();
-    const uiMessages = body.messages || [];
+    const body = (await c.req.json()) as StreamRequestBody;
+    const uiMessages = Array.isArray(body.messages) ? (body.messages as UIMessage[]) : [];
 
     // Extract the last user message text for memory/moderation
-    const lastUserMsg = [...uiMessages].reverse().find((m: any) => m.role === 'user');
-    const content =
-        lastUserMsg?.content || lastUserMsg?.parts?.find((p: any) => p.type === 'text')?.text || '';
+    const lastUserMsg = [...uiMessages].reverse().find((m) => m.role === 'user');
+    const content = textFromUIMessage(lastUserMsg);
 
     if (!content) {
         return c.json({ error: 'No message content' }, 400);
@@ -651,7 +709,7 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
     });
 
     // Model selection
-    const modelId = body.model_id || chat.modelPreference || 'groq/llama-4-maverick';
+    const modelId = body.model_id || chatModelPreference(chat) || 'groq/llama-4-maverick';
     const smartModelId = getSmartModelId(modelId, content);
     const { model: resolvedModel, actualModelId } = getModelWithFallback(smartModelId);
 
@@ -685,9 +743,8 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
     if (useSupermemoryWrapper) {
         try {
             const { withSupermemory } = await import('@supermemory/tools/ai-sdk');
-            streamModel = withSupermemory(resolvedModel, {
-                apiKey: process.env.SUPERMEMORY_API_KEY!,
-                containerTags: [`user_${userId}`],
+            streamModel = withSupermemory(resolvedModel, `user_${userId}`, {
+                apiKey: process.env.SUPERMEMORY_API_KEY,
             });
         } catch {
             // Fall back to base model
@@ -711,7 +768,7 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
     }
 
     // Convert UI messages to model messages for streamText
-    const modelMessages = convertToModelMessages(uiMessages);
+    const modelMessages = await convertToModelMessages(uiMessages);
 
     // Stream with UI Message Stream protocol
     const stream = createUIMessageStream({
@@ -721,7 +778,7 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
                 system: systemPrompt,
                 messages: modelMessages,
                 tools: allTools,
-                maxSteps: 5,
+                stopWhen: stepCountIs(5),
                 temperature: 0.7,
                 onFinish: async ({ text, usage }) => {
                     try {
@@ -882,11 +939,11 @@ app.post(
         // Meter token usage for each successful model call
         for (const resp of responses) {
             if ('usage' in resp && resp.usage) {
-                const usage = resp.usage as { promptTokens?: number; completionTokens?: number };
+                const usage = tokenUsagePair(resp.usage);
                 await billingService.recordTokenUsage(
                     userId,
-                    usage.promptTokens || 0,
-                    usage.completionTokens || 0,
+                    usage.inputTokens,
+                    usage.outputTokens,
                     resp.modelId
                 );
             }
@@ -1025,8 +1082,8 @@ app.get('/:id/export', validateParams(chatIdParamSchema), async (c) => {
     const lines: string[] = [
         `# ${chat.title || 'Untitled Chat'}`,
         '',
-        `**Model:** ${chat.modelPreference || 'default'}`,
-        `**Created:** ${chat.createdAt}`,
+        `**Model:** ${chatModelPreference(chat) || 'default'}`,
+        `**Created:** ${chatCreatedAt(chat)}`,
         `**Messages:** ${chat.messages?.length || 0}`,
         '',
         '---',
