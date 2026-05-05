@@ -28,3 +28,13 @@ export async function sha256Hex(value: string): Promise<string> {
 export function isProductionRuntime(): boolean {
     return process.env.NODE_ENV === 'production';
 }
+
+export function isTestRuntime(): boolean {
+    return (
+        process.env.NODE_ENV === 'test' || (!!process.env.VITEST && process.env.VITEST !== 'false')
+    );
+}
+
+export function allowsInMemoryGovernance(): boolean {
+    return isTestRuntime() || process.env.ALLOW_IN_MEMORY_GOVERNANCE === 'true';
+}

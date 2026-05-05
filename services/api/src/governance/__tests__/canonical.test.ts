@@ -9,12 +9,20 @@ const metadata: ReversibilityMetadata = {
     human_explanation: 'Test action',
 };
 
+const originalVitestEnv = process.env.VITEST;
+
 describe('canonical governance primitives', () => {
     afterEach(() => {
         vi.restoreAllMocks();
         delete process.env.AGIT_REPO_PATH;
+        delete process.env.ALLOW_IN_MEMORY_GOVERNANCE;
         delete process.env.FIDES_TEST_SIGNING_SECRET;
         process.env.NODE_ENV = 'test';
+        if (originalVitestEnv === undefined) {
+            delete process.env.VITEST;
+        } else {
+            process.env.VITEST = originalVitestEnv;
+        }
     });
 
     it('canonicalizes object keys deterministically', () => {
@@ -44,6 +52,31 @@ describe('canonical governance primitives', () => {
         const fides = new FidesService();
 
         await expect(fides.initialize()).rejects.toThrow(/Refusing to create fallback FIDES/);
+    });
+
+    it('refuses FIDES fallback signatures outside test without explicit local fallback opt-in', async () => {
+        process.env.NODE_ENV = 'development';
+        process.env.VITEST = 'false';
+        process.env.FIDES_TEST_SIGNING_SECRET = 'dev-secret';
+        delete process.env.ALLOW_IN_MEMORY_GOVERNANCE;
+
+        const fides = new FidesService();
+
+        await expect(fides.initialize()).rejects.toThrow(
+            /explicit local\/test governance fallback/
+        );
+    });
+
+    it('allows FIDES fallback signatures outside test only with explicit local fallback opt-in', async () => {
+        process.env.NODE_ENV = 'development';
+        process.env.VITEST = 'false';
+        process.env.FIDES_TEST_SIGNING_SECRET = 'dev-secret';
+        process.env.ALLOW_IN_MEMORY_GOVERNANCE = 'true';
+
+        const fides = new FidesService();
+
+        await expect(fides.initialize()).resolves.toBeUndefined();
+        await expect(fides.isUsingExplicitTestFallback()).resolves.toBe(true);
     });
 
     it('uses deterministic local AGIT hashes outside production fallback paths', async () => {
@@ -89,6 +122,51 @@ describe('canonical governance primitives', () => {
                 type: 'pre',
             })
         ).rejects.toThrow(/AGIT_REPO_PATH is required in production/);
+    });
+
+    it('refuses in-memory AGIT commits outside test without explicit local fallback opt-in', async () => {
+        process.env.NODE_ENV = 'development';
+        process.env.VITEST = 'false';
+        delete process.env.AGIT_REPO_PATH;
+        delete process.env.ALLOW_IN_MEMORY_GOVERNANCE;
+
+        const agit = new AgitService();
+
+        await expect(
+            agit.commitAction({
+                userId: 'user-1',
+                toolName: 'file.write',
+                args: {},
+                metadata,
+                fidesSignature: 'sig-1',
+                fidesDid: 'did:fides:test',
+                type: 'pre',
+            })
+        ).rejects.toThrow(/ALLOW_IN_MEMORY_GOVERNANCE=true/);
+    });
+
+    it('allows in-memory AGIT commits outside test only with explicit local fallback opt-in', async () => {
+        process.env.NODE_ENV = 'development';
+        process.env.VITEST = 'false';
+        process.env.ALLOW_IN_MEMORY_GOVERNANCE = 'true';
+        delete process.env.AGIT_REPO_PATH;
+
+        const agit = new AgitService();
+
+        await expect(
+            agit.commitAction({
+                userId: 'user-1',
+                toolName: 'file.write',
+                args: {},
+                metadata,
+                fidesSignature: 'sig-1',
+                fidesDid: 'did:fides:test',
+                type: 'pre',
+            })
+        ).resolves.toMatchObject({
+            did: 'did:fides:test',
+            signature: 'sig-1',
+        });
     });
 
     it('filters AGIT client history by commit owner metadata', async () => {

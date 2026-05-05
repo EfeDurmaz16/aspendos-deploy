@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { ReversibilityMetadata } from '../reversibility/types';
-import { canonicalJson, isProductionRuntime } from './canonical';
+import { allowsInMemoryGovernance, canonicalJson, isProductionRuntime } from './canonical';
 
 interface FidesSignResult {
     signature: string;
@@ -50,9 +50,9 @@ export class FidesService {
         const fallbackSecret =
             process.env.FIDES_TEST_SIGNING_SECRET ??
             (process.env.VITEST ? 'vitest-fides-test-secret' : undefined);
-        if (!fallbackSecret || isProductionRuntime()) {
+        if (!fallbackSecret || isProductionRuntime() || !allowsInMemoryGovernance()) {
             throw new Error(
-                '@fides/sdk is unavailable. Refusing to create fallback FIDES signatures on production paths.'
+                '@fides/sdk is unavailable. Refusing to create fallback FIDES signatures without explicit local/test governance fallback.'
             );
         }
 

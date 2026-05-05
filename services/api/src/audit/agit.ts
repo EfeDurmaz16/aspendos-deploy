@@ -1,4 +1,9 @@
-import { canonicalJson, isProductionRuntime, sha256Hex } from '../governance/canonical';
+import {
+    allowsInMemoryGovernance,
+    canonicalJson,
+    isProductionRuntime,
+    sha256Hex,
+} from '../governance/canonical';
 import type { ReversibilityMetadata, ToolResult } from '../reversibility/types';
 
 interface CommitRecord {
@@ -36,6 +41,11 @@ export class AgitService {
                     'AGIT_REPO_PATH is required in production. Refusing in-memory AGIT commits.'
                 );
             }
+            if (!allowsInMemoryGovernance()) {
+                throw new Error(
+                    'AGIT_REPO_PATH is required unless ALLOW_IN_MEMORY_GOVERNANCE=true is set for local development. Refusing in-memory AGIT commits.'
+                );
+            }
             this.initialized = true;
             return;
         }
@@ -49,6 +59,11 @@ export class AgitService {
         } catch (error) {
             if (isProductionRuntime()) {
                 throw new Error(`Failed to initialize AGIT repository: ${String(error)}`);
+            }
+            if (!allowsInMemoryGovernance()) {
+                throw new Error(
+                    `Failed to initialize AGIT repository and in-memory governance fallback is disabled: ${String(error)}`
+                );
             }
             this.initialized = true;
         }
