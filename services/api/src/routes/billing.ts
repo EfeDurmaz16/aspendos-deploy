@@ -2,20 +2,20 @@
  * Billing API Routes
  * Handles billing status, checkout, and webhooks.
  * TODO(stripe-migration): Re-wire checkout/webhook/portal/cancel to Stripe service.
- * Polar has been removed; endpoints return 503 until Stripe is wired up.
+ * Legacy webhook idempotency remains wired until the Stripe handler replaces it.
  */
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 
 import { createLogger } from '../lib/logger';
-import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 
 const log = createLogger({ action: 'billing' });
 
 import { validateBody, validateQuery } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
-// TODO(stripe-migration): replace with stripe.service
-// import * as polarService from '../services/polar.service';
+// TODO(stripe-migration): replace with stripe.service.
+import * as polarService from '../services/polar.service';
 import { createCheckoutSchema, getUsageQuerySchema } from '../validation/billing.schema';
 
 type Variables = {
@@ -137,15 +137,44 @@ app.get('/projection', requireAuth, async (c) => {
 
 // POST /api/billing/webhook - Handle billing provider webhooks
 // TODO(stripe-migration): replace with stripe.service.verifyWebhookSignature + handleWebhook.
-// Previously wired to Polar; polar.service.ts has been removed.
 app.post('/webhook', async (c) => {
-    log.warn('Billing webhook received while provider is being migrated to Stripe');
-    // Silence unused import warning until Stripe is wired up.
-    void prisma;
-    return c.json(
-        { error: 'Billing webhook is temporarily disabled during Stripe migration' },
-        503
-    );
+    const secret = process.env.POLAR_WEBHOOK_SECRET;
+    if (!secret) {
+        return c.json({ error: 'Webhook secret is not configured' }, 500);
+    }
+
+    const payload = await c.req.text();
+    const signature = c.req.header('polar-signature') ?? '';
+    if (!polarService.verifyWebhookSignature(payload, signature, secret)) {
+        return c.json({ error: 'Invalid signature' }, 401);
+    }
+
+    const event = JSON.parse(payload) as { id?: string; type: string; data: unknown };
+
+    if (event.id) {
+        const existing = await prisma.processedWebhookEvent.findUnique({
+            where: { id: event.id },
+        });
+        if (existing) {
+            return c.json({ received: true, duplicate: true });
+        }
+    }
+
+    await polarService.handleWebhook(event as any);
+
+    if (event.id) {
+        try {
+            await prisma.processedWebhookEvent.create({
+                data: { id: event.id, type: event.type },
+            });
+        } catch (error) {
+            log.warn('Webhook event was already recorded', {
+                metadata: { eventId: event.id, error },
+            });
+        }
+    }
+
+    return c.json({ received: true });
 });
 
 export default app;

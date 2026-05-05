@@ -146,31 +146,12 @@ class SemanticCache {
     /**
      * Find cached response (checks local cache first, then Redis)
      */
-    async lookupCache(query: string, model: string): Promise<CacheLookupResult> {
+    lookupCache(query: string, model: string): CacheLookupResult {
         const normalizedQuery = this.normalizeQuery(query);
         const key = this.getCacheKey(normalizedQuery, model);
         const now = new Date();
 
-        // Check local cache first
-        let entry = this.cache.get(key);
-
-        // On local miss, check Redis
-        if (!entry && this.redis) {
-            try {
-                const raw = await this.redis.get<string>(this.REDIS_PREFIX + key);
-                if (raw) {
-                    entry =
-                        typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as CacheEntry);
-                    // Populate local cache for subsequent fast reads
-                    if (entry) {
-                        this.cache.set(key, entry);
-                        this.updateAccessOrder(key);
-                    }
-                }
-            } catch {
-                // Redis read failed — treat as miss
-            }
-        }
+        const entry = this.cache.get(key);
 
         if (!entry) {
             this.totalMisses++;

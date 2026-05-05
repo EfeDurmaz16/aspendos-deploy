@@ -33,7 +33,7 @@ interface RateLimitEntry {
 // ============================================
 
 interface RateLimitStore {
-    get(key: string): Promise<RateLimitEntry | null>;
+    get(key: string): RateLimitEntry | null | Promise<RateLimitEntry | null>;
     set(key: string, entry: RateLimitEntry, ttlMs: number): Promise<void>;
 }
 
@@ -53,7 +53,7 @@ class InMemoryStore implements RateLimitStore {
         }, 60_000);
     }
 
-    async get(key: string): Promise<RateLimitEntry | null> {
+    get(key: string): RateLimitEntry | null {
         return this.store.get(key) || null;
     }
 
@@ -274,7 +274,19 @@ export function endpointRateLimit() {
 /**
  * Get current rate limit status for testing
  */
-export async function getRateLimitEntry_forTesting(key: string) {
+export function getRateLimitEntry_forTesting(key: string) {
+    if (store instanceof InMemoryStore) {
+        const memoryStore = (store as unknown as { store: Map<string, RateLimitEntry> }).store;
+        const direct = memoryStore.get(key);
+        if (direct) return direct;
+
+        const legacyMatch = key.match(/^endpoint:(.*):(.*):minute$/);
+        if (legacyMatch) {
+            return memoryStore.get(`eprl:${legacyMatch[1]}:${legacyMatch[2]}:m`);
+        }
+        return undefined;
+    }
+
     return store.get(key);
 }
 

@@ -1,3 +1,4 @@
+import { prisma } from '@aspendos/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@aspendos/db', () => ({

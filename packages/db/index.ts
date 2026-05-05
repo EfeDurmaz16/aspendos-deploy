@@ -1,5 +1,5 @@
+import { createRequire } from 'node:module';
 import { PrismaPg } from '@prisma/adapter-pg';
-import * as PrismaClientModule from '@prisma/client';
 
 /**
  * Connection Pool Configuration (via DATABASE_URL query parameters)
@@ -29,7 +29,13 @@ type PrismaClient = any;
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const PrismaClientCtor = (PrismaClientModule as any).PrismaClient;
+const require = createRequire(import.meta.url);
+let PrismaClientCtor: any = null;
+try {
+    PrismaClientCtor = require('@prisma/client').PrismaClient;
+} catch {
+    PrismaClientCtor = null;
+}
 
 function createFallbackPrismaClient(): PrismaClient {
     const readFallbacks: Record<string, any> = {
@@ -254,5 +260,3 @@ export async function checkDatabaseHealth(
         };
     }
 }
-
-export * from '@prisma/client';

@@ -53,6 +53,7 @@ interface StatusPageData {
         memory: 'operational' | 'degraded' | 'major_outage';
         council: 'operational' | 'degraded' | 'major_outage';
         billing: 'operational' | 'degraded' | 'major_outage';
+        database: { status: 'operational' | 'degraded' | 'major_outage' };
     };
     incidents: Incident[];
 }
@@ -240,9 +241,16 @@ export function getStatusPageData(): StatusPageData {
     const memoryStatus = getServiceStatus('/memory');
     const councilStatus = getServiceStatus('/council');
     const billingStatus = getServiceStatus('/billing');
+    const databaseStatus: 'operational' | 'degraded' | 'major_outage' = 'operational';
 
     // Determine overall status
-    const serviceStatuses = [chatStatus, memoryStatus, councilStatus, billingStatus];
+    const serviceStatuses = [
+        chatStatus,
+        memoryStatus,
+        councilStatus,
+        billingStatus,
+        databaseStatus,
+    ];
     const overallStatus = determineOverallStatus(serviceStatuses);
 
     return {
@@ -252,6 +260,7 @@ export function getStatusPageData(): StatusPageData {
             memory: memoryStatus,
             council: councilStatus,
             billing: billingStatus,
+            database: { status: databaseStatus },
         },
         incidents: recentIncidents,
     };

@@ -4,6 +4,7 @@
  * Tests for unified search across chats and memories with full-text search.
  */
 
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

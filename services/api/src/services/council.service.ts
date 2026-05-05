@@ -29,7 +29,7 @@ export const COUNCIL_PERSONAS: Record<
         name: 'The Scholar',
         role: 'Academic & Research Perspective',
         color: '#3B82F6', // Blue
-        modelId: 'groq/llama-4-maverick',
+        modelId: 'openai/gpt-5',
         systemPrompt: `You are The Scholar, an academic advisor providing well-researched, evidence-based perspectives.
 Your approach:
 - Cite relevant research, theories, and academic frameworks

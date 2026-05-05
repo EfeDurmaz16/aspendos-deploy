@@ -63,7 +63,7 @@ export type Period = 'day' | 'week' | 'month' | 'all';
 export const MODEL_PRICING_TABLE: Record<string, ModelPricing> = {
     // Groq - Llama 4 family (all tiers)
     'groq/llama-4-maverick': { input: 0.59, output: 0.79 },
-    'groq/llama-4-scout': { input: 0.11, output: 0.34 },
+    'groq/llama-4-scout': { input: 0.05, output: 0.08 },
     // ULTRA tier premium models (April 2026 — review before launch)
     // OpenAI GPT-5.4 family (April 2026)
     // TODO(pricing): verify against official OpenAI pricing docs before launch

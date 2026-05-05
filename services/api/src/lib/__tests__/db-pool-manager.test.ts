@@ -1,3 +1,4 @@
+import { prisma } from '@aspendos/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @aspendos/db inline (no vi.hoisted)

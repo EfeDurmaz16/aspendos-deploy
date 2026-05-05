@@ -58,7 +58,13 @@ type ReminderResponse = {
 };
 
 function reminderId(value: unknown): string {
-    return typeof value === 'string' ? value : '';
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object') {
+        const candidate = value as { id?: unknown; _id?: unknown };
+        if (typeof candidate.id === 'string') return candidate.id;
+        if (typeof candidate._id === 'string') return candidate._id;
+    }
+    return '';
 }
 
 function reminderFromLog(log: ReminderLog): ReminderResponse {

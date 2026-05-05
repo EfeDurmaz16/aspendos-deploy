@@ -1,3 +1,4 @@
+import { prisma } from '@aspendos/db';
 import type { Context, Next } from 'hono';
 import { auth } from '../lib/auth';
 
@@ -14,6 +15,14 @@ declare module 'hono' {
         userId: string | null;
         session: { id: string; expiresAt?: Date | string } | null;
     }
+}
+
+async function isUserBanned(userId: string): Promise<boolean> {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { banned: true },
+    });
+    return user?.banned === true;
 }
 
 export async function authMiddleware(c: Context, next: Next) {
@@ -38,12 +47,19 @@ export async function authMiddleware(c: Context, next: Next) {
 export async function requireAuth(c: Context, next: Next) {
     const userId = c.get('userId');
     if (userId) {
+        if (await isUserBanned(userId)) {
+            return c.json({ error: 'Account suspended', code: 'ACCOUNT_BANNED' }, 403);
+        }
         return next();
     }
 
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
     if (!session?.user?.id) {
-        return c.json({ error: 'Authentication required' }, 401);
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    if (await isUserBanned(session.user.id)) {
+        return c.json({ error: 'Account suspended', code: 'ACCOUNT_BANNED' }, 403);
     }
 
     c.set('user', {

@@ -10,7 +10,8 @@
  * Backed by Convex for data access.
  */
 
-import { api, getConvexClient } from '../lib/convex';
+import { prisma } from '@aspendos/db';
+import { api, getConvexClient, isConvexConfigured } from '../lib/convex';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -223,11 +224,93 @@ async function processExportJob(jobId: string, userId: string): Promise<void> {
 
 // ─── Data Export ─────────────────────────────────────────────────────────────
 
+async function exportUserDataFromPrisma(userId: string): Promise<ExportData> {
+    const [user, chats, memories, reminders, billing, councilSessions, notifications] =
+        await Promise.all([
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, email: true, name: true, createdAt: true },
+            }),
+            prisma.chat.findMany({
+                where: { userId },
+                include: { messages: true },
+                orderBy: { createdAt: 'asc' },
+            }),
+            prisma.memory.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } }),
+            prisma.pACReminder.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } }),
+            prisma.billingAccount.findUnique({ where: { userId } }),
+            prisma.councilSession.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } }),
+            prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } }),
+        ]);
+
+    return {
+        exportedAt: new Date().toISOString(),
+        format: 'YULA_GDPR_EXPORT_V1',
+        user: user
+            ? {
+                  id: user.id,
+                  email: user.email,
+                  name: user.name ?? null,
+                  createdAt: user.createdAt,
+              }
+            : null,
+        chats: chats.map((chat: any) => ({
+            id: chat.id,
+            title: chat.title ?? null,
+            createdAt: chat.createdAt,
+            messages: (chat.messages ?? []).map((message: any) => ({
+                role: message.role,
+                content: message.content,
+                createdAt: message.createdAt,
+                modelUsed: message.modelUsed ?? message.model ?? null,
+            })),
+        })),
+        memories: memories.map((memory: any) => ({
+            content: memory.content,
+            type: memory.type ?? null,
+            sector: memory.sector ?? null,
+            createdAt: memory.createdAt,
+        })),
+        reminders: reminders.map((reminder: any) => ({
+            content: reminder.content,
+            type: reminder.type,
+            status: reminder.status,
+            triggerAt: reminder.triggerAt ?? null,
+            createdAt: reminder.createdAt,
+        })),
+        billing: billing
+            ? {
+                  plan: billing.plan,
+                  creditUsed: billing.creditUsed,
+                  monthlyCredit: billing.monthlyCredit,
+                  createdAt: billing.createdAt,
+              }
+            : null,
+        councilSessions: councilSessions.map((session: any) => ({
+            id: session.id,
+            query: session.query,
+            status: session.status,
+            createdAt: session.createdAt,
+            responses: session.responses ?? [],
+        })),
+        notifications: notifications.map((notification: any) => ({
+            type: notification.type,
+            title: notification.title,
+            body: notification.body ?? null,
+            createdAt: notification.createdAt,
+        })),
+    };
+}
+
 /**
  * Gather all user data for export (GDPR Art. 20 - Data Portability).
  */
 export async function exportUserData(userId: string): Promise<ExportData> {
     try {
+        if (!isConvexConfigured()) {
+            return exportUserDataFromPrisma(userId);
+        }
+
         const client = getConvexClient();
 
         // Fetch conversations
@@ -323,11 +406,71 @@ export async function exportUserData(userId: string): Promise<ExportData> {
 
 // ─── Data Summary ────────────────────────────────────────────────────────────
 
+async function getDataSummaryFromPrisma(userId: string): Promise<DataSummary> {
+    const [
+        user,
+        chats,
+        messages,
+        memories,
+        reminders,
+        councilSessions,
+        importJobs,
+        achievements,
+        notifications,
+        auditLogs,
+        apiKeys,
+        lastMessage,
+    ] = await Promise.all([
+        prisma.user.findUnique({
+            where: { id: userId },
+            select: { createdAt: true },
+        }),
+        prisma.chat.count({ where: { userId } }),
+        prisma.message.count({ where: { userId } }),
+        prisma.memory.count({ where: { userId } }),
+        prisma.pACReminder.count({ where: { userId } }),
+        prisma.councilSession.count({ where: { userId } }),
+        prisma.importJob.count({ where: { userId } }),
+        prisma.achievement.count({ where: { userId } }),
+        prisma.notification.count({ where: { userId } }),
+        prisma.auditLog.count({ where: { userId } }),
+        prisma.apiKey.count({ where: { userId } }),
+        prisma.message.findFirst({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true },
+        }),
+    ]);
+
+    return {
+        userId,
+        counts: {
+            chats,
+            messages,
+            memories,
+            reminders,
+            councilSessions,
+            importJobs,
+            achievements,
+            notifications,
+            auditLogs,
+            apiKeys,
+        },
+        storageEstimateBytes: messages * 2048 + memories * 1024 + notifications * 512 + chats * 256,
+        accountCreatedAt: user?.createdAt ?? null,
+        lastActiveAt: lastMessage?.createdAt ?? null,
+    };
+}
+
 /**
  * Get a summary of all stored data for a user (GDPR Art. 15 - Right of Access).
  */
 export async function getDataSummary(userId: string): Promise<DataSummary> {
     try {
+        if (!isConvexConfigured()) {
+            return getDataSummaryFromPrisma(userId);
+        }
+
         const client = getConvexClient();
 
         const [conversations, memoriesRaw, actionLogs] = await Promise.all([
@@ -473,6 +616,31 @@ export function getPendingDeletion(
 
 // ─── Account Anonymization ───────────────────────────────────────────────────
 
+async function anonymizeUserWithPrisma(userId: string): Promise<void> {
+    const anonymizedEmail = `anon-${userId}-${Date.now()}@deleted.yula.dev`;
+
+    await prisma.$transaction(async (tx: any) => {
+        await tx.user.update({
+            where: { id: userId },
+            data: {
+                email: anonymizedEmail,
+                name: 'Anonymized User',
+                image: null,
+            },
+        });
+        await tx.session.deleteMany({ where: { userId } });
+        await tx.account.deleteMany({ where: { userId } });
+        await tx.notification.updateMany({
+            where: { userId },
+            data: {
+                title: '[anonymized]',
+                body: '[anonymized]',
+            },
+        });
+        await tx.apiKey.deleteMany({ where: { userId } });
+    });
+}
+
 /**
  * Anonymize a user account: strip PII but keep aggregate/analytical data.
  * This is an alternative to full deletion under GDPR Art. 17(3).
@@ -481,6 +649,11 @@ export function getPendingDeletion(
  */
 export async function anonymizeUser(userId: string): Promise<void> {
     try {
+        if (!isConvexConfigured()) {
+            await anonymizeUserWithPrisma(userId);
+            return;
+        }
+
         const client = getConvexClient();
 
         // Log the anonymization request

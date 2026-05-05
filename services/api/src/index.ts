@@ -193,6 +193,19 @@ app.use(
 );
 
 // Input sanitization middleware
+app.use('*', async (c, next) => {
+    const contentType = c.req.header('content-type') || '';
+    if (contentType.includes('application/json') && !['GET', 'HEAD'].includes(c.req.method)) {
+        try {
+            const body = await c.req.raw.clone().text();
+            if (body.trim()) JSON.parse(body);
+        } catch {
+            return c.json({ error: 'Invalid JSON', code: 'INVALID_JSON' }, 400);
+        }
+    }
+    return next();
+});
+
 app.use('*', sanitizeBody());
 
 // Bot protection middleware (blocks automated abuse)

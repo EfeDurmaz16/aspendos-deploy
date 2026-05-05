@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { prisma } from '../../lib/prisma';
 import { enforceTierLimit } from '../tier-enforcement';
 
 // Mock the prisma import used inside tier-enforcement.ts
@@ -10,10 +11,6 @@ vi.mock('../../lib/prisma', () => ({
         },
     },
 }));
-
-// Import the mocked prisma so we can control return values
-// TODO(convex-migrate): replace prisma with Convex client
-const prisma = null as any;
 
 const mockFindUnique = prisma.user.findUnique as ReturnType<typeof vi.fn>;
 

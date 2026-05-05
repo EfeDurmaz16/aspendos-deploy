@@ -5,9 +5,9 @@
  * All endpoints require admin authentication.
  */
 
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
-import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 
 type Variables = {

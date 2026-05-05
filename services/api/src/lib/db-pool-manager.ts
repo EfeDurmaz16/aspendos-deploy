@@ -12,7 +12,7 @@
  * - Connection validation (warm connections)
  */
 
-import { prisma } from './prisma';
+import { prisma } from '@aspendos/db';
 
 // ---------------------------------------------------------------------------
 // Types

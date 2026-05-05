@@ -20,6 +20,7 @@ export interface ChatMessage {
     role: 'user' | 'assistant' | 'system';
     content: string;
     model?: string;
+    modelUsed?: string;
     timestamp?: string;
 }
 
@@ -151,10 +152,9 @@ export function exportToMarkdown(chats: Chat[], userId: string): ExportResult {
         for (const message of chat.messages) {
             if (message.role === 'system') continue;
 
+            const model = message.model ?? message.modelUsed;
             const speaker =
-                message.role === 'user'
-                    ? '**User:**'
-                    : `**AI${message.model ? ` (${message.model})` : ''}:**`;
+                message.role === 'user' ? '**User:**' : `**AI${model ? ` (${model})` : ''}:**`;
 
             lines.push(`${speaker} ${message.content}`);
             lines.push('');

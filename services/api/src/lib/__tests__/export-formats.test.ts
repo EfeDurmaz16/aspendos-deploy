@@ -163,7 +163,7 @@ describe('exportToMarkdown', () => {
         expect(result.content).toContain('# Yula Chat Export');
         expect(result.content).toContain('## Test Chat');
         expect(result.content).toContain('**User:** Hello');
-        expect(result.content).toContain('**AI (gpt-4):** Hi there!');
+        expect(result.content).toContain('**AI (gpt-5):** Hi there!');
     });
 
     test('preserves code blocks in messages', () => {

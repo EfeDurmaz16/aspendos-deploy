@@ -11,6 +11,7 @@
  * 7. Banned user gets 403
  */
 
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 

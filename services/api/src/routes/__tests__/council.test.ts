@@ -5,6 +5,7 @@
  * listing, detail retrieval, persona selection, and synthesis.
  */
 
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,7 +42,7 @@ vi.mock('../../services/council.service', () => ({
             name: 'The Scholar',
             role: 'Academic & Research Perspective',
             color: '#3B82F6',
-            modelId: 'groq/llama-4-maverick',
+            modelId: 'openai/gpt-5',
         },
         CREATIVE: {
             name: 'The Visionary',
