@@ -48,6 +48,7 @@ import modelsRoutes from './routes/models';
 import notificationsRoutes from './routes/notifications';
 import pacRoutes from './routes/pac';
 import promptTemplatesRoutes from './routes/prompt-templates';
+import publicApi from './routes/public-api';
 import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
 import securityRoutes from './routes/security';
@@ -451,6 +452,7 @@ app.get('/metrics', async (c) => {
 app.route('/health', healthRoutes);
 app.route('/ready', healthRoutes);
 app.route('/status', statusRoutes);
+app.route('/', publicApi);
 
 // Better Auth routes
 app.on(['POST', 'GET'], '/api/auth/*', (c) => {

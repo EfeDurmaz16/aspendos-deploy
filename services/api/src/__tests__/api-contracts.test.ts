@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { getAgit } from '../audit/agit';
 import app from '../index';
 
 // Helper to handle rate-limited responses in tests
@@ -56,6 +57,32 @@ describe('API Contract Tests - Health & System', () => {
         expect(body).toHaveProperty('responseTimeMs');
         expect(body).toHaveProperty('timestamp');
         expect(typeof body.services).toBe('object');
+    });
+
+    test('GET /audit/verify/:hash - exposes mounted public verification route', async () => {
+        const commit = await getAgit().commitAction({
+            userId: 'contract-user',
+            toolName: 'contract.verify',
+            args: { ok: true },
+            metadata: {
+                reversibility_class: 'irreversible',
+                human_explanation: 'Contract verification fixture',
+            },
+            fidesSignature: 'contract-signature',
+            fidesDid: 'did:fides:contract',
+            type: 'pre',
+        });
+
+        const res = await app.request(`/audit/verify/${commit.hash}`);
+
+        expect(res.status).toBe(200);
+        expect(res.headers.get('content-type')).toContain('application/json');
+
+        const body = await res.json();
+        expect(body).toEqual({
+            hash: commit.hash,
+            verified: true,
+        });
     });
 
     test('GET /api/models - returns models list contract', async () => {
