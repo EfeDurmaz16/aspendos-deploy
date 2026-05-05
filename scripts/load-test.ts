@@ -173,7 +173,7 @@ async function main() {
     }
 
     // Summary table
-    console.log('\n' + '='.repeat(70));
+    console.log(`\n${'='.repeat(70)}`);
     console.log('RESULTS SUMMARY');
     console.log('='.repeat(70));
     console.log(
@@ -221,7 +221,7 @@ async function main() {
         minRps: 50,
     };
 
-    console.log('\n' + '='.repeat(70));
+    console.log(`\n${'='.repeat(70)}`);
     console.log('PASS/FAIL CRITERIA');
     console.log('='.repeat(70));
 

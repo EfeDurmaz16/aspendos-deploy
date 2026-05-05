@@ -321,7 +321,10 @@ describe('Security Remediation: Calculator rejects injection', () => {
     });
 
     it('should reject expressions with backticks', async () => {
-        const result = await calculatorTool.execute({ expression: '`${7*7}`' }, {} as any);
+        const result = await calculatorTool.execute(
+            { expression: '`' + '$' + '{7*7}' + '`' },
+            {} as any
+        );
         expect(result.success).toBe(false);
     });
 
