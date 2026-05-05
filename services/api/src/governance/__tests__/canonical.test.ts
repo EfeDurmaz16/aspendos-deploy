@@ -11,6 +11,10 @@ const metadata: ReversibilityMetadata = {
 
 const originalVitestEnv = process.env.VITEST;
 
+function forceMissingFidesSdk(fides: FidesService) {
+    (fides as unknown as { loadSdk: () => Promise<null> }).loadSdk = async () => null;
+}
+
 describe('canonical governance primitives', () => {
     afterEach(() => {
         vi.restoreAllMocks();
@@ -35,6 +39,7 @@ describe('canonical governance primitives', () => {
         process.env.FIDES_TEST_SIGNING_SECRET = 'test-secret';
 
         const fides = new FidesService();
+        forceMissingFidesSdk(fides);
         const args = { z: 1, a: 2 };
         const signed = await fides.signToolCall('file.write', args, metadata);
         const payload = fides.getToolCallPayload('file.write', { a: 2, z: 1 }, metadata);
@@ -50,6 +55,7 @@ describe('canonical governance primitives', () => {
         delete process.env.FIDES_TEST_SIGNING_SECRET;
 
         const fides = new FidesService();
+        forceMissingFidesSdk(fides);
 
         await expect(fides.initialize()).rejects.toThrow(/Refusing to create fallback FIDES/);
     });
@@ -61,6 +67,7 @@ describe('canonical governance primitives', () => {
         delete process.env.ALLOW_IN_MEMORY_GOVERNANCE;
 
         const fides = new FidesService();
+        forceMissingFidesSdk(fides);
 
         await expect(fides.initialize()).rejects.toThrow(
             /explicit local\/test governance fallback/
@@ -74,6 +81,7 @@ describe('canonical governance primitives', () => {
         process.env.ALLOW_IN_MEMORY_GOVERNANCE = 'true';
 
         const fides = new FidesService();
+        forceMissingFidesSdk(fides);
 
         await expect(fides.initialize()).resolves.toBeUndefined();
         await expect(fides.isUsingExplicitTestFallback()).resolves.toBe(true);
