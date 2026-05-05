@@ -128,25 +128,33 @@ async function handleSingleUndo(
                 );
             }
 
-            // Mark commit as reverted
+            const tool = referenceTools.get(commit.tool_name);
+            if (!tool?.rollback) {
+                return NextResponse.json(
+                    { success: false, message: `No rollback handler for ${commit.tool_name}.` },
+                    { status: 501 }
+                );
+            }
+
+            const result = await tool.rollback(commit as unknown as AgitCommit);
+            if (!result.success) {
+                return NextResponse.json(result, { status: 409 });
+            }
+
             await convex.mutation(api.commits.updateStatus, {
                 id: commit._id,
                 status: 'reverted',
                 result: {
                     reverted_at: Date.now(),
                     restored_from_snapshot: snapshotId,
+                    rollback_message: result.message,
                 },
             });
 
-            return NextResponse.json({
-                success: true,
-                message: `Snapshot ${snapshotId.slice(0, 8)}... restored. File at ${snapshot.target_path} reverted.`,
-                reverted_hash: commitHash,
-            });
+            return NextResponse.json(result);
         }
 
         case 'cancel_window': {
-            const cancelEndpoint = body.cancel_endpoint as string;
             const rollbackStrategy = commit.rollback_strategy as RollbackStrategy | undefined;
 
             if (
@@ -159,18 +167,30 @@ async function handleSingleUndo(
                 );
             }
 
-            // Mark commit as reverted
+            const tool = referenceTools.get(commit.tool_name);
+            if (!tool?.rollback) {
+                return NextResponse.json(
+                    { success: false, message: `No rollback handler for ${commit.tool_name}.` },
+                    { status: 501 }
+                );
+            }
+
+            const result = await tool.rollback(commit as unknown as AgitCommit);
+            if (!result.success) {
+                return NextResponse.json(result, { status: 409 });
+            }
+
             await convex.mutation(api.commits.updateStatus, {
                 id: commit._id,
                 status: 'reverted',
-                result: { reverted_at: Date.now(), cancel_method: 'cancel_window' },
+                result: {
+                    reverted_at: Date.now(),
+                    cancel_method: 'cancel_window',
+                    rollback_message: result.message,
+                },
             });
 
-            return NextResponse.json({
-                success: true,
-                message: 'Action cancelled within the window.',
-                reverted_hash: commitHash,
-            });
+            return NextResponse.json(result);
         }
 
         case 'compensation': {
@@ -194,18 +214,10 @@ async function handleSingleUndo(
                 return NextResponse.json(result);
             }
 
-            // Fallback: mark as reverted if no tool handler
-            await convex.mutation(api.commits.updateStatus, {
-                id: commit._id,
-                status: 'reverted',
-                result: { reverted_at: Date.now(), compensation_method: 'manual' },
-            });
-
-            return NextResponse.json({
-                success: true,
-                message: `Compensation dispatched for ${commit.tool_name}.`,
-                reverted_hash: commitHash,
-            });
+            return NextResponse.json(
+                { success: false, message: `No rollback handler for ${commit.tool_name}.` },
+                { status: 501 }
+            );
         }
 
         default:
@@ -282,29 +294,26 @@ async function handleRewind(targetHash: string, currentUserId: Id<'users'>) {
                     revertedHashes.push(commit.hash);
                     continue;
                 }
+                failedHashes.push(commit.hash);
+                continue;
             } catch {
-                // Fall through to generic revert
+                failedHashes.push(commit.hash);
+                continue;
             }
         }
 
-        // Generic revert — just mark status (for undoable/cancelable that lack tool handler)
-        try {
-            await convex.mutation(api.commits.updateStatus, {
-                id: commit._id,
-                status: 'reverted',
-                result: { reverted_at: Date.now(), rewind_target: targetHash },
-            });
-            revertedHashes.push(commit.hash);
-        } catch {
-            failedHashes.push(commit.hash);
-        }
+        failedHashes.push(commit.hash);
     }
 
-    return NextResponse.json({
-        success: true,
-        message: `Rewound ${revertedHashes.length} commit(s) to ${targetHash.slice(0, 8)}.`,
-        reverted_count: revertedHashes.length,
-        reverted_hashes: revertedHashes,
-        failed_hashes: failedHashes,
-    });
+    const success = failedHashes.length === 0;
+    return NextResponse.json(
+        {
+            success,
+            message: `Rewound ${revertedHashes.length} commit(s) to ${targetHash.slice(0, 8)}.`,
+            reverted_count: revertedHashes.length,
+            reverted_hashes: revertedHashes,
+            failed_hashes: failedHashes,
+        },
+        { status: success ? 200 : 207 }
+    );
 }
