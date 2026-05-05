@@ -143,6 +143,18 @@ export function getModel(modelId: ModelId | string) {
     return gateway(`${config.provider}/${config.id}`);
 }
 
+export function openai(modelId: string) {
+    return gateway(`openai/${modelId}`);
+}
+
+export function anthropic(modelId: string) {
+    return gateway(`anthropic/${modelId}`);
+}
+
+export function groq(modelId: string) {
+    return gateway(`groq/${modelId}`);
+}
+
 /**
  * Get the router model (fast Groq Llama for decision making)
  */

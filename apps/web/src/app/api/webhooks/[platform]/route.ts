@@ -1,8 +1,6 @@
 import { after } from 'next/server';
 import { getBot } from '@/lib/messaging/bot';
 
-type Platform = keyof typeof bot.webhooks;
-
 /**
  * Catch-all webhook route for any platform.
  * Individual platform routes (slack/, telegram/, etc.) take priority
@@ -11,8 +9,9 @@ type Platform = keyof typeof bot.webhooks;
  */
 export async function POST(request: Request, context: { params: Promise<{ platform: string }> }) {
     const { platform } = await context.params;
+    const bot = await getBot();
 
-    const handler = bot.webhooks[platform as Platform];
+    const handler = (bot.webhooks as Record<string, typeof bot.webhooks.slack>)[platform];
     if (!handler) {
         return new Response(`Unknown platform: ${platform}`, { status: 404 });
     }

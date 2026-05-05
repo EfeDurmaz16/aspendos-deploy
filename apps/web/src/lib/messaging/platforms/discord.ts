@@ -244,18 +244,30 @@ export async function verifyDiscordSignature(
 
     try {
         const encoder = new TextEncoder();
+        const keyBytes = hexToUint8Array(publicKey);
         const key = await crypto.subtle.importKey(
             'raw',
-            hexToUint8Array(publicKey),
+            keyBytes.buffer.slice(
+                keyBytes.byteOffset,
+                keyBytes.byteOffset + keyBytes.byteLength
+            ) as ArrayBuffer,
             { name: 'Ed25519' },
             false,
             ['verify']
         );
 
         const message = encoder.encode(timestamp + body);
+        const messageBytes = message.buffer.slice(
+            message.byteOffset,
+            message.byteOffset + message.byteLength
+        ) as ArrayBuffer;
         const sig = hexToUint8Array(signature);
+        const sigBytes = sig.buffer.slice(
+            sig.byteOffset,
+            sig.byteOffset + sig.byteLength
+        ) as ArrayBuffer;
 
-        return await crypto.subtle.verify('Ed25519', key, sig, message);
+        return await crypto.subtle.verify('Ed25519', key, sigBytes, messageBytes);
     } catch {
         return false;
     }

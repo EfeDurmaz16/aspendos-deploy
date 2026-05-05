@@ -15,7 +15,7 @@ const CALLBACK_BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://yula.dev';
 
 let _bot: Chat | null = null;
 
-export async function getBot(): Promise<Chat> {
+export async function getBot(): Promise<any> {
     if (_bot) return _bot;
 
     // Dynamic import Discord adapter to avoid zlib-sync native module issue with Turbopack
@@ -24,13 +24,14 @@ export async function getBot(): Promise<Chat> {
 
     const bot = new Chat({
         userName: 'yula',
+        state: {} as never,
         adapters: {
             slack: createSlackAdapter(),
             telegram: createTelegramAdapter(),
             discord: createDiscordAdapter(),
             whatsapp: createWhatsAppAdapter(),
         },
-    });
+    } as never) as any;
 
     // Register handlers
     registerMentionHandler(bot);
@@ -45,8 +46,8 @@ export async function getBot(): Promise<Chat> {
 // Handler Registration
 // ============================================
 
-function registerMentionHandler(bot: Chat): void {
-    bot.onNewMention(async (thread) => {
+function registerMentionHandler(bot: any): void {
+    bot.onNewMention(async (thread: any) => {
         await thread.subscribe();
         await thread.post(
             "Hey! I'm YULA, your universal assistant. Ask me anything in this thread."
@@ -54,8 +55,8 @@ function registerMentionHandler(bot: Chat): void {
     });
 }
 
-function registerMessageHandler(bot: Chat): void {
-    bot.onSubscribedMessage(async (thread, message) => {
+function registerMessageHandler(bot: any): void {
+    bot.onSubscribedMessage(async (thread: any, message: any) => {
         const text = message.text?.trim();
         if (!text) return;
 
@@ -83,9 +84,9 @@ function registerMessageHandler(bot: Chat): void {
     });
 }
 
-function registerActionHandlers(bot: Chat): void {
-    bot.onAction('approve', async (event) => {
-        const commitHash = event.action.value;
+function registerActionHandlers(bot: any): void {
+    bot.onAction('approve', async (event: any) => {
+        const commitHash = event.action?.value;
         if (!commitHash) return;
         try {
             await fetch(`${CALLBACK_BASE}/api/bot/approve`, {
@@ -104,8 +105,8 @@ function registerActionHandlers(bot: Chat): void {
         }
     });
 
-    bot.onAction('reject', async (event) => {
-        const commitHash = event.action.value;
+    bot.onAction('reject', async (event: any) => {
+        const commitHash = event.action?.value;
         if (!commitHash) return;
         try {
             await fetch(`${CALLBACK_BASE}/api/bot/approve`, {
@@ -124,7 +125,7 @@ function registerActionHandlers(bot: Chat): void {
         }
     });
 
-    bot.onAction('retry', async (event) => {
+    bot.onAction('retry', async (event: any) => {
         await event.thread.post('Retrying last request...');
     });
 }

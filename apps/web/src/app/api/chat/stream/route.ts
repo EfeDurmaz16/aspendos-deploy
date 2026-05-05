@@ -78,10 +78,10 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
             tools: {
                 memory_search: tool({
                     description: 'Search user memories for relevant context',
-                    parameters: z.object({
+                    inputSchema: z.object({
                         query: z.string().describe('Search query'),
                     }),
-                    execute: async ({ query }) => {
+                    execute: async ({ query }: { query: string }) => {
                         if (!process.env.SUPERMEMORY_API_KEY) {
                             return { results: [], note: 'Memory not configured' };
                         }
@@ -103,10 +103,10 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                 }),
                 memory_add: tool({
                     description: 'Save information to user memory',
-                    parameters: z.object({
+                    inputSchema: z.object({
                         content: z.string().describe('Content to remember'),
                     }),
-                    execute: async ({ content }) => {
+                    execute: async ({ content }: { content: string }) => {
                         if (!process.env.SUPERMEMORY_API_KEY) {
                             return { success: false, note: 'Memory not configured' };
                         }
@@ -115,7 +115,7 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                             const client = new sm.default({
                                 apiKey: process.env.SUPERMEMORY_API_KEY,
                             });
-                            await client.memories.create({
+                            await client.documents.add({
                                 content,
                                 containerTags: ['user_default'],
                             });
@@ -127,10 +127,10 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                 }),
                 calculator: tool({
                     description: 'Perform mathematical calculations',
-                    parameters: z.object({
+                    inputSchema: z.object({
                         expression: z.string().describe('Math expression to evaluate'),
                     }),
-                    execute: async ({ expression }) => {
+                    execute: async ({ expression }: { expression: string }) => {
                         if (!/^[0-9+\-*/.() \t]+$/.test(expression)) {
                             return { error: 'Invalid characters' };
                         }
@@ -144,10 +144,10 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                 }),
                 current_time: tool({
                     description: 'Get current date and time',
-                    parameters: z.object({
+                    inputSchema: z.object({
                         timezone: z.string().optional().describe('Timezone'),
                     }),
-                    execute: async ({ timezone }) => {
+                    execute: async ({ timezone }: { timezone?: string }) => {
                         const now = new Date();
                         return {
                             iso: now.toISOString(),

@@ -289,7 +289,9 @@ export const useOnboardingStore = create<OnboardingState>()(
                     );
                 }
 
-                set({ hasHydrated: true });
+                if (state) {
+                    state.hasHydrated = true;
+                }
             },
         }
     )

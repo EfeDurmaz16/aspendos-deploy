@@ -1,6 +1,10 @@
 'use client';
 
-export function useSession() {
+export function useSession(): {
+    data: { user?: { email?: string | null } } | null;
+    isPending: boolean;
+    error: Error | null;
+} {
     return { data: null, isPending: false, error: null };
 }
 
@@ -30,7 +34,10 @@ export async function checkout(_opts: any): Promise<void> {
     window.location.href = '/pricing';
 }
 
-export async function forgetPassword(): Promise<void> {
+export async function forgetPassword(_opts?: {
+    email?: string;
+    redirectTo?: string;
+}): Promise<void> {
     window.location.href = '/forgot-password';
 }
 

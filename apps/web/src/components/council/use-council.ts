@@ -18,6 +18,7 @@ export const personaDefinitions: Record<
     {
         name: string;
         role: string;
+        color: string;
         cssVar: string;
         icon: string;
         description: string;
@@ -28,6 +29,7 @@ export const personaDefinitions: Record<
     logic: {
         name: 'Scholar',
         role: 'The Analyst',
+        color: '#3b82f6',
         cssVar: 'var(--persona-scholar)',
         icon: 'brain',
         description: 'Evaluates decisions through data, facts, and rational analysis',
@@ -37,6 +39,7 @@ export const personaDefinitions: Record<
     creative: {
         name: 'Creative',
         role: 'The Innovator',
+        color: '#f59e0b',
         cssVar: 'var(--persona-creative)',
         icon: 'lightbulb',
         description: 'Explores unconventional solutions and creative possibilities',
@@ -46,6 +49,7 @@ export const personaDefinitions: Record<
     prudent: {
         name: 'Prudent',
         role: 'The Guardian',
+        color: '#10b981',
         cssVar: 'var(--persona-prudent)',
         icon: 'shield',
         description: 'Considers risks, long-term consequences, and safety',
@@ -55,6 +59,7 @@ export const personaDefinitions: Record<
     'devils-advocate': {
         name: "Devil's Advocate",
         role: 'The Challenger',
+        color: '#ef4444',
         cssVar: 'var(--persona-advocate)',
         icon: 'warning',
         description: "Challenges assumptions and plays devil's advocate",

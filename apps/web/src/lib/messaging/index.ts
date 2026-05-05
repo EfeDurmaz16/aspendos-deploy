@@ -1,5 +1,5 @@
 // Central bot instance
-export { bot, postApprovalCard } from './bot';
+export { getBot, postApprovalCard } from './bot';
 
 // Types
 export type {
