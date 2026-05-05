@@ -10,6 +10,9 @@ dist/
 .next/
 .turbo/
 out/
+.claude/worktrees/
+.worktrees/
+apps/web/src/lib/convex/_generated/
 
 # Environment
 .env.local
@@ -76,6 +79,9 @@ landing-2/
 # Local tool state
 .omc/
 .claude/plugins/
+.claude/ralph-loop.local.md
+.agent-progress.*.json
+.agent-issues.*.json
 .playwright-mcp/
 .serena/
 

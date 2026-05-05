@@ -4,6 +4,8 @@
     "packageManager": "bun@1.1.30",
     "workspaces": [
         "apps/web",
+        "services/api",
+        "services/eval",
         "packages/*"
     ],
     "scripts": {
@@ -13,10 +15,16 @@
         "dev:web": "turbo run dev --filter=@aspendos/web",
         "dev:api": "turbo run dev --filter=@aspendos/api",
         "build": "turbo run build",
+        "build:api": "bun run --cwd services/api build",
+        "build:web": "bun run --cwd apps/web build",
         "lint": "biome lint .",
         "format": "biome format --write .",
         "check": "biome check .",
         "check:fix": "biome check --write .",
+        "typecheck:web": "bun run --cwd apps/web typecheck",
+        "test:api": "bun run --cwd services/api test",
+        "test:web": "bun run --cwd apps/web test",
+        "convex:typecheck": "bunx convex typecheck",
         "bench:web-dev": "bash scripts/benchmark_web_dev.sh",
         "brand:generate": "bun run scripts/generate-brand-assets.ts",
         "release:ready": "bash ./scripts/check_release_readiness.sh",
