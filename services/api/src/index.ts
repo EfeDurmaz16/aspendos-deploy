@@ -509,6 +509,7 @@ app.route('/api/experiments', experimentsRoutes);
 app.route('/api/features', featuresRoutes);
 app.route('/api/feedback', feedbackRoutes);
 app.route('/api/health', healthRoutes);
+app.route('/api', miscRoutes);
 app.route('/api/misc', miscRoutes);
 app.route('/api/models', modelsRoutes);
 app.route('/api/traces', tracesRoutes);

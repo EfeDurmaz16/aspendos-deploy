@@ -9,8 +9,19 @@ import { getErrorCatalog } from '../lib/error-codes';
 import { jobQueue } from '../lib/job-queue';
 import { getPrivacyPolicy, getTermsOfService } from '../lib/legal';
 import { getWebhookCategories, getWebhookEventsCatalog } from '../lib/webhook-events';
+import { getRateLimitStatus } from '../middleware/rate-limit';
 
 const miscRoutes = new Hono();
+const adminUserIds = new Set(
+    (process.env.ADMIN_USER_IDS || '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean)
+);
+
+function isAdminUser(userId: string | null): boolean {
+    return !!userId && adminUserIds.has(userId);
+}
 
 // ─── Changelog ───────────────────────────────────────────────────────────────
 miscRoutes.get('/changelog', (c) => {
@@ -58,6 +69,53 @@ miscRoutes.get('/webhooks/events', (c) => {
         events: getWebhookEventsCatalog(category),
         categories: getWebhookCategories(),
     });
+});
+
+// ─── Rate Limit Legacy Paths ────────────────────────────────────────────────
+miscRoutes.get('/rate-limit', async (c) => {
+    const userId = c.get('userId') as string | null;
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const user = c.get('user') as Record<string, unknown> | null;
+    const tier =
+        ((user as Record<string, unknown>)?.tier as 'FREE' | 'STARTER' | 'PRO' | 'ULTRA') || 'FREE';
+
+    return c.json(await getRateLimitStatus(userId, tier));
+});
+
+miscRoutes.get('/analytics/rate-limits', async (c) => {
+    const userId = c.get('userId') as string | null;
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { getRateLimitDashboard, getUserRateLimitHistory, getNearLimitEvents } = await import(
+        '../lib/rate-limit-analytics'
+    );
+
+    const scope = c.req.query('scope') || 'user';
+
+    if (scope === 'user') {
+        const limit = Math.min(parseInt(c.req.query('limit') || '100', 10) || 100, 500);
+        return c.json({
+            scope: 'user',
+            userId,
+            history: getUserRateLimitHistory(userId, limit),
+        });
+    }
+
+    if (scope === 'dashboard') {
+        if (!isAdminUser(userId)) {
+            return c.json({ error: 'Forbidden' }, 403);
+        }
+
+        const dashboard = getRateLimitDashboard();
+        return c.json({
+            scope: 'dashboard',
+            ...dashboard,
+            nearLimitEvents: getNearLimitEvents(),
+        });
+    }
+
+    return c.json({ error: 'Invalid scope. Use "user" or "dashboard"' }, 400);
 });
 
 // ─── Audit Log (GDPR Art. 15 - Right of Access) ───────────────────────────────
