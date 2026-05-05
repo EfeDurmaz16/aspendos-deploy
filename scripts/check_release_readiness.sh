@@ -33,8 +33,8 @@ if [[ -f "apps/web/sentry.client.config.ts" ]]; then
   fail "Deprecated file apps/web/sentry.client.config.ts exists. Use instrumentation-client.ts instead."
 fi
 
-if [[ ! -f "apps/web/instrumentation-client.ts" ]]; then
-  fail "Missing apps/web/instrumentation-client.ts for Sentry client instrumentation."
+if [[ ! -f "apps/web/src/instrumentation-client.ts" ]]; then
+  fail "Missing apps/web/src/instrumentation-client.ts for Sentry client instrumentation."
 fi
 
 info "Running API critical tests..."
@@ -47,12 +47,11 @@ bun run --cwd services/api test \
 info "Building API..."
 bun run --cwd services/api build
 
-if [[ "${STRICT_WEB_TYPECHECK:-0}" == "1" ]]; then
-  info "Running strict web typecheck..."
-  bun run --cwd apps/web typecheck
-else
-  warn "Skipping strict web typecheck (set STRICT_WEB_TYPECHECK=1 to enable)."
-fi
+info "Running web typecheck..."
+bun run --cwd apps/web typecheck
+
+info "Running Convex typecheck..."
+bun run convex:typecheck
 
 info "Running migration readiness check (requires DATABASE_URL)..."
 if [[ -z "${DATABASE_URL:-}" ]]; then
