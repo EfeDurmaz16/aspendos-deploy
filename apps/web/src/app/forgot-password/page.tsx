@@ -9,7 +9,6 @@ import {
     Warning,
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { useState } from 'react';
 import { LogoMark } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';

@@ -12,12 +12,9 @@ import {
     GithubLogo,
     Lightning,
     ListChecks,
-    Prohibit,
-    Question,
     Seal,
     SealCheck,
     ShieldCheck,
-    SignIn,
     Sparkle,
 } from '@phosphor-icons/react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
@@ -1102,7 +1099,7 @@ function FAQSection() {
 
                 <div className="space-y-0">
                     {faqs.map((faq, idx) => (
-                        <div key={idx} className="border-b border-border/40">
+                        <div key={faq.q} className="border-b border-border/40">
                             <button
                                 type="button"
                                 onClick={() => setOpenIndex(openIndex === idx ? null : idx)}

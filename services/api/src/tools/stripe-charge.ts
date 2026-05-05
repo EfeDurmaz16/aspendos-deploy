@@ -36,7 +36,7 @@ export const stripeChargeTool: ToolDefinition = {
         };
     },
 
-    async execute(args: unknown, ctx: ToolContext): Promise<ToolResult> {
+    async execute(args: unknown, _ctx: ToolContext): Promise<ToolResult> {
         const { amount, currency, customer_id, description } = args as {
             amount: number;
             currency?: string;

@@ -71,7 +71,7 @@ export default function ChatIndexPage() {
         if (isLoaded && !isSignedIn) {
             hardNavigate('/login', 'replace');
         }
-    }, [isLoaded, isSignedIn, router]);
+    }, [isLoaded, isSignedIn]);
 
     const handleNewChat = useCallback(async () => {
         try {

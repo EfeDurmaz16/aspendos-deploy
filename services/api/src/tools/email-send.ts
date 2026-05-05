@@ -31,8 +31,8 @@ export const emailSendTool: ToolDefinition = {
         };
     },
 
-    async execute(args: unknown, ctx: ToolContext): Promise<ToolResult> {
-        const { to, subject, body } = args as { to: string; subject: string; body: string };
+    async execute(args: unknown, _ctx: ToolContext): Promise<ToolResult> {
+        const { to, subject } = args as { to: string; subject: string; body: string };
 
         if (!to || !subject) {
             return { success: false, error: 'Missing to or subject' };

@@ -67,8 +67,13 @@ export default function SkillsPage() {
                     ))}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <Skeleton key={`skel-card-${i}`} className="h-32 w-full rounded-xl" />
+                    {[
+                        'skills-skeleton-1',
+                        'skills-skeleton-2',
+                        'skills-skeleton-3',
+                        'skills-skeleton-4',
+                    ].map((key) => (
+                        <Skeleton key={key} className="h-32 w-full rounded-xl" />
                     ))}
                 </div>
             </main>

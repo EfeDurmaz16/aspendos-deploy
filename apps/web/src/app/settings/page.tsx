@@ -116,7 +116,7 @@ export default function SettingsPage() {
         if (isLoaded && isSignedIn) {
             loadSettings();
         }
-    }, [isLoaded, isSignedIn, router]);
+    }, [isLoaded, isSignedIn]);
 
     const updateSettings = <K extends keyof UserSettings>(
         category: K,
