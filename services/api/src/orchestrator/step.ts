@@ -36,6 +36,9 @@ export async function runToolStep(
 
     const fides = getFides();
     const signResult = await fides.signToolCall(toolName, args, metadata);
+    const preGovernanceSignature = await fides.signGovernanceCommit(toolName, args, metadata, {
+        status: 'pending',
+    });
 
     const agit = getAgit();
     const convexPreCommit = await commitConvexGovernance({
@@ -43,8 +46,8 @@ export async function runToolStep(
         toolName,
         args,
         metadata,
-        fidesSignature: signResult.signature,
-        fidesDid: signResult.did,
+        fidesSignature: preGovernanceSignature.signature,
+        fidesDid: preGovernanceSignature.did,
         status: 'pending',
     });
     let preCommitHash = convexPreCommit?.commitHash;
@@ -91,14 +94,19 @@ export async function runToolStep(
         result = { success: false, error: `Tool ${toolName} not found` };
     }
 
+    const postStatus = result.success ? 'executed' : 'failed';
+    const postGovernanceSignature = await fides.signGovernanceCommit(toolName, args, metadata, {
+        result,
+        status: postStatus,
+    });
     const convexPostCommit = await commitConvexGovernance({
         userId: ctx.userId,
         toolName,
         args,
         metadata,
-        fidesSignature: signResult.signature,
-        fidesDid: signResult.did,
-        status: result.success ? 'executed' : 'failed',
+        fidesSignature: postGovernanceSignature.signature,
+        fidesDid: postGovernanceSignature.did,
+        status: postStatus,
         result,
     });
 

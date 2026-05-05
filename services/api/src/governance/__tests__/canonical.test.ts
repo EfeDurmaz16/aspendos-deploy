@@ -50,6 +50,24 @@ describe('canonical governance primitives', () => {
         );
     });
 
+    it('signs and verifies canonical governance commit payloads', async () => {
+        const fides = new FidesService();
+        const args = { z: 1, a: 2 };
+        const result = { success: true, value: { b: 2, a: 1 } };
+        const signed = await fides.signGovernanceCommit('file.write', args, metadata, {
+            result,
+            status: 'executed',
+        });
+        const payload = fides.getGovernanceCommitPayload('file.write', { a: 2, z: 1 }, metadata, {
+            result: { value: { a: 1, b: 2 }, success: true },
+            status: 'executed',
+        });
+
+        await expect(fides.verifySignature(payload, signed.signature, signed.did)).resolves.toBe(
+            true
+        );
+    });
+
     it('refuses FIDES fallback signatures in production', async () => {
         process.env.NODE_ENV = 'production';
         delete process.env.FIDES_TEST_SIGNING_SECRET;

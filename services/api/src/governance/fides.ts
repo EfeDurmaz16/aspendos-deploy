@@ -77,6 +77,21 @@ export class FidesService {
         });
     }
 
+    private governanceSignaturePayload(
+        toolName: string,
+        args: unknown,
+        metadata: ReversibilityMetadata,
+        options: { result?: unknown; status: 'pending' | 'executed' | 'failed' }
+    ) {
+        return canonicalJson({
+            args,
+            result: options.result,
+            reversibility_class: metadata.reversibility_class,
+            status: options.status,
+            tool_name: toolName,
+        });
+    }
+
     private async signWithFallback(payload: string): Promise<string> {
         if (!this.fallbackSecret) {
             throw new Error('FIDES fallback signing requested without explicit test secret');
@@ -131,6 +146,15 @@ export class FidesService {
         return this.signaturePayload(toolName, args, metadata);
     }
 
+    getGovernanceCommitPayload(
+        toolName: string,
+        args: unknown,
+        metadata: ReversibilityMetadata,
+        options: { result?: unknown; status: 'pending' | 'executed' | 'failed' }
+    ): string {
+        return this.governanceSignaturePayload(toolName, args, metadata, options);
+    }
+
     async signToolCall(
         toolName: string,
         args: unknown,
@@ -145,6 +169,23 @@ export class FidesService {
             signature: await this.signPayload(payload),
             did: this.did!,
             timestamp,
+        };
+    }
+
+    async signGovernanceCommit(
+        toolName: string,
+        args: unknown,
+        metadata: ReversibilityMetadata,
+        options: { result?: unknown; status: 'pending' | 'executed' | 'failed' }
+    ): Promise<FidesSignResult> {
+        await this.initialize();
+
+        return {
+            signature: await this.signPayload(
+                this.governanceSignaturePayload(toolName, args, metadata, options)
+            ),
+            did: this.did!,
+            timestamp: Date.now(),
         };
     }
 

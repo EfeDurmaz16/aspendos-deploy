@@ -1,3 +1,4 @@
+import { parseDID, verify as verifyFidesSignature } from '@fides/sdk';
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
@@ -50,6 +51,22 @@ function commitPayload(args: {
     };
 }
 
+function fidesSignaturePayload(args: {
+    args: unknown;
+    result?: unknown;
+    reversibility_class: string;
+    status: string;
+    tool_name: string;
+}) {
+    return {
+        args: args.args,
+        result: args.result,
+        reversibility_class: args.reversibility_class,
+        status: args.status,
+        tool_name: args.tool_name,
+    };
+}
+
 async function hashCommitPayload(args: {
     args: unknown;
     parent_hash?: string;
@@ -59,6 +76,45 @@ async function hashCommitPayload(args: {
     tool_name: string;
 }) {
     return await sha256Hex(canonicalJson(commitPayload(args)));
+}
+
+function base64ToBytes(value: string) {
+    const binary = atob(value);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+    }
+    return bytes;
+}
+
+async function verifyExternalFidesSignature(args: {
+    args: unknown;
+    fides_signature: string;
+    fides_signer_did: string;
+    result?: unknown;
+    reversibility_class: string;
+    status: string;
+    tool_name: string;
+}) {
+    try {
+        const publicKey = parseDID(args.fides_signer_did);
+        const payload = canonicalJson(
+            fidesSignaturePayload({
+                args: args.args,
+                result: args.result,
+                reversibility_class: args.reversibility_class,
+                status: args.status,
+                tool_name: args.tool_name,
+            })
+        );
+        return await verifyFidesSignature(
+            new TextEncoder().encode(payload),
+            base64ToBytes(args.fides_signature),
+            publicKey
+        );
+    } catch {
+        return false;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -150,9 +206,8 @@ export const signAndCommit = mutation({
         // a real SDK signature; Convex HMAC is kept as an explicitly labeled
         // fallback for direct local Convex callers.
         const signaturePayload = canonicalJson(
-            commitPayload({
+            fidesSignaturePayload({
                 args: args.args,
-                parent_hash: parentHash ?? undefined,
                 result: args.result,
                 reversibility_class: args.reversibility_class,
                 status,
@@ -285,18 +340,24 @@ export const verifyCommit = query({
         checks.hash_integrity = expectedHash === commit.hash;
 
         // Check 2: Verify the authority signature binding. External FIDES
-        // signatures are verified by API-side FIDES flows; Convex can only
-        // cryptographically verify its explicitly labeled HMAC fallback.
+        // signatures are Ed25519 signatures over the canonical semantic
+        // governance payload; Convex HMAC is only an explicitly labeled local
+        // fallback for direct Convex callers.
         if (commit.fides_signature && commit.fides_signer_did) {
             if (commit.fides_signature_source === 'external') {
-                checks.fides_signature =
-                    commit.fides_signer_did.startsWith('did:fides:') &&
-                    commit.fides_signature.length > 0;
+                checks.fides_signature = await verifyExternalFidesSignature({
+                    args: commit.args,
+                    fides_signature: commit.fides_signature,
+                    fides_signer_did: commit.fides_signer_did,
+                    result: commit.result,
+                    reversibility_class: commit.reversibility_class,
+                    status: commit.status,
+                    tool_name: commit.tool_name,
+                });
             } else {
                 const signaturePayload = canonicalJson(
-                    commitPayload({
+                    fidesSignaturePayload({
                         args: commit.args,
-                        parent_hash: commit.parent_hash,
                         result: commit.result,
                         reversibility_class: commit.reversibility_class,
                         status: commit.status,
