@@ -60,3 +60,34 @@ export const expire = mutation({
         await ctx.db.patch(args.id, { status: 'expired' });
     },
 });
+
+export const decide = mutation({
+    args: {
+        id: v.id('approvals'),
+        action: v.union(v.literal('approve'), v.literal('reject')),
+        now: v.number(),
+    },
+    handler: async (ctx, args) => {
+        const approval = await ctx.db.get(args.id);
+        if (!approval) {
+            return { outcome: 'not_found' as const };
+        }
+
+        const requestedStatus = args.action === 'approve' ? 'approved' : 'rejected';
+        if (approval.status !== 'pending') {
+            return {
+                outcome: 'already_decided' as const,
+                status: approval.status,
+                idempotent: approval.status === requestedStatus,
+            };
+        }
+
+        if (approval.expires_at < args.now) {
+            await ctx.db.patch(args.id, { status: 'expired' });
+            return { outcome: 'expired' as const, status: 'expired' as const };
+        }
+
+        await ctx.db.patch(args.id, { status: requestedStatus });
+        return { outcome: 'updated' as const, status: requestedStatus };
+    },
+});
