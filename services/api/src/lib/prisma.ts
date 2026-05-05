@@ -6,8 +6,6 @@
  * When CONVEX_URL is not set, returns safe fallback values.
  */
 
-import { api, getConvexClient, isConvexConfigured } from './convex';
-
 type AsyncFn = (...args: any[]) => Promise<any>;
 
 const readFallbacks: Record<string, any> = {

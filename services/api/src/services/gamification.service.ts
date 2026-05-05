@@ -840,7 +840,6 @@ export async function getLeaderboard(limit = 10) {
  */
 export async function getUserRank(userId: string): Promise<number> {
     try {
-        const profile = await getOrCreateProfile(userId);
         const leaderboard = await getLeaderboard(1000);
 
         const rank = leaderboard.findIndex((p) => p.userId === userId);

@@ -18,7 +18,6 @@ export const dbMigrate: ReversibleToolDef = {
 
     classify(args: Record<string, unknown>) {
         const sql = (args.sql as string) ?? '';
-        const isDDL = /\b(CREATE|ALTER|DROP|TRUNCATE)\b/i.test(sql);
         const isDestructive = /\b(DROP|TRUNCATE|DELETE\s+FROM)\b/i.test(sql);
 
         return {

@@ -9,7 +9,7 @@
  * utilities for Slack-native features beyond the SDK.
  */
 
-import { BADGE_COLORS, BADGE_EMOJI } from '../../messaging/badge-constants';
+import { BADGE_EMOJI } from '../../messaging/badge-constants';
 import type { ApprovalPayload } from '../types';
 
 // ============================================
@@ -28,7 +28,7 @@ export interface SlackBlock {
  */
 export function buildSlackApprovalBlocks(
     payload: ApprovalPayload,
-    callbackUrl: string
+    _callbackUrl: string
 ): SlackBlock[] {
     const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
         payload;

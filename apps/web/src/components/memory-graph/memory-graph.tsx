@@ -43,15 +43,6 @@ interface MemoryGraphProps {
     width?: number;
 }
 
-type GraphNode = NodeObject & {
-    id: string;
-    name: string;
-    color: string;
-    category: MemoryNodeCategory;
-    x?: number;
-    y?: number;
-};
-
 export function MemoryGraph({ className, height = 400, width }: MemoryGraphProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const graphRef = useRef<ForceGraphMethods | undefined>(undefined);

@@ -22,7 +22,7 @@ export const browserTool: ToolDefinition = {
         };
     },
 
-    async execute(args: unknown, ctx: ToolContext): Promise<ToolResult> {
+    async execute(args: unknown, _ctx: ToolContext): Promise<ToolResult> {
         const { url, action } = args as {
             url: string;
             action?: 'navigate' | 'screenshot' | 'extract';

@@ -210,7 +210,7 @@ export const click = tool({
             }
 
             // Use Steel's action API to perform click
-            const result = await cached.client.actions.click({
+            await cached.client.actions.click({
                 sessionId,
                 selector,
             });

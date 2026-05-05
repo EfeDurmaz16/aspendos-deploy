@@ -11,7 +11,7 @@ export class E2BSandboxService implements SandboxService {
         return !!this.apiKey;
     }
 
-    async createSandbox(opts: SandboxOpts): Promise<string> {
+    async createSandbox(_opts: SandboxOpts): Promise<string> {
         if (!this.apiKey) throw new Error('E2B_API_KEY not configured');
 
         const { Sandbox } = await import('@e2b/code-interpreter');

@@ -156,7 +156,7 @@ async function main() {
             process.exit(1);
         }
         console.log('Health check passed. Starting load test...\n');
-    } catch (e) {
+    } catch {
         console.error(`Cannot reach ${BASE_URL}/health - is the server running?`);
         process.exit(1);
     }

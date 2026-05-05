@@ -16,7 +16,7 @@ export const signIn = {
     email: async () => {
         window.location.href = '/login';
     },
-    social: async ({ provider }: { provider: string }) => {
+    social: async ({ provider: _provider }: { provider: string }) => {
         window.location.href = '/login';
     },
     passkey: async () => {

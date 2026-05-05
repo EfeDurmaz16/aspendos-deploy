@@ -274,9 +274,8 @@ export async function searchMemories(options: SearchMemoriesOptions): Promise<Me
 /**
  * Get memory by ID
  */
-export async function getMemory(id: string, _userId: string): Promise<Memory | null> {
+export async function getMemory(_id: string, _userId: string): Promise<Memory | null> {
     try {
-        const client = getConvexClient();
         // Convex memories doesn't have a single-get query — list and find
         // For now return null; in practice SuperMemory handles retrieval
         return null;
