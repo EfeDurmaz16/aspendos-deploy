@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/performance/noImgElement: Generic fallback wrapper must preserve native img props and onError behavior. */
+
 import { Image as ImageIcon } from '@phosphor-icons/react';
 import { type ImgHTMLAttributes, useState } from 'react';
 import { cn } from '@/lib/utils';

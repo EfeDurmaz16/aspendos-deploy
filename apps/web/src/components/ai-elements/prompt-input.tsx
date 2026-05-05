@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/performance/noImgElement: Attachment thumbnails and previews can use blob/data URLs from local uploads. */
+
 'use client';
 
 import {

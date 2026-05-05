@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/performance/noImgElement: Auth avatar URLs are provider-controlled and already small. */
+
 'use client';
 
 import {

@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/performance/noImgElement: Leaderboard avatars are small user-provided images. */
+
 'use client';
 
 import { Crown as CrownIcon, Medal as MedalIcon } from '@phosphor-icons/react';

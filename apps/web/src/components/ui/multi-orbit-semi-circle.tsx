@@ -1,4 +1,7 @@
+/* biome-ignore-all lint/performance/noImgElement: Orbit icons are remote SVG logos with fixed pixel sizing. */
+
 'use client';
+
 import { useEffect, useState } from 'react';
 
 const ICONS = [

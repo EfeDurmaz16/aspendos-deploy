@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/performance/noImgElement: Gallery supports local SVG placeholders and caller-provided sources without Next image host config. */
+
 'use client';
 
 import { ArrowLeft, ArrowRight, ArrowSquareOut as ArrowUpRight } from '@phosphor-icons/react';
