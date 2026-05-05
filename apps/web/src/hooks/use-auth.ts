@@ -1,63 +1,36 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-interface AuthState {
-    user: {
-        id: string;
-        email: string;
-        firstName: string | null;
-        lastName: string | null;
-        imageUrl: string | null;
-    } | null;
-    loading: boolean;
-}
+import { useAccessToken, useAuth as useWorkOSAuth } from '@workos-inc/authkit-nextjs/components';
 
 export function useAuth() {
-    const [state, setState] = useState<AuthState>({ user: null, loading: true });
-
-    useEffect(() => {
-        fetch('/api/user')
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => setState({ user: data?.user ?? null, loading: false }))
-            .catch(() => setState({ user: null, loading: false }));
-    }, []);
+    const { loading, sessionId, signOut, user } = useWorkOSAuth();
+    const { getAccessToken } = useAccessToken();
 
     return {
-        isLoaded: !state.loading,
-        isSignedIn: !!state.user,
-        userId: state.user?.id ?? null,
-        sessionId: state.user?.id ?? null,
-        getToken: async () => null,
-        signOut: async () => {
-            window.location.href = '/login';
-        },
+        isLoaded: !loading,
+        isSignedIn: !!user,
+        userId: user?.id ?? null,
+        sessionId: sessionId ?? null,
+        getToken: getAccessToken,
+        signOut,
     };
 }
 
 export function useUser() {
-    const [state, setState] = useState<AuthState>({ user: null, loading: true });
-
-    useEffect(() => {
-        fetch('/api/user')
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => setState({ user: data?.user ?? null, loading: false }))
-            .catch(() => setState({ user: null, loading: false }));
-    }, []);
+    const { loading, user } = useWorkOSAuth();
 
     return {
-        isLoaded: !state.loading,
-        isSignedIn: !!state.user,
-        user: state.user
+        isLoaded: !loading,
+        isSignedIn: !!user,
+        user: user
             ? {
-                  id: state.user.id,
-                  firstName: state.user.firstName,
-                  lastName: state.user.lastName,
-                  fullName:
-                      [state.user.firstName, state.user.lastName].filter(Boolean).join(' ') || null,
-                  emailAddresses: state.user.email ? [{ emailAddress: state.user.email }] : [],
-                  primaryEmailAddress: state.user.email ? { emailAddress: state.user.email } : null,
-                  imageUrl: state.user.imageUrl,
+                  id: user.id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  fullName: [user.firstName, user.lastName].filter(Boolean).join(' ') || null,
+                  emailAddresses: user.email ? [{ emailAddress: user.email }] : [],
+                  primaryEmailAddress: user.email ? { emailAddress: user.email } : null,
+                  imageUrl: user.profilePictureUrl,
               }
             : null,
     };
