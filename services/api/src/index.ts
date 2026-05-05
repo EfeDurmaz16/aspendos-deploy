@@ -432,6 +432,12 @@ app.get('/metrics', async (c) => {
     });
 });
 
+// Root probe aliases used by load balancers, Kubernetes probes, and public API
+// contract tests. Canonical API paths remain under /api/* below.
+app.route('/health', healthRoutes);
+app.route('/ready', healthRoutes);
+app.route('/status', statusRoutes);
+
 // Better Auth routes
 app.on(['POST', 'GET'], '/api/auth/*', (c) => {
     return auth.handler(c.req.raw);

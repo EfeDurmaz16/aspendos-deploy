@@ -26,11 +26,11 @@ export const agentTask = workflow.define({
                 commit_hash: args.commit_hash,
             });
 
-            const approval = await step.waitForEvent('approval_received', {
-                timeoutMs: 5 * 60 * 1000,
+            const approval = await step.awaitEvent<{ status: 'approved' | 'rejected' }>({
+                name: 'approval_received',
             });
 
-            if (!approval || (approval as any).status === 'rejected') {
+            if (approval.status === 'rejected') {
                 await step.runMutation(internal.workflows.recordPostCommit, {
                     commit_hash: args.commit_hash,
                     status: 'failed',

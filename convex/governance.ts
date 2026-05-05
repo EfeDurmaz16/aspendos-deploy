@@ -303,7 +303,11 @@ export const revertCommit = mutation({
         await ctx.db.patch(commit._id, { status: 'reverted' });
 
         // Look up snapshot if rollback_strategy references one
-        let snapshotData = null;
+        let snapshotData: {
+            snapshot_id: string;
+            target_path: string;
+            prior_content: string;
+        } | null = null;
         const rollbackStrategy = commit.rollback_strategy as
             | {
                   kind: string;
