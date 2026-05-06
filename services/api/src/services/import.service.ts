@@ -7,7 +7,7 @@
 
 import { randomUUID } from 'node:crypto';
 
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 import { jobQueue } from '../lib/job-queue';
 import * as importParsers from './import-parsers';
 
@@ -568,6 +568,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
 
                 // Create conversation in Convex
                 const convId = await client.mutation(api.conversations.create, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     title: entity.title || 'Imported Conversation',
                 });
@@ -576,6 +577,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
                 for (const msg of content.messages) {
                     const role = msg.role as 'user' | 'assistant' | 'system';
                     await client.mutation(api.messages.create, {
+                        service_secret: getConvexServiceSecret(),
                         conversation_id: convId,
                         user_id: userId as any,
                         role,

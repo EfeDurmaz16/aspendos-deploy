@@ -1,8 +1,20 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+declare const process: { env: { CONVEX_SERVICE_SECRET?: string } };
+
 const DEFAULT_CONVERSATION_LIMIT = 50;
 const MAX_CONVERSATION_LIMIT = 200;
+
+function requireServiceSecret(serviceSecret: string) {
+    const expected = process.env.CONVEX_SERVICE_SECRET;
+    if (!expected) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    if (serviceSecret !== expected) {
+        throw new Error('Invalid service secret');
+    }
+}
 
 function clampLimit(value: number | undefined) {
     return Math.min(Math.max(value ?? DEFAULT_CONVERSATION_LIMIT, 1), MAX_CONVERSATION_LIMIT);
@@ -10,10 +22,12 @@ function clampLimit(value: number | undefined) {
 
 export const create = mutation({
     args: {
+        service_secret: v.string(),
         user_id: v.id('users'),
         title: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const now = Date.now();
         return await ctx.db.insert('conversations', {
             user_id: args.user_id,
@@ -25,15 +39,17 @@ export const create = mutation({
 });
 
 export const get = query({
-    args: { id: v.id('conversations') },
+    args: { service_secret: v.string(), id: v.id('conversations') },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db.get(args.id);
     },
 });
 
 export const listByUser = query({
-    args: { user_id: v.id('users'), limit: v.optional(v.number()) },
+    args: { service_secret: v.string(), user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const limit = clampLimit(args.limit);
         const q = ctx.db
             .query('conversations')
@@ -44,22 +60,25 @@ export const listByUser = query({
 });
 
 export const updateTitle = mutation({
-    args: { id: v.id('conversations'), title: v.string() },
+    args: { service_secret: v.string(), id: v.id('conversations'), title: v.string() },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.patch(args.id, { title: args.title });
     },
 });
 
 export const touch = mutation({
-    args: { id: v.id('conversations') },
+    args: { service_secret: v.string(), id: v.id('conversations') },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.patch(args.id, { last_message_at: Date.now() });
     },
 });
 
 export const remove = mutation({
-    args: { id: v.id('conversations') },
+    args: { service_secret: v.string(), id: v.id('conversations') },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.delete(args.id);
     },
 });

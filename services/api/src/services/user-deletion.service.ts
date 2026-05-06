@@ -11,7 +11,7 @@
  */
 
 import { prisma } from '@aspendos/db';
-import { api, getConvexClient, isConvexConfigured } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret, isConvexConfigured } from '../lib/convex';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -315,6 +315,7 @@ export async function exportUserData(userId: string): Promise<ExportData> {
 
         // Fetch conversations
         const conversations = await client.query(api.conversations.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
 
@@ -323,6 +324,7 @@ export async function exportUserData(userId: string): Promise<ExportData> {
         for (const conv of conversations) {
             try {
                 const messages = await client.query(api.messages.listByConversation, {
+                    service_secret: getConvexServiceSecret(),
                     conversation_id: conv._id,
                 });
                 chats.push({
@@ -474,7 +476,10 @@ export async function getDataSummary(userId: string): Promise<DataSummary> {
         const client = getConvexClient();
 
         const [conversations, memoriesRaw, actionLogs] = await Promise.all([
-            client.query(api.conversations.listByUser, { user_id: userId as any }),
+            client.query(api.conversations.listByUser, {
+                service_secret: getConvexServiceSecret(),
+                user_id: userId as any,
+            }),
             client.query(api.memories.listByUser, { user_id: userId as any }),
             client.query(api.actionLog.listByUser, { user_id: userId as any, limit: 5000 }),
         ]);
@@ -484,6 +489,7 @@ export async function getDataSummary(userId: string): Promise<DataSummary> {
         for (const conv of conversations.slice(0, 50)) {
             try {
                 const msgs = await client.query(api.messages.listByConversation, {
+                    service_secret: getConvexServiceSecret(),
                     conversation_id: conv._id,
                 });
                 messageCount += msgs.length;
@@ -680,17 +686,25 @@ export async function anonymizeUser(userId: string): Promise<void> {
 
         // Delete all conversations and messages
         const conversations = await client.query(api.conversations.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
         for (const conv of conversations) {
             try {
                 const messages = await client.query(api.messages.listByConversation, {
+                    service_secret: getConvexServiceSecret(),
                     conversation_id: conv._id,
                 });
                 for (const msg of messages) {
-                    await client.mutation(api.messages.remove, { id: msg._id });
+                    await client.mutation(api.messages.remove, {
+                        service_secret: getConvexServiceSecret(),
+                        id: msg._id,
+                    });
                 }
-                await client.mutation(api.conversations.remove, { id: conv._id });
+                await client.mutation(api.conversations.remove, {
+                    service_secret: getConvexServiceSecret(),
+                    id: conv._id,
+                });
             } catch {
                 /* continue */
             }

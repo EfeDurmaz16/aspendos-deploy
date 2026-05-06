@@ -5,7 +5,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@aspendos/db';
-import { api, getConvexClient, isConvexConfigured } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret, isConvexConfigured } from '../lib/convex';
 
 type Chat = any;
 type Message = any;
@@ -21,7 +21,10 @@ async function getOwnedConversation(client: ConvexClient, chatId: string, userId
     const convexUserId = await resolveConvexUserId(client, userId);
     if (!convexUserId) return null;
 
-    const chat = await client.query(api.conversations.get, { id: chatId as any });
+    const chat = await client.query(api.conversations.get, {
+        service_secret: getConvexServiceSecret(),
+        id: chatId as any,
+    });
     if (!chat || chat.user_id !== convexUserId) return null;
 
     return { chat, convexUserId };
@@ -104,6 +107,7 @@ export async function createChat(input: CreateChatInput): Promise<Chat> {
         const user = await client.query(api.users.getByWorkOSId, { workos_id: input.userId });
         if (!user) return null;
         const id = await client.mutation(api.conversations.create, {
+            service_secret: getConvexServiceSecret(),
             user_id: user._id,
             title: input.title || 'New Chat',
         });
@@ -128,6 +132,7 @@ export async function listChats(options: ListChatsOptions): Promise<Chat[]> {
         const user = await client.query(api.users.getByWorkOSId, { workos_id: options.userId });
         if (!user) return [];
         const conversations = await client.query(api.conversations.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: user._id,
             limit: options.limit || 50,
         });
@@ -166,6 +171,7 @@ export async function getChatWithMessages(
         if (!owned) return null;
 
         const messages = await client.query(api.messages.listByConversation, {
+            service_secret: getConvexServiceSecret(),
             conversation_id: chatId as any,
             limit,
         });
@@ -204,6 +210,7 @@ export async function updateChat(
 
         if (data.title) {
             await client.mutation(api.conversations.updateTitle, {
+                service_secret: getConvexServiceSecret(),
                 id: chatId as any,
                 title: data.title,
             });
@@ -223,7 +230,10 @@ export async function deleteChat(chatId: string, userId: string) {
         const owned = await getOwnedConversation(client, chatId, userId);
         if (!owned) return { count: 0 };
 
-        await client.mutation(api.conversations.remove, { id: chatId as any });
+        await client.mutation(api.conversations.remove, {
+            service_secret: getConvexServiceSecret(),
+            id: chatId as any,
+        });
         return { count: 1 };
     } catch {
         return { count: 0 };
@@ -256,6 +266,7 @@ export async function createMessage(input: CreateMessageInput): Promise<Message>
         if (!owned) return null;
 
         const id = await client.mutation(api.messages.create, {
+            service_secret: getConvexServiceSecret(),
             conversation_id: input.chatId as any,
             user_id: owned.convexUserId,
             role: input.role,
@@ -294,6 +305,7 @@ export async function getMessages(
         }
 
         const messages = await client.query(api.messages.listByConversation, {
+            service_secret: getConvexServiceSecret(),
             conversation_id: chatId as any,
             limit,
         });
@@ -316,6 +328,7 @@ export async function autoGenerateTitle(chatId: string, firstMessage: string, us
         const title =
             firstMessage.length > 50 ? `${firstMessage.substring(0, 47)}...` : firstMessage;
         await client.mutation(api.conversations.updateTitle, {
+            service_secret: getConvexServiceSecret(),
             id: chatId as any,
             title,
         });
@@ -337,7 +350,10 @@ export async function addMessageFeedback(
         const client = getConvexClient();
         // Convex messages schema doesn't have metadata/feedback fields yet
         // Log it as an action instead
-        const message = await client.query(api.messages.get, { id: messageId as any });
+        const message = await client.query(api.messages.get, {
+            service_secret: getConvexServiceSecret(),
+            id: messageId as any,
+        });
         if (!message) return null;
 
         const owned = await getOwnedConversation(client, message.conversation_id, userId);
@@ -395,6 +411,7 @@ export async function forkChat(
 
         // Create new conversation
         const newChatId = await client.mutation(api.conversations.create, {
+            service_secret: getConvexServiceSecret(),
             user_id: convexUserId,
             title: `Fork of: ${originalChat.title || 'Untitled'}`,
         });
@@ -402,6 +419,7 @@ export async function forkChat(
         // Copy messages to new chat
         for (const msg of messagesToCopy) {
             await client.mutation(api.messages.create, {
+                service_secret: getConvexServiceSecret(),
                 conversation_id: newChatId,
                 user_id: msg.user_id || convexUserId,
                 role: msg.role,

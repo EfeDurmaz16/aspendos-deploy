@@ -36,6 +36,7 @@ vi.mock('../../lib/convex', () => ({
         mutation: convexMutation,
         query: convexQuery,
     })),
+    getConvexServiceSecret: vi.fn(() => 'convex-service-secret'),
     isConvexConfigured: vi.fn(() => true),
 }));
 
@@ -63,7 +64,10 @@ describe('chat service Convex ownership checks', () => {
         expect(convexQuery).toHaveBeenNthCalledWith(1, 'users.getByWorkOSId', {
             workos_id: 'workos-user-1',
         });
-        expect(convexQuery).toHaveBeenNthCalledWith(2, 'conversations.get', { id: 'chat-1' });
+        expect(convexQuery).toHaveBeenNthCalledWith(2, 'conversations.get', {
+            service_secret: 'convex-service-secret',
+            id: 'chat-1',
+        });
     });
 
     it('does not read messages from another Convex user conversation', async () => {
@@ -115,6 +119,7 @@ describe('chat service Convex ownership checks', () => {
             userId: 'workos-user-1',
         });
         expect(convexMutation).toHaveBeenCalledWith('messages.create', {
+            service_secret: 'convex-service-secret',
             conversation_id: 'chat-1',
             user_id: 'convex-user-1',
             role: 'user',
