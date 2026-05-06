@@ -188,8 +188,9 @@ export async function createReminder(
                 chatId,
             },
         });
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[PAC] Failed to persist reminder:', error);
+        throw error;
     }
 }
 
@@ -212,8 +213,9 @@ export async function getPendingReminders(userId: string, limit = 20) {
             )
             .sort((a: any, b: any) => (a.details?.triggerAt || 0) - (b.details?.triggerAt || 0))
             .slice(0, limit);
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[PAC] Failed to read pending reminders:', error);
+        throw error;
     }
 }
 
@@ -236,8 +238,9 @@ export async function getDueReminders(limit = 100) {
                     l.details?.triggerAt <= now
             )
             .slice(0, limit);
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[PAC] Failed to read due reminders:', error);
+        throw error;
     }
 }
 
@@ -281,8 +284,9 @@ export async function completeReminder(reminderId: string, userId: string) {
         }
 
         return { count: 1 };
-    } catch {
-        return { count: 0 };
+    } catch (error) {
+        console.error('[PAC] Failed to complete reminder:', error);
+        throw error;
     }
 }
 
@@ -304,8 +308,9 @@ export async function dismissReminder(reminderId: string, userId: string) {
             },
         });
         return { count: 1 };
-    } catch {
-        return { count: 0 };
+    } catch (error) {
+        console.error('[PAC] Failed to dismiss reminder:', error);
+        throw error;
     }
 }
 
@@ -343,8 +348,9 @@ export async function snoozeReminder(reminderId: string, userId: string, minutes
         });
 
         return { newTriggerAt };
-    } catch {
-        return { newTriggerAt };
+    } catch (error) {
+        console.error('[PAC] Failed to snooze reminder:', error);
+        throw error;
     }
 }
 
@@ -361,8 +367,9 @@ export async function getPACSettings(userId: string) {
         });
         const settingsLog = (logs || []).find((l: any) => l.event_type === 'pac_settings');
         if (settingsLog) return settingsLog.details;
-    } catch {
-        // fall through to defaults
+    } catch (error) {
+        console.error('[PAC] Failed to read PAC settings:', error);
+        throw error;
     }
 
     // Return default settings
@@ -389,8 +396,9 @@ export async function getPACSettings(userId: string) {
             event_type: 'pac_settings',
             details: defaults,
         });
-    } catch {
-        // Non-blocking
+    } catch (error) {
+        console.error('[PAC] Failed to persist default PAC settings:', error);
+        throw error;
     }
 
     return defaults;
@@ -426,8 +434,9 @@ export async function updatePACSettings(
             details: merged,
         });
         return merged;
-    } catch {
-        return merged;
+    } catch (error) {
+        console.error('[PAC] Failed to update PAC settings:', error);
+        throw error;
     }
 }
 
@@ -482,7 +491,7 @@ export async function getPACStats(userId: string) {
             (r: any) => r.details?.responseType === 'dismissed'
         ).length;
 
-        const effectiveness = await computeEffectiveness(userId);
+        const effectiveness = await computeEffectiveness(userId, { failOnReadError: true });
 
         return {
             total,
@@ -493,24 +502,9 @@ export async function getPACStats(userId: string) {
             completionRate: total > 0 ? (completed / total) * 100 : 0,
             effectiveness,
         };
-    } catch {
-        return {
-            total: 0,
-            pending: 0,
-            completed: 0,
-            snoozed: 0,
-            dismissed: 0,
-            completionRate: 0,
-            effectiveness: {
-                engagementRate: 0,
-                avgResponseTimeMin: 0,
-                optimalHour: null,
-                bestDayOfWeek: null,
-                implicitAccuracy: 0,
-                snoozeRate: 0,
-                recommendation: 'Not enough data yet. Keep using PAC reminders.',
-            },
-        };
+    } catch (error) {
+        console.error('[PAC] Failed to read PAC stats:', error);
+        throw error;
     }
 }
 
@@ -531,7 +525,10 @@ interface EffectivenessMetrics {
 /**
  * Compute PAC effectiveness from user's historical behavior.
  */
-async function computeEffectiveness(userId: string): Promise<EffectivenessMetrics> {
+async function computeEffectiveness(
+    userId: string,
+    options: { failOnReadError?: boolean } = {}
+): Promise<EffectivenessMetrics> {
     const defaultMetrics: EffectivenessMetrics = {
         engagementRate: 0,
         avgResponseTimeMin: 0,
@@ -682,7 +679,10 @@ async function computeEffectiveness(userId: string): Promise<EffectivenessMetric
             snoozeRate: Math.round(snoozeRate * 10) / 10,
             recommendation,
         };
-    } catch {
+    } catch (error) {
+        if (options.failOnReadError) {
+            throw error;
+        }
         return defaultMetrics;
     }
 }
