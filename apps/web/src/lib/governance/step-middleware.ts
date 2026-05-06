@@ -42,6 +42,7 @@ export type ReversibilityClass =
 /** Tool metadata used for governance decisions. */
 export interface ToolGovernanceMetadata {
     reversibility_class: ReversibilityClass;
+    approval_required?: boolean;
     rollback_strategy?: RollbackStrategy;
     human_explanation: string;
 }
@@ -214,7 +215,8 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
             metadata: meta,
         });
 
-        const requiresApproval = meta.reversibility_class === 'approval_only';
+        const requiresApproval =
+            meta.approval_required === true || meta.reversibility_class === 'approval_only';
 
         if (requiresApproval && onApprovalRequired) {
             await onApprovalRequired(commitHash, toolName);

@@ -9,7 +9,7 @@ const BLOCK_THRESHOLD_CENTS = 5000;
 
 export const stripeChargeTool: ToolDefinition = {
     name: 'stripe.charge',
-    description: 'Create a Stripe charge — blocked above $50, compensatable via refund below',
+    description: 'Create a Stripe charge — blocked above $50, approval-gated and refundable below',
 
     classify(args: unknown): ReversibilityMetadata {
         const { amount } = args as { amount?: number };
@@ -26,13 +26,13 @@ export const stripeChargeTool: ToolDefinition = {
 
         return {
             reversibility_class: 'compensatable',
-            approval_required: false,
+            approval_required: true,
             rollback_strategy: {
                 kind: 'compensation',
                 compensate_tool: 'stripe.refund',
                 compensate_args: {},
             },
-            human_explanation: `Charge of $${(cents / 100).toFixed(2)} can be refunded within Stripe's refund window.`,
+            human_explanation: `Charge of $${(cents / 100).toFixed(2)} requires human approval before execution and can be refunded within Stripe's refund window.`,
         };
     },
 

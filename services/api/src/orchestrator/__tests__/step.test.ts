@@ -85,6 +85,19 @@ describe('runToolStep', () => {
         expect(result.commitHash).toBeTruthy();
     });
 
+    it('pauses payment tools even when the action is compensatable', async () => {
+        const result = await runToolStep(
+            'stripe.charge',
+            { amount: 2500, customer_id: 'cus_123' },
+            ctx
+        );
+        expect(result.awaitingApproval).toBe(true);
+        expect(result.blocked).toBe(false);
+        expect(result.result.success).toBe(false);
+        expect(result.metadata.reversibility_class).toBe('compensatable');
+        expect(result.metadata.approval_required).toBe(true);
+    });
+
     it('executes undoable tools end-to-end', async () => {
         const result = await runToolStep(
             'file.write',

@@ -105,6 +105,7 @@ describe('stripe.charge (threshold-based)', () => {
     it('classifies small charge as compensatable', () => {
         const meta = stripeChargeTool.classify({ amount: 2500 });
         expect(meta.reversibility_class).toBe('compensatable');
+        expect(meta.approval_required).toBe(true);
     });
 
     it('classifies large charge as irreversible_blocked', () => {
