@@ -1,40 +1,12 @@
 import { v } from 'convex/values';
-import type { MutationCtx, QueryCtx } from './_generated/server';
 import { mutation, query } from './_generated/server';
+import { requireAuthenticatedUser } from './lib/auth';
 
 const DEFAULT_BYOK_CREDENTIAL_LIMIT = 50;
 const MAX_BYOK_CREDENTIAL_LIMIT = 200;
 
 function clampLimit(value: number | undefined) {
     return Math.min(Math.max(value ?? DEFAULT_BYOK_CREDENTIAL_LIMIT, 1), MAX_BYOK_CREDENTIAL_LIMIT);
-}
-
-async function requireAuthenticatedUser(ctx: QueryCtx | MutationCtx) {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-        throw new Error('Not authenticated');
-    }
-
-    const byTokenIdentifier = await ctx.db
-        .query('users')
-        .withIndex('by_auth_token_identifier', (q) =>
-            q.eq('auth_token_identifier', identity.tokenIdentifier)
-        )
-        .first();
-    if (byTokenIdentifier) {
-        return byTokenIdentifier;
-    }
-
-    const user = await ctx.db
-        .query('users')
-        .withIndex('by_workos_id', (q) => q.eq('workos_id', identity.subject))
-        .first();
-
-    if (!user) {
-        throw new Error('Authenticated user is not provisioned');
-    }
-
-    return user;
 }
 
 export const store = mutation({

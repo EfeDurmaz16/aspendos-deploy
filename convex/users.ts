@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
-import type { QueryCtx } from './_generated/server';
 import { mutation, query } from './_generated/server';
+import { findAuthenticatedUser } from './lib/auth';
 
 declare const process: { env: { CONVEX_SERVICE_SECRET?: string } };
 
@@ -12,28 +12,6 @@ function requireServiceSecret(serviceSecret: string) {
     if (serviceSecret !== expected) {
         throw new Error('Invalid service secret');
     }
-}
-
-async function requireAuthenticatedUser(ctx: QueryCtx) {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-        throw new Error('Not authenticated');
-    }
-
-    const byTokenIdentifier = await ctx.db
-        .query('users')
-        .withIndex('by_auth_token_identifier', (q) =>
-            q.eq('auth_token_identifier', identity.tokenIdentifier)
-        )
-        .first();
-    if (byTokenIdentifier) {
-        return byTokenIdentifier;
-    }
-
-    return await ctx.db
-        .query('users')
-        .withIndex('by_workos_id', (q) => q.eq('workos_id', identity.subject))
-        .first();
 }
 
 export const upsertFromWorkOS = mutation({
@@ -92,7 +70,7 @@ export const getByWorkOSId = query({
 export const getCurrent = query({
     args: {},
     handler: async (ctx) => {
-        return await requireAuthenticatedUser(ctx);
+        return await findAuthenticatedUser(ctx);
     },
 });
 
