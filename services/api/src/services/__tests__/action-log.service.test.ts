@@ -83,8 +83,22 @@ describe('action log service persistence', () => {
         );
     });
 
+    it('does not fake an empty session action list when Convex returns null', async () => {
+        convexQuery.mockResolvedValueOnce(null);
+
+        await expect(getSessionActions('user-1', 'session-1')).rejects.toThrow(
+            'Failed to load session actions'
+        );
+    });
+
     it('does not fake an empty causal chain when Convex reads fail', async () => {
         convexQuery.mockRejectedValueOnce(new Error('convex unavailable'));
+
+        await expect(getCausalChain('action-1')).rejects.toThrow('Failed to load causal chain');
+    });
+
+    it('does not fake an empty causal chain when Convex returns null', async () => {
+        convexQuery.mockResolvedValueOnce(null);
 
         await expect(getCausalChain('action-1')).rejects.toThrow('Failed to load causal chain');
     });
@@ -95,8 +109,20 @@ describe('action log service persistence', () => {
         await expect(getActionEffects('action-1')).rejects.toThrow('Failed to load action effects');
     });
 
+    it('does not fake empty action effects when Convex returns null', async () => {
+        convexQuery.mockResolvedValueOnce(null);
+
+        await expect(getActionEffects('action-1')).rejects.toThrow('Failed to load action effects');
+    });
+
     it('does not fake recent actions when Convex reads fail', async () => {
         convexQuery.mockRejectedValueOnce(new Error('convex unavailable'));
+
+        await expect(getRecentActions('user-1')).rejects.toThrow('Failed to load recent actions');
+    });
+
+    it('does not fake recent actions when Convex returns null', async () => {
+        convexQuery.mockResolvedValueOnce(null);
 
         await expect(getRecentActions('user-1')).rejects.toThrow('Failed to load recent actions');
     });

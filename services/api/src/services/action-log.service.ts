@@ -120,9 +120,12 @@ export async function getSessionActions(
             user_id: userId as any,
             limit: options?.limit ?? 100,
         });
+        if (!Array.isArray(all)) {
+            throw new Error('Convex action log returned an invalid session action list');
+        }
 
         // Filter by sessionId in JS (Convex action_log doesn't have sessionId index)
-        const filtered = (all || []).filter((a: any) => a.details?.sessionId === sessionId);
+        const filtered = all.filter((a: any) => a.details?.sessionId === sessionId);
 
         const offset = options?.offset ?? 0;
         return filtered.slice(offset, offset + (options?.limit ?? 100));
@@ -143,7 +146,9 @@ export async function getCausalChain(actionId: string, _maxDepth = 20) {
             service_secret: getConvexServiceSecret(),
             limit: 200,
         });
-        if (!recent) return [];
+        if (!Array.isArray(recent)) {
+            throw new Error('Convex action log returned an invalid causal chain list');
+        }
 
         // Build lookup map
         const byId = new Map<string, any>();
@@ -178,7 +183,9 @@ export async function getActionEffects(actionId: string, maxDepth = 10) {
             service_secret: getConvexServiceSecret(),
             limit: 500,
         });
-        if (!recent) return [];
+        if (!Array.isArray(recent)) {
+            throw new Error('Convex action log returned an invalid action effects list');
+        }
 
         // Build parent->children map
         const childrenMap = new Map<string, any[]>();
@@ -226,7 +233,9 @@ export async function getRecentActions(
             limit: options?.limit ?? 50,
         });
 
-        if (!actions) return [];
+        if (!Array.isArray(actions)) {
+            throw new Error('Convex action log returned an invalid recent actions list');
+        }
 
         // Filter by toolName in JS if requested
         if (options?.toolName) {
