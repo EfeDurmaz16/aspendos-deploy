@@ -46,41 +46,10 @@ export const create = mutation({
         counter_signer_did: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        void ctx;
         requireServiceSecret(args.service_secret);
-        const commit = {
-            user_id: args.user_id,
-            hash: args.hash,
-            tool_name: args.tool_name,
-            args: args.args,
-            status: args.status,
-            reversibility_class: args.reversibility_class,
-            timestamp: Date.now(),
-            ...(args.parent_hash === undefined ? {} : { parent_hash: args.parent_hash }),
-            ...(args.ancestor_chain === undefined ? {} : { ancestor_chain: args.ancestor_chain }),
-            ...(args.result === undefined ? {} : { result: args.result }),
-            ...(args.rollback_strategy === undefined
-                ? {}
-                : { rollback_strategy: args.rollback_strategy }),
-            ...(args.rollback_deadline === undefined
-                ? {}
-                : { rollback_deadline: args.rollback_deadline }),
-            ...(args.human_explanation === undefined
-                ? {}
-                : { human_explanation: args.human_explanation }),
-            ...(args.fides_signature === undefined
-                ? {}
-                : { fides_signature: args.fides_signature }),
-            ...(args.fides_signer_did === undefined
-                ? {}
-                : { fides_signer_did: args.fides_signer_did }),
-            ...(args.counter_signature === undefined
-                ? {}
-                : { counter_signature: args.counter_signature }),
-            ...(args.counter_signer_did === undefined
-                ? {}
-                : { counter_signer_did: args.counter_signer_did }),
-        };
-        return await ctx.db.insert('commits', commit);
+        void args;
+        throw new Error('Commit creation is append-only; use governance.signAndCommit');
     },
 });
 
