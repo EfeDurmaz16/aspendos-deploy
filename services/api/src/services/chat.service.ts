@@ -13,7 +13,10 @@ type User = any;
 type ConvexClient = ReturnType<typeof getConvexClient>;
 
 async function resolveConvexUserId(client: ConvexClient, userId: string) {
-    const user = await client.query(api.users.getByWorkOSId, { workos_id: userId });
+    const user = await client.query(api.users.getByWorkOSId, {
+        service_secret: getConvexServiceSecret(),
+        workos_id: userId,
+    });
     return user?._id ?? null;
 }
 
@@ -47,11 +50,17 @@ export async function getOrCreateUser(
         const client = getConvexClient();
 
         // Try by ID first
-        const existing = await client.query(api.users.get, { id: userId as any });
+        const existing = await client.query(api.users.get, {
+            service_secret: getConvexServiceSecret(),
+            id: userId as any,
+        });
         if (existing) return existing;
 
         // Fallback: try by email
-        const byEmail = await client.query(api.users.getByEmail, { email });
+        const byEmail = await client.query(api.users.getByEmail, {
+            service_secret: getConvexServiceSecret(),
+            email,
+        });
         if (byEmail) return byEmail;
     } catch (err) {
         console.error('[chat.service] getOrCreateUser error:', err);
@@ -60,6 +69,7 @@ export async function getOrCreateUser(
     try {
         const client = getConvexClient();
         const id = await client.mutation(api.users.upsertFromWorkOS, {
+            service_secret: getConvexServiceSecret(),
             workos_id: userId,
             email: email || `${userId}@placeholder.local`,
             name: _name,
@@ -76,7 +86,10 @@ export async function getOrCreateUser(
 export async function getUserById(userId: string): Promise<User | null> {
     try {
         const client = getConvexClient();
-        return await client.query(api.users.get, { id: userId as any });
+        return await client.query(api.users.get, {
+            service_secret: getConvexServiceSecret(),
+            id: userId as any,
+        });
     } catch {
         return null;
     }
@@ -104,7 +117,10 @@ export interface ListChatsOptions {
 export async function createChat(input: CreateChatInput): Promise<Chat> {
     try {
         const client = getConvexClient();
-        const user = await client.query(api.users.getByWorkOSId, { workos_id: input.userId });
+        const user = await client.query(api.users.getByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
+            workos_id: input.userId,
+        });
         if (!user) return null;
         const id = await client.mutation(api.conversations.create, {
             service_secret: getConvexServiceSecret(),
@@ -129,7 +145,10 @@ export async function createChat(input: CreateChatInput): Promise<Chat> {
 export async function listChats(options: ListChatsOptions): Promise<Chat[]> {
     try {
         const client = getConvexClient();
-        const user = await client.query(api.users.getByWorkOSId, { workos_id: options.userId });
+        const user = await client.query(api.users.getByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
+            workos_id: options.userId,
+        });
         if (!user) return [];
         const conversations = await client.query(api.conversations.listByUser, {
             service_secret: getConvexServiceSecret(),

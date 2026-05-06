@@ -65,7 +65,10 @@ publicApi.get('/audit/:userId/timeline', async (c) => {
 
     try {
         const client = getConvexClient();
-        const user = await client.query(api.users.getByWorkOSId, { workos_id: userId });
+        const user = await client.query(api.users.getByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
+            workos_id: userId,
+        });
         if (!user?._id) {
             return c.json({ error: 'Timeline not found' }, 404);
         }

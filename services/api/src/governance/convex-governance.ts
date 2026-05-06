@@ -34,7 +34,10 @@ export async function commitConvexGovernance(
 
     try {
         const client = getConvexClient();
-        const user = await client.query(api.users.getByWorkOSId, { workos_id: input.userId });
+        const user = await client.query(api.users.getByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
+            workos_id: input.userId,
+        });
         if (!user?._id) {
             if (isProductionRuntime()) {
                 throw new Error('Convex user is required for governance commit');

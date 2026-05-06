@@ -8,6 +8,14 @@ import { api } from '../../../../../../../convex/_generated/api';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yula.dev';
 
+function getConvexServiceSecret() {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
+}
+
 /**
  * POST /api/billing/portal
  * Creates a Stripe Customer Portal session so users can manage their subscription,
@@ -26,6 +34,7 @@ export async function POST() {
     try {
         // Look up the user in Convex to get their stripe_customer_id
         const convexUser = await convexServer.query(api.users.getByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
             workos_id: userId,
         });
 

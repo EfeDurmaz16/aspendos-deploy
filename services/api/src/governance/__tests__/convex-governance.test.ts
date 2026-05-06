@@ -107,6 +107,7 @@ describe('commitConvexGovernance', () => {
         });
 
         expect(mocks.convexQuery).toHaveBeenCalledWith('users.getByWorkOSId', {
+            service_secret: 'convex-service-secret',
             workos_id: 'workos-user-1',
         });
         expect(mocks.convexMutation).toHaveBeenCalledWith('governance.signAndCommit', {

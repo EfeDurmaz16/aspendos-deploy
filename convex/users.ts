@@ -2,6 +2,18 @@ import { v } from 'convex/values';
 import type { QueryCtx } from './_generated/server';
 import { mutation, query } from './_generated/server';
 
+declare const process: { env: { CONVEX_SERVICE_SECRET?: string } };
+
+function requireServiceSecret(serviceSecret: string) {
+    const expected = process.env.CONVEX_SERVICE_SECRET;
+    if (!expected) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    if (serviceSecret !== expected) {
+        throw new Error('Invalid service secret');
+    }
+}
+
 async function requireAuthenticatedWorkOSId(ctx: QueryCtx) {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -12,12 +24,14 @@ async function requireAuthenticatedWorkOSId(ctx: QueryCtx) {
 
 export const upsertFromWorkOS = mutation({
     args: {
+        service_secret: v.string(),
         workos_id: v.string(),
         email: v.string(),
         name: v.optional(v.string()),
         avatar_url: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const existing = await ctx.db
             .query('users')
             .withIndex('by_workos_id', (q) => q.eq('workos_id', args.workos_id))
@@ -26,8 +40,8 @@ export const upsertFromWorkOS = mutation({
         if (existing) {
             await ctx.db.patch(existing._id, {
                 email: args.email,
-                name: args.name,
-                avatar_url: args.avatar_url,
+                ...(args.name === undefined ? {} : { name: args.name }),
+                ...(args.avatar_url === undefined ? {} : { avatar_url: args.avatar_url }),
             });
             return existing._id;
         }
@@ -35,8 +49,8 @@ export const upsertFromWorkOS = mutation({
         return await ctx.db.insert('users', {
             workos_id: args.workos_id,
             email: args.email,
-            name: args.name,
-            avatar_url: args.avatar_url,
+            ...(args.name === undefined ? {} : { name: args.name }),
+            ...(args.avatar_url === undefined ? {} : { avatar_url: args.avatar_url }),
             tier: 'free',
             created_at: Date.now(),
         });
@@ -44,8 +58,9 @@ export const upsertFromWorkOS = mutation({
 });
 
 export const getByWorkOSId = query({
-    args: { workos_id: v.string() },
+    args: { service_secret: v.string(), workos_id: v.string() },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db
             .query('users')
             .withIndex('by_workos_id', (q) => q.eq('workos_id', args.workos_id))
@@ -65,8 +80,9 @@ export const getCurrent = query({
 });
 
 export const getByEmail = query({
-    args: { email: v.string() },
+    args: { service_secret: v.string(), email: v.string() },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db
             .query('users')
             .withIndex('by_email', (q) => q.eq('email', args.email))
@@ -75,14 +91,16 @@ export const getByEmail = query({
 });
 
 export const get = query({
-    args: { id: v.id('users') },
+    args: { service_secret: v.string(), id: v.id('users') },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db.get(args.id);
     },
 });
 
 export const updateTier = mutation({
     args: {
+        service_secret: v.string(),
         id: v.id('users'),
         tier: v.union(
             v.literal('free'),
@@ -94,26 +112,31 @@ export const updateTier = mutation({
         ),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.patch(args.id, { tier: args.tier });
     },
 });
 
 export const updateStripeCustomerId = mutation({
     args: {
+        service_secret: v.string(),
         id: v.id('users'),
         stripe_customer_id: v.string(),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.patch(args.id, { stripe_customer_id: args.stripe_customer_id });
     },
 });
 
 export const updateFidesDid = mutation({
     args: {
+        service_secret: v.string(),
         id: v.id('users'),
         fides_did: v.string(),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.patch(args.id, { fides_did: args.fides_did });
     },
 });

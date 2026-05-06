@@ -213,7 +213,10 @@ async function sendEmailNotification(
     let user: any = null;
     try {
         const client = getConvexClient();
-        user = await client.query(api.users.get, { id: userId as any });
+        user = await client.query(api.users.get, {
+            service_secret: getConvexServiceSecret(),
+            id: userId as any,
+        });
     } catch {
         return { success: false, channel: 'email', error: 'User lookup failed' };
     }

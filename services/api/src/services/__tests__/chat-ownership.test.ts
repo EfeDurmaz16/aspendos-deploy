@@ -62,6 +62,7 @@ describe('chat service Convex ownership checks', () => {
             messages: [{ _id: 'message-1', content: 'hello' }],
         });
         expect(convexQuery).toHaveBeenNthCalledWith(1, 'users.getByWorkOSId', {
+            service_secret: 'convex-service-secret',
             workos_id: 'workos-user-1',
         });
         expect(convexQuery).toHaveBeenNthCalledWith(2, 'conversations.get', {

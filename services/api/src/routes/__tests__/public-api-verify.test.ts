@@ -219,6 +219,7 @@ describe('public audit timeline route', () => {
 
         expect(response.status).toBe(200);
         expect(mocks.convexQuery).toHaveBeenNthCalledWith(1, 'users.getByWorkOSId', {
+            service_secret: 'convex-service-secret',
             workos_id: 'user-1',
         });
         expect(mocks.convexQuery).toHaveBeenNthCalledWith(2, 'governance.getCommitChain', {

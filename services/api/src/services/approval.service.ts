@@ -23,7 +23,10 @@ export interface CreateApprovalParams {
 }
 
 async function resolveConvexUserId(client: ConvexClient, userId: string) {
-    const user = await client.query(api.users.getByWorkOSId, { workos_id: userId });
+    const user = await client.query(api.users.getByWorkOSId, {
+        service_secret: getConvexServiceSecret(),
+        workos_id: userId,
+    });
     if (!user?._id) {
         throw new Error('Authenticated user is not provisioned in Convex');
     }
