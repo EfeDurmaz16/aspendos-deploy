@@ -98,7 +98,8 @@ bun run --cwd services/api test \
   src/tools/__tests__/reference-tools.test.ts \
   src/orchestrator/__tests__/step.test.ts \
   src/services/__tests__/approval.service.test.ts \
-  src/middleware/__tests__/idempotency.test.ts
+  src/middleware/__tests__/idempotency.test.ts \
+  src/lib/__tests__/job-queue.test.ts
 
 info "Running web governance and messaging critical tests..."
 bun run --cwd apps/web test \

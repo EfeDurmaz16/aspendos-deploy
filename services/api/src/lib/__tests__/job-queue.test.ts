@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { assertProcessLocalJobQueueAllowed } from '../job-queue';
 
 // We need to test the JobQueue class directly, so let's create a fresh instance
 class TestJobQueue {
@@ -143,6 +144,35 @@ describe('JobQueue', () => {
 
     beforeEach(() => {
         queue = new TestJobQueue();
+    });
+
+    describe('production state posture', () => {
+        it('refuses process-local jobs in production by default', () => {
+            const originalNodeEnv = process.env.NODE_ENV;
+            process.env.NODE_ENV = 'production';
+            delete process.env.ALLOW_PROCESS_LOCAL_JOB_QUEUE;
+
+            try {
+                expect(() => assertProcessLocalJobQueueAllowed('import-embedding')).toThrow(
+                    /durable queue/
+                );
+            } finally {
+                process.env.NODE_ENV = originalNodeEnv;
+            }
+        });
+
+        it('allows explicit process-local job queue opt-in', () => {
+            const originalNodeEnv = process.env.NODE_ENV;
+            process.env.NODE_ENV = 'production';
+            process.env.ALLOW_PROCESS_LOCAL_JOB_QUEUE = 'true';
+
+            try {
+                expect(() => assertProcessLocalJobQueueAllowed('import-embedding')).not.toThrow();
+            } finally {
+                process.env.NODE_ENV = originalNodeEnv;
+                delete process.env.ALLOW_PROCESS_LOCAL_JOB_QUEUE;
+            }
+        });
     });
 
     describe('register', () => {

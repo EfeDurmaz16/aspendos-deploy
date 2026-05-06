@@ -645,7 +645,14 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
             });
 
             // Queue background embedding job for all pending memories
-            queueEmbeddingJobs(userId, jobId);
+            try {
+                queueEmbeddingJobs(userId, jobId);
+            } catch (error) {
+                console.error(
+                    '[Import] Embedding queue unavailable; memories remain pending:',
+                    error
+                );
+            }
         }
 
         return {

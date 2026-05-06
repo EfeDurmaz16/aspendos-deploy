@@ -53,6 +53,17 @@ const DEFAULT_CONFIG: QueueConfig = {
     maxBackoffMs: 60000,
 };
 
+export function assertProcessLocalJobQueueAllowed(queue: string): void {
+    if (
+        process.env.NODE_ENV === 'production' &&
+        process.env.ALLOW_PROCESS_LOCAL_JOB_QUEUE !== 'true'
+    ) {
+        throw new Error(
+            `FATAL: queue "${queue}" uses the process-local job queue. Configure a durable queue before enabling background jobs in production.`
+        );
+    }
+}
+
 class JobQueue {
     private queues = new Map<string, QueueConfig>();
     private handlers = new Map<string, JobHandler>();
@@ -84,6 +95,8 @@ class JobQueue {
         data: T,
         options: { priority?: number; ttlMs?: number; delayMs?: number } = {}
     ): string {
+        assertProcessLocalJobQueueAllowed(queue);
+
         if (this.isShuttingDown) {
             throw new Error('Queue is shutting down, cannot accept new jobs');
         }
