@@ -73,7 +73,7 @@ export function getPrivacyPolicy() {
             {
                 title: 'Data We Collect',
                 content:
-                    'We collect: (a) Account data (email, name); (b) Chat conversations; (c) Memory extractions from your conversations; (d) Usage analytics (models used, token counts); (e) Billing information (processed by Polar).',
+                    'We collect: (a) Account data (email, name); (b) Chat conversations; (c) Memory extractions from your conversations; (d) Usage analytics (models used, token counts); (e) Billing information (processed by Stripe).',
             },
             {
                 title: 'How We Use Your Data',
@@ -88,7 +88,7 @@ export function getPrivacyPolicy() {
             {
                 title: 'Third-Party Processors',
                 content:
-                    'We share data with: (a) AI providers (OpenAI, Anthropic, Google, Groq) to generate responses; (b) Polar for billing; (c) Railway for hosting; (d) Sentry for error monitoring. Each processor has their own privacy policy.',
+                    'We share data with: (a) AI providers (OpenAI, Anthropic, Google, Groq) to generate responses; (b) Stripe for billing; (c) Railway for hosting; (d) Sentry for error monitoring. Each processor has their own privacy policy.',
             },
             {
                 title: 'Your Rights (GDPR)',

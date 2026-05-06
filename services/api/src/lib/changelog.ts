@@ -101,8 +101,8 @@ const CHANGELOG: ChangelogEntry[] = [
             'Council: query 4 AI models simultaneously',
             'PAC: proactive AI-initiated conversations',
             'ChatGPT and Claude conversation import',
-            'Polar billing with Free/Starter/Pro/Ultra tiers',
-            'Better Auth authentication',
+            'Billing with Free/Starter/Pro/Ultra tiers',
+            'Authentication',
         ],
     },
 ];

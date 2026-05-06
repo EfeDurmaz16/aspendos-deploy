@@ -16,7 +16,7 @@ export const getUsageQuerySchema = z.object({
 });
 
 /**
- * Plan enum (lowercase to match Polar API)
+ * Plan enum accepted by legacy API billing routes.
  */
 export const planSchema = z.enum(['starter', 'pro', 'ultra'], {
     errorMap: () => ({ message: 'plan must be one of: starter, pro, ultra' }),

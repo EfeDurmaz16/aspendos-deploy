@@ -805,7 +805,7 @@ model AuditLog {
 }
 
 model ProcessedWebhookEvent {
-  id        String   @id // Webhook event ID from Polar
+  id        String   @id // Legacy billing webhook event ID
   type      String // Event type (e.g., "subscription.created")
   createdAt DateTime @default(now())
 

@@ -89,7 +89,7 @@ const WEBHOOK_EVENTS: WebhookEventDef[] = [
         event: 'billing.subscription.created',
         description: 'A new subscription was created',
         category: 'billing',
-        payloadExample: { userId: 'user_123', tier: 'PRO', polarSubscriptionId: 'sub_123' },
+        payloadExample: { userId: 'user_123', tier: 'PRO', stripeSubscriptionId: 'sub_123' },
     },
     {
         event: 'billing.subscription.cancelled',

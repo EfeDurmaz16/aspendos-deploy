@@ -1388,7 +1388,7 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                         checkoutUrl: {
                             type: 'string',
                             format: 'uri',
-                            example: 'https://checkout.polar.sh/session_xyz',
+                            example: 'https://checkout.stripe.com/c/session_xyz',
                         },
                         sessionId: {
                             type: 'string',

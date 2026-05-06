@@ -123,7 +123,7 @@ export default function TermsPage() {
                             <li>
                                 Subscriptions are billed weekly, monthly, or annually in advance
                             </li>
-                            <li>Payment processing is handled by Polar, our payment provider</li>
+                            <li>Payment processing is handled by Stripe, our payment provider</li>
                             <li>
                                 You authorize us to charge your payment method for recurring
                                 subscriptions

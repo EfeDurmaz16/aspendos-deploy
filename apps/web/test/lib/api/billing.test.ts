@@ -54,10 +54,10 @@ describe('Billing API', () => {
         });
     });
 
-    describe('Polar.sh Integration', () => {
+    describe('Stripe Integration', () => {
         it('should handle webhook events', async () => {
             const webhookPayload = {
-                type: 'subscription.created',
+                type: 'customer.subscription.created',
                 data: {
                     id: 'sub_123',
                     customerId: 'cus_456',
@@ -71,7 +71,7 @@ describe('Billing API', () => {
                 json: () => Promise.resolve({ received: true }),
             });
 
-            const response = await fetch('/api/webhooks/polar', {
+            const response = await fetch('/api/billing/webhook', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(webhookPayload),
@@ -87,11 +87,11 @@ describe('Billing API', () => {
                 json: () => Promise.resolve({ error: 'Invalid signature' }),
             });
 
-            const response = await fetch('/api/webhooks/polar', {
+            const response = await fetch('/api/billing/webhook', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Polar-Signature': 'invalid',
+                    'Stripe-Signature': 'invalid',
                 },
                 body: JSON.stringify({}),
             });
@@ -107,7 +107,7 @@ describe('Billing API', () => {
                 ok: true,
                 json: () =>
                     Promise.resolve({
-                        checkoutUrl: 'https://polar.sh/checkout/abc123',
+                        checkoutUrl: 'https://checkout.stripe.com/c/abc123',
                     }),
             });
 
@@ -117,7 +117,7 @@ describe('Billing API', () => {
 
             expect(response.ok).toBe(true);
             const data = await response.json();
-            expect(data.checkoutUrl).toContain('polar.sh');
+            expect(data.checkoutUrl).toContain('checkout.stripe.com');
         });
     });
 
@@ -127,7 +127,7 @@ describe('Billing API', () => {
                 ok: true,
                 json: () =>
                     Promise.resolve({
-                        portalUrl: 'https://polar.sh/portal/abc123',
+                        portalUrl: 'https://billing.stripe.com/p/session/abc123',
                     }),
             });
 
@@ -137,7 +137,7 @@ describe('Billing API', () => {
 
             expect(response.ok).toBe(true);
             const data = await response.json();
-            expect(data.portalUrl).toContain('polar.sh');
+            expect(data.portalUrl).toContain('billing.stripe.com');
         });
     });
 });
