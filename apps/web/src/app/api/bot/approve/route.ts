@@ -128,7 +128,11 @@ export async function POST(request: Request) {
             },
         });
 
-        if (action === 'approve' && process.env.AGENT_RESUME_URL) {
+        if (
+            action === 'approve' &&
+            process.env.AGENT_RESUME_URL &&
+            decision.outcome !== 'already_decided'
+        ) {
             fetch(process.env.AGENT_RESUME_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
