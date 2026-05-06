@@ -5,6 +5,9 @@
     "type": "module",
     "main": "./src/index.ts",
     "types": "./src/index.ts",
+    "scripts": {
+        "test": "bunx vitest run src/**/*.test.ts"
+    },
     "license": "Apache-2.0",
     "keywords": [
         "ai-agents",
@@ -22,5 +25,10 @@
     "peerDependencies": {
         "@fides/sdk": ">=0.1.0",
         "@agit/sdk": ">=0.1.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "typescript": "^5.0.0",
+        "vitest": "^4.0.17"
     }
 }

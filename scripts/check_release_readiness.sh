@@ -67,6 +67,9 @@ bun run --cwd services/api test \
   src/routes/__tests__/memory-validation.test.ts \
   src/lib/__tests__/critical-readiness.test.ts
 
+info "Running core deterministic flow tests..."
+bun run test:core
+
 info "Building API..."
 bun run --cwd services/api build
 

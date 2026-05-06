@@ -23,6 +23,7 @@
         "check:fix": "biome check --write .",
         "typecheck:web": "bun run --cwd apps/web typecheck",
         "typecheck:api": "bunx tsc -p services/api/tsconfig.typecheck.json --noEmit",
+        "test:core": "bunx vitest run packages/aspendos-core/src/**/*.test.ts",
         "test:api": "bun run --cwd services/api test",
         "test:web": "bun run --cwd apps/web test",
         "convex:typecheck": "bunx convex typecheck",

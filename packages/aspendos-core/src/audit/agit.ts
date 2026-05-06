@@ -63,23 +63,31 @@ async function sha256Hex(input: string): Promise<string> {
 
 export class AgitService {
     private client: any = null;
-    private fidesClient: any = null;
     private initialized = false;
+    private localHistory = new Map<string, CommitRecord[]>();
 
     async initialize(): Promise<void> {
         if (this.initialized) return;
 
+        const repoPath = process.env.AGIT_REPO_PATH;
+        if (!repoPath) {
+            if (isProductionRuntime()) {
+                throw new Error(
+                    'AGIT_REPO_PATH is required in production. Refusing in-memory AGIT commits.'
+                );
+            }
+            if (!allowsDeterministicFallback()) {
+                throw new Error(
+                    'AGIT_REPO_PATH is required unless ALLOW_IN_MEMORY_GOVERNANCE=true is set for local development. Refusing in-memory AGIT commits.'
+                );
+            }
+            this.initialized = true;
+            return;
+        }
+
         try {
             const agit = await import('@agit/sdk');
-            this.client = new agit.AgitClient({ adapter: 'memory' });
-            await this.client.open();
-
-            const fidesMod = await import('@fides/sdk');
-            const keyPair = await fidesMod.generateKeyPair();
-            this.fidesClient = new agit.AgitFidesClient(this.client, {
-                did: fidesMod.generateDID(keyPair.publicKey),
-                keyPair,
-            });
+            this.client = await agit.AgitClient.open(repoPath, { agentId: 'aspendos-core' });
             this.initialized = true;
         } catch {
             if (isProductionRuntime() || !allowsDeterministicFallback()) {
@@ -103,20 +111,24 @@ export class AgitService {
             result: opts.result,
         };
 
-        if (this.fidesClient) {
+        if (this.client) {
             try {
-                const branch = `user_${opts.userId}`;
-                try {
-                    await this.client.branch.create({ name: branch, from: 'main' });
-                } catch {
-                    // Branch may already exist
-                }
-
-                const result = await this.fidesClient.signedCommit(state, message);
+                const hash = await this.client.commit({
+                    memory: state,
+                    message,
+                    metadata: {
+                        did: opts.fidesDid,
+                        fidesDid: opts.fidesDid,
+                        fidesSignature: opts.fidesSignature,
+                        signature: opts.fidesSignature,
+                        type: opts.type,
+                        userId: opts.userId,
+                    },
+                });
                 return {
-                    hash: result.hash ?? (await this.generateHash(opts, message, state)),
-                    did: result.did ?? opts.fidesDid,
-                    signature: result.signature ?? opts.fidesSignature,
+                    hash,
+                    did: opts.fidesDid,
+                    signature: opts.fidesSignature,
                     timestamp: Date.now(),
                 };
             } catch (error) {
@@ -126,12 +138,16 @@ export class AgitService {
             }
         }
 
-        return {
+        const record = {
             hash: await this.generateHash(opts, message, state),
             did: opts.fidesDid,
             signature: opts.fidesSignature,
             timestamp: Date.now(),
         };
+        const history = this.localHistory.get(opts.userId) ?? [];
+        history.unshift(record);
+        this.localHistory.set(opts.userId, history);
+        return record;
     }
 
     async historyForUser(userId: string, limit = 50): Promise<CommitRecord[]> {
@@ -139,32 +155,38 @@ export class AgitService {
 
         if (this.client) {
             try {
-                const logs = await this.client.log({ limit, branch: `user_${userId}` });
-                return logs.map((l: any) => ({
-                    hash: l.hash,
-                    did: l.metadata?.did ?? '',
-                    signature: l.metadata?.signature ?? '',
-                    timestamp: l.timestamp ?? Date.now(),
-                }));
+                const logs = await this.client.log({ limit });
+                return logs
+                    .filter((l: any) => l.metadata?.userId === userId)
+                    .slice(0, limit)
+                    .map((l: any) => ({
+                        hash: l.hash,
+                        did: l.metadata?.did ?? l.metadata?.fidesDid ?? '',
+                        signature: l.metadata?.signature ?? l.metadata?.fidesSignature ?? '',
+                        timestamp: l.timestamp ?? Date.now(),
+                    }));
             } catch (error) {
                 if (isProductionRuntime()) throw error;
                 return [];
             }
         }
-        return [];
+        return (this.localHistory.get(userId) ?? []).slice(0, limit);
     }
 
     async verifyCommit(hash: string): Promise<boolean> {
         await this.initialize();
 
-        if (this.fidesClient) {
+        if (this.client) {
             try {
-                return await this.fidesClient.verifyCommit(hash);
+                await this.client.getState(hash);
+                return true;
             } catch {
                 return false;
             }
         }
-        return false;
+        return [...this.localHistory.values()].some((records) =>
+            records.some((record) => record.hash === hash)
+        );
     }
 
     async revert(_userId: string, hash: string): Promise<{ success: boolean; message: string }> {
