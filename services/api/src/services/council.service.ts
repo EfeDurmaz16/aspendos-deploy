@@ -178,8 +178,7 @@ export async function createCouncilSession(userId: string, query: string) {
         return { id: sessionId, userId, query, status: 'PENDING' };
     } catch (error) {
         console.error('[Council] createCouncilSession failed:', error);
-        const sessionId = `council_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        return { id: sessionId, userId, query, status: 'PENDING' };
+        throw error;
     }
 }
 
@@ -231,8 +230,9 @@ export async function getCouncilSession(sessionId: string, userId: string) {
                 createdAt: new Date(r.timestamp),
             })),
         };
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Council] getCouncilSession failed:', error);
+        throw error;
     }
 }
 
@@ -259,8 +259,9 @@ export async function listCouncilSessions(userId: string, limit = 20) {
             }));
 
         return sessions;
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Council] listCouncilSessions failed:', error);
+        throw error;
     }
 }
 
@@ -425,8 +426,9 @@ export async function updateSessionStatus(sessionId: string) {
         });
 
         return status;
-    } catch {
-        return 'PENDING' as const;
+    } catch (error) {
+        console.error('[Council] updateSessionStatus failed:', error);
+        throw error;
     }
 }
 
@@ -481,7 +483,7 @@ export async function selectResponse(sessionId: string, userId: string, persona:
     } catch (error) {
         if (error instanceof Error && error.message === 'Session not found') throw error;
         console.error('[Council] selectResponse failed:', error);
-        return { success: true };
+        throw error;
     }
 }
 
@@ -632,13 +634,9 @@ export async function getCouncilStats(userId: string) {
             latency: { avgMs, minMs, maxMs },
             insights: qualityInsights,
         };
-    } catch {
-        return {
-            totalSessions: 0,
-            preferences: {},
-            latency: { avgMs: 0, minMs: 0, maxMs: 0 },
-            insights: computeCouncilInsights({}, 0),
-        };
+    } catch (error) {
+        console.error('[Council] getCouncilStats failed:', error);
+        throw error;
     }
 }
 
