@@ -8,12 +8,13 @@
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { prisma } from '../lib/prisma';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 const sessionRoutes = new Hono();
 
 // All session routes require authentication
 sessionRoutes.use('/*', requireAuth);
+sessionRoutes.use('/*', rejectApiKeyAuth);
 
 /**
  * GET /sessions

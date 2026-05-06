@@ -114,6 +114,7 @@ bun run --cwd services/api test \
   src/routes/__tests__/workspace.test.ts \
   src/routes/__tests__/prompt-templates.test.ts \
   src/routes/__tests__/import-session-boundary.test.ts \
+  src/routes/__tests__/sessions.test.ts \
   src/__tests__/integration/gdpr-compliance.test.ts \
   src/lib/__tests__/cost-tracker.test.ts \
   src/lib/__tests__/data-retention.test.ts \
