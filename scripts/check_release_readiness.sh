@@ -27,9 +27,9 @@ require_secret_for_release() {
   local name="$1"
   if [[ -z "${!name:-}" ]]; then
     if require_database_url_for_release; then
-      fail "$name is required for CI/release. Set $name before deploying server-only Convex paths."
+      fail "$name is required for CI/release. Set $name before deploying production paths."
     fi
-    warn "$name is not set; local-only run cannot exercise server-only Convex approval/allowlist paths."
+    warn "$name is not set; local-only run cannot exercise the matching production path."
   fi
 }
 
@@ -80,6 +80,10 @@ info "Checking server-only Convex secret posture..."
 require_secret_for_release CONVEX_SERVICE_SECRET
 require_secret_for_release BOT_APPROVAL_WEBHOOK_SECRET
 require_secret_for_release STRIPE_WEBHOOK_SECRET
+
+info "Checking distributed rate limit secret posture..."
+require_secret_for_release UPSTASH_REDIS_REST_URL
+require_secret_for_release UPSTASH_REDIS_REST_TOKEN
 
 info "Running API critical tests..."
 bun run --cwd services/api test \

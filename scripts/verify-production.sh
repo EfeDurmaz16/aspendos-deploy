@@ -197,7 +197,7 @@ if [ -n "${UPSTASH_REDIS_REST_URL:-}" ] && [ -n "${UPSTASH_REDIS_REST_TOKEN:-}" 
         fail "Redis unreachable (HTTP $HTTP_CODE)"
     fi
 else
-    warn "Redis not configured — rate limiting will use in-memory store"
+    fail "Redis not configured — production rate limiting requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN"
 fi
 
 # ============================================

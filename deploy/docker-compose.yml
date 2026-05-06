@@ -21,7 +21,7 @@
 #    - Provider: Upstash (REST API), or self-hosted Redis
 #    - Set via: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN in .env.production
 #    - Required: Yes in production (rate limiting, semantic cache, session store)
-#    - Note: Without Redis, rate limiting falls back to in-memory (single-instance only)
+#    - Note: Production startup fails without Redis; do not rely on in-memory rate limiting.
 #
 # 3. Qdrant Vector Database
 #    - Provider: Qdrant Cloud, or self-hosted
