@@ -74,9 +74,55 @@ securityRoutes.get('/audit', (c) => {
             details: process.env.DATABASE_URL ? 'Configured' : 'Missing DATABASE_URL',
         },
         {
-            name: 'Auth Secret',
-            status: process.env.BETTER_AUTH_SECRET ? 'pass' : 'fail',
-            details: process.env.BETTER_AUTH_SECRET ? 'Configured' : 'Missing BETTER_AUTH_SECRET',
+            name: 'WorkOS AuthKit',
+            status:
+                process.env.WORKOS_CLIENT_ID &&
+                process.env.WORKOS_API_KEY &&
+                process.env.WORKOS_COOKIE_PASSWORD
+                    ? 'pass'
+                    : 'fail',
+            details:
+                process.env.WORKOS_CLIENT_ID &&
+                process.env.WORKOS_API_KEY &&
+                process.env.WORKOS_COOKIE_PASSWORD
+                    ? 'Configured'
+                    : 'Missing WorkOS auth configuration',
+        },
+        {
+            name: 'Convex Service Boundary',
+            status:
+                process.env.NEXT_PUBLIC_CONVEX_URL && process.env.CONVEX_SERVICE_SECRET
+                    ? 'pass'
+                    : 'fail',
+            details:
+                process.env.NEXT_PUBLIC_CONVEX_URL && process.env.CONVEX_SERVICE_SECRET
+                    ? 'Configured'
+                    : 'Missing Convex URL or service secret',
+        },
+        {
+            name: 'FIDES/AGIT Governance',
+            status:
+                process.env.AGIT_REPO_PATH && process.env.NODE_ENV === 'production'
+                    ? 'pass'
+                    : 'fail',
+            details:
+                process.env.AGIT_REPO_PATH && process.env.NODE_ENV === 'production'
+                    ? 'Production AGIT repository configured'
+                    : 'Missing AGIT_REPO_PATH or production NODE_ENV',
+        },
+        {
+            name: 'Stripe Webhook Secret',
+            status: process.env.STRIPE_WEBHOOK_SECRET ? 'pass' : 'fail',
+            details: process.env.STRIPE_WEBHOOK_SECRET
+                ? 'Configured'
+                : 'Missing STRIPE_WEBHOOK_SECRET',
+        },
+        {
+            name: 'Bot Approval Webhook Secret',
+            status: process.env.BOT_APPROVAL_WEBHOOK_SECRET ? 'pass' : 'fail',
+            details: process.env.BOT_APPROVAL_WEBHOOK_SECRET
+                ? 'Configured'
+                : 'Missing BOT_APPROVAL_WEBHOOK_SECRET',
         },
         {
             name: 'Error Tracking',

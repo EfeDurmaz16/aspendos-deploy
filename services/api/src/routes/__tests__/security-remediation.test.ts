@@ -14,6 +14,7 @@
 import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { auth } from '../../lib/auth';
 
 // ============================================
 // MOCKS
@@ -268,6 +269,50 @@ describe('Security Remediation: Security routes require admin auth', () => {
         const res = await app.request('/security/secrets-health');
         // requireAdmin on security routes checks ADMIN_USER_IDS - regular-user is not there
         expect(res.status).toBe(403);
+    });
+
+    it('reports current WorkOS, Convex, governance, and webhook security posture', async () => {
+        process.env.NODE_ENV = 'production';
+        process.env.ADMIN_USER_IDS = 'admin-user-1';
+        process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/db';
+        process.env.WORKOS_CLIENT_ID = 'client_123';
+        process.env.WORKOS_API_KEY = 'sk_test_123';
+        process.env.WORKOS_COOKIE_PASSWORD = '12345678901234567890123456789012';
+        process.env.NEXT_PUBLIC_CONVEX_URL = 'https://example.convex.cloud';
+        process.env.CONVEX_SERVICE_SECRET = '12345678901234567890123456789012';
+        process.env.AGIT_REPO_PATH = '/var/lib/yula/agit';
+        process.env.STRIPE_WEBHOOK_SECRET = 'whsec_123';
+        process.env.BOT_APPROVAL_WEBHOOK_SECRET = '12345678901234567890123456789012';
+        process.env.UPSTASH_REDIS_REST_URL = 'https://redis.example';
+        process.env.UPSTASH_REDIS_REST_TOKEN = 'redis-token';
+        (auth.api.getSession as any).mockResolvedValueOnce({
+            session: { id: 'sess-1', expiresAt: new Date(Date.now() + 60_000) },
+            user: {
+                id: 'admin-user-1',
+                email: 'admin@yula.dev',
+                name: 'Admin User',
+            },
+        });
+        mockPrisma.user.findUnique.mockResolvedValueOnce({ banned: false }).mockResolvedValueOnce({
+            id: 'admin-user-1',
+            email: 'admin@yula.dev',
+        });
+
+        const securityRoutes = (await import('../security')).default;
+        const app = new Hono();
+        app.route('/security', securityRoutes);
+
+        const res = await app.request('/security/audit');
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        const names = body.checks.map((check: { name: string }) => check.name);
+
+        expect(names).toContain('WorkOS AuthKit');
+        expect(names).toContain('Convex Service Boundary');
+        expect(names).toContain('FIDES/AGIT Governance');
+        expect(names).toContain('Stripe Webhook Secret');
+        expect(names).toContain('Bot Approval Webhook Secret');
+        expect(names).not.toContain('Auth Secret');
     });
 });
 
