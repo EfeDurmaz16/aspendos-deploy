@@ -110,6 +110,29 @@ describe('messaging approval actions', () => {
         );
     });
 
+    it('does not call a phantom bot undo endpoint from slash commands', async () => {
+        vi.stubGlobal('fetch', vi.fn());
+        const { handleSlashCommand } = await import('../../../src/lib/messaging/bot');
+        const thread = { post: vi.fn() };
+
+        await handleSlashCommand(thread, '/undo commit-123456');
+
+        expect(fetch).not.toHaveBeenCalled();
+        expect(thread.post).toHaveBeenCalledWith(
+            expect.objectContaining({
+                title: 'Undo Request',
+                children: expect.arrayContaining([
+                    expect.objectContaining({
+                        text: expect.stringContaining('was not reverted'),
+                    }),
+                    expect.objectContaining({
+                        text: expect.stringContaining('Use the web timeline'),
+                    }),
+                ]),
+            })
+        );
+    });
+
     it('does not initialize platform adapters without their verification secrets', async () => {
         vi.stubEnv('SLACK_BOT_TOKEN', 'xoxb-test');
         vi.stubEnv('SLACK_SIGNING_SECRET', '');

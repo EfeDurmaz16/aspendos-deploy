@@ -191,7 +191,7 @@ function buildApprovalRequest(payload: {
 // Slash Commands
 // ============================================
 
-async function handleSlashCommand(thread: any, text: string): Promise<void> {
+export async function handleSlashCommand(thread: any, text: string): Promise<void> {
     const [command, ...argParts] = text.split(' ');
     const args = argParts.join(' ');
 
@@ -206,24 +206,13 @@ async function handleSlashCommand(thread: any, text: string): Promise<void> {
                 Card({
                     title: 'Undo Request',
                     children: [
-                        CardText(`Attempting to revert commit \`${commitHash.slice(0, 8)}\`...`),
-                        CardText('This will be processed through the governance chain.'),
+                        CardText(`Commit \`${commitHash.slice(0, 8)}\` was not reverted.`),
+                        CardText(
+                            'Messaging /undo requires platform identity binding before it can safely mutate the audit chain. Use the web timeline to undo this commit.'
+                        ),
                     ],
                 })
             );
-            try {
-                const res = await fetch(`${CALLBACK_BASE}/api/bot/undo`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ commitHash }),
-                });
-                const result = await res.json();
-                await thread.post(
-                    result.success ? 'Revert completed.' : `Revert failed: ${result.error}`
-                );
-            } catch {
-                await thread.post('Failed to process undo request.');
-            }
             break;
         }
 
