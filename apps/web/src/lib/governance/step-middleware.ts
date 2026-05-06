@@ -85,8 +85,8 @@ export interface GovernanceOptions {
     toolMetadata?: Record<string, ToolGovernanceMetadata>;
     /**
      * Optional callback invoked when a tool requires approval.
-     * If not provided, approval_only and irreversible_blocked tools will
-     * proceed with a pending commit (the UI should present the approval).
+     * If not provided, approval_only tools proceed with a pending commit
+     * that the UI should present for human approval.
      */
     onApprovalRequired?: (commitHash: string, toolName: string) => Promise<void>;
     /**
@@ -199,9 +199,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
             metadata: meta,
         });
 
-        const requiresApproval =
-            meta.reversibility_class === 'approval_only' ||
-            meta.reversibility_class === 'irreversible_blocked';
+        const requiresApproval = meta.reversibility_class === 'approval_only';
 
         if (requiresApproval && onApprovalRequired) {
             await onApprovalRequired(commitHash, toolName);

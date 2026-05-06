@@ -49,4 +49,32 @@ describe('governance step middleware', () => {
             fides_signer_did: 'did:fides:web-agent-1',
         });
     });
+
+    it('treats unknown blocked tools as non-approvable audit records', async () => {
+        const convex = {
+            mutation: vi.fn().mockResolvedValueOnce({ commitHash: 'blocked-commit-1' }),
+            query: vi.fn(),
+        };
+        const onApprovalRequired = vi.fn();
+
+        const governance = createGovernanceCallbacks({
+            convex: convex as any,
+            userId: 'user-1' as any,
+            onApprovalRequired,
+        });
+
+        const result = await governance.preStep('unknown.dangerous', { value: true }, 'tool-1');
+
+        expect(result).toEqual({
+            commitHash: 'blocked-commit-1',
+            blocked: true,
+            requiresApproval: false,
+        });
+        expect(onApprovalRequired).not.toHaveBeenCalled();
+        expect(convex.mutation.mock.calls[0]?.[1]).toMatchObject({
+            tool_name: 'unknown.dangerous',
+            reversibility_class: 'irreversible_blocked',
+            human_explanation: 'Unknown tool — blocked by default (fail-closed)',
+        });
+    });
 });

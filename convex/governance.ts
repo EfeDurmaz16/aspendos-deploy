@@ -285,12 +285,9 @@ export const signAndCommit = mutation({
             timestamp: now,
         });
 
-        // 8. If this is an approval_only or irreversible_blocked tool, create
-        //    a pending approval automatically
-        if (
-            args.reversibility_class === 'approval_only' ||
-            args.reversibility_class === 'irreversible_blocked'
-        ) {
+        // 8. Approval-only tools create a pending approval automatically.
+        // Irreversible-blocked tools are audit records, not approvable work.
+        if (args.reversibility_class === 'approval_only') {
             await ctx.db.insert('approvals', {
                 user_id: args.user_id,
                 commit_hash: commitHash,
