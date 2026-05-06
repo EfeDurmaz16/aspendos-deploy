@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { assertSandboxOwner, getSandboxOwnerKey } from '../ownership';
 import { validateSandboxCommand, validateSandboxPath } from '../validation';
 
 describe('sandbox validation', () => {
@@ -38,5 +39,38 @@ describe('sandbox validation', () => {
         '/home/user/.ssh/id_rsa',
     ])('blocks sensitive path: %s', (path) => {
         expect(() => validateSandboxPath(path)).toThrow(/blocked sensitive file/);
+    });
+
+    it('requires sandbox owner context with user and session ids', () => {
+        expect(() => getSandboxOwnerKey(undefined)).toThrow(/user context required/);
+        expect(() => getSandboxOwnerKey({ userId: 'user-1', sessionId: '' })).toThrow(
+            /session context required/
+        );
+        expect(getSandboxOwnerKey({ userId: ' user-1 ', sessionId: ' session-1 ' })).toBe(
+            'user-1:session-1'
+        );
+    });
+
+    it('rejects unknown or cross-owner sandbox ids before provider connection', () => {
+        const owners = new Map([['sandbox-1', 'user-1:session-1']]);
+
+        expect(() =>
+            assertSandboxOwner(owners, 'sandbox-1', {
+                userId: 'user-1',
+                sessionId: 'session-1',
+            })
+        ).not.toThrow();
+        expect(() =>
+            assertSandboxOwner(owners, 'missing-sandbox', {
+                userId: 'user-1',
+                sessionId: 'session-1',
+            })
+        ).toThrow(/Sandbox not found/);
+        expect(() =>
+            assertSandboxOwner(owners, 'sandbox-1', {
+                userId: 'user-1',
+                sessionId: 'session-2',
+            })
+        ).toThrow(/does not belong/);
     });
 });

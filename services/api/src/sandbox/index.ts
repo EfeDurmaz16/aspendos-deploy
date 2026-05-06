@@ -26,4 +26,4 @@ export function isSandboxConfigured(): boolean {
     return !!process.env.DAYTONA_API_KEY || !!process.env.E2B_API_KEY;
 }
 
-export type { ExecResult, SandboxOpts, SandboxService } from './types';
+export type { ExecResult, SandboxContext, SandboxOpts, SandboxService } from './types';
