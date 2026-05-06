@@ -491,6 +491,7 @@ app.post(
                     system: systemPrompt,
                     messages: history,
                     tools: allTools,
+                    experimental_context: { userId, sessionId: chatId },
                     stopWhen: stepCountIs(5), // Allow up to 5 tool call rounds
                     temperature: 0.7,
                     onFinish: async ({ text, usage }) => {
@@ -618,6 +619,7 @@ app.post(
                 system: systemPrompt,
                 messages: history,
                 tools: allTools,
+                experimental_context: { userId, sessionId: chatId },
                 stopWhen: stepCountIs(5),
                 temperature: 0.7,
             });
@@ -778,6 +780,7 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
                 system: systemPrompt,
                 messages: modelMessages,
                 tools: allTools,
+                experimental_context: { userId, sessionId: chatId },
                 stopWhen: stepCountIs(5),
                 temperature: 0.7,
                 onFinish: async ({ text, usage }) => {
