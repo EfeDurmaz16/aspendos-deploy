@@ -85,10 +85,14 @@ messagingRoutes.delete(
         const userId = c.get('userId') as string;
         const id = c.req.param('id');
 
-        await prisma.platformConnection.updateMany({
+        const result = await prisma.platformConnection.updateMany({
             where: { id, userId },
             data: { isActive: false },
         });
+
+        if (result.count === 0) {
+            return c.json({ error: 'Platform connection not found' }, 404);
+        }
 
         return c.json({ success: true });
     }

@@ -203,4 +203,18 @@ describe('messaging webhook route allowlist', () => {
         });
         expect(mockPrisma.platformConnection.create).not.toHaveBeenCalled();
     });
+
+    it('does not report success when unlinking a missing or cross-owner platform connection', async () => {
+        mockPrisma.platformConnection.updateMany.mockResolvedValueOnce({ count: 0 });
+        const app = await createUserAuthenticatedTestApp();
+
+        const response = await app.request('/messaging/connections/connection-1', {
+            method: 'DELETE',
+        });
+
+        expect(response.status).toBe(404);
+        await expect(response.json()).resolves.toEqual({
+            error: 'Platform connection not found',
+        });
+    });
 });
