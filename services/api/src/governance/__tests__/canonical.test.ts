@@ -247,6 +247,7 @@ describe('canonical governance primitives', () => {
             {
                 hash: 'own-commit',
                 did: 'did:fides:user-1',
+                parentHash: null,
                 signature: 'sig-user-1',
                 timestamp: 2,
             },

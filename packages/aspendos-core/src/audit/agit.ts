@@ -3,6 +3,7 @@ import type { ReversibilityMetadata, ToolResult } from '../reversibility/types';
 interface CommitRecord {
     hash: string;
     did: string;
+    parentHash?: string | null;
     signature: string;
     timestamp: number;
 }
@@ -14,6 +15,7 @@ interface AgitCommitOptions {
     metadata: ReversibilityMetadata;
     fidesSignature: string;
     fidesDid: string;
+    parentHash?: string | null;
     type: 'pre' | 'post';
     result?: ToolResult;
 }
@@ -121,6 +123,7 @@ export class AgitService {
                         fidesDid: opts.fidesDid,
                         fidesSignature: opts.fidesSignature,
                         signature: opts.fidesSignature,
+                        parentHash: opts.parentHash ?? null,
                         type: opts.type,
                         userId: opts.userId,
                     },
@@ -128,6 +131,7 @@ export class AgitService {
                 return {
                     hash,
                     did: opts.fidesDid,
+                    parentHash: opts.parentHash ?? null,
                     signature: opts.fidesSignature,
                     timestamp: Date.now(),
                 };
@@ -141,6 +145,7 @@ export class AgitService {
         const record = {
             hash: await this.generateHash(opts, message, state),
             did: opts.fidesDid,
+            parentHash: opts.parentHash ?? null,
             signature: opts.fidesSignature,
             timestamp: Date.now(),
         };
@@ -162,6 +167,7 @@ export class AgitService {
                     .map((l: any) => ({
                         hash: l.hash,
                         did: l.metadata?.did ?? l.metadata?.fidesDid ?? '',
+                        parentHash: l.metadata?.parentHash ?? null,
                         signature: l.metadata?.signature ?? l.metadata?.fidesSignature ?? '',
                         timestamp: l.timestamp ?? Date.now(),
                     }));
@@ -184,8 +190,11 @@ export class AgitService {
                 return false;
             }
         }
-        return [...this.localHistory.values()].some((records) =>
-            records.some((record) => record.hash === hash)
+        const records = [...this.localHistory.values()].flat();
+        const record = records.find((candidate) => candidate.hash === hash);
+        if (!record) return false;
+        return (
+            !record.parentHash || records.some((candidate) => candidate.hash === record.parentHash)
         );
     }
 
@@ -214,6 +223,7 @@ export class AgitService {
                 fides_did: opts.fidesDid,
                 fides_signature: opts.fidesSignature,
                 message,
+                parent_hash: opts.parentHash ?? null,
                 state,
                 type: opts.type,
                 user_id: opts.userId,

@@ -46,6 +46,8 @@ describe('deterministic core action flow', () => {
 
         const [postCommit, preCommit] = history;
         expect(preCommit.hash).toBe(result.commitHash);
+        expect(preCommit.parentHash).toBeNull();
+        expect(postCommit.parentHash).toBe(preCommit.hash);
         expect(postCommit.hash).not.toBe(preCommit.hash);
         await expect(agit.verifyCommit(preCommit.hash)).resolves.toBe(true);
         await expect(agit.verifyCommit(postCommit.hash)).resolves.toBe(true);
@@ -64,6 +66,7 @@ describe('deterministic core action flow', () => {
             args,
             result.metadata,
             {
+                parentHash: preCommit.hash,
                 result: result.result,
                 status: 'executed',
             }

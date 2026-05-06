@@ -9,6 +9,7 @@ import type { ReversibilityMetadata, ToolResult } from '../reversibility/types';
 interface CommitRecord {
     hash: string;
     did: string;
+    parentHash?: string | null;
     signature: string;
     timestamp: number;
 }
@@ -20,6 +21,7 @@ interface AgitCommitOptions {
     metadata: ReversibilityMetadata;
     fidesSignature: string;
     fidesDid: string;
+    parentHash?: string | null;
     type: 'pre' | 'post' | 'blocked';
     result?: ToolResult;
 }
@@ -96,6 +98,7 @@ export class AgitService {
                     metadata: {
                         fidesDid: opts.fidesDid,
                         fidesSignature: opts.fidesSignature,
+                        parentHash: opts.parentHash ?? null,
                         type: opts.type,
                         userId: opts.userId,
                     },
@@ -103,6 +106,7 @@ export class AgitService {
                 return {
                     hash,
                     did: opts.fidesDid,
+                    parentHash: opts.parentHash ?? null,
                     signature: opts.fidesSignature,
                     timestamp,
                 };
@@ -116,6 +120,7 @@ export class AgitService {
         const hash = await sha256Hex(
             canonicalJson({
                 message,
+                parent_hash: opts.parentHash ?? null,
                 state: deterministicState,
                 signature: opts.fidesSignature,
             })
@@ -123,6 +128,7 @@ export class AgitService {
         const record = {
             hash,
             did: opts.fidesDid,
+            parentHash: opts.parentHash ?? null,
             signature: opts.fidesSignature,
             timestamp,
         };
@@ -144,6 +150,7 @@ export class AgitService {
                     .map((l: any) => ({
                         hash: l.hash,
                         did: l.metadata?.fidesDid ?? '',
+                        parentHash: l.metadata?.parentHash ?? null,
                         signature: l.metadata?.fidesSignature ?? '',
                         timestamp: l.timestamp ?? Date.now(),
                     }));
@@ -168,8 +175,11 @@ export class AgitService {
                 return false;
             }
         }
-        return [...this.localHistory.values()].some((records) =>
-            records.some((record) => record.hash === hash)
+        const records = [...this.localHistory.values()].flat();
+        const record = records.find((candidate) => candidate.hash === hash);
+        if (!record) return false;
+        return (
+            !record.parentHash || records.some((candidate) => candidate.hash === record.parentHash)
         );
     }
 

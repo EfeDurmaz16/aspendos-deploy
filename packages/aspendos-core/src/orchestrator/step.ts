@@ -80,6 +80,7 @@ export async function runToolStep(
     }
 
     const postSignature = await fides.signGovernanceCommit(toolName, args, metadata, {
+        parentHash: preCommit.hash,
         result,
         status: result.success ? 'executed' : 'failed',
     });
@@ -91,6 +92,7 @@ export async function runToolStep(
         metadata,
         fidesSignature: postSignature.signature,
         fidesDid: postSignature.did,
+        parentHash: preCommit.hash,
         type: 'post',
         result,
     });

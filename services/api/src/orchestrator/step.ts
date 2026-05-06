@@ -181,6 +181,7 @@ export async function runToolStep(
 
     const postStatus = result.success ? 'executed' : 'failed';
     const postGovernanceSignature = await fides.signGovernanceCommit(toolName, args, metadata, {
+        parentHash: preCommitHash,
         result,
         status: postStatus,
     });
@@ -205,6 +206,7 @@ export async function runToolStep(
             metadata,
             fidesSignature: postGovernanceSignature.signature,
             fidesDid: postGovernanceSignature.did,
+            parentHash: preCommitHash,
             type: 'post',
             result,
         });
