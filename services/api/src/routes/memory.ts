@@ -145,14 +145,24 @@ app.delete(
         const userId = c.get('userId')!;
         const { id: memoryId } = c.get('validatedParams') as { id: string };
 
-        // Verify ownership before delete
-        const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
-        if (!isOwner) {
-            return c.json({ error: 'Memory not found' }, 404);
-        }
+        try {
+            // Verify ownership before delete
+            const isOwner = await openMemory.verifyMemoryOwnership(memoryId, userId);
+            if (!isOwner) {
+                return c.json({ error: 'Memory not found' }, 404);
+            }
 
-        await openMemory.deleteMemory(memoryId);
-        return c.json({ success: true, message: 'Memory deleted' });
+            await openMemory.deleteMemory(memoryId);
+            return c.json({ success: true, message: 'Memory deleted' });
+        } catch (error) {
+            return c.json(
+                {
+                    error: 'Memory delete failed',
+                    cause: error instanceof Error ? error.message : 'Unknown error',
+                },
+                503
+            );
+        }
     }
 );
 
@@ -170,14 +180,25 @@ app.post(
         let deleted = 0;
         for (const id of ids) {
             try {
-                // Verify ownership before each delete
+                // Verify ownership before each delete. Missing IDs are skipped, but backend
+                // failures must surface so bulk delete cannot report fake success.
                 const isOwner = await openMemory.verifyMemoryOwnership(id, userId);
                 if (!isOwner) continue;
+
                 await openMemory.deleteMemory(id);
-                deleted++;
-            } catch {
-                // Continue with next
+            } catch (error) {
+                return c.json(
+                    {
+                        error: 'Bulk memory delete failed',
+                        failedId: id,
+                        deleted,
+                        cause: error instanceof Error ? error.message : 'Unknown error',
+                    },
+                    503
+                );
             }
+
+            deleted++;
         }
 
         // Audit log the bulk delete
@@ -213,8 +234,18 @@ app.post(
             return c.json({ error: 'Memory not found' }, 404);
         }
 
-        if (wasHelpful) {
-            await openMemory.reinforceMemory(memoryId);
+        try {
+            if (wasHelpful) {
+                await openMemory.reinforceMemory(memoryId);
+            }
+        } catch (error) {
+            return c.json(
+                {
+                    error: 'Memory feedback failed',
+                    cause: error instanceof Error ? error.message : 'Unknown error',
+                },
+                503
+            );
         }
 
         return c.json({ success: true }, 201);

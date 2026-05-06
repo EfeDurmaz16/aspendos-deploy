@@ -80,21 +80,6 @@ function applyRecencyBoost(
         .sort((a, b) => b.score - a.score);
 }
 
-/**
- * Graceful degradation wrapper for SuperMemory operations.
- */
-async function withSupermemoryFallback<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
-    try {
-        return await breakers.supermemory.execute(fn);
-    } catch (error) {
-        console.warn(
-            '[SuperMemory] Service unavailable, using fallback:',
-            error instanceof Error ? error.message : 'Unknown'
-        );
-        return fallback;
-    }
-}
-
 // ============================================
 // MEMORY OPERATIONS
 // ============================================
@@ -334,14 +319,12 @@ export async function listMemories(
     }
 ): Promise<MemoryResult[]> {
     const sm = getClient();
-    const results = await withSupermemoryFallback(
-        async () =>
-            sm.memories.list({
-                containerTags: [containerTag(userId)],
-                limit: options?.limit || 50,
-                page: Math.floor((options?.offset || 0) / (options?.limit || 50)) + 1,
-            }),
-        { memories: [], pagination: { currentPage: 1, totalItems: 0, totalPages: 0 } }
+    const results = await breakers.supermemory.execute(async () =>
+        sm.memories.list({
+            containerTags: [containerTag(userId)],
+            limit: options?.limit || 50,
+            page: Math.floor((options?.offset || 0) / (options?.limit || 50)) + 1,
+        })
     );
 
     return (results.memories || []).map((r: any) => ({
@@ -405,7 +388,8 @@ export async function reinforceMemory(id: string): Promise<void> {
             details: { memoryId: id, reinforcedAt: new Date().toISOString() },
         });
     } catch (error) {
-        console.warn('[SuperMemory] reinforceMemory tracking failed:', error);
+        console.error('[SuperMemory] reinforceMemory tracking failed:', error);
+        throw error;
     }
 }
 
@@ -432,8 +416,8 @@ export async function getMemoryStats(userId: string): Promise<MemoryStats> {
             avgSalience: 0.5, // Default since Convex memories don't track salience
         };
     } catch (error) {
-        console.warn('[SuperMemory] getMemoryStats failed:', error);
-        return { total: 0, bySector: {}, avgSalience: 0 };
+        console.error('[SuperMemory] getMemoryStats failed:', error);
+        throw error;
     }
 }
 
@@ -452,8 +436,13 @@ export async function verifyMemoryOwnership(memoryId: string, userId: string): P
         return memories.some(
             (m) => (m._id as any as string) === memoryId || m.supermemory_id === memoryId
         );
-    } catch {
-        return false;
+    } catch (error) {
+        console.error('[SuperMemory] verifyMemoryOwnership failed:', error);
+        throw new Error(
+            `Memory ownership verification failed: ${
+                error instanceof Error ? error.message : 'Unknown error'
+            }`
+        );
     }
 }
 
@@ -491,8 +480,8 @@ export async function getUserProfile(
             ),
         };
     } catch (error) {
-        console.warn('[SuperMemory] getUserProfile failed:', error);
-        return { static: [], dynamic: [] };
+        console.error('[SuperMemory] getUserProfile failed:', error);
+        throw error;
     }
 }
 
@@ -518,7 +507,8 @@ export async function processConversation(
             })
         );
     } catch (error) {
-        console.warn('[SuperMemory] processConversation failed:', error);
+        console.error('[SuperMemory] processConversation failed:', error);
+        throw error;
     }
 }
 
