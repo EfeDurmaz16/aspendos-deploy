@@ -252,4 +252,30 @@ describe('canonical governance primitives', () => {
             },
         ]);
     });
+
+    it('fails loud when production AGIT history cannot be read', async () => {
+        process.env.NODE_ENV = 'production';
+        const agit = new AgitService();
+        (agit as any).initialized = true;
+        (agit as any).client = {
+            log: vi.fn().mockRejectedValue(new Error('repo offline')),
+        };
+
+        await expect(agit.historyForUser('user-1', 10)).rejects.toThrow(
+            /AGIT log failed: Error: repo offline/
+        );
+    });
+
+    it('fails loud when production AGIT revert cannot be applied', async () => {
+        process.env.NODE_ENV = 'production';
+        const agit = new AgitService();
+        (agit as any).initialized = true;
+        (agit as any).client = {
+            revert: vi.fn().mockRejectedValue(new Error('revert denied')),
+        };
+
+        await expect(agit.revert('user-1', 'commit-1')).rejects.toThrow(
+            /AGIT revert failed: revert denied/
+        );
+    });
 });

@@ -147,7 +147,10 @@ export class AgitService {
                         signature: l.metadata?.fidesSignature ?? '',
                         timestamp: l.timestamp ?? Date.now(),
                     }));
-            } catch {
+            } catch (error) {
+                if (isProductionRuntime()) {
+                    throw new Error(`AGIT log failed: ${String(error)}`);
+                }
                 return [];
             }
         }
@@ -178,6 +181,9 @@ export class AgitService {
                 await this.client.revert(hash);
                 return { success: true, message: `Reverted to ${hash}` };
             } catch (e: any) {
+                if (isProductionRuntime()) {
+                    throw new Error(`AGIT revert failed: ${e?.message ?? String(e)}`);
+                }
                 return { success: false, message: e?.message ?? 'Revert failed' };
             }
         }
