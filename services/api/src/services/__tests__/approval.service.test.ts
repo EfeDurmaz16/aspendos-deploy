@@ -31,6 +31,7 @@ vi.mock('../../lib/convex', () => ({
         mutation: convexMutation,
         query: convexQuery,
     })),
+    getConvexServiceSecret: vi.fn(() => process.env.CONVEX_SERVICE_SECRET),
 }));
 
 describe('approval service persistence', () => {

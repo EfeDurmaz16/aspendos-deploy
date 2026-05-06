@@ -12,6 +12,14 @@ function createConvexClient(accessToken: string) {
     return convex;
 }
 
+function getConvexServiceSecret() {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
+}
+
 // ── POST /api/undo ───────────────────────────────────────────
 // Handles three strategies:
 //   1. Single undo (snapshot_restore, cancel_window, compensation)
@@ -313,6 +321,7 @@ async function appendRevertCommit(
     });
 
     await convex.mutation(api.governance.signAndCommit, {
+        service_secret: getConvexServiceSecret(),
         user_id: commit.user_id as any,
         tool_name: `revert_${commit.tool_name}`,
         args,

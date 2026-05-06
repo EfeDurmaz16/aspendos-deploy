@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createGovernanceCallbacks } from '../../../src/lib/governance/step-middleware';
 
 vi.mock('../../../src/lib/governance/fides', () => ({
@@ -9,6 +9,16 @@ vi.mock('../../../src/lib/governance/fides', () => ({
 }));
 
 describe('governance step middleware', () => {
+    const originalEnv = { ...process.env };
+
+    beforeEach(() => {
+        process.env.CONVEX_SERVICE_SECRET = 'convex-service-secret';
+    });
+
+    afterEach(() => {
+        process.env = originalEnv;
+    });
+
     it('records tool results by appending a signed commit instead of mutating the pending commit', async () => {
         const convex = {
             mutation: vi
@@ -35,6 +45,7 @@ describe('governance step middleware', () => {
 
         expect(convex.mutation).toHaveBeenCalledTimes(2);
         expect(convex.mutation.mock.calls[1]?.[1]).toMatchObject({
+            service_secret: 'convex-service-secret',
             user_id: 'user-1',
             tool_name: 'file.write',
             args: {
@@ -72,6 +83,7 @@ describe('governance step middleware', () => {
         });
         expect(onApprovalRequired).not.toHaveBeenCalled();
         expect(convex.mutation.mock.calls[0]?.[1]).toMatchObject({
+            service_secret: 'convex-service-secret',
             tool_name: 'unknown.dangerous',
             reversibility_class: 'irreversible_blocked',
             human_explanation: 'Unknown tool — blocked by default (fail-closed)',

@@ -2,10 +2,22 @@ import { parseDID, verify as verifyFidesSignature } from '@fides/sdk';
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+declare const process: { env: { CONVEX_SERVICE_SECRET?: string } };
+
 const DEFAULT_COMMIT_CHAIN_LIMIT = 25;
 const MAX_COMMIT_CHAIN_LIMIT = 100;
 const DEFAULT_VERIFY_CHAIN_LIMIT = 100;
 const MAX_VERIFY_CHAIN_LIMIT = 500;
+
+function requireServiceSecret(serviceSecret: string) {
+    const expected = process.env.CONVEX_SERVICE_SECRET;
+    if (!expected) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    if (serviceSecret !== expected) {
+        throw new Error('Invalid service secret');
+    }
+}
 
 function clampCommitChainLimit(value: number | undefined) {
     return Math.min(Math.max(value ?? DEFAULT_COMMIT_CHAIN_LIMIT, 1), MAX_COMMIT_CHAIN_LIMIT);
@@ -155,6 +167,7 @@ async function sha256Hex(input: string): Promise<string> {
 
 export const signAndCommit = mutation({
     args: {
+        service_secret: v.string(),
         user_id: v.id('users'),
         tool_name: v.string(),
         args: v.any(),
@@ -182,6 +195,7 @@ export const signAndCommit = mutation({
         result: v.optional(v.any()),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const now = Date.now();
         const status = args.status ?? 'pending';
 
@@ -417,10 +431,12 @@ export const verifyCommit = query({
 
 export const revertCommit = mutation({
     args: {
+        service_secret: v.string(),
         hash: v.string(),
         user_id: v.id('users'),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const commit = await ctx.db
             .query('commits')
             .withIndex('by_hash', (q) => q.eq('hash', args.hash))
@@ -488,11 +504,13 @@ export const updateCommitResult = mutation({
 
 export const getCommitChain = query({
     args: {
+        service_secret: v.string(),
         user_id: v.id('users'),
         limit: v.optional(v.number()),
         cursor: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const limit = clampCommitChainLimit(args.limit);
 
         // If cursor is provided, start from that commit's timestamp
@@ -542,10 +560,12 @@ export const getCommitChain = query({
 
 export const verifyChain = query({
     args: {
+        service_secret: v.string(),
         user_id: v.id('users'),
         limit: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const limit = clampVerifyChainLimit(args.limit);
         const commits = await ctx.db
             .query('commits')

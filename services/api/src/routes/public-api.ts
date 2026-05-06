@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 import { runToolStep } from '../orchestrator/step';
 import type { ToolContext } from '../reversibility/types';
 import { registry } from '../tools/registry';
@@ -71,6 +71,7 @@ publicApi.get('/audit/:userId/timeline', async (c) => {
         }
 
         const timeline = await client.query(api.governance.getCommitChain, {
+            service_secret: getConvexServiceSecret(),
             user_id: user._id,
             limit,
         });

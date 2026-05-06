@@ -50,15 +50,19 @@ function undoRequest(body: Record<string, unknown>) {
 }
 
 describe('undo API route authorization', () => {
+    const originalEnv = { ...process.env };
+
     beforeEach(() => {
         vi.resetModules();
         auth.mockReset();
         convexQuery.mockReset();
         convexMutation.mockReset();
         convexSetAuth.mockReset();
+        process.env.CONVEX_SERVICE_SECRET = 'convex-service-secret';
     });
 
     afterEach(() => {
+        process.env = originalEnv;
         vi.unstubAllGlobals();
     });
 
@@ -146,6 +150,7 @@ describe('undo API route authorization', () => {
         expect(response.status).toBe(200);
         expect(convexMutation).toHaveBeenCalledTimes(1);
         expect(convexMutation.mock.calls[0]?.[1]).toMatchObject({
+            service_secret: 'convex-service-secret',
             user_id: 'user-1',
             tool_name: 'revert_file-write',
             args: { reverted_hash: 'commit-1', strategy: 'snapshot_restore' },

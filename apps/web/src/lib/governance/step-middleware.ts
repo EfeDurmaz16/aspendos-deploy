@@ -73,6 +73,14 @@ export interface StepResult {
 /** Convex client — supports both reactive and imperative clients. */
 type AnyConvexClient = ConvexReactClient | ConvexClient;
 
+function getConvexServiceSecret() {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
+}
+
 export interface GovernanceOptions {
     /** Convex client for mutations/queries. */
     convex: AnyConvexClient;
@@ -179,6 +187,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
 
         // Create the signed commit via Convex
         const result = await (convex as any).mutation(api.governance.signAndCommit, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId,
             tool_name: toolName,
             args: toolArgs,
@@ -231,6 +240,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
         });
 
         await (convex as any).mutation(api.governance.signAndCommit, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId,
             tool_name: pending.toolName,
             args: {
@@ -280,6 +290,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
     // -----------------------------------------------------------------------
     async function revert(commitHash: string) {
         return (convex as any).mutation(api.governance.revertCommit, {
+            service_secret: getConvexServiceSecret(),
             hash: commitHash,
             user_id: userId,
         });

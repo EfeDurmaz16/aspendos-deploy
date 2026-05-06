@@ -19,4 +19,12 @@ export function isConvexConfigured(): boolean {
     return !!(process.env.NEXT_PUBLIC_CONVEX_URL || process.env.CONVEX_URL);
 }
 
+export function getConvexServiceSecret(): string {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
+}
+
 export { api };

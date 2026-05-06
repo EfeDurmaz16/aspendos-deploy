@@ -1,4 +1,4 @@
-import { api, getConvexClient, isConvexConfigured } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret, isConvexConfigured } from '../lib/convex';
 import type { ReversibilityMetadata, ToolResult } from '../reversibility/types';
 import { isProductionRuntime } from './canonical';
 
@@ -43,6 +43,7 @@ export async function commitConvexGovernance(
         }
 
         const commit = await client.mutation(api.governance.signAndCommit, {
+            service_secret: getConvexServiceSecret(),
             user_id: user._id,
             tool_name: input.toolName,
             args: input.args,

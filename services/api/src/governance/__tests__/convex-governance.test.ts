@@ -20,6 +20,7 @@ vi.mock('../../lib/convex', () => ({
         mutation: mocks.convexMutation,
         query: mocks.convexQuery,
     })),
+    getConvexServiceSecret: vi.fn(() => 'convex-service-secret'),
     isConvexConfigured: mocks.convexConfigured,
 }));
 
@@ -109,6 +110,7 @@ describe('commitConvexGovernance', () => {
             workos_id: 'workos-user-1',
         });
         expect(mocks.convexMutation).toHaveBeenCalledWith('governance.signAndCommit', {
+            service_secret: 'convex-service-secret',
             user_id: 'convex-user-1',
             tool_name: 'file.write',
             args: { path: '/tmp/a' },

@@ -6,7 +6,7 @@
 
 import { canonicalJson, sha256Hex } from '../governance/canonical';
 import type { BlastRadiusReport } from '../lib/agent-guards';
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 const DEFAULT_TTL_MS = 5 * 60 * 1000;
 type ConvexClient = ReturnType<typeof getConvexClient>;
@@ -28,14 +28,6 @@ async function resolveConvexUserId(client: ConvexClient, userId: string) {
         throw new Error('Authenticated user is not provisioned in Convex');
     }
     return user._id;
-}
-
-function getConvexServiceSecret() {
-    const secret = process.env.CONVEX_SERVICE_SECRET;
-    if (!secret) {
-        throw new Error('CONVEX_SERVICE_SECRET is not configured');
-    }
-    return secret;
 }
 
 async function createApprovalCommitHash(params: CreateApprovalParams): Promise<string> {

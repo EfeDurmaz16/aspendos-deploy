@@ -20,6 +20,7 @@ vi.mock('../../lib/convex', () => ({
     getConvexClient: vi.fn(() => ({
         query: mocks.convexQuery,
     })),
+    getConvexServiceSecret: vi.fn(() => 'convex-service-secret'),
 }));
 
 vi.mock('../../orchestrator/step', () => ({
@@ -221,6 +222,7 @@ describe('public audit timeline route', () => {
             workos_id: 'user-1',
         });
         expect(mocks.convexQuery).toHaveBeenNthCalledWith(2, 'governance.getCommitChain', {
+            service_secret: 'convex-service-secret',
             user_id: 'convex-user-1',
             limit: 10,
         });
