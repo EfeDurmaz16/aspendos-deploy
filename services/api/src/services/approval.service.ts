@@ -136,8 +136,8 @@ export async function getPendingApprovals(userId: string) {
             service_secret: getConvexServiceSecret(),
             user_id: convexUserId,
         });
-    } catch {
-        return [];
+    } catch (error) {
+        throw new Error('Failed to load pending approvals', { cause: error });
     }
 }
 
@@ -150,8 +150,8 @@ export async function getApprovalForUser(userId: string, approvalId: string) {
             id: approvalId as any,
             user_id: convexUserId,
         });
-    } catch {
-        return null;
+    } catch (error) {
+        throw new Error('Failed to load approval request', { cause: error });
     }
 }
 
@@ -216,7 +216,7 @@ export async function getAllowlist(userId: string) {
             service_secret: getConvexServiceSecret(),
             user_id: convexUserId,
         });
-    } catch {
-        return [];
+    } catch (error) {
+        throw new Error('Failed to load tool allowlist', { cause: error });
     }
 }

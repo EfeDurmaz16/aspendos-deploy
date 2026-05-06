@@ -3,6 +3,9 @@ import {
     addToAllowlist,
     approveRequest,
     createApproval,
+    getAllowlist,
+    getApprovalForUser,
+    getPendingApprovals,
     rejectRequest,
     removeFromAllowlist,
 } from '../approval.service';
@@ -19,9 +22,12 @@ vi.mock('../../lib/convex', () => ({
         approvals: {
             create: 'approvals.create',
             decide: 'approvals.decide',
+            getByIdForUser: 'approvals.getByIdForUser',
+            listPendingByUser: 'approvals.listPendingByUser',
         },
         toolAllowlist: {
             grant: 'toolAllowlist.grant',
+            isAllowed: 'toolAllowlist.isAllowed',
             listByUser: 'toolAllowlist.listByUser',
             revoke: 'toolAllowlist.revoke',
         },
@@ -168,6 +174,24 @@ describe('approval service persistence', () => {
         );
     });
 
+    it('does not fake an empty approval list when Convex reads fail', async () => {
+        convexQuery.mockResolvedValueOnce({ _id: 'convex-user-1' });
+        convexQuery.mockRejectedValueOnce(new Error('convex unavailable'));
+
+        await expect(getPendingApprovals('workos-user-1')).rejects.toThrow(
+            'Failed to load pending approvals'
+        );
+    });
+
+    it('does not fake a missing approval when Convex reads fail', async () => {
+        convexQuery.mockResolvedValueOnce({ _id: 'convex-user-1' });
+        convexQuery.mockRejectedValueOnce(new Error('convex unavailable'));
+
+        await expect(getApprovalForUser('workos-user-1', 'approval-1')).rejects.toThrow(
+            'Failed to load approval request'
+        );
+    });
+
     it('scopes allowlist grants to the resolved Convex user id', async () => {
         convexQuery.mockResolvedValueOnce({ _id: 'convex-user-1' });
         convexMutation.mockResolvedValueOnce(undefined);
@@ -202,6 +226,15 @@ describe('approval service persistence', () => {
 
         await expect(addToAllowlist('workos-user-1', 'file.write', 'permanent')).rejects.toThrow(
             'Failed to persist tool allowlist grant'
+        );
+    });
+
+    it('does not fake an empty allowlist when Convex reads fail', async () => {
+        convexQuery.mockResolvedValueOnce({ _id: 'convex-user-1' });
+        convexQuery.mockRejectedValueOnce(new Error('convex unavailable'));
+
+        await expect(getAllowlist('workos-user-1')).rejects.toThrow(
+            'Failed to load tool allowlist'
         );
     });
 });
