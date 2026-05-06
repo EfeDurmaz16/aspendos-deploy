@@ -1,9 +1,19 @@
+import type { ToolExecutionOptions } from 'ai';
 import { describe, expect, it } from 'vitest';
-import { runCode, validateCommand, validateSandboxPath } from '../../../src/lib/tools/sandbox';
+import {
+    createSandbox,
+    runCode,
+    validateCommand,
+    validateSandboxPath,
+} from '../../../src/lib/tools/sandbox';
 
-const toolExecutionOptions = {
+const toolExecutionOptions: ToolExecutionOptions = {
     toolCallId: 'test-tool-call',
     messages: [],
+    experimental_context: {
+        userId: 'user-1',
+        sessionId: 'session-1',
+    },
 };
 
 describe('web sandbox safety', () => {
@@ -40,6 +50,26 @@ describe('web sandbox safety', () => {
         expect(result).toEqual({
             success: false,
             error: 'Sandbox not found. Create a sandbox first.',
+        });
+    });
+
+    it('requires execution owner context before creating a cloud sandbox', async () => {
+        const execute = createSandbox.execute;
+        if (!execute) {
+            throw new Error('createSandbox tool must expose an execute function');
+        }
+
+        const result = await execute(
+            {},
+            {
+                toolCallId: 'test-tool-call',
+                messages: [],
+            }
+        );
+
+        expect(result).toEqual({
+            success: false,
+            error: 'Tool execution user context required',
         });
     });
 });

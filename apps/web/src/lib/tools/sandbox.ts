@@ -5,9 +5,10 @@
  * Tier: Personal+
  */
 
-import { tool } from 'ai';
+import { type ToolExecutionOptions, tool } from 'ai';
 import { z } from 'zod';
 import type { ReversibilityClass, RollbackStrategy } from '@/lib/reversibility/types';
+import { assertToolOwner, getToolOwnerKey } from './execution-context';
 
 // ── Metadata ────────────────────────────────────────────────────
 export const SANDBOX_TOOL_META = {
@@ -20,7 +21,7 @@ export const SANDBOX_TOOL_META = {
 };
 
 // ── Sandbox instance cache (per-request, keyed by sandboxId) ────
-const sandboxCache = new Map<string, any>();
+const sandboxCache = new Map<string, { sandbox: any; ownerKey: string }>();
 const SAFE_PATH_ROOTS = ['/home/user', '/tmp', '/workspace'];
 const SAFE_PACKAGE_NAME = /^(?:@[-a-z0-9._]+\/)?[-a-z0-9._]+$/i;
 const BLOCKED_COMMAND_PATTERNS = [
@@ -77,7 +78,7 @@ function validatePackages(packages: string[]) {
     }
 }
 
-async function getOrCreateSandbox(sandboxId?: string) {
+async function getOrCreateSandbox(options: ToolExecutionOptions | undefined, sandboxId?: string) {
     const Sandbox = (await import('e2b')).default;
 
     if (sandboxId) {
@@ -85,16 +86,18 @@ async function getOrCreateSandbox(sandboxId?: string) {
         if (!cached) {
             throw new Error('Sandbox not found. Create a sandbox first.');
         }
-        return cached;
+        assertToolOwner(cached.ownerKey, options);
+        return cached.sandbox;
     }
 
+    const ownerKey = getToolOwnerKey(options);
     const apiKey = process.env.E2B_API_KEY;
     if (!apiKey) {
         throw new Error('E2B_API_KEY not configured');
     }
 
     const sandbox = await Sandbox.create({ apiKey });
-    sandboxCache.set(sandbox.sandboxId, sandbox);
+    sandboxCache.set(sandbox.sandboxId, { sandbox, ownerKey });
     return sandbox;
 }
 
@@ -114,8 +117,9 @@ export const createSandbox = tool({
             .optional()
             .describe('Sandbox timeout in milliseconds. Default 300000 (5 min).'),
     }),
-    execute: async ({ template, timeoutMs }) => {
+    execute: async ({ template, timeoutMs }, options: ToolExecutionOptions) => {
         try {
+            const ownerKey = getToolOwnerKey(options);
             const Sandbox = (await import('e2b')).default;
             const apiKey = process.env.E2B_API_KEY;
             if (!apiKey) {
@@ -127,7 +131,7 @@ export const createSandbox = tool({
             if (timeoutMs) opts.timeoutMs = timeoutMs;
 
             const sandbox = await Sandbox.create(opts);
-            sandboxCache.set(sandbox.sandboxId, sandbox);
+            sandboxCache.set(sandbox.sandboxId, { sandbox, ownerKey });
 
             return {
                 success: true,
@@ -160,11 +164,11 @@ export const runCode = tool({
             .optional()
             .describe('Command timeout in milliseconds. Default 30000.'),
     }),
-    execute: async ({ sandboxId, command, cwd, timeoutMs }) => {
+    execute: async ({ sandboxId, command, cwd, timeoutMs }, options: ToolExecutionOptions) => {
         try {
             validateCommand(command);
             if (cwd) validateSandboxPath(cwd);
-            const sandbox = await getOrCreateSandbox(sandboxId);
+            const sandbox = await getOrCreateSandbox(options, sandboxId);
             const opts: Record<string, unknown> = {};
             if (cwd) opts.cwd = cwd;
             if (timeoutMs) opts.timeoutMs = timeoutMs;
@@ -196,10 +200,10 @@ export const writeFile = tool({
             .describe('Absolute file path inside the sandbox (e.g. "/home/user/main.py")'),
         content: z.string().describe('File content to write'),
     }),
-    execute: async ({ sandboxId, path, content }) => {
+    execute: async ({ sandboxId, path, content }, options: ToolExecutionOptions) => {
         try {
             validateSandboxPath(path);
-            const sandbox = await getOrCreateSandbox(sandboxId);
+            const sandbox = await getOrCreateSandbox(options, sandboxId);
             await sandbox.files.write(path, content);
             return { success: true, path };
         } catch (error) {
@@ -218,10 +222,10 @@ export const readFile = tool({
         sandboxId: z.string().describe('Sandbox ID from createSandbox'),
         path: z.string().describe('Absolute file path inside the sandbox'),
     }),
-    execute: async ({ sandboxId, path }) => {
+    execute: async ({ sandboxId, path }, options: ToolExecutionOptions) => {
         try {
             validateSandboxPath(path);
-            const sandbox = await getOrCreateSandbox(sandboxId);
+            const sandbox = await getOrCreateSandbox(options, sandboxId);
             const content = await sandbox.files.read(path);
             return { success: true, path, content };
         } catch (error) {
@@ -244,10 +248,10 @@ export const installPackage = tool({
             .array(z.string())
             .describe('Package names to install (e.g. ["numpy", "pandas"])'),
     }),
-    execute: async ({ sandboxId, manager, packages }) => {
+    execute: async ({ sandboxId, manager, packages }, options: ToolExecutionOptions) => {
         try {
             validatePackages(packages);
-            const sandbox = await getOrCreateSandbox(sandboxId);
+            const sandbox = await getOrCreateSandbox(options, sandboxId);
 
             const cmds: Record<string, string> = {
                 pip: `pip install ${packages.join(' ')}`,
