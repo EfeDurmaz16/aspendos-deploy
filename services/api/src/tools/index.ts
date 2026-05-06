@@ -286,8 +286,12 @@ async function getSupermemoryTools(_userId: string): Promise<Record<string, any>
     try {
         const { supermemoryTools } = await import('@supermemory/tools/ai-sdk');
         return supermemoryTools(process.env.SUPERMEMORY_API_KEY);
-    } catch {
-        return null;
+    } catch (error) {
+        throw new Error(
+            `SuperMemory tools are configured but unavailable: ${
+                error instanceof Error ? error.message : String(error)
+            }`
+        );
     }
 }
 

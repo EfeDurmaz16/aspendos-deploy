@@ -480,10 +480,14 @@ app.post(
                             apiKey: process.env.SUPERMEMORY_API_KEY,
                         });
                     } catch (smError) {
-                        log.error('SuperMemory wrapper failed, using base model', {
+                        log.error('SuperMemory wrapper failed', {
                             metadata: { error: String(smError) },
                         });
-                        // Falls back to base model without memory injection
+                        throw new Error(
+                            `SuperMemory wrapper is enabled but unavailable: ${
+                                smError instanceof Error ? smError.message : String(smError)
+                            }`
+                        );
                     }
                 }
 
@@ -749,8 +753,12 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
             streamModel = withSupermemory(resolvedModel, `user_${userId}`, {
                 apiKey: process.env.SUPERMEMORY_API_KEY,
             });
-        } catch {
-            // Fall back to base model
+        } catch (smError) {
+            throw new Error(
+                `SuperMemory wrapper is enabled but unavailable: ${
+                    smError instanceof Error ? smError.message : String(smError)
+                }`
+            );
         }
     }
 
