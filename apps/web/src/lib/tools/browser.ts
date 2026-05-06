@@ -8,6 +8,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import type { ReversibilityClass, RollbackStrategy } from '@/lib/reversibility/types';
+import { validateExternalUrl } from './url-safety';
 
 // ── Metadata ────────────────────────────────────────────────────
 export const BROWSER_TOOL_META = {
@@ -86,6 +87,7 @@ export const navigate = tool({
     }),
     execute: async ({ sessionId, url, waitFor }) => {
         try {
+            validateExternalUrl(url);
             const cached = sessionCache.get(sessionId);
             if (!cached) {
                 return { success: false, error: 'Session not found. Create a session first.' };
@@ -166,6 +168,7 @@ export const extractContent = tool({
     }),
     execute: async ({ sessionId, url, format }) => {
         try {
+            validateExternalUrl(url);
             const cached = sessionCache.get(sessionId);
             if (!cached) {
                 return { success: false, error: 'Session not found. Create a session first.' };

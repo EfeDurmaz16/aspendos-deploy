@@ -1,3 +1,4 @@
+import { validateExternalUrl } from '../lib/external-url';
 import type {
     ReversibilityMetadata,
     ToolContext,
@@ -29,6 +30,14 @@ export const browserTool: ToolDefinition = {
         };
 
         if (!url) return { success: false, error: 'Missing url' };
+        try {
+            validateExternalUrl(url);
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'URL failed safety validation',
+            };
+        }
 
         const apiKey = process.env.STEEL_API_KEY;
         if (!apiKey) {
