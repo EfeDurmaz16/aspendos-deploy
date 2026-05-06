@@ -1,6 +1,7 @@
 import type { ReversibilityClass } from '../reversibility/types';
 
 export interface ApprovalCard {
+    approvalId: string;
     commitHash: string;
     toolName: string;
     humanExplanation: string;
@@ -36,6 +37,7 @@ export const BADGE_EMOJI: Record<ReversibilityClass, string> = {
 };
 
 export function createApprovalCard(
+    approvalId: string,
     commitHash: string,
     toolName: string,
     humanExplanation: string,
@@ -44,6 +46,7 @@ export function createApprovalCard(
     expiresAt?: string
 ): ApprovalCard {
     return {
+        approvalId,
         commitHash,
         toolName,
         humanExplanation,

@@ -22,15 +22,15 @@ export function renderWhatsAppApprovalCard(card: ApprovalCard) {
                 buttons: [
                     {
                         type: 'reply',
-                        reply: { id: `approve:${card.commitHash}`, title: 'Approve' },
+                        reply: { id: `approve:${card.approvalId}`, title: 'Approve' },
                     },
                     {
                         type: 'reply',
-                        reply: { id: `reject:${card.commitHash}`, title: 'Reject' },
+                        reply: { id: `reject:${card.approvalId}`, title: 'Reject' },
                     },
                     {
                         type: 'reply',
-                        reply: { id: `always:${card.commitHash}`, title: 'Always Allow' },
+                        reply: { id: `always:${card.approvalId}`, title: 'Always Allow' },
                     },
                 ],
             },

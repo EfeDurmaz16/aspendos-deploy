@@ -6,6 +6,7 @@ import { renderWhatsAppApprovalCard } from '../cards/whatsapp';
 import { createApprovalCard } from '../types';
 
 const card = createApprovalCard(
+    'approval_abc123',
     'abc123def456',
     'db.migrate',
     'Database migration requires approval',
@@ -15,6 +16,7 @@ const card = createApprovalCard(
 );
 
 const greenCard = createApprovalCard(
+    'approval_def789',
     'def789ghi012',
     'file.write',
     'File will be written with snapshot for undo',
@@ -34,6 +36,12 @@ describe('Slack approval card', () => {
     it('has 3 action buttons', () => {
         const result = renderSlackApprovalCard(card);
         expect(result.blocks[2].elements).toHaveLength(3);
+    });
+
+    it('uses approval id for action payloads, not commit hash', () => {
+        const result = renderSlackApprovalCard(card);
+        expect(result.blocks[2].elements[0].value).toBe('approval_abc123');
+        expect(result.blocks[2].elements[0].value).not.toBe('abc123def456');
     });
 
     it('includes commit hash in context', () => {
@@ -62,6 +70,9 @@ describe('Telegram approval card', () => {
         const result = renderTelegramApprovalCard(card);
         expect(result.reply_markup.inline_keyboard[0]).toHaveLength(2);
         expect(result.reply_markup.inline_keyboard[0][0].text).toBe('✅ Approve');
+        expect(result.reply_markup.inline_keyboard[0][0].callback_data).toBe(
+            'approve:approval_abc123'
+        );
     });
 
     it('uses Markdown parse mode', () => {
@@ -84,6 +95,7 @@ describe('Discord approval card', () => {
     it('approve button is style 3 (green)', () => {
         const result = renderDiscordApprovalCard(card);
         expect(result.components[0].components[0].style).toBe(3);
+        expect(result.components[0].components[0].custom_id).toBe('approve:approval_abc123');
     });
 
     it('has embed fields for class and commit', () => {
@@ -102,6 +114,7 @@ describe('WhatsApp approval card', () => {
     it('has 3 reply buttons', () => {
         const result = renderWhatsAppApprovalCard(card);
         expect(result.interactive.action.buttons).toHaveLength(3);
+        expect(result.interactive.action.buttons[0].reply.id).toBe('approve:approval_abc123');
     });
 
     it('body contains tool name and explanation', () => {

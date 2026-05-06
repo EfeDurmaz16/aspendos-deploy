@@ -18,10 +18,10 @@ export function renderTelegramApprovalCard(card: ApprovalCard) {
         reply_markup: {
             inline_keyboard: [
                 [
-                    { text: '✅ Approve', callback_data: `approve:${card.commitHash}` },
-                    { text: '❌ Reject', callback_data: `reject:${card.commitHash}` },
+                    { text: '✅ Approve', callback_data: `approve:${card.approvalId}` },
+                    { text: '❌ Reject', callback_data: `reject:${card.approvalId}` },
                 ],
-                [{ text: '🔓 Always Allow', callback_data: `always:${card.commitHash}` }],
+                [{ text: '🔓 Always Allow', callback_data: `always:${card.approvalId}` }],
             ],
         },
     };
