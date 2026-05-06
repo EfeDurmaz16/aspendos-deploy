@@ -15,6 +15,7 @@
     },
     "dependencies": {
         "@ai-sdk/mcp": "^1.0.10",
+        "@aspendos/db": "workspace:*",
         "@aspendos/shared-types": "workspace:*",
         "@chat-adapter/discord": "^4.20.2",
         "@chat-adapter/slack": "^4.20.2",
