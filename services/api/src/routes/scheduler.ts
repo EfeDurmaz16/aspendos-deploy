@@ -4,11 +4,11 @@
  * Handles scheduled task management and webhook execution.
  */
 
-// import { ScheduledTaskStatus } from '@aspendos/db';
-const ScheduledTaskStatus = {} as any;
-type ScheduledTaskStatus = any;
-
 import { timingSafeEqual } from 'node:crypto';
+import {
+    type ScheduledTaskStatus,
+    ScheduledTaskStatus as ScheduledTaskStatuses,
+} from '@aspendos/db';
 import { Hono } from 'hono';
 import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
@@ -262,7 +262,7 @@ app.post('/execute', validateBody(executeTaskSchema), async (c) => {
         return c.json({ error: 'Task not found' }, 404);
     }
 
-    if (task.status !== ScheduledTaskStatus.PENDING) {
+    if (task.status !== ScheduledTaskStatuses.PENDING) {
         return c.json({ error: 'Task is not pending', status: task.status }, 400);
     }
 
