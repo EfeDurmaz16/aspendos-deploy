@@ -76,6 +76,9 @@ fi
 info "Checking Convex query bounds..."
 bash scripts/check_convex_query_bounds.sh
 
+info "Checking process-local correctness posture..."
+bash scripts/check_process_local_state.sh
+
 info "Checking Helm deployment chart..."
 bash scripts/check_helm_chart.sh
 
