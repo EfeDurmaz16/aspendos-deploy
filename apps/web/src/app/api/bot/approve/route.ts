@@ -65,7 +65,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid approval signature' }, { status: 401 });
         }
 
-        const body: ApproveRequest = JSON.parse(rawBody);
+        let body: ApproveRequest;
+        try {
+            body = JSON.parse(rawBody);
+        } catch {
+            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+        }
+
         const { commitHash, action, platform, platformUserId } = body;
 
         if (!commitHash || !action || !platform || !platformUserId) {

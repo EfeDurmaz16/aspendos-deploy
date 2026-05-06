@@ -179,6 +179,17 @@ describe('bot approval webhook', () => {
         expect(convexMutation).not.toHaveBeenCalled();
     });
 
+    it('rejects signed malformed JSON before touching Convex', async () => {
+        const { POST } = await import('../../../src/app/api/bot/approve/route');
+
+        const response = await POST(signedRawRequest('{"commitHash":', 'test-secret'));
+
+        await expect(response.json()).resolves.toEqual({ error: 'Invalid JSON body' });
+        expect(response.status).toBe(400);
+        expect(convexQuery).not.toHaveBeenCalled();
+        expect(convexMutation).not.toHaveBeenCalled();
+    });
+
     it('accepts idempotent approval replays without resuming the agent again', async () => {
         process.env.AGENT_RESUME_URL = 'https://agent.example/resume';
         convexQuery.mockResolvedValueOnce({
