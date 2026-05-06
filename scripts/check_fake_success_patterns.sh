@@ -49,6 +49,13 @@ if [[ -n "$WEB_MEMORY_STUB_MATCHES" ]]; then
   exit 1
 fi
 
+WEB_MEMORY_ERASURE_STUB_MATCHES="$(rg -n 'Qdrant removed|deleteUserMemories|storeMemory\(|qdrant = \{ scroll|Continue even if memory deletion fails' apps/web/src/app/api/account apps/web/src/lib/memory/ingest.ts || true)"
+if [[ -n "$WEB_MEMORY_ERASURE_STUB_MATCHES" ]]; then
+  echo "$WEB_MEMORY_ERASURE_STUB_MATCHES"
+  echo "[ERROR] Web account deletion/import/export must not report success while external memory erasure/storage is disconnected." >&2
+  exit 1
+fi
+
 SILENT_MEMORY_FAILURE_MATCHES="$(rg -n 'Memory search failed, continue without|Memory search failed|Memory save failed' apps/web/src/app/api services/api/src/routes services/api/src/bot || true)"
 if [[ -n "$SILENT_MEMORY_FAILURE_MATCHES" ]]; then
   echo "$SILENT_MEMORY_FAILURE_MATCHES"

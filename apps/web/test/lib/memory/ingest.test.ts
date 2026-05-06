@@ -6,9 +6,12 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
+    detectExportFormat,
+    exportUserMemories,
+    importAspendosExport,
+    ingestConversations,
     parseChatGPTExport,
     parseClaudeExport,
-    detectExportFormat,
     type AspendosExport,
 } from '@/lib/memory/ingest';
 
@@ -245,6 +248,38 @@ describe('Memory Ingest Module', () => {
         it('should throw error for invalid format', () => {
             expect(() => parseClaudeExport({ invalid: 'data' })).toThrow(
                 'Invalid Claude export format'
+            );
+        });
+    });
+
+    describe('memory persistence posture', () => {
+        it('fails loud instead of reporting fake imported conversation counts', async () => {
+            await expect(
+                ingestConversations('user-123', ['User: remember this'], 'chatgpt')
+            ).rejects.toThrow(/not wired to Convex\/SuperMemory/);
+        });
+
+        it('fails loud instead of reporting fake Aspendos import counts', async () => {
+            const exportData: AspendosExport = {
+                version: '1.0',
+                exportedAt: '2024-01-01T00:00:00Z',
+                userId: 'user-123',
+                memories: [],
+                stats: {
+                    totalMemories: 0,
+                    byType: {},
+                    bySource: {},
+                },
+            };
+
+            await expect(importAspendosExport('user-123', exportData)).rejects.toThrow(
+                /not wired to Convex\/SuperMemory/
+            );
+        });
+
+        it('fails loud instead of exporting fake empty memory data', async () => {
+            await expect(exportUserMemories('user-123')).rejects.toThrow(
+                /not wired to Convex\/SuperMemory/
             );
         });
     });

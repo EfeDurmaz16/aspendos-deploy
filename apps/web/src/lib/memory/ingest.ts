@@ -1,13 +1,5 @@
-import { v4 as uuidv4 } from 'uuid';
-import { createEmbeddings } from '@/lib/ai';
-
-// TODO(phase-a-day-3): Qdrant removed — memory ingest will use Convex + SuperMemory
-const COLLECTIONS = {
-    USER_MEMORIES: 'user_memories',
-    CONVERSATION_EMBEDDINGS: 'conversation_embeddings',
-} as const;
-async function storeMemory(_params: Record<string, unknown>): Promise<void> {}
-const qdrant = { scroll: async () => ({ points: [] }) } as any;
+const MEMORY_STORE_UNAVAILABLE =
+    'Memory import/export is not wired to Convex/SuperMemory; refusing fake success.';
 
 // ============================================
 // CHATGPT EXPORT FORMAT
@@ -158,105 +150,19 @@ export function parseClaudeExport(jsonData: unknown): {
 // ============================================
 
 export async function ingestConversations(
-    userId: string,
-    conversations: string[],
-    source: 'chatgpt' | 'claude' | 'aspendos'
+    _userId: string,
+    _conversations: string[],
+    _source: 'chatgpt' | 'claude' | 'aspendos'
 ): Promise<{ success: number; failed: number }> {
-    let success = 0;
-    let failed = 0;
-
-    // Process in batches of 10
-    const batchSize = 10;
-    for (let i = 0; i < conversations.length; i += batchSize) {
-        const batch = conversations.slice(i, i + batchSize);
-
-        try {
-            // Create embeddings for the batch
-            const embeddings = await createEmbeddings(batch.map((c) => c.slice(0, 8000))); // Limit text size
-
-            // Store concurrently using Promise.all
-            await Promise.all(
-                batch.map((conversation, j) =>
-                    storeMemory({
-                        id: uuidv4(),
-                        vector: embeddings[j],
-                        userId,
-                        content: conversation.slice(0, 5000), // Store truncated
-                        type: 'context',
-                        metadata: {
-                            source,
-                            importedAt: new Date().toISOString(),
-                        },
-                    })
-                        .then(() => {
-                            success++;
-                        })
-                        .catch((error) => {
-                            console.error(
-                                `[Ingest] Failed to store memory for conversation ${j}:`,
-                                error
-                            );
-                            failed++;
-                        })
-                )
-            );
-        } catch (error) {
-            console.error('[Ingest] Batch embedding failed:', error);
-            failed += batch.length;
-        }
-    }
-
-    return { success, failed };
+    throw new Error(MEMORY_STORE_UNAVAILABLE);
 }
 
 // ============================================
 // EXPORT USER MEMORIES
 // ============================================
 
-export async function exportUserMemories(userId: string): Promise<AspendosExport> {
-    // Fetch all memories for user from vector store
-    const scrollResult = await qdrant.scroll(COLLECTIONS.USER_MEMORIES, {
-        filter: {
-            must: [{ key: 'user_id', match: { value: userId } }],
-        },
-        limit: 10000,
-        with_payload: true,
-        with_vector: false,
-    });
-
-    const memories: AspendosMemory[] = scrollResult.points.map((point) => {
-        const payload = point.payload as Record<string, unknown>;
-        return {
-            id: String(point.id),
-            content: (payload.content as string) || '',
-            type: (payload.type as 'context' | 'preference' | 'insight') || 'context',
-            source: (payload.source as 'chatgpt' | 'claude' | 'aspendos' | 'manual') || 'aspendos',
-            conversationId: payload.conversation_id as string | undefined,
-            createdAt: (payload.created_at as string) || new Date().toISOString(),
-            metadata: payload.metadata as Record<string, unknown> | undefined,
-        };
-    });
-
-    // Calculate stats
-    const byType: Record<string, number> = {};
-    const bySource: Record<string, number> = {};
-
-    for (const memory of memories) {
-        byType[memory.type] = (byType[memory.type] || 0) + 1;
-        bySource[memory.source] = (bySource[memory.source] || 0) + 1;
-    }
-
-    return {
-        version: '1.0',
-        exportedAt: new Date().toISOString(),
-        userId,
-        memories,
-        stats: {
-            totalMemories: memories.length,
-            byType,
-            bySource,
-        },
-    };
+export async function exportUserMemories(_userId: string): Promise<AspendosExport> {
+    throw new Error(MEMORY_STORE_UNAVAILABLE);
 }
 
 // ============================================
@@ -264,56 +170,10 @@ export async function exportUserMemories(userId: string): Promise<AspendosExport
 // ============================================
 
 export async function importAspendosExport(
-    userId: string,
-    exportData: AspendosExport
+    _userId: string,
+    _exportData: AspendosExport
 ): Promise<{ success: number; failed: number }> {
-    let success = 0;
-    let failed = 0;
-
-    // Process in batches
-    const batchSize = 20;
-    const memories = exportData.memories;
-
-    for (let i = 0; i < memories.length; i += batchSize) {
-        const batch = memories.slice(i, i + batchSize);
-
-        try {
-            const embeddings = await createEmbeddings(batch.map((m) => m.content.slice(0, 8000)));
-
-            // Store concurrently using Promise.all
-            await Promise.all(
-                batch.map((memory, j) =>
-                    storeMemory({
-                        id: uuidv4(), // New ID for imported memory
-                        vector: embeddings[j],
-                        userId,
-                        content: memory.content,
-                        type: memory.type,
-                        conversationId: memory.conversationId,
-                        metadata: {
-                            ...memory.metadata,
-                            originalId: memory.id,
-                            source: memory.source,
-                            originalCreatedAt: memory.createdAt,
-                            importedAt: new Date().toISOString(),
-                        },
-                    })
-                        .then(() => {
-                            success++;
-                        })
-                        .catch((error) => {
-                            console.error(`[Import] Failed to store memory ${j}:`, error);
-                            failed++;
-                        })
-                )
-            );
-        } catch (error) {
-            console.error('[Import] Batch embedding failed:', error);
-            failed += batch.length;
-        }
-    }
-
-    return { success, failed };
+    throw new Error(MEMORY_STORE_UNAVAILABLE);
 }
 
 // ============================================
