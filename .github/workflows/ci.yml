@@ -194,6 +194,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
       - uses: actions/cache@v4
         with:
           path: |
