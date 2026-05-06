@@ -149,6 +149,10 @@ function buildApprovalRequest(payload: {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const secret = process.env.BOT_APPROVAL_WEBHOOK_SECRET;
 
+    if (!secret && process.env.NODE_ENV === 'production') {
+        throw new Error('BOT_APPROVAL_WEBHOOK_SECRET is required for approval callbacks');
+    }
+
     if (secret) {
         headers['x-yula-timestamp'] = timestamp;
         headers['x-yula-signature'] = `sha256=${createHmac('sha256', secret)

@@ -91,4 +91,19 @@ describe('messaging approval actions', () => {
         );
         expect(event.thread.post).not.toHaveBeenCalledWith('Approved by Ada.');
     });
+
+    it('does not send unsigned approval callbacks in production', async () => {
+        vi.stubEnv('NODE_ENV', 'production');
+        vi.stubEnv('BOT_APPROVAL_WEBHOOK_SECRET', '');
+        vi.stubGlobal('fetch', vi.fn());
+        const { submitApprovalAction } = await import('../../../src/lib/messaging/bot');
+        const event = approvalEvent();
+
+        await submitApprovalAction(event, 'approve');
+
+        expect(fetch).not.toHaveBeenCalled();
+        expect(event.thread.post).toHaveBeenCalledWith(
+            'Failed to process approve: BOT_APPROVAL_WEBHOOK_SECRET is required for approval callbacks'
+        );
+    });
 });
