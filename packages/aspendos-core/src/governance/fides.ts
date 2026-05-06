@@ -93,6 +93,21 @@ export class FidesService {
         });
     }
 
+    private governanceSignaturePayload(
+        toolName: string,
+        args: unknown,
+        metadata: ReversibilityMetadata,
+        options: { result?: unknown; status: 'pending' | 'executed' | 'failed' }
+    ) {
+        return canonicalJson({
+            args,
+            result: options.result,
+            reversibility_class: metadata.reversibility_class,
+            status: options.status,
+            tool_name: toolName,
+        });
+    }
+
     private async signWithFallback(payload: string): Promise<string> {
         if (!this.fallbackSecret) {
             throw new Error('FIDES fallback signing requested without explicit test secret');
@@ -121,6 +136,46 @@ export class FidesService {
         await this.initialize();
 
         const payload = this.signaturePayload(toolName, args, metadata);
+        const timestamp = Date.now();
+
+        const fides = await this.loadSdk();
+        if (fides && this.keyPair) {
+            const signature = await fides.sign(
+                new TextEncoder().encode(payload),
+                this.keyPair.privateKey
+            );
+            return {
+                signature: Buffer.from(signature).toString('base64'),
+                did: this.did!,
+                timestamp,
+            };
+        }
+
+        return {
+            signature: await this.signWithFallback(payload),
+            did: this.did!,
+            timestamp,
+        };
+    }
+
+    getGovernanceCommitPayload(
+        toolName: string,
+        args: unknown,
+        metadata: ReversibilityMetadata,
+        options: { result?: unknown; status: 'pending' | 'executed' | 'failed' }
+    ): string {
+        return this.governanceSignaturePayload(toolName, args, metadata, options);
+    }
+
+    async signGovernanceCommit(
+        toolName: string,
+        args: unknown,
+        metadata: ReversibilityMetadata,
+        options: { result?: unknown; status: 'pending' | 'executed' | 'failed' }
+    ): Promise<FidesSignResult> {
+        await this.initialize();
+
+        const payload = this.governanceSignaturePayload(toolName, args, metadata, options);
         const timestamp = Date.now();
 
         const fides = await this.loadSdk();

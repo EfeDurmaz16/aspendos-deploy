@@ -4,24 +4,6 @@ import { getFides } from '../governance/fides';
 import { runToolStep } from '../orchestrator/step';
 import { registry } from '../tools/registry';
 
-function normalizeForSignature(value: unknown): unknown {
-    if (value === null || typeof value !== 'object') return value;
-    if (Array.isArray(value)) return value.map((item) => normalizeForSignature(item));
-
-    const record = value as Record<string, unknown>;
-    return Object.keys(record)
-        .sort()
-        .reduce<Record<string, unknown>>((acc, key) => {
-            const item = record[key];
-            if (item !== undefined) acc[key] = normalizeForSignature(item);
-            return acc;
-        }, {});
-}
-
-function canonicalJson(value: unknown): string {
-    return JSON.stringify(normalizeForSignature(value));
-}
-
 describe('deterministic core action flow', () => {
     beforeEach(() => {
         process.env.ALLOW_IN_MEMORY_GOVERNANCE = 'true';
@@ -69,17 +51,30 @@ describe('deterministic core action flow', () => {
         await expect(agit.verifyCommit(postCommit.hash)).resolves.toBe(true);
 
         const fides = getFides();
-        const payload = canonicalJson({
+        const prePayload = fides.getGovernanceCommitPayload(
+            'core.test.write',
             args,
-            reversibility_class: result.metadata.reversibility_class,
-            tool: 'core.test.write',
-        });
+            result.metadata,
+            {
+                status: 'pending',
+            }
+        );
+        const postPayload = fides.getGovernanceCommitPayload(
+            'core.test.write',
+            args,
+            result.metadata,
+            {
+                result: result.result,
+                status: 'executed',
+            }
+        );
 
         await expect(
-            fides.verifySignature(payload, preCommit.signature, preCommit.did)
+            fides.verifySignature(prePayload, preCommit.signature, preCommit.did)
         ).resolves.toBe(true);
         await expect(
-            fides.verifySignature(payload, postCommit.signature, postCommit.did)
+            fides.verifySignature(postPayload, postCommit.signature, postCommit.did)
         ).resolves.toBe(true);
+        expect(postCommit.signature).not.toBe(preCommit.signature);
     });
 });

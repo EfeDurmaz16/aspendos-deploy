@@ -34,7 +34,9 @@ export async function runToolStep(
     }
 
     const fides = getFides();
-    const signResult = await fides.signToolCall(toolName, args, metadata);
+    const preSignature = await fides.signGovernanceCommit(toolName, args, metadata, {
+        status: 'pending',
+    });
 
     const agit = getAgit();
     const preCommit = await agit.commitAction({
@@ -42,8 +44,8 @@ export async function runToolStep(
         toolName,
         args,
         metadata,
-        fidesSignature: signResult.signature,
-        fidesDid: signResult.did,
+        fidesSignature: preSignature.signature,
+        fidesDid: preSignature.did,
         type: 'pre',
     });
 
@@ -77,13 +79,18 @@ export async function runToolStep(
         result = { success: false, error: `Tool ${toolName} not found` };
     }
 
+    const postSignature = await fides.signGovernanceCommit(toolName, args, metadata, {
+        result,
+        status: result.success ? 'executed' : 'failed',
+    });
+
     await agit.commitAction({
         userId: ctx.userId,
         toolName,
         args,
         metadata,
-        fidesSignature: signResult.signature,
-        fidesDid: signResult.did,
+        fidesSignature: postSignature.signature,
+        fidesDid: postSignature.did,
         type: 'post',
         result,
     });
