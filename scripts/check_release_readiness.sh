@@ -82,7 +82,8 @@ bun run --cwd services/api test \
   src/routes/__tests__/council.test.ts \
   src/routes/__tests__/pac.test.ts \
   src/routes/__tests__/memory-validation.test.ts \
-  src/lib/__tests__/critical-readiness.test.ts
+  src/lib/__tests__/critical-readiness.test.ts \
+  src/routes/__tests__/public-api-verify.test.ts
 
 info "Running core deterministic flow tests..."
 bun run test:core
