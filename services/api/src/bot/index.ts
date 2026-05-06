@@ -249,14 +249,39 @@ async function handleMessage(
 // HELPERS
 // ============================================
 
-async function resolveUserId(_thread: any, message: { user?: { id?: string } }): Promise<string> {
-    if (!message.user?.id) return 'anonymous';
-
-    try {
-        return 'anonymous';
-    } catch {
-        return 'anonymous';
+async function resolveUserId(
+    thread: any,
+    message: { platform?: string; user?: { id?: string } }
+): Promise<string> {
+    const platformUserId = message.user?.id;
+    if (!platformUserId) {
+        throw new Error('Bot message missing platform user identity');
     }
+
+    const platform = resolvePlatformName(thread, message);
+    if (!platform) {
+        throw new Error('Bot message missing platform identity');
+    }
+
+    const { prisma } = await import('../lib/prisma');
+    const connection = await prisma.platformConnection.findUnique({
+        where: {
+            platform_platformUserId: {
+                platform,
+                platformUserId,
+            },
+        },
+        select: {
+            isActive: true,
+            userId: true,
+        },
+    });
+
+    if (!connection?.isActive) {
+        throw new Error('Messaging platform user is not linked to a Yula account');
+    }
+
+    return connection.userId;
 }
 
 function resolveActionActorId(action: any): string {
@@ -272,6 +297,17 @@ function resolveActionActorId(action: any): string {
     }
 
     return actorId;
+}
+
+function resolvePlatformName(thread: any, message: { platform?: string }): string | null {
+    const platform =
+        message.platform ??
+        thread?.platform ??
+        thread?.adapter?.platform ??
+        thread?.adapter?.name ??
+        thread?.adapterName;
+
+    return typeof platform === 'string' && platform.trim() ? platform.trim().toLowerCase() : null;
 }
 
 async function getThreadHistory(

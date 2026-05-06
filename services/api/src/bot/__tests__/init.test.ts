@@ -6,6 +6,9 @@ const onSubscribedMessage = vi.fn();
 const approveRequest = vi.fn();
 const rejectRequest = vi.fn();
 const addToAllowlist = vi.fn();
+const platformConnectionFindUnique = vi.fn();
+const runDoctorChecks = vi.fn();
+const formatDoctorText = vi.fn();
 const Chat = vi.fn(function Chat(config: unknown) {
     return {
         config,
@@ -41,6 +44,17 @@ vi.mock('../../services/approval.service', () => ({
     approveRequest,
     rejectRequest,
 }));
+vi.mock('../../lib/prisma', () => ({
+    prisma: {
+        platformConnection: {
+            findUnique: platformConnectionFindUnique,
+        },
+    },
+}));
+vi.mock('../../messaging/cards/doctor', () => ({
+    formatDoctorText,
+    runDoctorChecks,
+}));
 
 describe('api bot initialization', () => {
     const originalEnv = { ...process.env };
@@ -51,6 +65,12 @@ describe('api bot initialization', () => {
         approveRequest.mockResolvedValue({ id: 'approval-1', status: 'approved' });
         rejectRequest.mockResolvedValue({ id: 'approval-1', status: 'rejected' });
         addToAllowlist.mockResolvedValue(undefined);
+        platformConnectionFindUnique.mockResolvedValue({
+            isActive: true,
+            userId: 'workos-user-1',
+        });
+        runDoctorChecks.mockReturnValue({ status: 'ok' });
+        formatDoctorText.mockReturnValue('doctor ok');
         process.env = { ...originalEnv };
         delete process.env.DATABASE_URL;
         delete process.env.SLACK_BOT_TOKEN;
@@ -132,5 +152,55 @@ describe('api bot initialization', () => {
 
         expect(approveRequest).not.toHaveBeenCalled();
         expect(thread.post).toHaveBeenCalledWith('Approval action failed.');
+    });
+
+    it('resolves bot messages through an active platform connection', async () => {
+        const { getBot } = await import('../index');
+        await getBot();
+        const mentionHandler = onNewMention.mock.calls[0]?.[0];
+        const thread = {
+            adapter: { name: 'slack' },
+            post: vi.fn(),
+            subscribe: vi.fn(),
+        };
+
+        await mentionHandler(thread, {
+            text: '/doctor',
+            user: { id: 'U123' },
+        });
+
+        expect(platformConnectionFindUnique).toHaveBeenCalledWith({
+            where: {
+                platform_platformUserId: {
+                    platform: 'slack',
+                    platformUserId: 'U123',
+                },
+            },
+            select: {
+                isActive: true,
+                userId: true,
+            },
+        });
+        expect(thread.post).toHaveBeenCalledWith('doctor ok');
+    });
+
+    it('does not run bot commands for unlinked platform users', async () => {
+        platformConnectionFindUnique.mockResolvedValueOnce(null);
+        const { getBot } = await import('../index');
+        await getBot();
+        const mentionHandler = onNewMention.mock.calls[0]?.[0];
+        const thread = {
+            adapter: { name: 'slack' },
+            post: vi.fn(),
+            subscribe: vi.fn(),
+        };
+
+        await mentionHandler(thread, {
+            text: '/doctor',
+            user: { id: 'U123' },
+        });
+
+        expect(runDoctorChecks).not.toHaveBeenCalled();
+        expect(thread.post).toHaveBeenCalledWith('Sorry, something went wrong. Please try again.');
     });
 });
