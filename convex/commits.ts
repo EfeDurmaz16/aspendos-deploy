@@ -169,11 +169,12 @@ export const updateStatus = mutation({
         result: v.optional(v.any()),
     },
     handler: async (ctx, args) => {
+        void ctx;
         requireServiceSecret(args.service_secret);
-        await ctx.db.patch(args.id, {
-            status: args.status,
-            result: args.result,
-        });
+        void args.id;
+        void args.status;
+        void args.result;
+        throw new Error('Commit status is append-only; use governance.signAndCommit');
     },
 });
 
@@ -189,16 +190,9 @@ export const updateCurrentUserStatus = mutation({
         result: v.optional(v.any()),
     },
     handler: async (ctx, args) => {
-        const user = await requireAuthenticatedUser(ctx);
-        const commit = await ctx.db.get(args.id);
-        if (!commit || commit.user_id !== user._id) {
-            throw new Error('Commit not found');
-        }
-
-        await ctx.db.patch(args.id, {
-            status: args.status,
-            result: args.result,
-        });
+        void ctx;
+        void args;
+        throw new Error('Commit status is append-only; use governance.signAndCommit');
     },
 });
 
@@ -252,10 +246,11 @@ export const batchUpdateStatus = mutation({
         ),
     },
     handler: async (ctx, args) => {
+        void ctx;
         requireServiceSecret(args.service_secret);
-        for (const id of args.ids) {
-            await ctx.db.patch(id, { status: args.status });
-        }
+        void args.ids;
+        void args.status;
+        throw new Error('Commit status is append-only; use governance.signAndCommit');
     },
 });
 
