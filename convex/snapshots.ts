@@ -1,21 +1,10 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { requireAuthenticatedUser } from './lib/auth';
-
-declare const process: { env: { CONVEX_SERVICE_SECRET?: string } };
+import { requireServiceSecret } from './lib/serviceSecret';
 
 const DEFAULT_SNAPSHOT_LIMIT = 50;
 const MAX_SNAPSHOT_LIMIT = 200;
-
-function requireServiceSecret(serviceSecret: string) {
-    const expected = process.env.CONVEX_SERVICE_SECRET;
-    if (!expected) {
-        throw new Error('CONVEX_SERVICE_SECRET is not configured');
-    }
-    if (serviceSecret !== expected) {
-        throw new Error('Invalid service secret');
-    }
-}
 
 function clampLimit(value: number | undefined) {
     return Math.min(Math.max(value ?? DEFAULT_SNAPSHOT_LIMIT, 1), MAX_SNAPSHOT_LIMIT);

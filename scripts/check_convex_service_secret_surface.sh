@@ -14,6 +14,17 @@ tmp_actual="$(mktemp)"
 tmp_expected="$(mktemp)"
 trap 'rm -f "$tmp_actual" "$tmp_expected"' EXIT
 
+duplicate_helpers="$(
+  grep -R --line-number --include='*.ts' 'function requireServiceSecret' "$ROOT_DIR/convex" \
+    | grep -v '/_generated/' \
+    | grep -v '/lib/serviceSecret.ts:' || true
+)"
+if [[ -n "$duplicate_helpers" ]]; then
+  echo "$duplicate_helpers" >&2
+  echo "[ERROR] Convex service secret checks must use convex/lib/serviceSecret.ts." >&2
+  exit 1
+fi
+
 while IFS= read -r file; do
   module="${file#"$ROOT_DIR"/convex/}"
   module="${module%.ts}"

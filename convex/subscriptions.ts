@@ -1,17 +1,7 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
-declare const process: { env: { CONVEX_SERVICE_SECRET?: string } };
-
-function requireServiceSecret(serviceSecret: string) {
-    const expected = process.env.CONVEX_SERVICE_SECRET;
-    if (!expected) {
-        throw new Error('CONVEX_SERVICE_SECRET is not configured');
-    }
-    if (serviceSecret !== expected) {
-        throw new Error('Invalid service secret');
-    }
-}
+import { requireServiceSecret } from './lib/serviceSecret';
 
 const tierValidator = v.union(
     v.literal('personal'),

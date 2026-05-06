@@ -1,23 +1,12 @@
 import { parseDID, verify as verifyFidesSignature } from '@fides/sdk';
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
-
-declare const process: { env: { CONVEX_SERVICE_SECRET?: string } };
+import { requireServiceSecret } from './lib/serviceSecret';
 
 const DEFAULT_COMMIT_CHAIN_LIMIT = 25;
 const MAX_COMMIT_CHAIN_LIMIT = 100;
 const DEFAULT_VERIFY_CHAIN_LIMIT = 100;
 const MAX_VERIFY_CHAIN_LIMIT = 500;
-
-function requireServiceSecret(serviceSecret: string) {
-    const expected = process.env.CONVEX_SERVICE_SECRET;
-    if (!expected) {
-        throw new Error('CONVEX_SERVICE_SECRET is not configured');
-    }
-    if (serviceSecret !== expected) {
-        throw new Error('Invalid service secret');
-    }
-}
 
 function clampCommitChainLimit(value: number | undefined) {
     return Math.min(Math.max(value ?? DEFAULT_COMMIT_CHAIN_LIMIT, 1), MAX_COMMIT_CHAIN_LIMIT);
