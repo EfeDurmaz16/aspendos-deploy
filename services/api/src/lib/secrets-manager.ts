@@ -11,6 +11,7 @@ interface SecretConfig {
     required: boolean;
     rotationIntervalDays?: number;
     format?: RegExp;
+    minLength?: number;
     description: string;
 }
 
@@ -41,11 +42,34 @@ const SECRET_REGISTRY: SecretConfig[] = [
         description: 'PostgreSQL connection string',
     },
     {
-        key: 'better_auth_secret',
-        envVar: 'BETTER_AUTH_SECRET',
+        key: 'convex_service_secret',
+        envVar: 'CONVEX_SERVICE_SECRET',
         required: true,
         rotationIntervalDays: 90,
-        description: 'Better Auth signing secret',
+        minLength: 32,
+        description: 'Server-only Convex service boundary secret',
+    },
+    {
+        key: 'workos_api_key',
+        envVar: 'WORKOS_API_KEY',
+        required: true,
+        rotationIntervalDays: 90,
+        description: 'WorkOS AuthKit API key',
+    },
+    {
+        key: 'workos_cookie_password',
+        envVar: 'WORKOS_COOKIE_PASSWORD',
+        required: true,
+        rotationIntervalDays: 90,
+        minLength: 32,
+        description: 'WorkOS AuthKit encrypted cookie password',
+    },
+    {
+        key: 'ai_gateway_api_key',
+        envVar: 'AI_GATEWAY_API_KEY',
+        required: true,
+        rotationIntervalDays: 180,
+        description: 'AI Gateway API key',
     },
     {
         key: 'openai_api_key',
@@ -72,18 +96,43 @@ const SECRET_REGISTRY: SecretConfig[] = [
         description: 'Groq API key',
     },
     {
-        key: 'polar_access_token',
-        envVar: 'POLAR_ACCESS_TOKEN',
-        required: false,
+        key: 'stripe_secret_key',
+        envVar: 'STRIPE_SECRET_KEY',
+        required: true,
+        format: /^sk_(test|live)_/,
         rotationIntervalDays: 90,
-        description: 'Polar billing access token',
+        description: 'Stripe API secret key',
     },
     {
-        key: 'encryption_key',
+        key: 'stripe_webhook_secret',
+        envVar: 'STRIPE_WEBHOOK_SECRET',
+        required: true,
+        format: /^whsec_/,
+        rotationIntervalDays: 90,
+        description: 'Stripe webhook signing secret',
+    },
+    {
+        key: 'bot_approval_webhook_secret',
+        envVar: 'BOT_APPROVAL_WEBHOOK_SECRET',
+        required: true,
+        minLength: 32,
+        rotationIntervalDays: 90,
+        description: 'Bot approval webhook signing secret',
+    },
+    {
+        key: 'byok_encryption_secret',
+        envVar: 'BYOK_ENCRYPTION_SECRET',
+        required: false,
+        minLength: 32,
+        rotationIntervalDays: 365,
+        description: 'BYOK credential vault encryption secret',
+    },
+    {
+        key: 'legacy_field_encryption_key',
         envVar: 'ENCRYPTION_KEY',
         required: false,
         rotationIntervalDays: 365,
-        description: 'Field-level encryption key',
+        description: 'Legacy field-level encryption key',
     },
     {
         key: 'sentry_dsn',
@@ -154,6 +203,13 @@ export function validateSecret(key: string): { isValid: boolean; reason?: string
         return {
             isValid: false,
             reason: `Secret ${config.envVar} does not match expected format`,
+        };
+    }
+
+    if (config.minLength && value.length < config.minLength) {
+        return {
+            isValid: false,
+            reason: `Secret ${config.envVar} must be at least ${config.minLength} characters`,
         };
     }
 

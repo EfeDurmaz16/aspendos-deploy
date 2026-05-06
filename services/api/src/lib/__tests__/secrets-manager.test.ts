@@ -54,15 +54,15 @@ describe('Secrets Manager', () => {
 
     describe('requireSecret', () => {
         it('should return value when set', () => {
-            process.env.BETTER_AUTH_SECRET = 'my-secret-key';
-            const value = requireSecret('better_auth_secret', 'test');
-            expect(value).toBe('my-secret-key');
+            process.env.CONVEX_SERVICE_SECRET = '12345678901234567890123456789012';
+            const value = requireSecret('convex_service_secret', 'test');
+            expect(value).toBe('12345678901234567890123456789012');
         });
 
         it('should throw when required secret is not set', () => {
-            delete process.env.BETTER_AUTH_SECRET;
-            expect(() => requireSecret('better_auth_secret', 'test')).toThrow(
-                'Required secret "better_auth_secret"'
+            delete process.env.CONVEX_SERVICE_SECRET;
+            expect(() => requireSecret('convex_service_secret', 'test')).toThrow(
+                'Required secret "convex_service_secret"'
             );
         });
     });
@@ -78,6 +78,22 @@ describe('Secrets Manager', () => {
             const result = validateSecret('openai_api_key');
             expect(result.isValid).toBe(false);
             expect(result.reason).toContain('does not match expected format');
+        });
+
+        it('should validate format for Stripe secrets', () => {
+            process.env.STRIPE_SECRET_KEY = 'sk_test_abc123';
+            process.env.STRIPE_WEBHOOK_SECRET = 'whsec_abc123';
+
+            expect(validateSecret('stripe_secret_key').isValid).toBe(true);
+            expect(validateSecret('stripe_webhook_secret').isValid).toBe(true);
+        });
+
+        it('should reject short fixed secrets', () => {
+            process.env.CONVEX_SERVICE_SECRET = 'too-short';
+
+            const result = validateSecret('convex_service_secret');
+            expect(result.isValid).toBe(false);
+            expect(result.reason).toContain('at least 32 characters');
         });
 
         it('should validate format for Anthropic key', () => {
@@ -143,11 +159,11 @@ describe('Secrets Manager', () => {
 
     describe('markSecretRotated', () => {
         it('should update rotation timestamp', () => {
-            markSecretRotated('better_auth_secret');
+            markSecretRotated('convex_service_secret');
 
             const health = getSecretsHealth();
-            const authHealth = health.find((h) => h.key === 'better_auth_secret');
-            expect(authHealth?.needsRotation).toBe(false);
+            const convexHealth = health.find((h) => h.key === 'convex_service_secret');
+            expect(convexHealth?.needsRotation).toBe(false);
         });
     });
 
