@@ -25,8 +25,21 @@ vi.mock('../../services/billing.service', () => ({
 
 // Mock auth middleware
 vi.mock('../../middleware/auth', () => ({
-    requireAuth: vi.fn((_c: unknown, next: () => Promise<void>) => next()),
+    requireAuth: vi.fn((c: any, next: () => Promise<void>) => {
+        c.set('userId', 'billing-user-1');
+        return next();
+    }),
+    rejectApiKeyAuth: vi.fn((c: any, next: () => Promise<void>) => {
+        if (c.get('apiKeyId')) {
+            return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+        }
+        return next();
+    }),
 }));
+
+import { requireAuth } from '../../middleware/auth';
+
+const mockRequireAuth = requireAuth as any;
 
 // Mock validate middleware
 vi.mock('../../middleware/validate', () => ({
@@ -84,6 +97,35 @@ describe('Retired API billing webhook', () => {
             code: 'BILLING_WEBHOOK_RETIRED',
             provider: 'stripe',
             owner: 'apps/web/src/app/api/billing/webhook/route.ts',
+        });
+    });
+});
+
+describe('Billing session boundaries', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockRequireAuth.mockImplementation((c: any, next: () => Promise<void>) => {
+            c.set('userId', 'billing-user-1');
+            return next();
+        });
+    });
+
+    it('rejects API-key authenticated access to billing routes', async () => {
+        mockRequireAuth.mockImplementationOnce((c: any, next: () => Promise<void>) => {
+            c.set('userId', 'billing-user-1');
+            c.set('apiKeyId', 'key-1');
+            c.set('apiKeyPermissions', ['chat:read']);
+            return next();
+        });
+        const { default: billingApp } = await import('../billing');
+        const app = new Hono();
+        app.route('/billing', billingApp);
+
+        const res = await app.request('/billing');
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
         });
     });
 });

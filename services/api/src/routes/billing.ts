@@ -5,7 +5,7 @@
  */
 import { Hono } from 'hono';
 
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 import { validateBody, validateQuery } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
@@ -30,7 +30,7 @@ const WEB_OWNED_BILLING_RESPONSE = {
 // ============================================
 
 // GET /api/billing - Get billing status
-app.get('/', requireAuth, async (c) => {
+app.get('/', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     const status = await billingService.getBillingStatus(userId);
@@ -39,14 +39,14 @@ app.get('/', requireAuth, async (c) => {
 });
 
 // POST /api/billing/sync - Web app owns Stripe customer lifecycle
-app.post('/sync', requireAuth, async (c) => {
+app.post('/sync', requireAuth, rejectApiKeyAuth, async (c) => {
     const _userId = c.get('userId')!;
     const _user = c.get('user')!;
     return c.json(WEB_OWNED_BILLING_RESPONSE, 503);
 });
 
 // GET /api/billing/usage - Get usage history
-app.get('/usage', requireAuth, validateQuery(getUsageQuerySchema), async (c) => {
+app.get('/usage', requireAuth, rejectApiKeyAuth, validateQuery(getUsageQuerySchema), async (c) => {
     const userId = c.get('userId')!;
     const validatedQuery = c.get('validatedQuery') as { limit: number };
     const limit = validatedQuery.limit;
@@ -63,55 +63,61 @@ app.get('/tiers', async (c) => {
 });
 
 // POST /api/billing/checkout - Web app owns Stripe checkout session creation
-app.post('/checkout', requireAuth, validateBody(createCheckoutSchema), async (c) => {
-    const _userId = c.get('userId')!;
-    const _user = c.get('user')!;
-    const _validatedBody = c.get('validatedBody');
-    return c.json(WEB_OWNED_BILLING_RESPONSE, 503);
-});
+app.post(
+    '/checkout',
+    requireAuth,
+    rejectApiKeyAuth,
+    validateBody(createCheckoutSchema),
+    async (c) => {
+        const _userId = c.get('userId')!;
+        const _user = c.get('user')!;
+        const _validatedBody = c.get('validatedBody');
+        return c.json(WEB_OWNED_BILLING_RESPONSE, 503);
+    }
+);
 
 // POST /api/billing/cancel - Web app owns Stripe subscription cancellation
-app.post('/cancel', requireAuth, async (c) => {
+app.post('/cancel', requireAuth, rejectApiKeyAuth, async (c) => {
     const _userId = c.get('userId')!;
     return c.json(WEB_OWNED_BILLING_RESPONSE, 503);
 });
 
 // GET /api/billing/portal - Web app owns Stripe customer portal links
-app.get('/portal', requireAuth, async (c) => {
+app.get('/portal', requireAuth, rejectApiKeyAuth, async (c) => {
     const _userId = c.get('userId')!;
     return c.json(WEB_OWNED_BILLING_RESPONSE, 503);
 });
 
 // GET /api/billing/cost-ceiling - Check daily cost ceiling status
-app.get('/cost-ceiling', requireAuth, async (c) => {
+app.get('/cost-ceiling', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const ceiling = await billingService.checkCostCeiling(userId);
     return c.json(ceiling);
 });
 
 // GET /api/billing/cost-summary - Get cost breakdown by model and day
-app.get('/cost-summary', requireAuth, async (c) => {
+app.get('/cost-summary', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const summary = await billingService.getCostSummary(userId);
     return c.json(summary);
 });
 
 // GET /api/billing/spending-alerts - Get spending alerts for user
-app.get('/spending-alerts', requireAuth, async (c) => {
+app.get('/spending-alerts', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const alerts = await billingService.getSpendingAlerts(userId);
     return c.json(alerts);
 });
 
 // GET /api/billing/unit-economics - Get per-user unit economics (admin/self)
-app.get('/unit-economics', requireAuth, async (c) => {
+app.get('/unit-economics', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const economics = await billingService.getUnitEconomics(userId);
     return c.json(economics);
 });
 
 // GET /api/billing/projection - Get end-of-month cost projection
-app.get('/projection', requireAuth, async (c) => {
+app.get('/projection', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const projection = await billingService.getCostProjection(userId);
     return c.json(projection);
