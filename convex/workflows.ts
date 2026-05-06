@@ -1,9 +1,12 @@
 import { WorkflowManager } from '@convex-dev/workflow';
 import { v } from 'convex/values';
-import { components, internal } from './_generated/api';
+import { components } from './_generated/api';
 import { internalMutation } from './_generated/server';
 
 export const workflow = new WorkflowManager(components.workflow);
+
+const RETIRED_WORKFLOW_ERROR =
+    'Legacy workflow execution is retired: append execution outcomes through governance.signAndCommit with an external FIDES signature';
 
 export const agentTask = workflow.define({
     args: {
@@ -13,40 +16,9 @@ export const agentTask = workflow.define({
         commit_hash: v.string(),
         requires_approval: v.boolean(),
     },
-    handler: async (step, args) => {
-        await step.runMutation(internal.workflows.recordPreCommit, {
-            user_id: args.user_id,
-            tool_name: args.tool_name,
-            commit_hash: args.commit_hash,
-        });
-
-        if (args.requires_approval) {
-            await step.runMutation(internal.workflows.createApprovalRequest, {
-                user_id: args.user_id,
-                commit_hash: args.commit_hash,
-            });
-
-            const approval = await step.awaitEvent<{ status: 'approved' | 'rejected' }>({
-                name: 'approval_received',
-            });
-
-            if (approval.status === 'rejected') {
-                await step.runMutation(internal.workflows.recordPostCommit, {
-                    commit_hash: args.commit_hash,
-                    status: 'failed',
-                    result: { error: 'Rejected by user' },
-                });
-                return { success: false, reason: 'rejected' };
-            }
-        }
-
-        await step.runMutation(internal.workflows.recordPostCommit, {
-            commit_hash: args.commit_hash,
-            status: 'executed',
-            result: { tool_name: args.tool_name },
-        });
-
-        return { success: true, commit_hash: args.commit_hash };
+    handler: async (_step, args) => {
+        void args;
+        throw new Error(RETIRED_WORKFLOW_ERROR);
     },
 });
 
@@ -57,12 +29,9 @@ export const recordPreCommit = internalMutation({
         commit_hash: v.string(),
     },
     handler: async (ctx, args) => {
-        await ctx.db.insert('action_log', {
-            user_id: args.user_id,
-            event_type: 'agent_task_pre_commit',
-            details: { tool_name: args.tool_name, commit_hash: args.commit_hash },
-            timestamp: Date.now(),
-        });
+        void ctx;
+        void args;
+        throw new Error(RETIRED_WORKFLOW_ERROR);
     },
 });
 
@@ -72,13 +41,9 @@ export const createApprovalRequest = internalMutation({
         commit_hash: v.string(),
     },
     handler: async (ctx, args) => {
-        await ctx.db.insert('approvals', {
-            user_id: args.user_id,
-            commit_hash: args.commit_hash,
-            surface: 'workflow',
-            expires_at: Date.now() + 5 * 60 * 1000,
-            status: 'pending',
-        });
+        void ctx;
+        void args;
+        throw new Error(RETIRED_WORKFLOW_ERROR);
     },
 });
 
@@ -89,14 +54,8 @@ export const recordPostCommit = internalMutation({
         result: v.any(),
     },
     handler: async (ctx, args) => {
-        await ctx.db.insert('action_log', {
-            event_type: 'agent_task_post_commit',
-            details: {
-                commit_hash: args.commit_hash,
-                status: args.status,
-                result: args.result,
-            },
-            timestamp: Date.now(),
-        });
+        void ctx;
+        void args;
+        throw new Error(RETIRED_WORKFLOW_ERROR);
     },
 });

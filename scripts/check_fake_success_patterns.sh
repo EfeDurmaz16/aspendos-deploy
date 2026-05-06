@@ -42,6 +42,13 @@ if [[ -n "$FIDES_FALLBACK_MATCHES" ]]; then
   exit 1
 fi
 
+LEGACY_WORKFLOW_COMMIT_MATCHES="$(rg -n "agent_task_pre_commit|agent_task_post_commit|surface: 'workflow'" convex/workflows.ts || true)"
+if [[ -n "$LEGACY_WORKFLOW_COMMIT_MATCHES" ]]; then
+  echo "$LEGACY_WORKFLOW_COMMIT_MATCHES"
+  echo "[ERROR] Legacy Convex workflows must not fake governance commits with action_log or workflow approvals." >&2
+  exit 1
+fi
+
 WEB_MEMORY_STUB_MATCHES="$(rg -n 'Qdrant removed|return \[\];|async function (storeMemory|deleteUserMemories|searchConversations)' apps/web/src/app/api/memory apps/web/src/app/api/cron/pac apps/web/src/lib/ai/hybrid.ts apps/web/src/lib/services/hybrid-router.ts || true)"
 if [[ -n "$WEB_MEMORY_STUB_MATCHES" ]]; then
   echo "$WEB_MEMORY_STUB_MATCHES"
