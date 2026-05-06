@@ -30,9 +30,15 @@ const BLOCKED_COMMAND_PATTERNS = [
     /:\s*\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}/,
     /\bcurl\b.*\|\s*(?:sh|bash|zsh)\b/i,
     /\bwget\b.*\|\s*(?:sh|bash|zsh)\b/i,
+    /\b(?:169\.254\.169\.254|metadata\.google\.internal)\b/i,
+];
+const BLOCKED_PATH_PATTERNS = [
+    /(^|\/)\.env(?:$|\.)/i,
+    /\.(?:pem|key|p12|pfx)$/i,
+    /(^|\/)(?:id_rsa|id_ed25519|credentials|secrets?)(?:$|\.)/i,
 ];
 
-function validateSandboxPath(path: string) {
+export function validateSandboxPath(path: string) {
     if (!path.startsWith('/')) {
         throw new Error('Sandbox path must be absolute');
     }
@@ -42,9 +48,14 @@ function validateSandboxPath(path: string) {
     if (!SAFE_PATH_ROOTS.some((root) => path === root || path.startsWith(`${root}/`))) {
         throw new Error(`Sandbox path must be under ${SAFE_PATH_ROOTS.join(', ')}`);
     }
+    for (const pattern of BLOCKED_PATH_PATTERNS) {
+        if (pattern.test(path)) {
+            throw new Error('Sandbox path targets a blocked sensitive file');
+        }
+    }
 }
 
-function validateCommand(command: string) {
+export function validateCommand(command: string) {
     if (command.length > 4000) {
         throw new Error('Sandbox command is too long');
     }
@@ -69,8 +80,12 @@ function validatePackages(packages: string[]) {
 async function getOrCreateSandbox(sandboxId?: string) {
     const Sandbox = (await import('e2b')).default;
 
-    if (sandboxId && sandboxCache.has(sandboxId)) {
-        return sandboxCache.get(sandboxId);
+    if (sandboxId) {
+        const cached = sandboxCache.get(sandboxId);
+        if (!cached) {
+            throw new Error('Sandbox not found. Create a sandbox first.');
+        }
+        return cached;
     }
 
     const apiKey = process.env.E2B_API_KEY;
