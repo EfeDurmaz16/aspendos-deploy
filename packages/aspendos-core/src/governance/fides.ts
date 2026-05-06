@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import type { ReversibilityMetadata } from '../reversibility/types';
 
 interface FidesSignResult {
@@ -125,7 +126,12 @@ export class FidesService {
 
     private async verifyWithFallback(payload: string, signature: string): Promise<boolean> {
         const expected = await this.signWithFallback(payload);
-        return expected === signature;
+        const expectedBuffer = Buffer.from(expected);
+        const actualBuffer = Buffer.from(signature);
+        return (
+            expectedBuffer.length === actualBuffer.length &&
+            timingSafeEqual(expectedBuffer, actualBuffer)
+        );
     }
 
     async signToolCall(
