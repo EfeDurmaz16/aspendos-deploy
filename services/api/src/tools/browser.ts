@@ -44,21 +44,13 @@ export const browserTool: ToolDefinition = {
             return { success: false, error: 'STEEL_API_KEY not configured' };
         }
 
-        try {
-            const Steel = await import('steel-sdk');
-            const client = new Steel.default({ steelAPIKey: apiKey });
-            const session = await client.sessions.create();
-
-            return {
-                success: true,
-                data: {
-                    sessionId: session.id,
-                    url,
-                    action: action ?? 'navigate',
-                },
-            };
-        } catch (e: any) {
-            return { success: false, error: e?.message ?? 'Steel.dev request failed' };
-        }
+        return {
+            success: false,
+            error: 'Browser navigation is not implemented. Refusing to report success without navigating or capturing the requested URL.',
+            data: {
+                url,
+                action: action ?? 'navigate',
+            },
+        };
     },
 };

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ToolContext } from '../../reversibility/types';
+import { browserTool } from '../browser';
 import { calendarCreateEventTool } from '../calendar-create-event';
 import { computerUseTool } from '../computer-use';
 import { dbMigrateTool } from '../db-migrate';
@@ -162,6 +163,26 @@ describe('computer.use', () => {
 
             if (previousE2BKey === undefined) delete process.env.E2B_API_KEY;
             else process.env.E2B_API_KEY = previousE2BKey;
+        }
+    });
+});
+
+describe('browser.navigate', () => {
+    it('fails loud instead of reporting fake browser navigation success', async () => {
+        const previousSteelKey = process.env.STEEL_API_KEY;
+        process.env.STEEL_API_KEY = 'test-steel-key';
+
+        try {
+            const result = await browserTool.execute(
+                { url: 'https://example.com', action: 'navigate' },
+                ctx
+            );
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('not implemented');
+            expect(result.error).toContain('Refusing to report success');
+        } finally {
+            if (previousSteelKey === undefined) delete process.env.STEEL_API_KEY;
+            else process.env.STEEL_API_KEY = previousSteelKey;
         }
     });
 });
