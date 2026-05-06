@@ -1,9 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { ConvexHttpClient } from 'convex/browser';
 import { NextResponse } from 'next/server';
+import { getConvexServer } from '@/lib/convex-server';
 import { api } from '../../../../../../../convex/_generated/api';
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const SIGNATURE_HEADER = 'x-yula-signature';
 const TIMESTAMP_HEADER = 'x-yula-timestamp';
 const SIGNATURE_TOLERANCE_MS = 5 * 60 * 1000;
@@ -119,6 +118,7 @@ export async function POST(request: Request) {
 
         // Look up the approval record by commit hash
         const serviceSecret = getConvexServiceSecret();
+        const convex = getConvexServer();
         const approval = await convex.query(api.approvals.getByCommitHash, {
             service_secret: serviceSecret,
             commit_hash: commitHash,
