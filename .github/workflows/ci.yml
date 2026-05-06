@@ -146,6 +146,7 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile -t aspendos-api-railway:ci .
       - run: docker build -f services/api/Dockerfile -t aspendos-api:ci .
       - run: docker build -f apps/web/Dockerfile -t aspendos-web:ci .
 

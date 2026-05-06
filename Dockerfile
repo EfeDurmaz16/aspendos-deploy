@@ -1,32 +1,24 @@
 # Yula OS API Service Dockerfile
-# Standalone API build for GCP Cloud Run
+# Railway/root production image for the API service.
 
 FROM oven/bun:1 AS builder
 WORKDIR /app
 
-# Copy API package.json and fix workspace refs to local paths
-COPY services/api/package.json ./package.json.orig
-RUN sed 's|"workspace:\*"|"file:./packages/db"|; s|"@aspendos/shared-types": "file:./packages/db"|"@aspendos/shared-types": "file:./packages/shared-types"|' \
-    package.json.orig > package.json.tmp && \
-    cat package.json.orig | sed 's/"@aspendos\/db": "workspace:\*"/"@aspendos\/db": "file:\.\/packages\/db"/' | \
-    sed 's/"@aspendos\/shared-types": "workspace:\*"/"@aspendos\/shared-types": "file:\.\/packages\/shared-types"/' > package.json
+# Copy the monorepo workspace exactly as CI sees it. Railway selects this
+# root Dockerfile, so it must fail on dependency, workspace, or Prisma drift.
+COPY package.json bun.lock ./
+COPY packages/ ./packages/
+COPY services/api/ ./services/api/
 
-# Copy workspace packages
-COPY packages/db/ ./packages/db/
-COPY packages/shared-types/ ./packages/shared-types/
+# Install deps with the committed lockfile.
+RUN bun install --frozen-lockfile
 
-# Install deps
-RUN bun install --no-frozen-lockfile
+# Generate Prisma client. This must fail loudly; the API uses @aspendos/db on
+# production paths and cannot safely run with the fallback client.
+RUN cd packages/db && bun run db:generate
 
-# Generate Prisma client
-RUN cd packages/db && bunx prisma generate 2>/dev/null || true
-
-# Copy API source
-COPY services/api/src ./src
-COPY services/api/tsconfig.json ./
-
-# Build
-RUN bun build src/index.ts --outdir dist --target bun
+# Build the API through the package script used by CI.
+RUN cd services/api && bun run build
 
 # ============================================
 FROM oven/bun:1-slim AS runner
@@ -36,11 +28,15 @@ ENV NODE_ENV=production
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs api
 
-COPY --from=builder --chown=api:nodejs /app/package.json ./
-COPY --from=builder --chown=api:nodejs /app/dist ./dist
+COPY --from=builder --chown=api:nodejs /app/services/api/package.json ./
 COPY --from=builder --chown=api:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=api:nodejs /app/packages ./packages
+COPY --from=builder --chown=api:nodejs /app/services/api/dist ./dist
 
 USER api
 EXPOSE 8080
 
-CMD ["bun", "run", "dist/index.js"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD bun -e "fetch('http://localhost:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+
+CMD ["bun", "run", "start"]
