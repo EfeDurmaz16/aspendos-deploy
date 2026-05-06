@@ -66,8 +66,7 @@ export async function createImportJob(
         };
     } catch (error) {
         console.error('[Import] createImportJob failed:', error);
-        const jobId = `import_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        return { id: jobId, userId, source, fileName, fileSize, status: 'PENDING' };
+        throw error;
     }
 }
 
@@ -104,7 +103,7 @@ export async function updateImportJobStatus(
         return { id: jobId, status };
     } catch (err) {
         console.error('[Import] updateImportJobStatus failed:', err);
-        return { id: jobId, status };
+        throw err;
     }
 }
 
@@ -146,8 +145,9 @@ export async function getImportJob(jobId: string, userId: string) {
             status: latestStatus,
             entities,
         };
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Import] getImportJob failed:', error);
+        throw error;
     }
 }
 
@@ -184,8 +184,9 @@ export async function listImportJobs(userId: string, limit = 20) {
                 createdAt: new Date(job.timestamp),
             };
         });
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Import] listImportJobs failed:', error);
+        throw error;
     }
 }
 
@@ -516,7 +517,7 @@ export async function storeImportEntities(jobId: string, conversations: ParsedCo
         return conversations.length;
     } catch (error) {
         console.error('[Import] storeImportEntities failed:', error);
-        return 0;
+        throw error;
     }
 }
 
@@ -532,8 +533,9 @@ export async function updateEntitySelection(entityId: string, jobId: string, sel
             details: { entityId, jobId, selected },
         });
         return { id: entityId, jobId, selected };
-    } catch {
-        return { id: entityId, jobId, selected };
+    } catch (error) {
+        console.error('[Import] updateEntitySelection failed:', error);
+        throw error;
     }
 }
 
@@ -665,7 +667,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
             throw error;
         }
         console.error('[Import] executeImport failed:', error);
-        return { total: 0, imported: 0, failed: 0 };
+        throw error;
     }
 }
 
@@ -696,8 +698,9 @@ export async function getImportStats(userId: string) {
             totalJobs: jobs.length,
             totalImported,
         };
-    } catch {
-        return { totalJobs: 0, totalImported: 0 };
+    } catch (error) {
+        console.error('[Import] getImportStats failed:', error);
+        throw error;
     }
 }
 
