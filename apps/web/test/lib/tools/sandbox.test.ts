@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { runCode, validateCommand, validateSandboxPath } from '../../../src/lib/tools/sandbox';
 
+const toolExecutionOptions = {
+    toolCallId: 'test-tool-call',
+    messages: [],
+};
+
 describe('web sandbox safety', () => {
     it('blocks destructive commands before provider execution', () => {
         expect(() => validateCommand('rm -rf /')).toThrow(/blocked destructive pattern/);
@@ -19,10 +24,18 @@ describe('web sandbox safety', () => {
     });
 
     it('does not create a new sandbox when an operation references an unknown sandbox id', async () => {
-        const result = await runCode.execute({
-            sandboxId: 'unknown-sandbox',
-            command: 'echo ok',
-        });
+        const execute = runCode.execute;
+        if (!execute) {
+            throw new Error('runCode tool must expose an execute function');
+        }
+
+        const result = await execute(
+            {
+                sandboxId: 'unknown-sandbox',
+                command: 'echo ok',
+            },
+            toolExecutionOptions
+        );
 
         expect(result).toEqual({
             success: false,
