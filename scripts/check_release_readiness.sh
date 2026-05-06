@@ -60,6 +60,9 @@ else
   bash scripts/pre-deploy-check.sh
 fi
 
+info "Checking Convex query bounds..."
+bash scripts/check_convex_query_bounds.sh
+
 info "Running API critical tests..."
 bun run --cwd services/api test \
   src/routes/__tests__/council.test.ts \
