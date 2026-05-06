@@ -76,6 +76,9 @@ fi
 info "Checking Convex query bounds..."
 bash scripts/check_convex_query_bounds.sh
 
+info "Checking Helm deployment chart..."
+bash scripts/check_helm_chart.sh
+
 info "Checking server-only Convex secret posture..."
 require_secret_for_release CONVEX_SERVICE_SECRET
 require_secret_for_release BOT_APPROVAL_WEBHOOK_SECRET

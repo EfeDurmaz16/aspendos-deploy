@@ -177,10 +177,18 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run generated:check
 
+  helm-chart:
+    name: Helm Chart Check
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/check_helm_chart.sh
+
   release-readiness:
     name: Release Readiness
     runs-on: ubuntu-latest
-    needs: [build, typecheck-web, typecheck-api, test-web, test-api, test-core, docker-build, convex-typecheck, generated-artifacts]
+    needs: [build, typecheck-web, typecheck-api, test-web, test-api, test-core, docker-build, convex-typecheck, generated-artifacts, helm-chart]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2

@@ -19,7 +19,7 @@ api:
     repository: ghcr.io/aspendos/yula-api
     tag: latest
     pullPolicy: IfNotPresent
-  port: 8787
+  port: 8080
   resources:
     requests:
       cpu: 100m
@@ -35,11 +35,27 @@ redis:
     tag: 7-alpine
 
 env:
+  DATABASE_URL: ""
   NEXT_PUBLIC_CONVEX_URL: ""
+  CONVEX_SERVICE_SECRET: ""
   AI_GATEWAY_API_KEY: ""
   SUPERMEMORY_API_KEY: ""
   WORKOS_CLIENT_ID: ""
   WORKOS_API_KEY: ""
+  WORKOS_COOKIE_PASSWORD: ""
+  NEXT_PUBLIC_WORKOS_REDIRECT_URI: ""
+  STRIPE_SECRET_KEY: ""
+  STRIPE_PUBLISHABLE_KEY: ""
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ""
+  STRIPE_WEBHOOK_SECRET: ""
+  BOT_APPROVAL_WEBHOOK_SECRET: ""
+  AGENT_RESUME_URL: ""
+  AGIT_REPO_PATH: ""
+  UPSTASH_REDIS_REST_URL: ""
+  UPSTASH_REDIS_REST_TOKEN: ""
+  BYOK_ENCRYPTION_SECRET: ""
+  SENTRY_DSN: ""
+  NEXT_PUBLIC_SENTRY_DSN: ""
 
 ingress:
   enabled: true
