@@ -243,13 +243,7 @@ app.use('*', async (c, next) => {
 
         // Capture error in Sentry
         // Sanitize headers before sending to Sentry (never log auth tokens)
-        const SENSITIVE_HEADERS = [
-            'authorization',
-            'cookie',
-            'x-cron-secret',
-            'x-polar-signature',
-            'polar-signature',
-        ];
+        const SENSITIVE_HEADERS = ['authorization', 'cookie', 'x-cron-secret', 'stripe-signature'];
         const safeHeaders = Object.fromEntries(
             [...c.req.raw.headers.entries()].filter(
                 ([key]) => !SENSITIVE_HEADERS.includes(key.toLowerCase())

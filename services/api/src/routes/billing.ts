@@ -1,21 +1,14 @@
 /**
  * Billing API Routes
  * Handles billing status, checkout, and webhooks.
- * TODO(stripe-migration): Re-wire checkout/webhook/portal/cancel to Stripe service.
- * Legacy webhook idempotency remains wired until the Stripe handler replaces it.
+ * Stripe checkout, portal, and webhook lifecycle are owned by the web app.
  */
-import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 
-import { createLogger } from '../lib/logger';
 import { requireAuth } from '../middleware/auth';
-
-const log = createLogger({ action: 'billing' });
 
 import { validateBody, validateQuery } from '../middleware/validate';
 import * as billingService from '../services/billing.service';
-// TODO(stripe-migration): replace with stripe.service.
-import * as polarService from '../services/polar.service';
 import { createCheckoutSchema, getUsageQuerySchema } from '../validation/billing.schema';
 
 type Variables = {
@@ -25,9 +18,6 @@ type Variables = {
 };
 
 const app = new Hono<{ Variables: Variables }>();
-
-// TODO(stripe-migration): re-enable webhook retry queue once Stripe webhook handler is wired up.
-// (Previously processed Polar webhook retries with exponential backoff; removed with polar.service.ts.)
 
 // ============================================
 // AUTHENTICATED ROUTES
@@ -135,46 +125,20 @@ app.get('/projection', requireAuth, async (c) => {
 // WEBHOOK (NO AUTH - uses signature verification)
 // ============================================
 
-// POST /api/billing/webhook - Handle billing provider webhooks
-// TODO(stripe-migration): replace with stripe.service.verifyWebhookSignature + handleWebhook.
+// POST /api/billing/webhook - Retired legacy API webhook.
+// Stripe webhook handling lives in apps/web/src/app/api/billing/webhook/route.ts,
+// which writes subscription state to Convex. Keeping the old API webhook active
+// would create a second billing truth source against Prisma BillingAccount rows.
 app.post('/webhook', async (c) => {
-    const secret = process.env.POLAR_WEBHOOK_SECRET;
-    if (!secret) {
-        return c.json({ error: 'Webhook secret is not configured' }, 500);
-    }
-
-    const payload = await c.req.text();
-    const signature = c.req.header('polar-signature') ?? '';
-    if (!polarService.verifyWebhookSignature(payload, signature, secret)) {
-        return c.json({ error: 'Invalid signature' }, 401);
-    }
-
-    const event = JSON.parse(payload) as { id?: string; type: string; data: unknown };
-
-    if (event.id) {
-        const existing = await prisma.processedWebhookEvent.findUnique({
-            where: { id: event.id },
-        });
-        if (existing) {
-            return c.json({ received: true, duplicate: true });
-        }
-    }
-
-    await polarService.handleWebhook(event as any);
-
-    if (event.id) {
-        try {
-            await prisma.processedWebhookEvent.create({
-                data: { id: event.id, type: event.type },
-            });
-        } catch (error) {
-            log.warn('Webhook event was already recorded', {
-                metadata: { eventId: event.id, error },
-            });
-        }
-    }
-
-    return c.json({ received: true });
+    return c.json(
+        {
+            error: 'Legacy API billing webhook is retired',
+            code: 'BILLING_WEBHOOK_RETIRED',
+            provider: 'stripe',
+            owner: 'apps/web/src/app/api/billing/webhook/route.ts',
+        },
+        410
+    );
 });
 
 export default app;
