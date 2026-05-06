@@ -58,12 +58,59 @@ export const TOOL_GROUPS: ToolGroupMeta[] = [
     },
 ];
 
+function governedTool(toolName: string, rawTool: any, group: ToolGroupMeta) {
+    if (typeof rawTool?.execute !== 'function') {
+        return rawTool;
+    }
+
+    return {
+        ...rawTool,
+        execute: async (...args: unknown[]) => {
+            if (group.reversibility_class === 'irreversible_blocked') {
+                return {
+                    success: false,
+                    status: 'blocked',
+                    toolName,
+                    class: group.reversibility_class,
+                    error: `Tool "${toolName}" is blocked by governance policy.`,
+                };
+            }
+
+            if (group.reversibility_class === 'approval_only') {
+                return {
+                    success: false,
+                    status: 'awaiting_approval',
+                    toolName,
+                    class: group.reversibility_class,
+                    error: `Tool "${toolName}" requires approval before execution.`,
+                };
+            }
+
+            return rawTool.execute(...args);
+        },
+    };
+}
+
+function addGovernedGroup(
+    target: Record<string, any>,
+    rawTools: Record<string, any>,
+    group: ToolGroupMeta
+) {
+    for (const [toolName, rawTool] of Object.entries(rawTools)) {
+        target[toolName] = governedTool(toolName, rawTool, group);
+    }
+}
+
 // ── All tools (ungated) ─────────────────────────────────────────
 export const allAgentTools = {
-    ...sandboxTools,
-    ...browserTools,
-    ...computerUseTools,
-} as const;
+    ...(() => {
+        const tools: Record<string, any> = {};
+        addGovernedGroup(tools, sandboxTools, TOOL_GROUPS[0]!);
+        addGovernedGroup(tools, browserTools, TOOL_GROUPS[1]!);
+        addGovernedGroup(tools, computerUseTools, TOOL_GROUPS[2]!);
+        return tools;
+    })(),
+};
 
 // ── Tier-gated tool resolver ────────────────────────────────────
 export function getToolsForTier(tier: UserTier): Record<string, any> {
@@ -71,15 +118,15 @@ export function getToolsForTier(tier: UserTier): Record<string, any> {
     const tools: Record<string, any> = {};
 
     if (tierLevel >= TIER_ORDER[SANDBOX_TOOL_META.tier_minimum as UserTier]) {
-        Object.assign(tools, sandboxTools);
+        addGovernedGroup(tools, sandboxTools, TOOL_GROUPS[0]!);
     }
 
     if (tierLevel >= TIER_ORDER[BROWSER_TOOL_META.tier_minimum as UserTier]) {
-        Object.assign(tools, browserTools);
+        addGovernedGroup(tools, browserTools, TOOL_GROUPS[1]!);
     }
 
     if (tierLevel >= TIER_ORDER[COMPUTER_USE_TOOL_META.tier_minimum as UserTier]) {
-        Object.assign(tools, computerUseTools);
+        addGovernedGroup(tools, computerUseTools, TOOL_GROUPS[2]!);
     }
 
     return tools;
