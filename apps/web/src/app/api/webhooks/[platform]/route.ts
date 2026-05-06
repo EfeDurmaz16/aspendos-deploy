@@ -1,5 +1,4 @@
-import { after } from 'next/server';
-import { getBot } from '@/lib/messaging/bot';
+import { dispatchWebhook } from '@/lib/messaging/webhook-dispatch';
 
 const SUPPORTED_WEBHOOK_PLATFORMS = new Set(['slack', 'discord', 'telegram', 'whatsapp']);
 
@@ -15,14 +14,5 @@ export async function POST(request: Request, context: { params: Promise<{ platfo
         return new Response(`Unknown platform: ${platform}`, { status: 404 });
     }
 
-    const bot = await getBot();
-
-    const handler = (bot.webhooks as Record<string, typeof bot.webhooks.slack>)[platform];
-    if (!handler) {
-        return new Response(`Unknown platform: ${platform}`, { status: 404 });
-    }
-
-    return handler(request, {
-        waitUntil: (task) => after(() => task),
-    });
+    return dispatchWebhook(platform, request);
 }

@@ -1,9 +1,5 @@
-import { after } from 'next/server';
-import { getBot } from '@/lib/messaging/bot';
+import { dispatchWebhook } from '@/lib/messaging/webhook-dispatch';
 
 export async function POST(request: Request) {
-    const b = await getBot();
-    return b.webhooks.telegram(request, {
-        waitUntil: (task) => after(() => task),
-    });
+    return dispatchWebhook('telegram', request);
 }

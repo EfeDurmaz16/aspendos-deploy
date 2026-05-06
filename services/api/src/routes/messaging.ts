@@ -114,7 +114,7 @@ messagingRoutes.post('/webhook/:platform', async (c) => {
     const handler = (bot.webhooks as Record<string, any>)?.[platform];
 
     if (!handler) {
-        return c.json({ error: `Unknown platform: ${platform}` }, 404);
+        return c.json({ error: `Platform not configured: ${platform}` }, 503);
     }
 
     const response = await handler(c.req.raw, {
@@ -141,7 +141,7 @@ messagingRoutes.get('/webhook/:platform', async (c) => {
     const handler = (bot.webhooks as Record<string, any>)?.[platform];
 
     if (!handler) {
-        return c.json({ error: `Unknown platform: ${platform}` }, 404);
+        return c.json({ error: `Platform not configured: ${platform}` }, 503);
     }
 
     return handler(c.req.raw, {

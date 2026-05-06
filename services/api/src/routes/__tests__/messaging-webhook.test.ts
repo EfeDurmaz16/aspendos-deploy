@@ -100,6 +100,20 @@ describe('messaging webhook route allowlist', () => {
         expect(experimentalHandler).not.toHaveBeenCalled();
     });
 
+    it('returns a service error when a supported platform adapter is disabled', async () => {
+        const app = await createTestApp();
+
+        const response = await app.request('/messaging/webhook/discord', {
+            method: 'POST',
+            body: '{}',
+        });
+
+        expect(response.status).toBe(503);
+        await expect(response.json()).resolves.toEqual({
+            error: 'Platform not configured: discord',
+        });
+    });
+
     it('rejects API-key authenticated platform connection management', async () => {
         const app = await createApiKeyAuthenticatedTestApp();
 

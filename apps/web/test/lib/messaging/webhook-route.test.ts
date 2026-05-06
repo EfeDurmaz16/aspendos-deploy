@@ -48,4 +48,26 @@ describe('messaging webhook catch-all route', () => {
         expect(getBot).not.toHaveBeenCalled();
         expect(experimentalHandler).not.toHaveBeenCalled();
     });
+
+    it('returns service unavailable when a supported catch-all platform is disabled', async () => {
+        getBot.mockResolvedValueOnce({ webhooks: {} });
+
+        const { POST } = await import('../../../src/app/api/webhooks/[platform]/route');
+        const response = await POST(new Request('https://yula.dev/api/webhooks/slack'), {
+            params: Promise.resolve({ platform: 'slack' }),
+        });
+
+        expect(response.status).toBe(503);
+        await expect(response.text()).resolves.toBe('Platform not configured: slack');
+    });
+
+    it('returns service unavailable when a direct platform route is disabled', async () => {
+        getBot.mockResolvedValueOnce({ webhooks: {} });
+
+        const { POST } = await import('../../../src/app/api/webhooks/slack/route');
+        const response = await POST(new Request('https://yula.dev/api/webhooks/slack'));
+
+        expect(response.status).toBe(503);
+        await expect(response.text()).resolves.toBe('Platform not configured: slack');
+    });
 });
