@@ -56,6 +56,7 @@ export class AgitService {
             const agit = await import('@agit/sdk');
             this.client = await agit.AgitClient.open(repoPath, {
                 agentId: 'yula-api',
+                requireNative: isProductionRuntime() || !allowsInMemoryGovernance(),
             });
             this.initialized = true;
         } catch (error) {

@@ -4,6 +4,16 @@ import type { ReversibilityMetadata } from '../../reversibility/types';
 import { canonicalJson } from '../canonical';
 import { FidesService } from '../fides';
 
+const agitSdkMocks = vi.hoisted(() => ({
+    open: vi.fn(),
+}));
+
+vi.mock('@agit/sdk', () => ({
+    AgitClient: {
+        open: agitSdkMocks.open,
+    },
+}));
+
 const metadata: ReversibilityMetadata = {
     reversibility_class: 'undoable',
     human_explanation: 'Test action',
@@ -27,6 +37,7 @@ describe('canonical governance primitives', () => {
         } else {
             process.env.VITEST = originalVitestEnv;
         }
+        agitSdkMocks.open.mockReset();
     });
 
     it('canonicalizes object keys deterministically', () => {
@@ -170,6 +181,34 @@ describe('canonical governance primitives', () => {
                 type: 'pre',
             })
         ).rejects.toThrow(/AGIT_REPO_PATH is required in production/);
+    });
+
+    it('refuses AGIT pure-TypeScript fallback when production repo path is configured', async () => {
+        process.env.NODE_ENV = 'production';
+        process.env.AGIT_REPO_PATH = '/tmp/yula-agit-prod';
+        agitSdkMocks.open.mockRejectedValueOnce(
+            new Error(
+                '@agit/core native repository is required; refusing pure-TypeScript in-memory fallback'
+            )
+        );
+
+        const agit = new AgitService();
+
+        await expect(
+            agit.commitAction({
+                userId: 'user-1',
+                toolName: 'file.write',
+                args: {},
+                metadata,
+                fidesSignature: 'sig-1',
+                fidesDid: 'did:fides:test',
+                type: 'pre',
+            })
+        ).rejects.toThrow(/refusing pure-TypeScript in-memory fallback/);
+        expect(agitSdkMocks.open).toHaveBeenCalledWith('/tmp/yula-agit-prod', {
+            agentId: 'yula-api',
+            requireNative: true,
+        });
     });
 
     it('refuses in-memory AGIT commits outside test without explicit local fallback opt-in', async () => {

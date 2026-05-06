@@ -89,7 +89,10 @@ export class AgitService {
 
         try {
             const agit = await import('@agit/sdk');
-            this.client = await agit.AgitClient.open(repoPath, { agentId: 'aspendos-core' });
+            this.client = await agit.AgitClient.open(repoPath, {
+                agentId: 'aspendos-core',
+                requireNative: isProductionRuntime() || !allowsDeterministicFallback(),
+            });
             this.initialized = true;
         } catch {
             if (isProductionRuntime() || !allowsDeterministicFallback()) {
