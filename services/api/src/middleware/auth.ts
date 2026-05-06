@@ -132,6 +132,13 @@ export function requireApiKeyPermission(permission: string) {
     };
 }
 
+export async function rejectApiKeyAuth(c: Context, next: Next) {
+    if (c.get('apiKeyId')) {
+        return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+    }
+    return next();
+}
+
 export function optionalAuth(c: Context, next: Next) {
     return authMiddleware(c, next);
 }

@@ -19,9 +19,18 @@ vi.mock('../../middleware/auth', () => ({
         c.set('userId', 'user-api-key-test');
         return next();
     }),
+    rejectApiKeyAuth: vi.fn(async (c: any, next: any) => {
+        if (c.get('apiKeyId')) {
+            return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+        }
+        return next();
+    }),
 }));
 
+import { requireAuth } from '../../middleware/auth';
+
 const mockPrisma = prisma as any;
+const mockRequireAuth = requireAuth as any;
 
 async function requestApiKeys(path: string, init?: RequestInit) {
     const { default: apiKeysApp } = await import('../api-keys');
@@ -34,6 +43,28 @@ async function requestApiKeys(path: string, init?: RequestInit) {
 describe('API key routes', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockRequireAuth.mockImplementation(async (c: any, next: any) => {
+            c.set('userId', 'user-api-key-test');
+            return next();
+        });
+    });
+
+    it('rejects API-key authenticated access to API key management', async () => {
+        mockRequireAuth.mockImplementationOnce(async (c: any, next: any) => {
+            c.set('userId', 'user-api-key-test');
+            c.set('apiKeyId', 'key-1');
+            c.set('apiKeyPermissions', ['chat:read']);
+            return next();
+        });
+        mockPrisma.apiKey.findMany.mockResolvedValue([]);
+
+        const res = await requestApiKeys('/');
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
+        });
+        expect(mockPrisma.apiKey.findMany).not.toHaveBeenCalled();
     });
 
     it('lists API keys from the database for the authenticated user', async () => {

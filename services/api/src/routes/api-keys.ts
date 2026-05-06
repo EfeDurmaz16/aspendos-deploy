@@ -5,7 +5,7 @@
 import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { hashApiKey } from '../lib/api-key-auth';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 type Variables = { userId: string };
 const app = new Hono<{ Variables: Variables }>();
@@ -22,7 +22,7 @@ function generateApiKey(): string {
 // ============================================
 
 // GET /api/api-keys - List user's API keys (masked)
-app.get('/', requireAuth, async (c) => {
+app.get('/', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
@@ -56,7 +56,7 @@ app.get('/', requireAuth, async (c) => {
 });
 
 // POST /api/api-keys - Create a new API key
-app.post('/', requireAuth, async (c) => {
+app.post('/', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
@@ -144,7 +144,7 @@ app.post('/', requireAuth, async (c) => {
 });
 
 // DELETE /api/api-keys/:id - Revoke/delete an API key
-app.delete('/:id', requireAuth, async (c) => {
+app.delete('/:id', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
