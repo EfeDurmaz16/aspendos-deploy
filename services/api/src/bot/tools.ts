@@ -194,12 +194,22 @@ export async function getAgentTools(userId: string) {
             timezone: z.string().optional().default('UTC'),
         }),
         execute: async ({ timezone }: { timezone: string }) => {
-            const now = new Date();
-            return {
-                datetime: now.toLocaleString('en-US', { timeZone: timezone }),
-                iso: now.toISOString(),
-                timezone,
-            };
+            try {
+                const requestedTimezone = timezone ?? 'UTC';
+                const now = new Date();
+                return {
+                    success: true,
+                    datetime: now.toLocaleString('en-US', { timeZone: requestedTimezone }),
+                    iso: now.toISOString(),
+                    timezone: requestedTimezone,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Invalid timezone',
+                    timezone,
+                };
+            }
         },
     });
 
@@ -215,8 +225,12 @@ export async function getAgentTools(userId: string) {
                 }
             }
         }
-    } catch {
-        // SuperMemory tools not available
+    } catch (error) {
+        throw new Error(
+            `Bot SuperMemory tools are configured but unavailable: ${
+                error instanceof Error ? error.message : String(error)
+            }`
+        );
     }
 
     return tools;
