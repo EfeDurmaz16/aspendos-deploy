@@ -3,6 +3,14 @@ import { Webhook } from 'svix';
 
 const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
+function getConvexServiceSecret() {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
+}
+
 export async function POST(req: NextRequest) {
     if (!WEBHOOK_SECRET) {
         console.error('[clerk-webhook] CLERK_WEBHOOK_SECRET not set');
@@ -42,12 +50,13 @@ export async function POST(req: NextRequest) {
 
                 if (!email) break;
 
-                await fetch(`${convexUrl}/api/mutation`, {
+                const response = await fetch(`${convexUrl}/api/mutation`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         path: 'users:upsertFromWorkOS',
                         args: {
+                            service_secret: getConvexServiceSecret(),
                             workos_id: id,
                             email,
                             name: [first_name, last_name].filter(Boolean).join(' ') || undefined,
@@ -55,6 +64,9 @@ export async function POST(req: NextRequest) {
                         },
                     }),
                 });
+                if (!response.ok) {
+                    throw new Error(`Convex upsert failed with status ${response.status}`);
+                }
                 break;
             }
 

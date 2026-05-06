@@ -20,6 +20,16 @@ async function requireAuthenticatedUser(ctx: MutationCtx) {
         throw new Error('Not authenticated');
     }
 
+    const byTokenIdentifier = await ctx.db
+        .query('users')
+        .withIndex('by_auth_token_identifier', (q) =>
+            q.eq('auth_token_identifier', identity.tokenIdentifier)
+        )
+        .first();
+    if (byTokenIdentifier) {
+        return byTokenIdentifier;
+    }
+
     const user = await ctx.db
         .query('users')
         .withIndex('by_workos_id', (q) => q.eq('workos_id', identity.subject))

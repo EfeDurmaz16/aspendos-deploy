@@ -4,6 +4,7 @@ import { v } from 'convex/values';
 export default defineSchema({
     users: defineTable({
         workos_id: v.string(),
+        auth_token_identifier: v.optional(v.string()),
         email: v.string(),
         name: v.optional(v.string()),
         avatar_url: v.optional(v.string()),
@@ -20,6 +21,7 @@ export default defineSchema({
         created_at: v.number(),
     })
         .index('by_workos_id', ['workos_id'])
+        .index('by_auth_token_identifier', ['auth_token_identifier'])
         .index('by_email', ['email'])
         .index('by_stripe_customer_id', ['stripe_customer_id']),
 

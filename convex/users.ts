@@ -14,18 +14,33 @@ function requireServiceSecret(serviceSecret: string) {
     }
 }
 
-async function requireAuthenticatedWorkOSId(ctx: QueryCtx) {
+async function requireAuthenticatedUser(ctx: QueryCtx) {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
         throw new Error('Not authenticated');
     }
-    return identity.subject;
+
+    const byTokenIdentifier = await ctx.db
+        .query('users')
+        .withIndex('by_auth_token_identifier', (q) =>
+            q.eq('auth_token_identifier', identity.tokenIdentifier)
+        )
+        .first();
+    if (byTokenIdentifier) {
+        return byTokenIdentifier;
+    }
+
+    return await ctx.db
+        .query('users')
+        .withIndex('by_workos_id', (q) => q.eq('workos_id', identity.subject))
+        .first();
 }
 
 export const upsertFromWorkOS = mutation({
     args: {
         service_secret: v.string(),
         workos_id: v.string(),
+        auth_token_identifier: v.optional(v.string()),
         email: v.string(),
         name: v.optional(v.string()),
         avatar_url: v.optional(v.string()),
@@ -40,6 +55,9 @@ export const upsertFromWorkOS = mutation({
         if (existing) {
             await ctx.db.patch(existing._id, {
                 email: args.email,
+                ...(args.auth_token_identifier === undefined
+                    ? {}
+                    : { auth_token_identifier: args.auth_token_identifier }),
                 ...(args.name === undefined ? {} : { name: args.name }),
                 ...(args.avatar_url === undefined ? {} : { avatar_url: args.avatar_url }),
             });
@@ -48,6 +66,9 @@ export const upsertFromWorkOS = mutation({
 
         return await ctx.db.insert('users', {
             workos_id: args.workos_id,
+            ...(args.auth_token_identifier === undefined
+                ? {}
+                : { auth_token_identifier: args.auth_token_identifier }),
             email: args.email,
             ...(args.name === undefined ? {} : { name: args.name }),
             ...(args.avatar_url === undefined ? {} : { avatar_url: args.avatar_url }),
@@ -71,11 +92,7 @@ export const getByWorkOSId = query({
 export const getCurrent = query({
     args: {},
     handler: async (ctx) => {
-        const workosId = await requireAuthenticatedWorkOSId(ctx);
-        return await ctx.db
-            .query('users')
-            .withIndex('by_workos_id', (q) => q.eq('workos_id', workosId))
-            .first();
+        return await requireAuthenticatedUser(ctx);
     },
 });
 
