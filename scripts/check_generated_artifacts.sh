@@ -15,15 +15,23 @@ BRAND_DIFF="$(
     apps/web/public/favicon.svg \
     apps/web/public/favicon.ico \
     apps/web/public/apple-touch-icon.png \
-    apps/web/public/icons \
-    apps/web/public/og \
-    apps/web/public/screenshots || true
+    apps/web/public/icons || true
 )"
 if [[ -n "$BRAND_DIFF" ]]; then
   echo "$BRAND_DIFF"
   echo "[ERROR] Generated brand assets are out of date. Run bun run brand:generate and commit the result." >&2
   exit 1
 fi
+
+for generated_asset in \
+  apps/web/public/og/home.png \
+  apps/web/public/screenshots/chat-desktop.png \
+  apps/web/public/screenshots/chat-mobile.png; do
+  if [[ ! -s "$generated_asset" ]]; then
+    echo "[ERROR] Missing generated preview asset: $generated_asset" >&2
+    exit 1
+  fi
+done
 
 echo "[INFO] Checking tracked local/generated artifact paths..."
 TRACKED_LOCAL_ARTIFACTS="$(

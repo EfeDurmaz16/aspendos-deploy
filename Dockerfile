@@ -7,8 +7,10 @@ WORKDIR /app
 # Copy the monorepo workspace exactly as CI sees it. Railway selects this
 # root Dockerfile, so it must fail on dependency, workspace, or Prisma drift.
 COPY package.json bun.lock ./
+COPY apps/web/ ./apps/web/
 COPY packages/ ./packages/
 COPY services/api/ ./services/api/
+COPY services/eval/ ./services/eval/
 
 # Install deps with the committed lockfile.
 RUN bun install --frozen-lockfile

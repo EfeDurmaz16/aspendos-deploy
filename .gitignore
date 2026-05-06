@@ -78,6 +78,8 @@ landing-2/
 *audit*
 !services/api/src/audit/
 !services/api/src/audit/**
+!services/api/src/lib/audit-log.ts
+!services/api/src/lib/audit-store.ts
 !services/api/src/middleware/audit-trail.ts
 !services/api/src/routes/admin-audit.ts
 !packages/aspendos-core/src/audit/

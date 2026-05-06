@@ -26,6 +26,7 @@
         "@ai-sdk/anthropic": "^3.0.69",
         "@ai-sdk/react": "^3.0.41",
         "@anthropic-ai/sdk": "^0.89.0",
+        "@aspendos/shared-types": "workspace:*",
         "@auth/core": "^0.34.3",
         "@chat-adapter/discord": "^4.26.0",
         "@chat-adapter/gchat": "^4.26.0",

@@ -62,6 +62,8 @@ fi
 
 info "Checking tracked API bootstrap imports..."
 for required_source in \
+  services/api/src/lib/audit-log.ts \
+  services/api/src/lib/audit-store.ts \
   services/api/src/middleware/audit-trail.ts \
   services/api/src/routes/admin-audit.ts; do
   if ! git ls-files --error-unmatch "$required_source" >/dev/null 2>&1; then
