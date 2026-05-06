@@ -8,18 +8,20 @@ FROM oven/bun:1.3.4 AS builder
 
 WORKDIR /app
 
-# Copy monorepo root files
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the monorepo workspace exactly as CI sees it.
 COPY package.json bun.lock ./
-COPY packages/db/package.json ./packages/db/
-COPY packages/shared-types/package.json ./packages/shared-types/
-COPY services/api/package.json ./services/api/
+COPY apps/web/ ./apps/web/
+COPY convex/ ./convex/
+COPY packages/ ./packages/
+COPY services/api/ ./services/api/
+COPY services/eval/ ./services/eval/
 
 # Install dependencies
 RUN bun install --frozen-lockfile
-
-# Copy workspace source code
-COPY packages/ ./packages/
-COPY services/api/ ./services/api/
 
 # Generate Prisma client. This must fail loudly; the API uses @aspendos/db on
 # production paths and cannot safely run with the fallback client.
@@ -38,8 +40,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 api
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs api
 
 # Copy built application and dependencies
 COPY --from=builder --chown=api:nodejs /app/services/api/package.json ./
