@@ -46,6 +46,18 @@ function createTestApp() {
     return app;
 }
 
+function createApiKeyAuthenticatedTestApp() {
+    const app = new Hono();
+    app.use('*', async (c, next) => {
+        c.set('userId', 'test-user-1');
+        c.set('apiKeyId', 'key-1');
+        c.set('apiKeyPermissions', ['chat:read']);
+        return next();
+    });
+    app.route('/workspace', workspaceRoutes);
+    return app;
+}
+
 describe('Workspace Routes', () => {
     const originalNodeEnv = process.env.NODE_ENV;
 
@@ -74,6 +86,19 @@ describe('Workspace Routes', () => {
             code: 'WORKSPACE_PERSISTENCE_UNAVAILABLE',
         });
         expect(mockGetSession).not.toHaveBeenCalled();
+    });
+
+    it('rejects API-key authenticated access to workspace routes', async () => {
+        mockService.getUserWorkspaces.mockResolvedValue([]);
+        const app = createApiKeyAuthenticatedTestApp();
+
+        const res = await app.request('/workspace');
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
+        });
+        expect(mockService.getUserWorkspaces).not.toHaveBeenCalled();
     });
 
     describe('POST /workspace - Create workspace', () => {

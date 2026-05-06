@@ -4,7 +4,7 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import * as workspaceService from '../services/workspace.service';
 import {
@@ -34,6 +34,7 @@ app.use('*', async (c, next) => {
 
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
+app.use('*', rejectApiKeyAuth);
 
 // POST /api/workspace - Create workspace
 app.post('/', validateBody(createWorkspaceSchema), async (c) => {
