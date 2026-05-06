@@ -81,6 +81,12 @@ function fidesSignaturePayload(args: {
     };
 }
 
+function getRevertedHash(args: unknown) {
+    if (!args || typeof args !== 'object' || Array.isArray(args)) return undefined;
+    const value = (args as { reverted_hash?: unknown }).reverted_hash;
+    return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
 async function hashCommitPayload(args: {
     args: unknown;
     parent_hash?: string;
@@ -247,6 +253,7 @@ export const signAndCommit = mutation({
         }
 
         // 6. Insert commit record
+        const revertedHash = getRevertedHash(args.args);
         const commitId = await ctx.db.insert('commits', {
             user_id: args.user_id,
             parent_hash: parentHash ?? undefined,
@@ -255,6 +262,7 @@ export const signAndCommit = mutation({
             tool_name: args.tool_name,
             args: args.args,
             status,
+            reverted_hash: revertedHash,
             result: args.result,
             reversibility_class: args.reversibility_class,
             rollback_strategy: args.rollback_strategy,

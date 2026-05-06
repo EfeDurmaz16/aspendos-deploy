@@ -71,6 +71,7 @@ export default defineSchema({
             v.literal('reverted'),
             v.literal('failed')
         ),
+        reverted_hash: v.optional(v.string()),
         result: v.optional(v.any()),
         reversibility_class: v.union(
             v.literal('undoable'),
@@ -92,6 +93,7 @@ export default defineSchema({
     })
         .index('by_user', ['user_id'])
         .index('by_user_time', ['user_id', 'timestamp'])
+        .index('by_user_and_reverted_hash', ['user_id', 'reverted_hash'])
         .index('by_hash', ['hash']),
 
     approvals: defineTable({

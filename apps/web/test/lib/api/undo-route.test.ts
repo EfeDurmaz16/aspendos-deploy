@@ -30,6 +30,7 @@ vi.mock('../../../../convex/_generated/api', () => ({
     api: {
         commits: {
             getCurrentUserByHash: 'commits.getCurrentUserByHash',
+            getCurrentUserReversalForHash: 'commits.getCurrentUserReversalForHash',
             listCurrentUserAfterTimestamp: 'commits.listCurrentUserAfterTimestamp',
         },
         governance: {
@@ -116,6 +117,7 @@ describe('undo API route authorization', () => {
                 rollback_strategy: { kind: 'snapshot_restore', snapshot_id: 'snap-1' },
                 human_explanation: 'Write a file',
             })
+            .mockResolvedValueOnce(null)
             .mockResolvedValueOnce({
                 snapshot_id: 'snap-1',
                 target_path: '/tmp/x',
@@ -163,6 +165,45 @@ describe('undo API route authorization', () => {
         expect(convexMutation.mock.calls[0]?.[1]?.result).toMatchObject({
             restored_from_snapshot: 'snap-1',
         });
+    });
+
+    it('blocks repeated undo when a reversal commit already exists', async () => {
+        auth.mockResolvedValueOnce({ accessToken: 'token-1', userId: 'workos-user-1' });
+        convexQuery
+            .mockResolvedValueOnce({
+                _id: 'commit-doc-1',
+                hash: 'commit-1',
+                user_id: 'user-1',
+                status: 'executed',
+                tool_name: 'file-write',
+                reversibility_class: 'undoable',
+                rollback_strategy: { kind: 'snapshot_restore', snapshot_id: 'snap-1' },
+                human_explanation: 'Write a file',
+            })
+            .mockResolvedValueOnce({
+                _id: 'reversal-doc-1',
+                hash: 'reversal-1',
+                reverted_hash: 'commit-1',
+                status: 'executed',
+            });
+
+        const { POST } = await import('../../../src/app/api/undo/route');
+        const response = await POST(
+            undoRequest({
+                commit_hash: 'commit-1',
+                strategy: 'snapshot_restore',
+                snapshot_id: 'snap-1',
+            }) as any
+        );
+
+        expect(response.status).toBe(409);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            message: 'Commit already has a reversal commit.',
+        });
+        expect(convexQuery).toHaveBeenCalledTimes(2);
+        expect(convexQuery.mock.calls[1]?.[1]).toEqual({ hash: 'commit-1' });
+        expect(convexMutation).not.toHaveBeenCalled();
     });
 
     it('rewinds only after verifying the target commit belongs to the current user', async () => {

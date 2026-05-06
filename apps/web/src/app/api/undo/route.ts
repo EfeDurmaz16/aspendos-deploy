@@ -98,6 +98,16 @@ async function handleSingleUndo(
         );
     }
 
+    const existingReversal = await convex.query(api.commits.getCurrentUserReversalForHash, {
+        hash: commitHash,
+    });
+    if (existingReversal) {
+        return NextResponse.json(
+            { success: false, message: 'Commit already has a reversal commit.' },
+            { status: 409 }
+        );
+    }
+
     const { strategy } = body;
 
     // Dispatch based on strategy kind

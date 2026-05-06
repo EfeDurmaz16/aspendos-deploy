@@ -81,6 +81,19 @@ export const getCurrentUserByHash = query({
     },
 });
 
+export const getCurrentUserReversalForHash = query({
+    args: { hash: v.string() },
+    handler: async (ctx, args) => {
+        const user = await requireAuthenticatedUser(ctx);
+        return await ctx.db
+            .query('commits')
+            .withIndex('by_user_and_reverted_hash', (q) =>
+                q.eq('user_id', user._id).eq('reverted_hash', args.hash)
+            )
+            .first();
+    },
+});
+
 export const listByUser = query({
     args: { service_secret: v.string(), user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
