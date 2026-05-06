@@ -162,10 +162,22 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run convex:typecheck
 
+  generated-artifacts:
+    name: Generated Artifact Drift
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - run: bun install --frozen-lockfile
+      - run: bun run generated:check
+
   release-readiness:
     name: Release Readiness
     runs-on: ubuntu-latest
-    needs: [build, typecheck-web, typecheck-api, test-web, test-api, test-core, docker-build, convex-typecheck]
+    needs: [build, typecheck-web, typecheck-api, test-web, test-api, test-core, docker-build, convex-typecheck, generated-artifacts]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2

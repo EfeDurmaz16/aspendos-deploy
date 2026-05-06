@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - 'convex/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'packages/**'
+      - '.github/workflows/convex-deploy.yml'
 
 jobs:
   deploy:

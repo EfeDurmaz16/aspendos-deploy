@@ -29,6 +29,7 @@
         "convex:typecheck": "bunx convex typecheck",
         "bench:web-dev": "bash scripts/benchmark_web_dev.sh",
         "brand:generate": "bun run scripts/generate-brand-assets.ts",
+        "generated:check": "bash scripts/check_generated_artifacts.sh",
         "release:ready": "bash ./scripts/check_release_readiness.sh",
         "prepare": "husky"
     },
