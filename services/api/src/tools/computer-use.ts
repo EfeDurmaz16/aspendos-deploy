@@ -47,12 +47,12 @@ export const computerUseTool: ToolDefinition = {
         }
 
         return {
-            success: true,
+            success: false,
+            error: 'Computer Use sandbox loop is not implemented. Refusing to report success without executing the desktop action.',
             data: {
                 action,
                 coordinate,
                 text,
-                note: 'Computer Use execution delegated to sandbox + Anthropic API loop',
             },
         };
     },

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ToolContext } from '../../reversibility/types';
 import { calendarCreateEventTool } from '../calendar-create-event';
+import { computerUseTool } from '../computer-use';
 import { dbMigrateTool } from '../db-migrate';
 import { emailSendTool } from '../email-send';
 import { fileWriteTool } from '../file-write';
@@ -129,5 +130,38 @@ describe('stripe.charge (threshold-based)', () => {
             ctx
         );
         expect(result.success).toBe(true);
+    });
+});
+
+describe('computer.use', () => {
+    it('requires approval for destructive desktop actions', () => {
+        const meta = computerUseTool.classify({ action: 'click' });
+        expect(meta.reversibility_class).toBe('approval_only');
+        expect(meta.approval_required).toBe(true);
+    });
+
+    it('fails loud instead of reporting fake sandbox execution success', async () => {
+        const previousAnthropicKey = process.env.ANTHROPIC_API_KEY;
+        const previousDaytonaKey = process.env.DAYTONA_API_KEY;
+        const previousE2BKey = process.env.E2B_API_KEY;
+        process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
+        process.env.DAYTONA_API_KEY = 'test-daytona-key';
+        delete process.env.E2B_API_KEY;
+
+        try {
+            const result = await computerUseTool.execute({ action: 'screenshot' }, ctx);
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('not implemented');
+            expect(result.error).toContain('Refusing to report success');
+        } finally {
+            if (previousAnthropicKey === undefined) delete process.env.ANTHROPIC_API_KEY;
+            else process.env.ANTHROPIC_API_KEY = previousAnthropicKey;
+
+            if (previousDaytonaKey === undefined) delete process.env.DAYTONA_API_KEY;
+            else process.env.DAYTONA_API_KEY = previousDaytonaKey;
+
+            if (previousE2BKey === undefined) delete process.env.E2B_API_KEY;
+            else process.env.E2B_API_KEY = previousE2BKey;
+        }
     });
 });
