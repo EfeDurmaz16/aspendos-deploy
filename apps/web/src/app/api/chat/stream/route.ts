@@ -3,6 +3,30 @@ export const dynamic = 'force-dynamic';
 import { gateway, stepCountIs, streamText, tool } from 'ai';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { auth } from '@/lib/auth';
+
+type ChatStreamBody = {
+    messages?: unknown;
+    message?: unknown;
+    chatId?: unknown;
+    model?: unknown;
+};
+
+export function getMemoryContainerTags(userId: string): string[] {
+    return [`user_${userId}`];
+}
+
+export function getMessagesFromBody(body: ChatStreamBody) {
+    if (Array.isArray(body.messages)) {
+        return body.messages;
+    }
+
+    if (typeof body.message === 'string' && body.message.trim()) {
+        return [{ role: 'user' as const, content: body.message }];
+    }
+
+    return null;
+}
 
 function safeMathEval(expr: string): number {
     let pos = 0;
@@ -56,17 +80,33 @@ function safeMathEval(expr: string): number {
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
-        const { messages, model: requestedModel } = body;
+        const session = await auth();
+        if (!session?.userId) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
 
-        if (!messages || !Array.isArray(messages)) {
+        const body = (await req.json()) as ChatStreamBody;
+        const messages = getMessagesFromBody(body);
+
+        if (!messages) {
             return new Response(JSON.stringify({ error: 'Messages array required' }), {
                 status: 400,
                 headers: { 'Content-Type': 'application/json' },
             });
         }
 
-        const modelId = requestedModel || 'anthropic/claude-sonnet-4.6';
+        const modelId =
+            typeof body.model === 'string' && body.model
+                ? body.model
+                : 'anthropic/claude-sonnet-4.6';
+        const sessionId =
+            typeof body.chatId === 'string' && body.chatId
+                ? body.chatId
+                : (req.headers.get('x-yula-session-id') ?? session.session?.id ?? session.userId);
+        const memoryContainerTags = getMemoryContainerTags(session.userId);
 
         const result = streamText({
             model: gateway(modelId),
@@ -91,7 +131,7 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                             });
                             const results = await client.search.execute({
                                 q: query,
-                                containerTags: ['user_default'],
+                                containerTags: memoryContainerTags,
                                 limit: 5,
                             });
                             return { results: results.results?.map((r: any) => r.content) ?? [] };
@@ -116,7 +156,7 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                             });
                             await client.documents.add({
                                 content,
-                                containerTags: ['user_default'],
+                                containerTags: memoryContainerTags,
                             });
                             return { success: true };
                         } catch {
@@ -157,6 +197,7 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                     },
                 }),
             },
+            experimental_context: { userId: session.userId, sessionId },
             stopWhen: stepCountIs(5),
         });
 
