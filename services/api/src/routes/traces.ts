@@ -109,8 +109,14 @@ tracesRoutes.get('/session/:sessionId', async (c) => {
         const { getSessionSummary } = await import('../services/causal-trace.service');
         const summary = await getSessionSummary(userId, sessionId);
         return c.json(summary);
-    } catch {
-        return c.json({ error: 'Session not found' }, 404);
+    } catch (error) {
+        return c.json(
+            {
+                error: 'Failed to load session trace summary',
+                cause: error instanceof Error ? error.message : String(error),
+            },
+            503
+        );
     }
 });
 
@@ -124,8 +130,14 @@ tracesRoutes.get('/causal/:actionId', async (c) => {
         const { getCausalChain } = await import('../services/causal-trace.service');
         const chain = await getCausalChain(actionId);
         return c.json(chain);
-    } catch {
-        return c.json({ error: 'Action not found' }, 404);
+    } catch (error) {
+        return c.json(
+            {
+                error: 'Failed to load causal trace',
+                cause: error instanceof Error ? error.message : String(error),
+            },
+            503
+        );
     }
 });
 
