@@ -151,7 +151,7 @@ function registerBotHandlers(chatBot: any) {
         const { actionId, value, thread } = action;
 
         try {
-            const actorUserId = resolveActionActorId(action);
+            const actorUserId = await resolveActionUserId(action);
 
             if (actionId?.startsWith('yula_approve')) {
                 const { approveRequest } = await import('../services/approval.service');
@@ -263,6 +263,44 @@ async function resolveUserId(
         throw new Error('Bot message missing platform identity');
     }
 
+    return resolveLinkedPlatformUser(platform, platformUserId);
+}
+
+async function resolveActionUserId(action: any): Promise<string> {
+    const actorId =
+        action?.user?.id ??
+        action?.userId ??
+        action?.actor?.id ??
+        action?.member?.user?.id ??
+        action?.from?.id;
+
+    if (!actorId || typeof actorId !== 'string') {
+        throw new Error('Approval action missing actor identity');
+    }
+
+    const platform = resolvePlatformName(action?.thread, action);
+    if (!platform) {
+        throw new Error('Approval action missing platform identity');
+    }
+
+    return resolveLinkedPlatformUser(platform, actorId);
+}
+
+function resolvePlatformName(thread: any, message: { platform?: string }): string | null {
+    const platform =
+        message.platform ??
+        thread?.platform ??
+        thread?.adapter?.platform ??
+        thread?.adapter?.name ??
+        thread?.adapterName;
+
+    return typeof platform === 'string' && platform.trim() ? platform.trim().toLowerCase() : null;
+}
+
+async function resolveLinkedPlatformUser(
+    platform: string,
+    platformUserId: string
+): Promise<string> {
     const { prisma } = await import('../lib/prisma');
     const connection = await prisma.platformConnection.findUnique({
         where: {
@@ -282,32 +320,6 @@ async function resolveUserId(
     }
 
     return connection.userId;
-}
-
-function resolveActionActorId(action: any): string {
-    const actorId =
-        action?.user?.id ??
-        action?.userId ??
-        action?.actor?.id ??
-        action?.member?.user?.id ??
-        action?.from?.id;
-
-    if (!actorId || typeof actorId !== 'string') {
-        throw new Error('Approval action missing actor identity');
-    }
-
-    return actorId;
-}
-
-function resolvePlatformName(thread: any, message: { platform?: string }): string | null {
-    const platform =
-        message.platform ??
-        thread?.platform ??
-        thread?.adapter?.platform ??
-        thread?.adapter?.name ??
-        thread?.adapterName;
-
-    return typeof platform === 'string' && platform.trim() ? platform.trim().toLowerCase() : null;
 }
 
 async function getThreadHistory(

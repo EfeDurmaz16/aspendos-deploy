@@ -120,19 +120,31 @@ describe('api bot initialization', () => {
         );
     });
 
-    it('uses the button actor identity for approval decisions', async () => {
+    it('uses the linked platform actor identity for approval decisions', async () => {
         const { getBot } = await import('../index');
         await getBot();
         const actionHandler = onAction.mock.calls[0]?.[0];
-        const thread = { post: vi.fn() };
+        const thread = { adapter: { name: 'slack' }, post: vi.fn() };
 
         await actionHandler({
             actionId: 'yula_approve',
             value: 'approval-1',
-            user: { id: 'workos-user-1' },
+            user: { id: 'U123' },
             thread,
         });
 
+        expect(platformConnectionFindUnique).toHaveBeenCalledWith({
+            where: {
+                platform_platformUserId: {
+                    platform: 'slack',
+                    platformUserId: 'U123',
+                },
+            },
+            select: {
+                isActive: true,
+                userId: true,
+            },
+        });
         expect(approveRequest).toHaveBeenCalledWith('approval-1', 'workos-user-1');
         expect(approveRequest).not.toHaveBeenCalledWith('approval-1', 'system');
         expect(thread.post).toHaveBeenCalledWith('Approved.');
