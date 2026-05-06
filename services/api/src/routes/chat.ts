@@ -22,7 +22,7 @@ import {
 } from '../lib/ai-providers';
 import { createLogger } from '../lib/logger';
 import { getMCPTools, isMCPInitialized } from '../lib/mcp-clients';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 const log = createLogger({ action: 'chat' });
 
@@ -159,6 +159,7 @@ app.get('/shared/:token', async (c) => {
 
 // Apply auth middleware to all subsequent routes
 app.use('*', requireAuth);
+app.use('*', rejectApiKeyAuth);
 
 // GET /api/chat - List all chats for user
 app.get('/', async (c) => {
