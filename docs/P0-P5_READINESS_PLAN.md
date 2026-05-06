@@ -1,5 +1,7 @@
 # P0-P5 Readiness Plan
 
+> Archived historical plan. This document predates the deterministic/provable agent OS production spine. Use `README.md`, `SPEC.md`, `CLAUDE.md`, `DEPLOYMENT.md`, `START_GUIDE.md`, and `docs/aspendos-dev/concepts/production-spine.md` for current execution guidance.
+
 This plan is scoped to the three critical capabilities:
 
 1. Shared memory across all model paths
