@@ -156,10 +156,7 @@ export class AgitService {
                         timestamp: l.timestamp ?? Date.now(),
                     }));
             } catch (error) {
-                if (isProductionRuntime()) {
-                    throw new Error(`AGIT log failed: ${String(error)}`);
-                }
-                return [];
+                throw new Error(`AGIT log failed: ${String(error)}`);
             }
         }
         return (this.localHistory.get(userId) ?? []).slice(0, limit);
@@ -172,8 +169,8 @@ export class AgitService {
             try {
                 await this.client.getState(hash);
                 return true;
-            } catch {
-                return false;
+            } catch (error) {
+                throw new Error(`AGIT verify failed: ${String(error)}`);
             }
         }
         const records = [...this.localHistory.values()].flat();
@@ -192,10 +189,7 @@ export class AgitService {
                 await this.client.revert(hash);
                 return { success: true, message: `Reverted to ${hash}` };
             } catch (e: any) {
-                if (isProductionRuntime()) {
-                    throw new Error(`AGIT revert failed: ${e?.message ?? String(e)}`);
-                }
-                return { success: false, message: e?.message ?? 'Revert failed' };
+                throw new Error(`AGIT revert failed: ${e?.message ?? String(e)}`);
             }
         }
         return { success: false, message: 'AGIT client not initialized' };

@@ -293,8 +293,7 @@ describe('canonical governance primitives', () => {
         ]);
     });
 
-    it('fails loud when production AGIT history cannot be read', async () => {
-        process.env.NODE_ENV = 'production';
+    it('fails loud when AGIT history cannot be read', async () => {
         const agit = new AgitService();
         (agit as any).initialized = true;
         (agit as any).client = {
@@ -306,8 +305,19 @@ describe('canonical governance primitives', () => {
         );
     });
 
-    it('fails loud when production AGIT revert cannot be applied', async () => {
-        process.env.NODE_ENV = 'production';
+    it('fails loud when AGIT verification cannot read commit state', async () => {
+        const agit = new AgitService();
+        (agit as any).initialized = true;
+        (agit as any).client = {
+            getState: vi.fn().mockRejectedValue(new Error('repo offline')),
+        };
+
+        await expect(agit.verifyCommit('commit-1')).rejects.toThrow(
+            /AGIT verify failed: Error: repo offline/
+        );
+    });
+
+    it('fails loud when AGIT revert cannot be applied', async () => {
         const agit = new AgitService();
         (agit as any).initialized = true;
         (agit as any).client = {
