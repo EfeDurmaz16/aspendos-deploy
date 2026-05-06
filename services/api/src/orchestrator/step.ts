@@ -73,7 +73,6 @@ export async function runToolStep(
     }
 
     const fides = getFides();
-    const signResult = await fides.signToolCall(toolName, args, metadata);
     const preGovernanceSignature = await fides.signGovernanceCommit(toolName, args, metadata, {
         status: 'pending',
     });
@@ -95,8 +94,8 @@ export async function runToolStep(
             toolName,
             args,
             metadata,
-            fidesSignature: signResult.signature,
-            fidesDid: signResult.did,
+            fidesSignature: preGovernanceSignature.signature,
+            fidesDid: preGovernanceSignature.did,
             type: 'pre',
         });
         preCommitHash = preCommit.hash;
@@ -158,8 +157,8 @@ export async function runToolStep(
             toolName,
             args,
             metadata,
-            fidesSignature: signResult.signature,
-            fidesDid: signResult.did,
+            fidesSignature: postGovernanceSignature.signature,
+            fidesDid: postGovernanceSignature.did,
             type: 'post',
             result,
         });

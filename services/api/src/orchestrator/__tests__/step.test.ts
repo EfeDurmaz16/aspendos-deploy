@@ -116,12 +116,19 @@ describe('runToolStep', () => {
         await expect(agit.verifyCommit(postCommit.hash)).resolves.toBe(true);
 
         const fides = getFides();
-        const payload = fides.getToolCallPayload('file.write', args, result.metadata);
+        const prePayload = fides.getGovernanceCommitPayload('file.write', args, result.metadata, {
+            status: 'pending',
+        });
+        const postPayload = fides.getGovernanceCommitPayload('file.write', args, result.metadata, {
+            result: result.result,
+            status: 'executed',
+        });
         await expect(
-            fides.verifySignature(payload, preCommit.signature, preCommit.did)
+            fides.verifySignature(prePayload, preCommit.signature, preCommit.did)
         ).resolves.toBe(true);
         await expect(
-            fides.verifySignature(payload, postCommit.signature, postCommit.did)
+            fides.verifySignature(postPayload, postCommit.signature, postCommit.did)
         ).resolves.toBe(true);
+        expect(postCommit.signature).not.toBe(preCommit.signature);
     });
 });
