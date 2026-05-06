@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+    assertEndpointRateLimitProductionConfig,
     clearRateLimits_forTesting,
     endpointRateLimit,
     getRateLimitEntry_forTesting,
@@ -34,6 +35,21 @@ describe('Endpoint Rate Limit Middleware', () => {
         app.post('/api/account/delete', (c) => c.json({ deleted: true }));
         app.get('/api/models', (c) => c.json({ models: [] }));
         app.post('/api/custom', (c) => c.json({ data: 'ok' }));
+    });
+
+    describe('Production store configuration', () => {
+        it('fails loud when production Redis env is missing', () => {
+            const originalNodeEnv = process.env.NODE_ENV;
+            process.env.NODE_ENV = 'production';
+
+            try {
+                expect(() => assertEndpointRateLimitProductionConfig(undefined, undefined)).toThrow(
+                    /Endpoint rate limiting requires UPSTASH_REDIS_REST_URL/
+                );
+            } finally {
+                process.env.NODE_ENV = originalNodeEnv;
+            }
+        });
     });
 
     describe('Per-endpoint rate limits', () => {
