@@ -14,6 +14,47 @@ export interface StepResult {
     awaitingApproval: boolean;
 }
 
+async function appendBlockedAuditCommit(
+    toolName: string,
+    args: unknown,
+    ctx: ToolContext,
+    metadata: ReversibilityMetadata,
+    result: ToolResult
+) {
+    const fides = getFides();
+    const signature = await fides.signGovernanceCommit(toolName, args, metadata, {
+        result,
+        status: 'failed',
+    });
+
+    const convexCommit = await commitConvexGovernance({
+        userId: ctx.userId,
+        toolName,
+        args,
+        metadata,
+        fidesSignature: signature.signature,
+        fidesDid: signature.did,
+        status: 'failed',
+        result,
+    });
+    if (convexCommit) {
+        return convexCommit.commitHash;
+    }
+
+    const agit = getAgit();
+    const commit = await agit.commitAction({
+        userId: ctx.userId,
+        toolName,
+        args,
+        metadata,
+        fidesSignature: signature.signature,
+        fidesDid: signature.did,
+        type: 'blocked',
+        result,
+    });
+    return commit.hash;
+}
+
 export async function runToolStep(
     toolName: string,
     args: unknown,
@@ -39,34 +80,45 @@ export async function runToolStep(
     });
 
     if (guardResult.decision.type === 'block') {
+        const blockedMetadata = {
+            ...metadata,
+            reversibility_class: 'irreversible_blocked' as const,
+            approval_required: false,
+            rollback_strategy: { kind: 'none' as const },
+            human_explanation: guardResult.decision.reason,
+        };
+        const result = {
+            success: false,
+            error: guardResult.decision.reason,
+        };
+        const commitHash = await appendBlockedAuditCommit(
+            toolName,
+            args,
+            ctx,
+            blockedMetadata,
+            result
+        );
         return {
             toolName,
-            metadata: {
-                ...metadata,
-                reversibility_class: 'irreversible_blocked',
-                approval_required: false,
-                rollback_strategy: { kind: 'none' },
-                human_explanation: guardResult.decision.reason,
-            },
-            commitHash: '',
-            result: {
-                success: false,
-                error: guardResult.decision.reason,
-            },
+            metadata: blockedMetadata,
+            commitHash,
+            result,
             blocked: true,
             awaitingApproval: false,
         };
     }
 
     if (metadata.reversibility_class === 'irreversible_blocked') {
+        const result = {
+            success: false,
+            error: metadata.human_explanation,
+        };
+        const commitHash = await appendBlockedAuditCommit(toolName, args, ctx, metadata, result);
         return {
             toolName,
             metadata,
-            commitHash: '',
-            result: {
-                success: false,
-                error: metadata.human_explanation,
-            },
+            commitHash,
+            result,
             blocked: true,
             awaitingApproval: false,
         };

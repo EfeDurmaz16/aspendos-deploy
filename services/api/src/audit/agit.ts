@@ -20,7 +20,7 @@ interface AgitCommitOptions {
     metadata: ReversibilityMetadata;
     fidesSignature: string;
     fidesDid: string;
-    type: 'pre' | 'post';
+    type: 'pre' | 'post' | 'blocked';
     result?: ToolResult;
 }
 

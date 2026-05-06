@@ -44,9 +44,34 @@ describe('runToolStep', () => {
 
         expect(result.blocked).toBe(true);
         expect(result.awaitingApproval).toBe(false);
-        expect(result.commitHash).toBe('');
+        expect(result.commitHash).toBeTruthy();
         expect(result.metadata.reversibility_class).toBe('irreversible_blocked');
         expect(result.result.error).toContain('Potentially dangerous operation detected');
+    });
+
+    it('persists a signed audit commit for blocked tool decisions', async () => {
+        const blockCtx: ToolContext = {
+            userId: 'blocked-flow-user',
+            sessionId: 'blocked-flow-session',
+        };
+        const result = await runToolStep('unknown.tool', {}, blockCtx);
+
+        expect(result.blocked).toBe(true);
+        expect(result.commitHash).toBeTruthy();
+
+        const agit = getAgit();
+        const [blockedCommit] = await agit.historyForUser(blockCtx.userId, 1);
+        expect(blockedCommit.hash).toBe(result.commitHash);
+        await expect(agit.verifyCommit(blockedCommit.hash)).resolves.toBe(true);
+
+        const fides = getFides();
+        const payload = fides.getGovernanceCommitPayload('unknown.tool', {}, result.metadata, {
+            result: result.result,
+            status: 'failed',
+        });
+        await expect(
+            fides.verifySignature(payload, blockedCommit.signature, blockedCommit.did)
+        ).resolves.toBe(true);
     });
 
     it('pauses approval_only tools', async () => {
