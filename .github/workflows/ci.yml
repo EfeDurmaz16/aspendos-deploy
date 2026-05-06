@@ -181,6 +181,8 @@ jobs:
       - run: bun run release:ready
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CONVEX_SERVICE_SECRET: ${{ secrets.CONVEX_SERVICE_SECRET }}
+          BOT_APPROVAL_WEBHOOK_SECRET: ${{ secrets.BOT_APPROVAL_WEBHOOK_SECRET }}
           RELEASE_REQUIRE_DATABASE_URL: 'true'
 
   security:
