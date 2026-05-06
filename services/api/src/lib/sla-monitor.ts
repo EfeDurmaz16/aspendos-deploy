@@ -305,10 +305,13 @@ export function resolveIncident(incidentId: string): boolean {
  */
 export function getUptimeHistory(days = 7): UptimeDay[] {
     const now = Date.now();
+    const todayStart = new Date(now);
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
     const history: UptimeDay[] = [];
 
     for (let i = days - 1; i >= 0; i--) {
-        const dayStart = now - i * 24 * 60 * 60 * 1000;
+        const dayStart = todayStartMs - i * 24 * 60 * 60 * 1000;
         const dayEnd = dayStart + 24 * 60 * 60 * 1000;
 
         const dayMetrics = requestMetrics.filter(
