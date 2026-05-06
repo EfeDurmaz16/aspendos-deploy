@@ -19,6 +19,10 @@ fail() {
   exit 1
 }
 
+require_database_url_for_release() {
+  [[ "${RELEASE_REQUIRE_DATABASE_URL:-}" == "true" || "${CI:-}" == "true" ]]
+}
+
 info "Running release readiness checks for critical capabilities..."
 
 # Guard against accidental duplicate source/release files (e.g. 'layout 2.tsx'
@@ -46,6 +50,16 @@ if [[ ! -f "packages/db/prisma/schema.prisma" ]]; then
 fi
 bun run --cwd packages/db db:generate
 
+info "Running migration readiness check (requires DATABASE_URL)..."
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  if require_database_url_for_release; then
+    fail "DATABASE_URL is required for CI/release migration readiness. Set DATABASE_URL or run locally outside CI for a build-only check."
+  fi
+  warn "DATABASE_URL is not set, skipping scripts/pre-deploy-check.sh in local run."
+else
+  bash scripts/pre-deploy-check.sh
+fi
+
 info "Running API critical tests..."
 bun run --cwd services/api test \
   src/routes/__tests__/council.test.ts \
@@ -65,12 +79,5 @@ bun run --cwd apps/web typecheck
 
 info "Running Convex typecheck..."
 bun run convex:typecheck
-
-info "Running migration readiness check (requires DATABASE_URL)..."
-if [[ -z "${DATABASE_URL:-}" ]]; then
-  warn "DATABASE_URL is not set, skipping scripts/pre-deploy-check.sh in local run."
-else
-  bash scripts/pre-deploy-check.sh
-fi
 
 info "Release readiness checks passed."

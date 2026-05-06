@@ -151,6 +151,9 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun run release:ready
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RELEASE_REQUIRE_DATABASE_URL: 'true'
 
   security:
     name: Security Scan
