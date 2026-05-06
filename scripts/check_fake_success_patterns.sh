@@ -28,6 +28,13 @@ if [[ -n "$API_PRISMA_FALLBACK_MATCHES" ]]; then
   exit 1
 fi
 
+WEB_PRISMA_FALLBACK_MATCHES="$(rg -n 'readFallbacks|createModelProxy|safe fallback values|Prisma compatibility shim' apps/web/src/lib/prisma.ts || true)"
+if [[ -n "$WEB_PRISMA_FALLBACK_MATCHES" ]]; then
+  echo "$WEB_PRISMA_FALLBACK_MATCHES"
+  echo "[ERROR] Web Prisma compatibility fallback stubs are forbidden; use @aspendos/db directly." >&2
+  exit 1
+fi
+
 FIDES_FALLBACK_MATCHES="$(rg -n 'convex_hmac_fallback|hmacSha256' convex services apps packages || true)"
 if [[ -n "$FIDES_FALLBACK_MATCHES" ]]; then
   echo "$FIDES_FALLBACK_MATCHES"
