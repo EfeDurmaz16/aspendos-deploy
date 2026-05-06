@@ -116,6 +116,7 @@ bun run --cwd services/api test \
   src/routes/__tests__/notifications.test.ts \
   src/routes/__tests__/workspace.test.ts \
   src/routes/__tests__/approvals-session-boundary.test.ts \
+  src/routes/__tests__/session-only-feature-routes.test.ts \
   src/routes/__tests__/messaging-webhook.test.ts \
   src/routes/__tests__/scheduler-session-boundary.test.ts \
   src/routes/__tests__/voice.test.ts \

@@ -4,13 +4,14 @@
  * Handles XP, levels, achievements, streaks, and referrals.
  */
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import * as gamificationService from '../services/gamification.service';
 
 const app = new Hono();
 
 // All routes require authentication
 app.use('*', requireAuth);
+app.use('*', rejectApiKeyAuth);
 
 /**
  * GET /api/gamification/profile - Get user's gamification profile

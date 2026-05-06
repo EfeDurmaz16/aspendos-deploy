@@ -6,7 +6,7 @@
 
 import { Hono } from 'hono';
 import { prisma } from '../lib/prisma';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 type Variables = {
     userId?: string;
@@ -16,6 +16,7 @@ const app = new Hono<{ Variables: Variables }>();
 
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
+app.use('*', rejectApiKeyAuth);
 
 interface SearchResult {
     type: 'chat' | 'memory';

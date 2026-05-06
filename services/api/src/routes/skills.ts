@@ -5,7 +5,7 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody, validateParams, validateQuery } from '../middleware/validate';
 import * as skillService from '../services/skill.service';
 import {
@@ -21,6 +21,7 @@ import {
 const skillRoutes = new Hono();
 
 skillRoutes.use('*', requireAuth);
+skillRoutes.use('*', rejectApiKeyAuth);
 
 // GET /skills - List available skills
 skillRoutes.get('/', validateQuery(listSkillsQuerySchema), async (c) => {

@@ -23,6 +23,7 @@ const mockPrisma = prisma as any;
 
 vi.mock('../../middleware/auth', () => ({
     requireAuth: vi.fn((_c, next) => next()),
+    rejectApiKeyAuth: vi.fn((_c, next) => next()),
 }));
 
 import searchRoutes from '../search';

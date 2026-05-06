@@ -1,11 +1,12 @@
 import { Hono } from 'hono';
 import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { requireTier } from '../middleware/tier-gate';
 
 const enterprise = new Hono();
 
 enterprise.use('*', requireAuth);
+enterprise.use('*', rejectApiKeyAuth);
 enterprise.use('*', requireTier('team', 'Enterprise features'));
 
 enterprise.post('/organizations', async (c) => {
