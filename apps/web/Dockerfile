@@ -45,6 +45,7 @@ RUN npm install -g bun@1.3.4
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/packages ./packages
 
 # Copy source code
 COPY . .
