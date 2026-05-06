@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     clearChaos_forTesting,
     type FaultTarget,
@@ -22,6 +22,10 @@ import {
 describe('Chaos Testing Framework', () => {
     beforeEach(() => {
         clearChaos_forTesting();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     describe('injectFault', () => {
@@ -305,11 +309,15 @@ describe('Chaos Testing Framework', () => {
         });
 
         it('should measure test duration', async () => {
-            const result = await runResilienceTest('timed-test', async () => {
+            vi.useFakeTimers();
+
+            const resultPromise = runResilienceTest('timed-test', async () => {
                 await new Promise((resolve) => setTimeout(resolve, 50));
             });
+            await vi.advanceTimersByTimeAsync(50);
+            const result = await resultPromise;
 
-            expect(result.duration).toBeGreaterThanOrEqual(50);
+            expect(result.duration).toBe(50);
         });
 
         it('should include metrics in result', async () => {
@@ -360,17 +368,23 @@ describe('Chaos Testing Framework', () => {
         });
 
         it('should calculate average duration', async () => {
-            await runResilienceTest('test-1', async () => {
+            vi.useFakeTimers();
+
+            const firstResult = runResilienceTest('test-1', async () => {
                 await new Promise((resolve) => setTimeout(resolve, 50));
             });
-            await runResilienceTest('test-2', async () => {
+            await vi.advanceTimersByTimeAsync(50);
+            await firstResult;
+
+            const secondResult = runResilienceTest('test-2', async () => {
                 await new Promise((resolve) => setTimeout(resolve, 100));
             });
+            await vi.advanceTimersByTimeAsync(100);
+            await secondResult;
 
             const report = getResilienceReport();
 
-            expect(report.averageDuration).toBeGreaterThan(0);
-            expect(report.averageDuration).toBeGreaterThanOrEqual(75);
+            expect(report.averageDuration).toBe(75);
         });
 
         it('should include resilience score', async () => {
