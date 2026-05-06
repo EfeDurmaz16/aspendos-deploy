@@ -188,7 +188,7 @@ jobs:
   release-readiness:
     name: Release Readiness
     runs-on: ubuntu-latest
-    needs: [build, typecheck-web, typecheck-api, test-web, test-api, test-core, docker-build, convex-typecheck, generated-artifacts, helm-chart]
+    needs: [build, typecheck-web, typecheck-api, test-web, test-api, test-core, docker-build, convex-typecheck, generated-artifacts, helm-chart, security]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
