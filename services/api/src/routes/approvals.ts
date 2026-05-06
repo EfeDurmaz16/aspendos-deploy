@@ -24,8 +24,12 @@ function approvalStatus(approval: ApprovalView): string | undefined {
     return approval.status?.toLowerCase();
 }
 
-function approvalDecisionId(approval: ApprovalView, fallbackId: string): string {
-    return approval._id ?? approval.id ?? fallbackId;
+function approvalDecisionId(approval: ApprovalView): string {
+    const decisionId = approval._id ?? approval.id;
+    if (!decisionId) {
+        throw new Error('Approval record is missing a decision id');
+    }
+    return decisionId;
 }
 
 function approvalToolName(approval: ApprovalView): string | undefined {
@@ -56,10 +60,7 @@ approvalRoutes.post('/:id/approve', validateParams(approvalIdParamSchema), async
         return c.json({ error: `Approval is already ${approval.status}` }, 400);
     }
 
-    const result = await approvalService.approveRequest(
-        approvalDecisionId(approval, approvalId),
-        userId
-    );
+    const result = await approvalService.approveRequest(approvalDecisionId(approval), userId);
 
     // Check if user wants to "always allow" this tool
     const alwaysAllow = c.req.query('always_allow') === 'true';
@@ -84,10 +85,7 @@ approvalRoutes.post('/:id/reject', validateParams(approvalIdParamSchema), async 
         return c.json({ error: `Approval is already ${approval.status}` }, 400);
     }
 
-    const result = await approvalService.rejectRequest(
-        approvalDecisionId(approval, approvalId),
-        userId
-    );
+    const result = await approvalService.rejectRequest(approvalDecisionId(approval), userId);
     return c.json({ approval: result });
 });
 

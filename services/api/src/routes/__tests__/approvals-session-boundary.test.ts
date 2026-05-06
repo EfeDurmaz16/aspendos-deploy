@@ -38,11 +38,28 @@ function createApiKeyAuthenticatedApp() {
     return app;
 }
 
+function createSessionAuthenticatedApp() {
+    const app = new Hono();
+    app.onError((err, c) => c.json({ error: err.message }, 500));
+    app.use('*', async (c, next) => {
+        c.set('userId', 'approval-user-1');
+        c.set('apiKeyId', null);
+        c.set('apiKeyPermissions', null);
+        return next();
+    });
+    app.route('/approvals', approvalRoutes);
+    return app;
+}
+
 describe('approval route session boundary', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockPrisma.user.findUnique.mockResolvedValue({ banned: false });
         mockApprovalService.getPendingApprovals.mockResolvedValue([]);
+        mockApprovalService.getApprovalForUser.mockResolvedValue({
+            status: 'pending',
+            tool_name: 'file.write',
+        });
     });
 
     it('rejects API-key authenticated approval access', async () => {
@@ -55,5 +72,29 @@ describe('approval route session boundary', () => {
             error: 'API key authentication is not allowed for this route',
         });
         expect(mockApprovalService.getPendingApprovals).not.toHaveBeenCalled();
+    });
+
+    it('fails loud instead of approving with a URL id fallback when the approval record has no decision id', async () => {
+        const app = createSessionAuthenticatedApp();
+
+        const res = await app.request('/approvals/approval_abc123/approve', { method: 'POST' });
+
+        expect(res.status).toBe(500);
+        await expect(res.json()).resolves.toEqual({
+            error: 'Approval record is missing a decision id',
+        });
+        expect(mockApprovalService.approveRequest).not.toHaveBeenCalled();
+    });
+
+    it('fails loud instead of rejecting with a URL id fallback when the approval record has no decision id', async () => {
+        const app = createSessionAuthenticatedApp();
+
+        const res = await app.request('/approvals/approval_abc123/reject', { method: 'POST' });
+
+        expect(res.status).toBe(500);
+        await expect(res.json()).resolves.toEqual({
+            error: 'Approval record is missing a decision id',
+        });
+        expect(mockApprovalService.rejectRequest).not.toHaveBeenCalled();
     });
 });
