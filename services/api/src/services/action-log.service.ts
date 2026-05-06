@@ -69,7 +69,7 @@ export async function logAction(params: LogActionParams): Promise<string> {
         return id as string;
     } catch (err) {
         console.error('[action-log.service] logAction error:', err);
-        return '';
+        throw new Error('Failed to persist action log', { cause: err });
     }
 }
 
@@ -126,8 +126,9 @@ export async function getSessionActions(
 
         const offset = options?.offset ?? 0;
         return filtered.slice(offset, offset + (options?.limit ?? 100));
-    } catch {
-        return [];
+    } catch (err) {
+        console.error('[action-log.service] getSessionActions error:', err);
+        throw new Error('Failed to load session actions', { cause: err });
     }
 }
 
@@ -161,8 +162,9 @@ export async function getCausalChain(actionId: string, _maxDepth = 20) {
         }
 
         return chain;
-    } catch {
-        return [];
+    } catch (err) {
+        console.error('[action-log.service] getCausalChain error:', err);
+        throw new Error('Failed to load causal chain', { cause: err });
     }
 }
 
@@ -203,8 +205,9 @@ export async function getActionEffects(actionId: string, maxDepth = 10) {
         }
 
         return effects;
-    } catch {
-        return [];
+    } catch (err) {
+        console.error('[action-log.service] getActionEffects error:', err);
+        throw new Error('Failed to load action effects', { cause: err });
     }
 }
 
@@ -231,7 +234,8 @@ export async function getRecentActions(
         }
 
         return actions;
-    } catch {
-        return [];
+    } catch (err) {
+        console.error('[action-log.service] getRecentActions error:', err);
+        throw new Error('Failed to load recent actions', { cause: err });
     }
 }
