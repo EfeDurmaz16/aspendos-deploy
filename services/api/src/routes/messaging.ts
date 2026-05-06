@@ -11,7 +11,7 @@
 
 import { Hono } from 'hono';
 import { prisma } from '../lib/prisma';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
 import { connectionIdParamSchema, createConnectionSchema } from '../validation/messaging.schema';
 
@@ -27,7 +27,7 @@ function isSupportedWebhookPlatform(platform: string) {
 // ============================================
 
 // GET /messaging/connections - List user's platform connections
-messagingRoutes.get('/connections', requireAuth, async (c) => {
+messagingRoutes.get('/connections', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId') as string;
     const connections = await prisma.platformConnection.findMany({
         where: { userId },
@@ -40,6 +40,7 @@ messagingRoutes.get('/connections', requireAuth, async (c) => {
 messagingRoutes.post(
     '/connections',
     requireAuth,
+    rejectApiKeyAuth,
     validateBody(createConnectionSchema),
     async (c) => {
         const userId = c.get('userId') as string;
@@ -63,6 +64,7 @@ messagingRoutes.post(
 messagingRoutes.delete(
     '/connections/:id',
     requireAuth,
+    rejectApiKeyAuth,
     validateParams(connectionIdParamSchema),
     async (c) => {
         const userId = c.get('userId') as string;

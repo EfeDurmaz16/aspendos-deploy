@@ -10,7 +10,7 @@ type ScheduledTaskStatus = any;
 
 import { timingSafeEqual } from 'node:crypto';
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
 import { recordTokenUsage } from '../services/billing.service';
 import * as commitmentService from '../services/commitment-detector.service';
@@ -55,7 +55,7 @@ function verifyCronSecret(provided: string | undefined): boolean {
 // ============================================
 
 // GET /api/scheduler/tasks - Get user's scheduled tasks
-app.get('/tasks', requireAuth, validateQuery(getTasksQuerySchema), async (c) => {
+app.get('/tasks', requireAuth, rejectApiKeyAuth, validateQuery(getTasksQuerySchema), async (c) => {
     const userId = c.get('userId')!;
     const validated = c.get('validatedQuery') as {
         status?: ScheduledTaskStatus;
@@ -88,67 +88,73 @@ app.get('/tasks', requireAuth, validateQuery(getTasksQuerySchema), async (c) => 
 });
 
 // POST /api/scheduler/tasks - Create a scheduled task
-app.post('/tasks', requireAuth, validateBody(createScheduledTaskSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const validated = c.get('validatedBody') as {
-        chatId: string;
-        triggerAt: string;
-        intent: string;
-        contextSummary?: string;
-        topic?: string;
-        tone?: 'friendly' | 'professional' | 'encouraging';
-        channelPref?: 'auto' | 'push' | 'email' | 'in_app';
-        metadata?: Record<string, unknown>;
-    };
+app.post(
+    '/tasks',
+    requireAuth,
+    rejectApiKeyAuth,
+    validateBody(createScheduledTaskSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const validated = c.get('validatedBody') as {
+            chatId: string;
+            triggerAt: string;
+            intent: string;
+            contextSummary?: string;
+            topic?: string;
+            tone?: 'friendly' | 'professional' | 'encouraging';
+            channelPref?: 'auto' | 'push' | 'email' | 'in_app';
+            metadata?: Record<string, unknown>;
+        };
 
-    const { chatId, triggerAt, intent, contextSummary, topic, tone, channelPref, metadata } =
-        validated;
+        const { chatId, triggerAt, intent, contextSummary, topic, tone, channelPref, metadata } =
+            validated;
 
-    // Parse triggerAt (can be ISO string or relative expression)
-    let triggerDate: Date | null;
-    if (triggerAt.includes('T') || triggerAt.match(/^\d{4}-\d{2}-\d{2}/)) {
-        triggerDate = new Date(triggerAt);
-    } else {
-        triggerDate = schedulerService.parseTimeExpression(triggerAt);
+        // Parse triggerAt (can be ISO string or relative expression)
+        let triggerDate: Date | null;
+        if (triggerAt.includes('T') || triggerAt.match(/^\d{4}-\d{2}-\d{2}/)) {
+            triggerDate = new Date(triggerAt);
+        } else {
+            triggerDate = schedulerService.parseTimeExpression(triggerAt);
+        }
+
+        if (!triggerDate || Number.isNaN(triggerDate.getTime())) {
+            return c.json({ error: 'Invalid triggerAt format' }, 400);
+        }
+
+        // Validate triggerAt is in the future
+        if (triggerDate <= new Date()) {
+            return c.json({ error: 'triggerAt must be in the future' }, 400);
+        }
+
+        const task = await schedulerService.createScheduledTask({
+            userId,
+            chatId,
+            triggerAt: triggerDate,
+            intent,
+            contextSummary,
+            topic,
+            tone,
+            channelPref,
+            metadata,
+        });
+
+        return c.json(
+            {
+                id: task.id,
+                chatId: task.chatId,
+                triggerAt: task.triggerAt.toISOString(),
+                triggerAtFormatted: schedulerService.formatScheduledTime(task.triggerAt),
+                status: task.status,
+                intent: task.intent,
+                topic: task.topic,
+            },
+            201
+        );
     }
-
-    if (!triggerDate || Number.isNaN(triggerDate.getTime())) {
-        return c.json({ error: 'Invalid triggerAt format' }, 400);
-    }
-
-    // Validate triggerAt is in the future
-    if (triggerDate <= new Date()) {
-        return c.json({ error: 'triggerAt must be in the future' }, 400);
-    }
-
-    const task = await schedulerService.createScheduledTask({
-        userId,
-        chatId,
-        triggerAt: triggerDate,
-        intent,
-        contextSummary,
-        topic,
-        tone,
-        channelPref,
-        metadata,
-    });
-
-    return c.json(
-        {
-            id: task.id,
-            chatId: task.chatId,
-            triggerAt: task.triggerAt.toISOString(),
-            triggerAtFormatted: schedulerService.formatScheduledTime(task.triggerAt),
-            status: task.status,
-            intent: task.intent,
-            topic: task.topic,
-        },
-        201
-    );
-});
+);
 
 // GET /api/scheduler/tasks/:id - Get a single task
-app.get('/tasks/:id', requireAuth, async (c) => {
+app.get('/tasks/:id', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const taskId = c.req.param('id');
     if (!taskId) return c.json({ error: 'Task id is required' }, 400);
@@ -177,7 +183,7 @@ app.get('/tasks/:id', requireAuth, async (c) => {
 });
 
 // DELETE /api/scheduler/tasks/:id - Cancel a scheduled task
-app.delete('/tasks/:id', requireAuth, async (c) => {
+app.delete('/tasks/:id', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const taskId = c.req.param('id');
     if (!taskId) return c.json({ error: 'Task id is required' }, 400);
@@ -192,41 +198,47 @@ app.delete('/tasks/:id', requireAuth, async (c) => {
 });
 
 // PATCH /api/scheduler/tasks/:id - Reschedule a task
-app.patch('/tasks/:id', requireAuth, validateBody(rescheduleTaskSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const taskId = c.req.param('id');
-    if (!taskId) return c.json({ error: 'Task id is required' }, 400);
-    const validated = c.get('validatedBody') as { triggerAt: string };
+app.patch(
+    '/tasks/:id',
+    requireAuth,
+    rejectApiKeyAuth,
+    validateBody(rescheduleTaskSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const taskId = c.req.param('id');
+        if (!taskId) return c.json({ error: 'Task id is required' }, 400);
+        const validated = c.get('validatedBody') as { triggerAt: string };
 
-    // Parse new triggerAt
-    let triggerDate: Date | null;
-    if (validated.triggerAt.includes('T') || validated.triggerAt.match(/^\d{4}-\d{2}-\d{2}/)) {
-        triggerDate = new Date(validated.triggerAt);
-    } else {
-        triggerDate = schedulerService.parseTimeExpression(validated.triggerAt);
+        // Parse new triggerAt
+        let triggerDate: Date | null;
+        if (validated.triggerAt.includes('T') || validated.triggerAt.match(/^\d{4}-\d{2}-\d{2}/)) {
+            triggerDate = new Date(validated.triggerAt);
+        } else {
+            triggerDate = schedulerService.parseTimeExpression(validated.triggerAt);
+        }
+
+        if (!triggerDate || Number.isNaN(triggerDate.getTime())) {
+            return c.json({ error: 'Invalid triggerAt format' }, 400);
+        }
+
+        if (triggerDate <= new Date()) {
+            return c.json({ error: 'triggerAt must be in the future' }, 400);
+        }
+
+        const task = await schedulerService.rescheduleTask(taskId, userId, triggerDate);
+
+        if (!task) {
+            return c.json({ error: 'Task not found or cannot be rescheduled' }, 404);
+        }
+
+        return c.json({
+            id: task.id,
+            triggerAt: task.triggerAt.toISOString(),
+            triggerAtFormatted: schedulerService.formatScheduledTime(task.triggerAt),
+            status: task.status,
+        });
     }
-
-    if (!triggerDate || Number.isNaN(triggerDate.getTime())) {
-        return c.json({ error: 'Invalid triggerAt format' }, 400);
-    }
-
-    if (triggerDate <= new Date()) {
-        return c.json({ error: 'triggerAt must be in the future' }, 400);
-    }
-
-    const task = await schedulerService.rescheduleTask(taskId, userId, triggerDate);
-
-    if (!task) {
-        return c.json({ error: 'Task not found or cannot be rescheduled' }, 404);
-    }
-
-    return c.json({
-        id: task.id,
-        triggerAt: task.triggerAt.toISOString(),
-        triggerAtFormatted: schedulerService.formatScheduledTime(task.triggerAt),
-        status: task.status,
-    });
-});
+);
 
 // ============================================
 // WEBHOOK ROUTES (No auth - uses signature verification)

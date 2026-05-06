@@ -112,6 +112,10 @@ bun run --cwd services/api test \
   src/routes/__tests__/account-session-boundary.test.ts \
   src/routes/__tests__/notifications.test.ts \
   src/routes/__tests__/workspace.test.ts \
+  src/routes/__tests__/approvals-session-boundary.test.ts \
+  src/routes/__tests__/messaging-webhook.test.ts \
+  src/routes/__tests__/scheduler-session-boundary.test.ts \
+  src/routes/__tests__/voice.test.ts \
   src/routes/__tests__/prompt-templates.test.ts \
   src/routes/__tests__/import-session-boundary.test.ts \
   src/routes/__tests__/sessions.test.ts \

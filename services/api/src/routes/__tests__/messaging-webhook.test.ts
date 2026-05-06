@@ -13,9 +13,39 @@ vi.mock('../../bot', () => ({
     },
 }));
 
+vi.mock('@aspendos/db', () => ({
+    prisma: {
+        user: {
+            findUnique: vi.fn().mockResolvedValue({ banned: false }),
+        },
+        platformConnection: {
+            findMany: vi.fn(),
+            upsert: vi.fn(),
+            updateMany: vi.fn(),
+        },
+    },
+}));
+
+import { prisma } from '@aspendos/db';
+
+const mockPrisma = prisma as any;
+
 async function createTestApp() {
     const { default: messagingRoutes } = await import('../messaging');
     const app = new Hono();
+    app.route('/messaging', messagingRoutes);
+    return app;
+}
+
+async function createApiKeyAuthenticatedTestApp() {
+    const { default: messagingRoutes } = await import('../messaging');
+    const app = new Hono();
+    app.use('*', async (c, next) => {
+        c.set('userId', 'test-user-1');
+        c.set('apiKeyId', 'key-1');
+        c.set('apiKeyPermissions', ['chat:read']);
+        return next();
+    });
     app.route('/messaging', messagingRoutes);
     return app;
 }
@@ -25,6 +55,7 @@ describe('messaging webhook route allowlist', () => {
         vi.resetModules();
         slackHandler.mockReset();
         experimentalHandler.mockReset();
+        mockPrisma.platformConnection.findMany.mockResolvedValue([]);
     });
 
     it('routes explicitly supported POST webhooks to their adapter handler', async () => {
@@ -67,5 +98,17 @@ describe('messaging webhook route allowlist', () => {
             error: 'Unknown platform: experimental',
         });
         expect(experimentalHandler).not.toHaveBeenCalled();
+    });
+
+    it('rejects API-key authenticated platform connection management', async () => {
+        const app = await createApiKeyAuthenticatedTestApp();
+
+        const response = await app.request('/messaging/connections');
+
+        expect(response.status).toBe(403);
+        await expect(response.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
+        });
+        expect(mockPrisma.platformConnection.findMany).not.toHaveBeenCalled();
     });
 });

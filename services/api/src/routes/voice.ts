@@ -4,7 +4,7 @@
  */
 import { Hono } from 'hono';
 import OpenAI from 'openai';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import { hasVoiceMinutes, recordVoiceUsage } from '../services/billing.service';
 import { synthesizeSchema } from '../validation/voice.schema';
@@ -13,6 +13,7 @@ const app = new Hono();
 
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
+app.use('*', rejectApiKeyAuth);
 
 // Lazily initialize OpenAI client pointing to Vercel AI Gateway
 let openai: OpenAI | null = null;

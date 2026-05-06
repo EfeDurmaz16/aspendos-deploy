@@ -5,7 +5,7 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateParams } from '../middleware/validate';
 import * as approvalService from '../services/approval.service';
 import { approvalIdParamSchema, toolAllowlistParamSchema } from '../validation/approvals.schema';
@@ -34,6 +34,7 @@ function approvalToolName(approval: ApprovalView): string | undefined {
 
 // All routes require auth
 approvalRoutes.use('*', requireAuth);
+approvalRoutes.use('*', rejectApiKeyAuth);
 
 // GET /approvals - List pending approvals
 approvalRoutes.get('/', async (c) => {
