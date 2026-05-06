@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createSlackAdapter } from '@chat-adapter/slack';
+import { Chat } from 'chat';
 
 vi.mock('@ai-sdk/anthropic', () => ({
     anthropic: vi.fn(),
@@ -40,6 +42,7 @@ describe('messaging approval actions', () => {
 
     beforeEach(() => {
         vi.resetModules();
+        vi.clearAllMocks();
         process.env = {
             ...originalEnv,
             BOT_APPROVAL_WEBHOOK_SECRET: 'approval-secret',
@@ -104,6 +107,21 @@ describe('messaging approval actions', () => {
         expect(fetch).not.toHaveBeenCalled();
         expect(event.thread.post).toHaveBeenCalledWith(
             'Failed to process approve: BOT_APPROVAL_WEBHOOK_SECRET is required for approval callbacks'
+        );
+    });
+
+    it('does not initialize platform adapters without their verification secrets', async () => {
+        vi.stubEnv('SLACK_BOT_TOKEN', 'xoxb-test');
+        vi.stubEnv('SLACK_SIGNING_SECRET', '');
+        const { getBot } = await import('../../../src/lib/messaging/bot');
+
+        await getBot();
+
+        expect(createSlackAdapter).not.toHaveBeenCalled();
+        expect(Chat).toHaveBeenCalledWith(
+            expect.objectContaining({
+                adapters: {},
+            })
         );
     });
 });

@@ -16,22 +16,46 @@ const CALLBACK_BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://yula.dev';
 
 let _bot: Chat | null = null;
 
+const VERIFIED_ADAPTER_ENV: Record<string, string[]> = {
+    slack: ['SLACK_BOT_TOKEN', 'SLACK_SIGNING_SECRET'],
+    telegram: ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_WEBHOOK_SECRET_TOKEN'],
+    discord: ['DISCORD_BOT_TOKEN', 'DISCORD_PUBLIC_KEY', 'DISCORD_APPLICATION_ID'],
+    whatsapp: [
+        'WHATSAPP_ACCESS_TOKEN',
+        'WHATSAPP_APP_SECRET',
+        'WHATSAPP_PHONE_NUMBER_ID',
+        'WHATSAPP_VERIFY_TOKEN',
+    ],
+};
+
+function hasVerifiedAdapterEnv(platform: keyof typeof VERIFIED_ADAPTER_ENV) {
+    return VERIFIED_ADAPTER_ENV[platform].every((name) => process.env[name]?.trim());
+}
+
 export async function getBot(): Promise<any> {
     if (_bot) return _bot;
 
-    // Dynamic import Discord adapter to avoid zlib-sync native module issue with Turbopack
-    const discordPkg = '@chat-adapter/' + 'discord';
-    const { createDiscordAdapter } = await import(/* webpackIgnore: true */ discordPkg);
+    const adapters: Record<string, unknown> = {};
+    if (hasVerifiedAdapterEnv('slack')) {
+        adapters.slack = createSlackAdapter();
+    }
+    if (hasVerifiedAdapterEnv('telegram')) {
+        adapters.telegram = createTelegramAdapter({ mode: 'webhook' });
+    }
+    if (hasVerifiedAdapterEnv('discord')) {
+        // Dynamic import Discord adapter to avoid zlib-sync native module issue with Turbopack
+        const discordPkg = '@chat-adapter/' + 'discord';
+        const { createDiscordAdapter } = await import(/* webpackIgnore: true */ discordPkg);
+        adapters.discord = createDiscordAdapter();
+    }
+    if (hasVerifiedAdapterEnv('whatsapp')) {
+        adapters.whatsapp = createWhatsAppAdapter();
+    }
 
     const bot = new Chat({
         userName: 'yula',
         state: {} as never,
-        adapters: {
-            slack: createSlackAdapter(),
-            telegram: createTelegramAdapter(),
-            discord: createDiscordAdapter(),
-            whatsapp: createWhatsAppAdapter(),
-        },
+        adapters,
     } as never) as any;
 
     // Register handlers

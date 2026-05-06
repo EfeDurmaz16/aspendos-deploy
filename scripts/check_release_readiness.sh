@@ -104,6 +104,7 @@ bun run --cwd services/api test \
   src/routes/__tests__/memory-validation.test.ts \
   src/lib/__tests__/critical-readiness.test.ts \
   src/routes/__tests__/public-api-verify.test.ts \
+  src/bot/__tests__/init.test.ts \
   src/tools/__tests__/reference-tools.test.ts \
   src/orchestrator/__tests__/step.test.ts \
   src/services/__tests__/approval.service.test.ts \
