@@ -91,7 +91,15 @@ bun run --cwd services/api test \
   src/routes/__tests__/pac.test.ts \
   src/routes/__tests__/memory-validation.test.ts \
   src/lib/__tests__/critical-readiness.test.ts \
-  src/routes/__tests__/public-api-verify.test.ts
+  src/routes/__tests__/public-api-verify.test.ts \
+  src/tools/__tests__/reference-tools.test.ts \
+  src/orchestrator/__tests__/step.test.ts
+
+info "Running web governance and messaging critical tests..."
+bun run --cwd apps/web test \
+  src/lib/governance/__tests__/step-middleware.test.ts \
+  test/lib/messaging/bot-actions.test.ts \
+  test/lib/messaging/bot-approval.test.ts
 
 info "Running core deterministic flow tests..."
 bun run test:core
