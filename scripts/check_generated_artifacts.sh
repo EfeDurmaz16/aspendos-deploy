@@ -25,6 +25,21 @@ if [[ -n "$BRAND_DIFF" ]]; then
   exit 1
 fi
 
+echo "[INFO] Checking tracked local/generated artifact paths..."
+TRACKED_LOCAL_ARTIFACTS="$(
+  git ls-files \
+    apps/yula-video/build \
+    klaros/build \
+    klaros/test-output \
+    .claude/worktrees \
+    .worktrees || true
+)"
+if [[ -n "$TRACKED_LOCAL_ARTIFACTS" ]]; then
+  echo "$TRACKED_LOCAL_ARTIFACTS"
+  echo "[ERROR] Local worktree/build/test-output artifacts are tracked. Remove them from git before release." >&2
+  exit 1
+fi
+
 echo "[INFO] Verifying Convex generated API symlink..."
 LINK_PATH="apps/web/src/lib/convex/_generated"
 EXPECTED_TARGET="../../../../../convex/_generated"

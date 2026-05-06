@@ -107,6 +107,7 @@ better-min-time.txt
 # Build artifacts
 apps/yula-video/build/
 klaros/build/
+klaros/test-output/
 
 .vercel
 
