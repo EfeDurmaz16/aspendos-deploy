@@ -226,21 +226,21 @@ export const currentTimeTool = tool({
             .describe('Timezone (e.g., "America/New_York", "UTC")'),
     }),
     execute: async ({ timezone }) => {
+        const requestedTimezone = timezone ?? 'UTC';
         try {
             const now = new Date();
-            const formatted = now.toLocaleString('en-US', { timeZone: timezone });
+            const formatted = now.toLocaleString('en-US', { timeZone: requestedTimezone });
             return {
                 success: true,
                 datetime: formatted,
                 iso: now.toISOString(),
-                timezone,
+                timezone: requestedTimezone,
             };
-        } catch {
+        } catch (error) {
             return {
-                success: true,
-                datetime: new Date().toISOString(),
-                iso: new Date().toISOString(),
-                timezone: 'UTC',
+                success: false,
+                error: error instanceof Error ? error.message : 'Invalid timezone',
+                timezone: requestedTimezone,
             };
         }
     },
