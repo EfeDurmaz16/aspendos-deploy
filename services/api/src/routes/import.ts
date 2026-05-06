@@ -3,11 +3,9 @@
  *
  * Handles importing chat history from ChatGPT and Claude exports.
  */
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
-
-const prisma = null as any;
-
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { enforceTierLimit } from '../middleware/tier-enforcement';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as importService from '../services/import.service';
@@ -123,6 +121,7 @@ const app = new Hono<{ Variables: Variables }>();
 
 // All routes require authentication
 app.use('*', requireAuth);
+app.use('*', rejectApiKeyAuth);
 
 /**
  * POST /api/import/jobs - Create a new import job and parse file
