@@ -18,7 +18,7 @@ export const stripeChargeTool: ToolDefinition = {
         if (cents > BLOCK_THRESHOLD_CENTS) {
             return {
                 reversibility_class: 'irreversible_blocked',
-                approval_required: true,
+                approval_required: false,
                 rollback_strategy: { kind: 'none' },
                 human_explanation: `Charge of $${(cents / 100).toFixed(2)} exceeds the $${(BLOCK_THRESHOLD_CENTS / 100).toFixed(2)} automated threshold. This action is blocked.`,
             };

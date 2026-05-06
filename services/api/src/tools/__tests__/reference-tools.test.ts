@@ -26,7 +26,7 @@ describe('Tool Registry', () => {
     it('returns irreversible_blocked for unknown tools', () => {
         const meta = registry.classify('unknown.tool', {});
         expect(meta.reversibility_class).toBe('irreversible_blocked');
-        expect(meta.approval_required).toBe(true);
+        expect(meta.approval_required).toBe(false);
     });
 });
 
@@ -110,6 +110,7 @@ describe('stripe.charge (threshold-based)', () => {
     it('classifies large charge as irreversible_blocked', () => {
         const meta = stripeChargeTool.classify({ amount: 10000 });
         expect(meta.reversibility_class).toBe('irreversible_blocked');
+        expect(meta.approval_required).toBe(false);
     });
 
     it('blocks execution of large charge', async () => {

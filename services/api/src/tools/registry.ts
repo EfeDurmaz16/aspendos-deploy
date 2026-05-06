@@ -20,7 +20,7 @@ class ToolRegistry {
         if (!tool) {
             return {
                 reversibility_class: 'irreversible_blocked',
-                approval_required: true,
+                approval_required: false,
                 rollback_strategy: { kind: 'none' },
                 human_explanation: `Unknown tool "${name}" — blocked by default (fail-closed)`,
             };
