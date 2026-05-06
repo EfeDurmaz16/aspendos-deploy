@@ -2,25 +2,13 @@
  * API Key Management Routes
  * Handles CRUD operations for user API keys.
  */
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
-
-const prisma = null as any;
-
+import { hashApiKey } from '../lib/api-key-auth';
 import { requireAuth } from '../middleware/auth';
 
 type Variables = { userId: string };
 const app = new Hono<{ Variables: Variables }>();
-
-/**
- * Hash API key for secure storage
- */
-async function hashApiKey(key: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(key);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
 
 /**
  * Generate a new API key

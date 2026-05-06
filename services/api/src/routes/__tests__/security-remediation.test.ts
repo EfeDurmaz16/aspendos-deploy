@@ -46,6 +46,10 @@ vi.mock('@aspendos/db', () => ({
             count: vi.fn(),
             create: vi.fn(),
         },
+        apiKey: {
+            findUnique: vi.fn(),
+            update: vi.fn(),
+        },
     },
 }));
 
@@ -995,5 +999,86 @@ describe('Security Remediation: Production bearer auth hardening', () => {
 
         expect(res.status).toBe(200);
         expect(await res.json()).toEqual({ userId: 'local-test-user' });
+    });
+});
+
+// ============================================
+// 9. API KEYS ARE VERIFIED BEFORE AUTHENTICATING
+// ============================================
+
+describe('Security Remediation: API key authentication', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockPrisma.user.findUnique.mockResolvedValue({ id: 'api-user', banned: false });
+        mockPrisma.apiKey.update.mockResolvedValue({});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('authenticates a valid yula API key and updates lastUsedAt', async () => {
+        const { requireAuth } = await import('../../middleware/auth');
+
+        mockPrisma.apiKey.findUnique.mockResolvedValue({
+            id: 'key-1',
+            userId: 'api-user',
+            permissions: ['chat:write'],
+            expiresAt: null,
+        });
+
+        const app = new Hono();
+        app.use('*', requireAuth);
+        app.get('/api/tools', (c) =>
+            c.json({
+                userId: c.get('userId' as any),
+                session: c.get('session' as any),
+            })
+        );
+
+        const res = await app.request('/api/tools', {
+            headers: { Authorization: 'Bearer yula_valid_api_key' },
+        });
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toMatchObject({
+            userId: 'api-user',
+            session: { id: 'api-key:key-1' },
+        });
+        expect(mockPrisma.apiKey.findUnique).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { keyHash: expect.stringMatching(/^[a-f0-9]{64}$/) },
+            })
+        );
+        expect(mockPrisma.apiKey.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { id: 'key-1' },
+                data: { lastUsedAt: expect.any(Date) },
+            })
+        );
+    });
+
+    it('rejects expired API keys', async () => {
+        const { requireAuth } = await import('../../middleware/auth');
+
+        mockPrisma.apiKey.findUnique.mockResolvedValue({
+            id: 'expired-key',
+            userId: 'api-user',
+            permissions: ['chat:write'],
+            expiresAt: new Date(Date.now() - 1000),
+        });
+        (auth.api.getSession as any).mockResolvedValue(null);
+
+        const app = new Hono();
+        app.use('*', requireAuth);
+        app.get('/api/tools', (c) => c.json({ ok: true }));
+
+        const res = await app.request('/api/tools', {
+            headers: { 'x-api-key': 'yula_expired_api_key' },
+        });
+
+        expect(res.status).toBe(401);
+        expect(await res.json()).toEqual({ error: 'Unauthorized' });
+        expect(mockPrisma.apiKey.update).not.toHaveBeenCalled();
     });
 });

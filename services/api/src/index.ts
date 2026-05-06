@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import { authenticateApiKey, extractApiKey } from './lib/api-key-auth';
 import { auth } from './lib/auth';
 import { validateEnv } from './lib/env';
 import { AppError } from './lib/errors';
@@ -264,6 +265,18 @@ app.use('*', async (c, next) => {
 
 // Session middleware — local/test bearer shortcut, then WorkOS session.
 app.use('*', async (c, next) => {
+    const rawApiKey = extractApiKey(c.req.raw.headers);
+    if (rawApiKey) {
+        const apiKey = await authenticateApiKey(rawApiKey);
+        if (apiKey) {
+            c.set('user', { id: apiKey.userId, email: '' });
+            c.set('session', { id: `api-key:${apiKey.id}` });
+            c.set('userId', apiKey.userId);
+            await next();
+            return;
+        }
+    }
+
     const bearerUserId = getUnverifiedBearerUserId(c.req.header('Authorization'));
     if (bearerUserId) {
         c.set('user', { id: bearerUserId, email: '' });

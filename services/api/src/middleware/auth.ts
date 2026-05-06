@@ -1,5 +1,6 @@
 import { prisma } from '@aspendos/db';
 import type { Context, Next } from 'hono';
+import { authenticateApiKey, extractApiKey } from '../lib/api-key-auth';
 import { auth } from '../lib/auth';
 
 export interface AuthUser {
@@ -42,6 +43,17 @@ export async function authMiddleware(c: Context, next: Next) {
     const existingUserId = c.get('userId' as any);
     if (existingUserId) return next();
 
+    const rawApiKey = extractApiKey(c.req.raw.headers);
+    if (rawApiKey) {
+        const apiKey = await authenticateApiKey(rawApiKey);
+        if (apiKey) {
+            c.set('user', { userId: apiKey.userId, email: '' });
+            c.set('userId', apiKey.userId);
+            c.set('session', { id: `api-key:${apiKey.id}` });
+            return next();
+        }
+    }
+
     const bearerUserId = getUnverifiedBearerUserId(c.req.header('Authorization'));
     if (bearerUserId) {
         c.set('user', { userId: bearerUserId, email: '' });
@@ -61,6 +73,20 @@ export async function requireAuth(c: Context, next: Next) {
             return c.json({ error: 'Account suspended', code: 'ACCOUNT_BANNED' }, 403);
         }
         return next();
+    }
+
+    const rawApiKey = extractApiKey(c.req.raw.headers);
+    if (rawApiKey) {
+        const apiKey = await authenticateApiKey(rawApiKey);
+        if (apiKey) {
+            if (await isUserBanned(apiKey.userId)) {
+                return c.json({ error: 'Account suspended', code: 'ACCOUNT_BANNED' }, 403);
+            }
+            c.set('user', { userId: apiKey.userId, email: '' });
+            c.set('userId', apiKey.userId);
+            c.set('session', { id: `api-key:${apiKey.id}` });
+            return next();
+        }
     }
 
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
