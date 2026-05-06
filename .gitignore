@@ -78,6 +78,8 @@ landing-2/
 *audit*
 !services/api/src/audit/
 !services/api/src/audit/**
+!services/api/src/middleware/audit-trail.ts
+!services/api/src/routes/admin-audit.ts
 !packages/aspendos-core/src/audit/
 !packages/aspendos-core/src/audit/**
 # Local tool state

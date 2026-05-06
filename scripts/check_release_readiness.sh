@@ -60,6 +60,15 @@ if [[ ! -f "apps/web/src/instrumentation-client.ts" ]]; then
   fail "Missing apps/web/src/instrumentation-client.ts for Sentry client instrumentation."
 fi
 
+info "Checking tracked API bootstrap imports..."
+for required_source in \
+  services/api/src/middleware/audit-trail.ts \
+  services/api/src/routes/admin-audit.ts; do
+  if ! git ls-files --error-unmatch "$required_source" >/dev/null 2>&1; then
+    fail "$required_source is imported by the API bootstrap but is not tracked by git."
+  fi
+done
+
 info "Verifying Prisma schema and generated client..."
 if [[ ! -f "packages/db/prisma/schema.prisma" ]]; then
   fail "Missing packages/db/prisma/schema.prisma. Restore or remove @aspendos/db production paths before release."
