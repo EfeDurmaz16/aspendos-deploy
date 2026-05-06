@@ -192,7 +192,7 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                         }),
                         execute: async ({ query }: { query: string }) => {
                             if (!process.env.SUPERMEMORY_API_KEY) {
-                                return { results: [], note: 'Memory not configured' };
+                                throw new Error('SuperMemory is not configured');
                             }
                             try {
                                 const sm = await import('supermemory');
@@ -205,10 +205,15 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                                     limit: 5,
                                 });
                                 return {
+                                    success: true,
                                     results: results.results?.map((r: any) => r.content) ?? [],
                                 };
-                            } catch {
-                                return { results: [], note: 'Memory search failed' };
+                            } catch (error) {
+                                throw new Error(
+                                    `SuperMemory query failed: ${
+                                        error instanceof Error ? error.message : 'Unknown error'
+                                    }`
+                                );
                             }
                         },
                     }),
@@ -219,7 +224,7 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                         }),
                         execute: async ({ content }: { content: string }) => {
                             if (!process.env.SUPERMEMORY_API_KEY) {
-                                return { success: false, note: 'Memory not configured' };
+                                throw new Error('SuperMemory is not configured');
                             }
                             try {
                                 const sm = await import('supermemory');
@@ -231,8 +236,12 @@ Be transparent about what you're doing and why. When a tool is blocked or requir
                                     containerTags: memoryContainerTags,
                                 });
                                 return { success: true };
-                            } catch {
-                                return { success: false, note: 'Memory save failed' };
+                            } catch (error) {
+                                throw new Error(
+                                    `SuperMemory write failed: ${
+                                        error instanceof Error ? error.message : 'Unknown error'
+                                    }`
+                                );
                             }
                         },
                     }),

@@ -68,7 +68,7 @@ describe('Hybrid Router', () => {
             expect(result.memories).toEqual([]);
         });
 
-        it('should return empty memories for rag_search decisions (Qdrant removed)', async () => {
+        it('fails loud for rag_search decisions while web memory search is disconnected', async () => {
             const mockDecision = {
                 type: 'rag_search' as const,
                 query: 'travel plans',
@@ -79,11 +79,9 @@ describe('Hybrid Router', () => {
             vi.mocked(routeUserMessage).mockResolvedValueOnce(mockDecision);
             vi.mocked(createEmbedding).mockResolvedValueOnce(new Array(1536).fill(0.2));
 
-            const result = await executeHybridRoute('What are my travel plans?', 'user-123');
-
-            expect(createEmbedding).toHaveBeenCalledWith('travel plans');
-            // Memory stub returns empty since Qdrant was removed
-            expect(result.memories).toEqual([]);
+            await expect(
+                executeHybridRoute('What are my travel plans?', 'user-123')
+            ).rejects.toThrow(/Web hybrid memory search is not wired/);
         });
 
         it('should skip router when forceModel is provided', async () => {
@@ -116,7 +114,7 @@ describe('Hybrid Router', () => {
             });
         });
 
-        it('should handle memory search errors gracefully', async () => {
+        it('fails loud when required memory embedding cannot be created', async () => {
             vi.mocked(routeUserMessage).mockResolvedValueOnce({
                 type: 'rag_search',
                 query: 'test query',
@@ -125,12 +123,9 @@ describe('Hybrid Router', () => {
             });
             vi.mocked(createEmbedding).mockRejectedValueOnce(new Error('Embedding failed'));
 
-            const result = await executeHybridRoute('What did I say?', 'user-123');
-
-            // Should still return a result, just without memories
-            expect(result.decision.type).toBe('rag_search');
-            expect(result.memoryContext).toBe('');
-            expect(result.memories).toEqual([]);
+            await expect(executeHybridRoute('What did I say?', 'user-123')).rejects.toThrow(
+                /Embedding failed/
+            );
         });
     });
 

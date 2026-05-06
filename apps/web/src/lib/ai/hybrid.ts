@@ -8,13 +8,12 @@
 import { streamText } from 'ai';
 import { createEmbedding } from './embeddings';
 
-// TODO(phase-a-day-3): Qdrant removed — memory search will use Convex + SuperMemory
 async function searchMemories(
     _userId: string,
     _embedding: number[],
     _limit: number
 ): Promise<Array<{ content: string; score: number }>> {
-    return [];
+    throw new Error('Web hybrid memory search is not wired to Convex/SuperMemory');
 }
 
 import { getFallbackModels, getModel, MODEL_REGISTRY, type ModelId } from './providers';
@@ -155,21 +154,15 @@ export async function executeHybridRoute(
     const shouldSkipMemory = skipMemoryReasons.some((r) => decision.reason?.includes(r));
 
     if (!shouldSkipMemory && (decision.type === 'rag_search' || decision.type === 'direct_reply')) {
-        try {
-            const queryText =
-                decision.type === 'rag_search'
-                    ? (decision as { query: string }).query
-                    : userMessage;
+        const queryText =
+            decision.type === 'rag_search' ? (decision as { query: string }).query : userMessage;
 
-            const queryEmbedding = await createEmbedding(queryText);
-            const searchResults = await searchMemories(userId, queryEmbedding, 5);
+        const queryEmbedding = await createEmbedding(queryText);
+        const searchResults = await searchMemories(userId, queryEmbedding, 5);
 
-            if (searchResults.length > 0) {
-                memories = searchResults.map((m) => ({ content: m.content, score: m.score }));
-                memoryContext = searchResults.map((m) => `- ${m.content}`).join('\n');
-            }
-        } catch (error) {
-            console.warn('[HybridRouter] Memory search failed:', error);
+        if (searchResults.length > 0) {
+            memories = searchResults.map((m) => ({ content: m.content, score: m.score }));
+            memoryContext = searchResults.map((m) => `- ${m.content}`).join('\n');
         }
     }
 

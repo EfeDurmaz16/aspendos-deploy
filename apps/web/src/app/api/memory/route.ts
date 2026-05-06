@@ -1,21 +1,12 @@
 export const dynamic = 'force-dynamic';
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
-import { createEmbedding } from '@/lib/ai';
 import { auth } from '@/lib/auth';
 
-// TODO(phase-a-day-3): Qdrant removed — memory ops will use Convex + SuperMemory
-async function searchMemories(
-    _userId: string,
-    _embedding: number[],
-    _limit: number,
-    _type?: string
-): Promise<Array<{ content: string; score: number }>> {
-    return [];
-}
-async function storeMemory(_params: Record<string, unknown>): Promise<void> {}
-async function deleteUserMemories(_userId: string): Promise<void> {}
+const MEMORY_ROUTE_DISABLED = {
+    error: 'Web memory route is not wired to Convex/SuperMemory',
+    detail: 'Use the API service memory endpoints until this route is reconnected.',
+};
 
 /**
  * GET /api/memory?q=query - Search user memories
@@ -33,17 +24,11 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const query = searchParams.get('q');
-        const limit = parseInt(searchParams.get('limit') || '10', 10);
-        const type = searchParams.get('type') as 'context' | 'preference' | 'insight' | undefined;
-
         if (!query) {
             return NextResponse.json({ error: 'Query parameter "q" is required' }, { status: 400 });
         }
 
-        const queryEmbedding = await createEmbedding(query);
-        const memories = await searchMemories(session.userId, queryEmbedding, limit, type);
-
-        return NextResponse.json({ memories });
+        return NextResponse.json(MEMORY_ROUTE_DISABLED, { status: 501 });
     } catch (error) {
         console.error('[API /memory GET] Error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -59,29 +44,13 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { content, type = 'context', conversationId, metadata } = body;
+        const { content } = body;
 
         if (!content?.trim()) {
             return NextResponse.json({ error: 'Content is required' }, { status: 400 });
         }
 
-        const embedding = await createEmbedding(content);
-        const memoryId = uuidv4();
-
-        await storeMemory({
-            id: memoryId,
-            vector: embedding,
-            userId: session.userId,
-            content,
-            type,
-            conversationId,
-            metadata,
-        });
-
-        return NextResponse.json(
-            { id: memoryId, message: 'Memory stored successfully' },
-            { status: 201 }
-        );
+        return NextResponse.json(MEMORY_ROUTE_DISABLED, { status: 501 });
     } catch (error) {
         console.error('[API /memory POST] Error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -96,8 +65,7 @@ export async function DELETE() {
     }
 
     try {
-        await deleteUserMemories(session.userId);
-        return NextResponse.json({ message: 'All memories cleared' });
+        return NextResponse.json(MEMORY_ROUTE_DISABLED, { status: 501 });
     } catch (error) {
         console.error('[API /memory DELETE] Error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

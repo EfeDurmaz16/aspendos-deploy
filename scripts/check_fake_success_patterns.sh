@@ -42,4 +42,18 @@ if [[ -n "$FIDES_FALLBACK_MATCHES" ]]; then
   exit 1
 fi
 
+WEB_MEMORY_STUB_MATCHES="$(rg -n 'Qdrant removed|return \[\];|async function (storeMemory|deleteUserMemories|searchConversations)' apps/web/src/app/api/memory apps/web/src/app/api/cron/pac apps/web/src/lib/ai/hybrid.ts apps/web/src/lib/services/hybrid-router.ts || true)"
+if [[ -n "$WEB_MEMORY_STUB_MATCHES" ]]; then
+  echo "$WEB_MEMORY_STUB_MATCHES"
+  echo "[ERROR] Web memory/PAC production routes must not ship disconnected Qdrant-era stubs." >&2
+  exit 1
+fi
+
+SILENT_MEMORY_FAILURE_MATCHES="$(rg -n 'Memory search failed, continue without|Memory search failed|Memory save failed' apps/web/src/app/api services/api/src/routes services/api/src/bot || true)"
+if [[ -n "$SILENT_MEMORY_FAILURE_MATCHES" ]]; then
+  echo "$SILENT_MEMORY_FAILURE_MATCHES"
+  echo "[ERROR] Configured memory failures must fail loud instead of silently continuing." >&2
+  exit 1
+fi
+
 echo "[INFO] Fake success pattern check passed."

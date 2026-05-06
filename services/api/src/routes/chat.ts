@@ -1,7 +1,7 @@
 /**
  * Chat API Routes
  * Handles chat CRUD and message streaming via Vercel AI SDK.
- * Uses OpenMemory for cognitive memory retrieval.
+ * Uses SuperMemory for cognitive memory retrieval.
  */
 
 import type { LanguageModelUsage, UIMessage } from 'ai';
@@ -430,8 +430,11 @@ app.post(
                     trace: m.trace,
                 }));
             } catch (error) {
-                log.error('Memory search failed', { metadata: { error: String(error) } });
-                // Continue without memory context
+                throw new Error(
+                    `Manual memory retrieval is enabled but unavailable: ${
+                        error instanceof Error ? error.message : String(error)
+                    }`
+                );
             }
         }
 
@@ -735,8 +738,12 @@ app.post('/:id/stream', validateParams(chatIdParamSchema), async (c) => {
                 sector: m.sector || 'semantic',
                 confidence: m.salience || 0.8,
             }));
-        } catch {
-            // Continue without memory
+        } catch (error) {
+            throw new Error(
+                `Manual memory retrieval is enabled but unavailable: ${
+                    error instanceof Error ? error.message : String(error)
+                }`
+            );
         }
     }
 
@@ -885,10 +892,11 @@ app.post(
                     confidence: m.salience || 0.8,
                 }));
             } catch (error) {
-                log.error('OpenMemory search failed in /multi', {
-                    metadata: { error: String(error) },
-                });
-                // Continue without memory context
+                throw new Error(
+                    `Multi-model memory retrieval is enabled but unavailable: ${
+                        error instanceof Error ? error.message : String(error)
+                    }`
+                );
             }
         }
 

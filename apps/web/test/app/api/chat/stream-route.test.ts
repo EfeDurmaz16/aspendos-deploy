@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
     convexMutation: vi.fn(),
     convexQuery: vi.fn(),
     streamText: vi.fn(),
+    supermemoryConstructor: vi.fn(),
 }));
 
 vi.mock('ai', () => ({
@@ -11,6 +12,10 @@ vi.mock('ai', () => ({
     stepCountIs: vi.fn((count: number) => ({ count })),
     streamText: mocks.streamText,
     tool: vi.fn((definition: unknown) => definition),
+}));
+
+vi.mock('supermemory', () => ({
+    default: mocks.supermemoryConstructor,
 }));
 
 vi.mock('../../../../src/lib/convex-server', () => ({
@@ -46,8 +51,10 @@ describe('chat stream route helpers', () => {
         mocks.convexMutation.mockReset();
         mocks.convexQuery.mockReset();
         mocks.streamText.mockReset();
+        mocks.supermemoryConstructor.mockReset();
         process.env.CONVEX_SERVICE_SECRET = 'convex-service-secret';
         process.env.NEXT_PUBLIC_CONVEX_URL = 'https://example.convex.cloud';
+        delete process.env.SUPERMEMORY_API_KEY;
         mocks.convexQuery.mockResolvedValue({ _id: 'convex-user-1' });
         mocks.convexMutation.mockResolvedValue({ commitHash: 'commit-1' });
         mocks.streamText.mockReturnValue({
@@ -135,6 +142,84 @@ describe('chat stream route helpers', () => {
             user_id: 'convex-user-1',
             status: 'executed',
             result: { result: 4 },
+        });
+    });
+
+    it('fails loud when memory search is requested without SuperMemory credentials', async () => {
+        mockAuth.mockResolvedValueOnce({
+            userId: 'workos-user-1',
+            user: {
+                email: 'efe@example.com',
+                id: 'workos-user-1',
+                image: null,
+                name: 'Efe',
+            },
+            session: { id: 'session-1' },
+        } as any);
+
+        await POST(
+            new Request('https://yula.dev/api/chat/stream', {
+                method: 'POST',
+                body: JSON.stringify({ chatId: 'chat-1', message: 'what do you remember?' }),
+            }) as any
+        );
+
+        const options = mocks.streamText.mock.calls[0]?.[0] as any;
+        await expect(
+            options.tools.memory_search.execute(
+                { query: 'travel plans' },
+                { toolCallId: 'tool-call-memory' }
+            )
+        ).rejects.toThrow(/SuperMemory is not configured/);
+
+        expect(mocks.convexMutation.mock.calls[1]?.[1]).toMatchObject({
+            status: 'failed',
+            result: { error: 'SuperMemory is not configured' },
+            tool_name: 'memory_search',
+        });
+    });
+
+    it('fails loud when configured SuperMemory search throws', async () => {
+        process.env.SUPERMEMORY_API_KEY = 'sm-test-key';
+        mocks.supermemoryConstructor.mockImplementationOnce(function MockSupermemory() {
+            return {
+                search: {
+                    execute: vi.fn(async () => {
+                        throw new Error('upstream unavailable');
+                    }),
+                },
+            };
+        });
+        mockAuth.mockResolvedValueOnce({
+            userId: 'workos-user-1',
+            user: {
+                email: 'efe@example.com',
+                id: 'workos-user-1',
+                image: null,
+                name: 'Efe',
+            },
+            session: { id: 'session-1' },
+        } as any);
+
+        await POST(
+            new Request('https://yula.dev/api/chat/stream', {
+                method: 'POST',
+                body: JSON.stringify({ chatId: 'chat-1', message: 'what do you remember?' }),
+            }) as any
+        );
+
+        const options = mocks.streamText.mock.calls[0]?.[0] as any;
+        await expect(
+            options.tools.memory_search.execute(
+                { query: 'travel plans' },
+                { toolCallId: 'tool-call-memory' }
+            )
+        ).rejects.toThrow(/SuperMemory query failed: upstream unavailable/);
+
+        expect(mocks.convexMutation.mock.calls[1]?.[1]).toMatchObject({
+            status: 'failed',
+            result: { error: 'SuperMemory query failed: upstream unavailable' },
+            tool_name: 'memory_search',
         });
     });
 });

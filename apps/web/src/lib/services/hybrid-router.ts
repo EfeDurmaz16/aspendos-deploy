@@ -2,14 +2,13 @@ import { createAnthropicStreamingCompletion } from './anthropic';
 import { createGroqStreamingCompletion, type RouteDecision, routeUserMessage } from './groq';
 import { createEmbedding, createStreamingChatCompletion as createOpenAIStream } from './openai';
 
-// TODO(phase-a-day-3): Qdrant removed — memory search will use Convex + SuperMemory
 async function searchMemories(
     _userId: string,
     _embedding: number[],
     _limit: number,
     _type?: string
 ): Promise<Array<{ content: string; score: number }>> {
-    return [];
+    throw new Error('Web hybrid memory search is not wired to Convex/SuperMemory');
 }
 
 // ============================================
@@ -165,18 +164,14 @@ export async function executeHybridRoute(
     let memories: Array<{ content: string; score: number }> = [];
 
     if (decision.type === 'rag_search') {
-        try {
-            const queryEmbedding = await createEmbedding(
-                decision.type === 'rag_search' ? (decision as { query: string }).query : userMessage
-            );
-            const searchResults = await searchMemories(userId, queryEmbedding, 5);
+        const queryEmbedding = await createEmbedding(
+            decision.type === 'rag_search' ? (decision as { query: string }).query : userMessage
+        );
+        const searchResults = await searchMemories(userId, queryEmbedding, 5);
 
-            if (searchResults.length > 0) {
-                memories = searchResults.map((m) => ({ content: m.content, score: m.score }));
-                memoryContext = searchResults.map((m) => `- ${m.content}`).join('\n');
-            }
-        } catch (error) {
-            console.warn('[HybridRouter] Memory search failed:', error);
+        if (searchResults.length > 0) {
+            memories = searchResults.map((m) => ({ content: m.content, score: m.score }));
+            memoryContext = searchResults.map((m) => `- ${m.content}`).join('\n');
         }
     }
 
