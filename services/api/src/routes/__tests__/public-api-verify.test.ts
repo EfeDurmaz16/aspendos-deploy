@@ -179,6 +179,32 @@ describe('public tool execution route', () => {
         });
         expect(mocks.runToolStep).not.toHaveBeenCalled();
     });
+
+    it('enforces chat:write for API-key authenticated tool execution', async () => {
+        const app = new Hono();
+        app.use('*', async (c, next) => {
+            c.set('userId', 'user-1');
+            c.set('apiKeyId' as any, 'key-read-only');
+            c.set('apiKeyPermissions' as any, ['chat:read']);
+            await next();
+        });
+        app.route('/', publicApi);
+
+        const response = await app.request('/tools/file.write/execute', {
+            method: 'POST',
+            body: JSON.stringify({ path: '/tmp/x', content: 'hello' }),
+            headers: {
+                'Content-Type': 'application/json',
+                'x-yula-session-id': 'api-session-1',
+            },
+        });
+
+        expect(response.status).toBe(403);
+        await expect(response.json()).resolves.toEqual({
+            error: 'API key missing required permission: chat:write',
+        });
+        expect(mocks.runToolStep).not.toHaveBeenCalled();
+    });
 });
 
 describe('public audit timeline route', () => {
@@ -200,6 +226,25 @@ describe('public audit timeline route', () => {
         const response = await app.request('/audit/user-2/timeline');
 
         expect(response.status).toBe(404);
+        expect(mocks.convexQuery).not.toHaveBeenCalled();
+    });
+
+    it('enforces chat:read for API-key authenticated timeline reads', async () => {
+        const app = new Hono();
+        app.use('*', async (c, next) => {
+            c.set('userId', 'user-1');
+            c.set('apiKeyId' as any, 'key-write-only');
+            c.set('apiKeyPermissions' as any, ['chat:write']);
+            await next();
+        });
+        app.route('/', publicApi);
+
+        const response = await app.request('/audit/user-1/timeline');
+
+        expect(response.status).toBe(403);
+        await expect(response.json()).resolves.toEqual({
+            error: 'API key missing required permission: chat:read',
+        });
         expect(mocks.convexQuery).not.toHaveBeenCalled();
     });
 

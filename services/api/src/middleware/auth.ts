@@ -15,6 +15,8 @@ declare module 'hono' {
         user: AuthUser | null;
         userId: string | null;
         session: { id: string; expiresAt?: Date | string } | null;
+        apiKeyId: string | null;
+        apiKeyPermissions: string[] | null;
     }
 }
 
@@ -50,6 +52,8 @@ export async function authMiddleware(c: Context, next: Next) {
             c.set('user', { userId: apiKey.userId, email: '' });
             c.set('userId', apiKey.userId);
             c.set('session', { id: `api-key:${apiKey.id}` });
+            c.set('apiKeyId', apiKey.id);
+            c.set('apiKeyPermissions', apiKey.permissions);
             return next();
         }
     }
@@ -85,6 +89,8 @@ export async function requireAuth(c: Context, next: Next) {
             c.set('user', { userId: apiKey.userId, email: '' });
             c.set('userId', apiKey.userId);
             c.set('session', { id: `api-key:${apiKey.id}` });
+            c.set('apiKeyId', apiKey.id);
+            c.set('apiKeyPermissions', apiKey.permissions);
             return next();
         }
     }

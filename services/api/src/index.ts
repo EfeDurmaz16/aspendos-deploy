@@ -272,6 +272,8 @@ app.use('*', async (c, next) => {
             c.set('user', { id: apiKey.userId, email: '' });
             c.set('session', { id: `api-key:${apiKey.id}` });
             c.set('userId', apiKey.userId);
+            c.set('apiKeyId', apiKey.id);
+            c.set('apiKeyPermissions', apiKey.permissions);
             await next();
             return;
         }
