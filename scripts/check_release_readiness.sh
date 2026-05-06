@@ -109,6 +109,7 @@ bun run --cwd services/api test \
   src/routes/__tests__/account-session-boundary.test.ts \
   src/routes/__tests__/notifications.test.ts \
   src/routes/__tests__/workspace.test.ts \
+  src/routes/__tests__/prompt-templates.test.ts \
   src/__tests__/integration/gdpr-compliance.test.ts \
   src/middleware/__tests__/idempotency.test.ts \
   src/lib/__tests__/job-queue.test.ts
