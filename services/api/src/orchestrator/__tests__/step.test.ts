@@ -3,6 +3,7 @@ import { getAgit } from '../../audit/agit';
 import { getFides } from '../../governance/fides';
 import type { ToolContext } from '../../reversibility/types';
 import { registerAllTools } from '../../tools/register-all';
+import { registry } from '../../tools/registry';
 import { runToolStep } from '../step';
 
 const ctx: ToolContext = { userId: 'test-user-123', sessionId: 'test-session-123' };
@@ -96,6 +97,33 @@ describe('runToolStep', () => {
         expect(result.result.success).toBe(false);
         expect(result.metadata.reversibility_class).toBe('compensatable');
         expect(result.metadata.approval_required).toBe(true);
+    });
+
+    it('honors guard-chain approval requirements before tool execution', async () => {
+        let executed = false;
+        registry.register({
+            name: 'documentDelete',
+            description: 'Delete a stored document',
+            classify: () => ({
+                reversibility_class: 'undoable',
+                approval_required: false,
+                rollback_strategy: { kind: 'none' },
+                human_explanation: 'Delete a stored document',
+            }),
+            execute: async () => {
+                executed = true;
+                return { success: true };
+            },
+        });
+
+        const result = await runToolStep('documentDelete', { documentId: 'doc-1' }, ctx);
+
+        expect(executed).toBe(false);
+        expect(result.awaitingApproval).toBe(true);
+        expect(result.blocked).toBe(false);
+        expect(result.commitHash).toBeTruthy();
+        expect(result.metadata.approval_required).toBe(true);
+        expect(result.metadata.human_explanation).toContain('high blast radius');
     });
 
     it('executes undoable tools end-to-end', async () => {

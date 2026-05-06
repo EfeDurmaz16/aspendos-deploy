@@ -122,17 +122,31 @@ export async function runToolStep(
         };
     }
 
+    const approvalMetadata =
+        guardResult.decision.type === 'require_approval'
+            ? {
+                  ...metadata,
+                  approval_required: true,
+                  human_explanation: guardResult.decision.reason,
+              }
+            : metadata;
+
     const fides = getFides();
-    const preGovernanceSignature = await fides.signGovernanceCommit(toolName, args, metadata, {
-        status: 'pending',
-    });
+    const preGovernanceSignature = await fides.signGovernanceCommit(
+        toolName,
+        args,
+        approvalMetadata,
+        {
+            status: 'pending',
+        }
+    );
 
     const agit = getAgit();
     const convexPreCommit = await commitConvexGovernance({
         userId: ctx.userId,
         toolName,
         args,
-        metadata,
+        metadata: approvalMetadata,
         status: 'pending',
     });
     let preCommitHash = convexPreCommit?.commitHash;
@@ -141,7 +155,7 @@ export async function runToolStep(
             userId: ctx.userId,
             toolName,
             args,
-            metadata,
+            metadata: approvalMetadata,
             fidesSignature: preGovernanceSignature.signature,
             fidesDid: preGovernanceSignature.did,
             type: 'pre',
@@ -149,10 +163,10 @@ export async function runToolStep(
         preCommitHash = preCommit.hash;
     }
 
-    if (metadata.approval_required) {
+    if (approvalMetadata.approval_required) {
         return {
             toolName,
-            metadata,
+            metadata: approvalMetadata,
             commitHash: preCommitHash,
             result: {
                 success: false,
@@ -180,16 +194,21 @@ export async function runToolStep(
     }
 
     const postStatus = result.success ? 'executed' : 'failed';
-    const postGovernanceSignature = await fides.signGovernanceCommit(toolName, args, metadata, {
-        parentHash: preCommitHash,
-        result,
-        status: postStatus,
-    });
+    const postGovernanceSignature = await fides.signGovernanceCommit(
+        toolName,
+        args,
+        approvalMetadata,
+        {
+            parentHash: preCommitHash,
+            result,
+            status: postStatus,
+        }
+    );
     const convexPostCommit = await commitConvexGovernance({
         userId: ctx.userId,
         toolName,
         args,
-        metadata,
+        metadata: approvalMetadata,
         status: postStatus,
         result,
     });
@@ -203,7 +222,7 @@ export async function runToolStep(
             userId: ctx.userId,
             toolName,
             args,
-            metadata,
+            metadata: approvalMetadata,
             fidesSignature: postGovernanceSignature.signature,
             fidesDid: postGovernanceSignature.did,
             parentHash: preCommitHash,
@@ -214,7 +233,7 @@ export async function runToolStep(
 
     return {
         toolName,
-        metadata,
+        metadata: approvalMetadata,
         commitHash: preCommitHash,
         result,
         blocked: false,
