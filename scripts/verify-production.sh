@@ -122,13 +122,18 @@ if [ -n "${DATABASE_URL:-}" ]; then
 
         if command -v npx &> /dev/null; then
             cd "$PRISMA_DIR"
-            STATUS_OUTPUT=$(npx prisma migrate status 2>&1) || true
+            STATUS_OUTPUT=$(npx prisma migrate status 2>&1)
+            STATUS_CODE=$?
             cd "$REPO_ROOT"
 
             if echo "$STATUS_OUTPUT" | grep -qi "have not yet been applied"; then
                 fail "Pending database migrations detected"
             elif echo "$STATUS_OUTPUT" | grep -qi "failed"; then
                 fail "Failed migrations detected"
+            elif [ "$STATUS_CODE" -ne 0 ]; then
+                fail "Could not verify migration status (prisma exited $STATUS_CODE)"
+            elif ! echo "$STATUS_OUTPUT" | grep -Eqi "database schema is up to date|already in sync"; then
+                fail "Could not confirm database migrations are up to date"
             else
                 pass "Database migrations are up to date"
             fi
