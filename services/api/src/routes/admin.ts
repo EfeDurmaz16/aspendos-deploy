@@ -38,6 +38,10 @@ export async function requireAdmin(c: any, next: any) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
+    if (c.get('apiKeyId')) {
+        return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+    }
+
     // Check if user is in admin list
     const user = await prisma.user.findUnique({
         where: { id: userId },

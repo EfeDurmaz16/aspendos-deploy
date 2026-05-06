@@ -144,6 +144,10 @@ export function optionalAuth(c: Context, next: Next) {
 }
 
 export async function requireAdmin(c: Context, next: Next) {
+    if (c.get('apiKeyId')) {
+        return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+    }
+
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Authentication required' }, 401);

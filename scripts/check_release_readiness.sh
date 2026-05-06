@@ -109,6 +109,9 @@ bun run --cwd services/api test \
   src/services/__tests__/approval.service.test.ts \
   src/routes/__tests__/api-keys.test.ts \
   src/routes/__tests__/api-key-route-permissions.test.ts \
+  src/middleware/__tests__/admin-session-boundary.test.ts \
+  src/routes/__tests__/admin-api-key-boundary.test.ts \
+  src/routes/__tests__/usage-admin-api-key-boundary.test.ts \
   src/routes/__tests__/account-session-boundary.test.ts \
   src/routes/__tests__/notifications.test.ts \
   src/routes/__tests__/workspace.test.ts \
