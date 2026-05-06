@@ -87,6 +87,7 @@ vi.mock('../../lib/auth', () => ({
 
 import {
     anonymizeUser,
+    assertProcessLocalComplianceStateAllowed,
     cancelDeletion,
     clearStores_forTesting,
     exportUserData,
@@ -111,6 +112,7 @@ const TEST_USER_ID_2 = 'test-user-gdpr-002';
 beforeEach(() => {
     vi.clearAllMocks();
     clearStores_forTesting();
+    delete process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE;
     setupDefaultMocks();
 });
 
@@ -219,6 +221,37 @@ function setupDefaultMocks() {
 // ─── Export Tests ────────────────────────────────────────────────────────────
 
 describe('GDPR Compliance - Data Export', () => {
+    describe('production state posture', () => {
+        it('refuses process-local compliance state in production by default', () => {
+            const originalNodeEnv = process.env.NODE_ENV;
+            process.env.NODE_ENV = 'production';
+
+            try {
+                expect(() => assertProcessLocalComplianceStateAllowed('GDPR export jobs')).toThrow(
+                    /durable compliance store/
+                );
+                expect(() => queueExportJob(TEST_USER_ID)).toThrow(/durable compliance store/);
+            } finally {
+                process.env.NODE_ENV = originalNodeEnv;
+            }
+        });
+
+        it('allows explicit local compliance state opt-in in production-like tests', () => {
+            const originalNodeEnv = process.env.NODE_ENV;
+            process.env.NODE_ENV = 'production';
+            process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE = 'true';
+
+            try {
+                expect(() =>
+                    assertProcessLocalComplianceStateAllowed('GDPR export jobs')
+                ).not.toThrow();
+            } finally {
+                process.env.NODE_ENV = originalNodeEnv;
+                delete process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE;
+            }
+        });
+    });
+
     describe('queueExportJob', () => {
         it('returns a job ID with queued status', () => {
             const result = queueExportJob(TEST_USER_ID);

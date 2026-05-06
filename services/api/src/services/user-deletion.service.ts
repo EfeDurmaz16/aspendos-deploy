@@ -128,6 +128,17 @@ const DELETION_GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 // Export expiry: 24 hours
 const EXPORT_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
+export function assertProcessLocalComplianceStateAllowed(feature: string): void {
+    if (
+        process.env.NODE_ENV === 'production' &&
+        process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE !== 'true'
+    ) {
+        throw new Error(
+            `FATAL: ${feature} uses process-local GDPR compliance state. Configure a durable compliance store before enabling this workflow in production.`
+        );
+    }
+}
+
 // ─── Export Job Processing ───────────────────────────────────────────────────
 
 /**
@@ -139,6 +150,8 @@ export function queueExportJob(userId: string): {
     status: 'queued';
     estimatedCompletionMs: number;
 } {
+    assertProcessLocalComplianceStateAllowed('GDPR export jobs');
+
     const jobId = crypto.randomUUID();
 
     exportJobs.set(jobId, {
@@ -174,6 +187,8 @@ export function getExportJobStatus(jobId: string): {
     status: 'queued' | 'processing' | 'ready' | 'expired';
     downloadUrl?: string;
 } | null {
+    assertProcessLocalComplianceStateAllowed('GDPR export job status');
+
     const job = exportJobs.get(jobId);
     if (!job) return null;
 
@@ -199,6 +214,8 @@ export function getExportJobStatus(jobId: string): {
  * Get the userId that owns a specific export job (for authorization checks).
  */
 export function getExportJobOwner(jobId: string): string | null {
+    assertProcessLocalComplianceStateAllowed('GDPR export job ownership');
+
     const job = exportJobs.get(jobId);
     return job?.userId ?? null;
 }
@@ -578,6 +595,8 @@ export async function scheduleAccountDeletion(
     userId: string,
     reason?: string
 ): Promise<DeletionSchedule> {
+    assertProcessLocalComplianceStateAllowed('account deletion scheduling');
+
     // Check if already scheduled
     const existing = pendingDeletions.get(userId);
     if (existing) {
@@ -604,6 +623,8 @@ export async function scheduleAccountDeletion(
  * Cancel a pending account deletion using the cancellation token.
  */
 export async function cancelDeletion(userId: string, token: string): Promise<boolean> {
+    assertProcessLocalComplianceStateAllowed('account deletion cancellation');
+
     const pending = pendingDeletions.get(userId);
 
     if (!pending) {
@@ -624,6 +645,8 @@ export async function cancelDeletion(userId: string, token: string): Promise<boo
 export function getPendingDeletion(
     userId: string
 ): { scheduledDate: Date; reason?: string } | null {
+    assertProcessLocalComplianceStateAllowed('pending account deletion lookup');
+
     const pending = pendingDeletions.get(userId);
     if (!pending) return null;
     return { scheduledDate: pending.scheduledDate, reason: pending.reason };

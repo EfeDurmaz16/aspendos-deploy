@@ -34,6 +34,10 @@ setInterval(() => {
 
 const EXPORT_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
+function complianceStateUnavailable(error: unknown) {
+    return error instanceof Error && error.message.includes('process-local GDPR compliance state');
+}
+
 // ─── POST /api/compliance/export ─────────────────────────────────────────────
 // Request an async data export. Returns a job ID to poll.
 
@@ -56,7 +60,21 @@ app.post('/export', requireAuth, async (c) => {
 
     exportRateLimiter.set(userId, Date.now());
 
-    const result = userDeletionService.queueExportJob(userId);
+    let result: ReturnType<typeof userDeletionService.queueExportJob>;
+    try {
+        result = userDeletionService.queueExportJob(userId);
+    } catch (error) {
+        if (complianceStateUnavailable(error)) {
+            exportRateLimiter.delete(userId);
+            return c.json(
+                {
+                    error: 'GDPR export is not available until durable compliance storage is configured.',
+                },
+                503
+            );
+        }
+        throw error;
+    }
 
     return c.json(result, 202);
 });
@@ -69,8 +87,24 @@ app.get('/export/:jobId', requireAuth, async (c) => {
     const jobId = c.req.param('jobId');
     if (!jobId) return c.json({ error: 'Export job id is required' }, 400);
 
+    let owner: string | null;
+    let status: ReturnType<typeof userDeletionService.getExportJobStatus>;
+    try {
+        owner = userDeletionService.getExportJobOwner(jobId);
+        status = userDeletionService.getExportJobStatus(jobId);
+    } catch (error) {
+        if (complianceStateUnavailable(error)) {
+            return c.json(
+                {
+                    error: 'GDPR export status is not available until durable compliance storage is configured.',
+                },
+                503
+            );
+        }
+        throw error;
+    }
+
     // Verify the job belongs to this user
-    const owner = userDeletionService.getExportJobOwner(jobId);
     if (!owner) {
         return c.json({ error: 'Export job not found' }, 404);
     }
@@ -78,7 +112,6 @@ app.get('/export/:jobId', requireAuth, async (c) => {
         return c.json({ error: 'Unauthorized' }, 403);
     }
 
-    const status = userDeletionService.getExportJobStatus(jobId);
     if (!status) {
         return c.json({ error: 'Export job not found' }, 404);
     }
@@ -110,7 +143,20 @@ app.post('/delete-account', requireAuth, async (c) => {
 
     const reason = typeof body.reason === 'string' ? body.reason.slice(0, 500) : undefined;
 
-    const result = await userDeletionService.scheduleAccountDeletion(userId, reason);
+    let result: Awaited<ReturnType<typeof userDeletionService.scheduleAccountDeletion>>;
+    try {
+        result = await userDeletionService.scheduleAccountDeletion(userId, reason);
+    } catch (error) {
+        if (complianceStateUnavailable(error)) {
+            return c.json(
+                {
+                    error: 'Account deletion scheduling is not available until durable compliance storage is configured.',
+                },
+                503
+            );
+        }
+        throw error;
+    }
 
     return c.json({
         scheduledDeletionDate: result.scheduledDate.toISOString(),
@@ -137,7 +183,20 @@ app.post('/cancel-deletion', requireAuth, async (c) => {
         return c.json({ error: 'cancellationToken is required' }, 400);
     }
 
-    const cancelled = await userDeletionService.cancelDeletion(userId, body.cancellationToken);
+    let cancelled: boolean;
+    try {
+        cancelled = await userDeletionService.cancelDeletion(userId, body.cancellationToken);
+    } catch (error) {
+        if (complianceStateUnavailable(error)) {
+            return c.json(
+                {
+                    error: 'Account deletion cancellation is not available until durable compliance storage is configured.',
+                },
+                503
+            );
+        }
+        throw error;
+    }
 
     if (!cancelled) {
         return c.json({ error: 'No pending deletion found or invalid cancellation token' }, 404);
