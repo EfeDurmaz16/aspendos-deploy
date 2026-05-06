@@ -1,37 +1,5 @@
 import type { ExecResult, SandboxOpts, SandboxService } from './types';
-
-const SAFE_PATH_ROOTS = ['/home/daytona', '/home/user', '/tmp', '/workspace'];
-const BLOCKED_COMMAND_PATTERNS = [
-    /\brm\s+-rf\s+(?:\/|\*)/i,
-    /\b(?:mkfs|shutdown|reboot|halt|poweroff)\b/i,
-    /\bdd\s+if=/i,
-    /:\s*\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}/,
-    /\bcurl\b.*\|\s*(?:sh|bash|zsh)\b/i,
-    /\bwget\b.*\|\s*(?:sh|bash|zsh)\b/i,
-];
-
-function validateSandboxPath(path: string) {
-    if (!path.startsWith('/')) {
-        throw new Error('Sandbox path must be absolute');
-    }
-    if (path.includes('\0') || path.split('/').includes('..')) {
-        throw new Error('Sandbox path contains unsafe traversal');
-    }
-    if (!SAFE_PATH_ROOTS.some((root) => path === root || path.startsWith(`${root}/`))) {
-        throw new Error(`Sandbox path must be under ${SAFE_PATH_ROOTS.join(', ')}`);
-    }
-}
-
-function validateCommand(cmd: string) {
-    if (cmd.length > 4000) {
-        throw new Error('Sandbox command is too long');
-    }
-    for (const pattern of BLOCKED_COMMAND_PATTERNS) {
-        if (pattern.test(cmd)) {
-            throw new Error('Sandbox command matches a blocked destructive pattern');
-        }
-    }
-}
+import { validateSandboxCommand, validateSandboxPath } from './validation';
 
 function pythonStringLiteral(value: string) {
     return JSON.stringify(value);
@@ -71,7 +39,7 @@ export class DaytonaSandboxService implements SandboxService {
 
     async execCommand(sandboxId: string, cmd: string): Promise<ExecResult> {
         if (!this.apiKey) throw new Error('DAYTONA_API_KEY not configured');
-        validateCommand(cmd);
+        validateSandboxCommand(cmd);
 
         const { Daytona } = await import('@daytona/sdk');
         const daytona = new Daytona({ apiKey: this.apiKey });

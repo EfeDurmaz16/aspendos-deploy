@@ -1,4 +1,5 @@
 import type { ExecResult, SandboxOpts, SandboxService } from './types';
+import { validateSandboxCommand, validateSandboxPath } from './validation';
 
 export class E2BSandboxService implements SandboxService {
     private apiKey: string | undefined;
@@ -21,6 +22,7 @@ export class E2BSandboxService implements SandboxService {
 
     async execCommand(sandboxId: string, cmd: string): Promise<ExecResult> {
         if (!this.apiKey) throw new Error('E2B_API_KEY not configured');
+        validateSandboxCommand(cmd);
 
         const { Sandbox } = await import('@e2b/code-interpreter');
         const sandbox = await Sandbox.connect(sandboxId, { apiKey: this.apiKey });
@@ -34,6 +36,7 @@ export class E2BSandboxService implements SandboxService {
 
     async writeFile(sandboxId: string, path: string, content: string): Promise<void> {
         if (!this.apiKey) throw new Error('E2B_API_KEY not configured');
+        validateSandboxPath(path);
 
         const { Sandbox } = await import('@e2b/code-interpreter');
         const sandbox = await Sandbox.connect(sandboxId, { apiKey: this.apiKey });
@@ -42,6 +45,7 @@ export class E2BSandboxService implements SandboxService {
 
     async readFile(sandboxId: string, path: string): Promise<string> {
         if (!this.apiKey) throw new Error('E2B_API_KEY not configured');
+        validateSandboxPath(path);
 
         const { Sandbox } = await import('@e2b/code-interpreter');
         const sandbox = await Sandbox.connect(sandboxId, { apiKey: this.apiKey });
