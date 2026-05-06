@@ -6,6 +6,7 @@ import {
     getAllowlist,
     getApprovalForUser,
     getPendingApprovals,
+    isToolAllowed,
     rejectRequest,
     removeFromAllowlist,
 } from '../approval.service';
@@ -235,6 +236,15 @@ describe('approval service persistence', () => {
 
         await expect(getAllowlist('workos-user-1')).rejects.toThrow(
             'Failed to load tool allowlist'
+        );
+    });
+
+    it('does not silently deny allowlisted tools when Convex reads fail', async () => {
+        convexQuery.mockResolvedValueOnce({ _id: 'convex-user-1' });
+        convexQuery.mockRejectedValueOnce(new Error('convex unavailable'));
+
+        await expect(isToolAllowed('workos-user-1', 'file.write')).rejects.toThrow(
+            'Failed to check tool allowlist'
         );
     });
 });

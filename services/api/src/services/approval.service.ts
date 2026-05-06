@@ -182,8 +182,8 @@ export async function isToolAllowed(userId: string, toolName: string): Promise<b
             user_id: convexUserId,
             tool_name: toolName,
         });
-    } catch {
-        return false;
+    } catch (error) {
+        throw new Error('Failed to check tool allowlist', { cause: error });
     }
 }
 
