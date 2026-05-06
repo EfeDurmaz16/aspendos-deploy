@@ -75,25 +75,17 @@ export const listPendingByUser = query({
 
 export const approve = mutation({
     args: { service_secret: v.string(), id: v.id('approvals'), user_id: v.id('users') },
-    handler: async (ctx, args) => {
+    handler: async (_ctx, args) => {
         requireServiceSecret(args.service_secret);
-        const approval = await ctx.db.get(args.id);
-        if (!approval || approval.user_id !== args.user_id) {
-            throw new Error('Approval not found');
-        }
-        await ctx.db.patch(args.id, { status: 'approved' });
+        throw new Error('approvals.approve is retired; use approvals.decide for audited decisions');
     },
 });
 
 export const reject = mutation({
     args: { service_secret: v.string(), id: v.id('approvals'), user_id: v.id('users') },
-    handler: async (ctx, args) => {
+    handler: async (_ctx, args) => {
         requireServiceSecret(args.service_secret);
-        const approval = await ctx.db.get(args.id);
-        if (!approval || approval.user_id !== args.user_id) {
-            throw new Error('Approval not found');
-        }
-        await ctx.db.patch(args.id, { status: 'rejected' });
+        throw new Error('approvals.reject is retired; use approvals.decide for audited decisions');
     },
 });
 

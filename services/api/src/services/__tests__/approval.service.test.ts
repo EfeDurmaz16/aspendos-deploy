@@ -18,8 +18,7 @@ vi.mock('../../lib/convex', () => ({
         },
         approvals: {
             create: 'approvals.create',
-            approve: 'approvals.approve',
-            reject: 'approvals.reject',
+            decide: 'approvals.decide',
         },
         toolAllowlist: {
             grant: 'toolAllowlist.grant',
@@ -135,19 +134,38 @@ describe('approval service persistence', () => {
     });
 
     it('scopes approval decisions to the resolved Convex user id', async () => {
+        vi.spyOn(Date, 'now').mockReturnValue(456_000);
         convexQuery.mockResolvedValueOnce({ _id: 'convex-user-1' });
-        convexMutation.mockResolvedValueOnce(undefined);
+        convexMutation.mockResolvedValueOnce({ outcome: 'updated', status: 'approved' });
 
         await expect(approveRequest('approval-1', 'workos-user-1')).resolves.toEqual({
             id: 'approval-1',
             status: 'approved',
         });
 
-        expect(convexMutation).toHaveBeenCalledWith('approvals.approve', {
+        expect(convexMutation).toHaveBeenCalledWith('approvals.decide', {
             service_secret: 'convex-service-secret',
             id: 'approval-1',
-            user_id: 'convex-user-1',
+            action: 'approve',
+            now: 456_000,
+            audit: {
+                platform: 'api',
+                platform_user_id: 'workos-user-1',
+            },
         });
+    });
+
+    it('rejects conflicting approval decisions from the audited decide mutation', async () => {
+        convexQuery.mockResolvedValueOnce({ _id: 'convex-user-1' });
+        convexMutation.mockResolvedValueOnce({
+            outcome: 'already_decided',
+            status: 'rejected',
+            idempotent: false,
+        });
+
+        await expect(approveRequest('approval-1', 'workos-user-1')).rejects.toThrow(
+            'Failed to persist approval decision'
+        );
     });
 
     it('scopes allowlist grants to the resolved Convex user id', async () => {

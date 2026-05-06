@@ -73,12 +73,26 @@ export async function createApproval(params: CreateApprovalParams) {
 export async function approveRequest(approvalId: string, decidedBy: string) {
     try {
         const client = getConvexClient();
-        const convexUserId = await resolveConvexUserId(client, decidedBy);
-        await client.mutation(api.approvals.approve, {
+        await resolveConvexUserId(client, decidedBy);
+        const decision = await client.mutation(api.approvals.decide, {
             service_secret: getConvexServiceSecret(),
             id: approvalId as any,
-            user_id: convexUserId,
+            action: 'approve',
+            now: Date.now(),
+            audit: {
+                platform: 'api',
+                platform_user_id: decidedBy,
+            },
         });
+        if (decision.outcome === 'not_found') {
+            throw new Error('Approval not found');
+        }
+        if (decision.outcome === 'expired') {
+            throw new Error('Approval has expired');
+        }
+        if (decision.outcome === 'already_decided' && !decision.idempotent) {
+            throw new Error(`Approval already ${decision.status}`);
+        }
         return { id: approvalId, status: 'approved' as const };
     } catch (error) {
         throw new Error('Failed to persist approval decision', { cause: error });
@@ -88,12 +102,26 @@ export async function approveRequest(approvalId: string, decidedBy: string) {
 export async function rejectRequest(approvalId: string, decidedBy: string) {
     try {
         const client = getConvexClient();
-        const convexUserId = await resolveConvexUserId(client, decidedBy);
-        await client.mutation(api.approvals.reject, {
+        await resolveConvexUserId(client, decidedBy);
+        const decision = await client.mutation(api.approvals.decide, {
             service_secret: getConvexServiceSecret(),
             id: approvalId as any,
-            user_id: convexUserId,
+            action: 'reject',
+            now: Date.now(),
+            audit: {
+                platform: 'api',
+                platform_user_id: decidedBy,
+            },
         });
+        if (decision.outcome === 'not_found') {
+            throw new Error('Approval not found');
+        }
+        if (decision.outcome === 'expired') {
+            throw new Error('Approval has expired');
+        }
+        if (decision.outcome === 'already_decided' && !decision.idempotent) {
+            throw new Error(`Approval already ${decision.status}`);
+        }
         return { id: approvalId, status: 'rejected' as const };
     } catch (error) {
         throw new Error('Failed to persist approval decision', { cause: error });
