@@ -85,6 +85,19 @@ vi.mock('../../lib/auth', () => ({
     },
 }));
 
+vi.mock('../../lib/convex', () => ({
+    api: {
+        compliance: {
+            scheduleDeletionByWorkOSId: 'compliance.scheduleDeletionByWorkOSId',
+            cancelDeletionByWorkOSId: 'compliance.cancelDeletionByWorkOSId',
+        },
+    },
+    getConvexClient: vi.fn(),
+    getConvexServiceSecret: vi.fn(() => 'test-service-secret'),
+    isConvexConfigured: vi.fn(() => false),
+}));
+
+import * as convexLib from '../../lib/convex';
 import {
     anonymizeUser,
     assertProcessLocalComplianceStateAllowed,
@@ -95,6 +108,7 @@ import {
     getExportJobOwner,
     getExportJobStatus,
     getPendingDeletion,
+    getPendingDeletions_forTesting,
     queueExportJob,
     scheduleAccountDeletion,
 } from '../../services/user-deletion.service';
@@ -113,6 +127,12 @@ beforeEach(() => {
     vi.clearAllMocks();
     clearStores_forTesting();
     delete process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE;
+    vi.mocked(convexLib.isConvexConfigured).mockReturnValue(false);
+    vi.mocked(convexLib.getConvexServiceSecret).mockReturnValue('test-service-secret');
+    vi.mocked(convexLib.getConvexClient).mockReturnValue({
+        mutation: vi.fn(),
+        query: vi.fn(),
+    } as any);
     setupDefaultMocks();
 });
 
@@ -388,6 +408,27 @@ describe('GDPR Compliance - Account Deletion', () => {
 
             expect(result1.cancellationToken).not.toBe(result2.cancellationToken);
         });
+
+        it('uses Convex durable deletion state when configured', async () => {
+            const mutation = vi.fn().mockResolvedValue({ scheduled_at: 1_800_000_000_000 });
+            vi.mocked(convexLib.isConvexConfigured).mockReturnValue(true);
+            vi.mocked(convexLib.getConvexClient).mockReturnValue({ mutation } as any);
+
+            const result = await scheduleAccountDeletion(TEST_USER_ID, 'durable request');
+
+            expect(result.scheduledDate.toISOString()).toBe('2027-01-15T08:00:00.000Z');
+            expect(result.cancellationToken).toEqual(expect.any(String));
+            expect(mutation).toHaveBeenCalledWith(
+                convexLib.api.compliance.scheduleDeletionByWorkOSId,
+                expect.objectContaining({
+                    service_secret: 'test-service-secret',
+                    workos_id: TEST_USER_ID,
+                    reason: 'durable request',
+                    cancellation_token_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+                })
+            );
+            expect(getPendingDeletions_forTesting().size).toBe(0);
+        });
     });
 
     describe('cancelDeletion', () => {
@@ -422,6 +463,24 @@ describe('GDPR Compliance - Account Deletion', () => {
             // Try to cancel user 1's deletion with user 2
             const cancelled = await cancelDeletion(TEST_USER_ID_2, cancellationToken);
             expect(cancelled).toBe(false);
+        });
+
+        it('cancels through Convex durable deletion state when configured', async () => {
+            const mutation = vi.fn().mockResolvedValue(true);
+            vi.mocked(convexLib.isConvexConfigured).mockReturnValue(true);
+            vi.mocked(convexLib.getConvexClient).mockReturnValue({ mutation } as any);
+
+            const cancelled = await cancelDeletion(TEST_USER_ID, 'token-to-hash');
+
+            expect(cancelled).toBe(true);
+            expect(mutation).toHaveBeenCalledWith(
+                convexLib.api.compliance.cancelDeletionByWorkOSId,
+                expect.objectContaining({
+                    service_secret: 'test-service-secret',
+                    workos_id: TEST_USER_ID,
+                    cancellation_token_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+                })
+            );
         });
     });
 

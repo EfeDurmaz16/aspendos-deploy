@@ -128,6 +128,14 @@ const DELETION_GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 // Export expiry: 24 hours
 const EXPORT_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
+async function hashCancellationToken(token: string): Promise<string> {
+    const bytes = new TextEncoder().encode(token);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+}
+
 export function assertProcessLocalComplianceStateAllowed(feature: string): void {
     if (
         process.env.NODE_ENV === 'production' &&
@@ -595,6 +603,25 @@ export async function scheduleAccountDeletion(
     userId: string,
     reason?: string
 ): Promise<DeletionSchedule> {
+    const cancellationToken = crypto.randomUUID();
+    const scheduledDate = new Date(Date.now() + DELETION_GRACE_PERIOD_MS);
+
+    if (isConvexConfigured()) {
+        const result = await getConvexClient().mutation(api.compliance.scheduleDeletionByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
+            workos_id: userId,
+            scheduled_at: scheduledDate.getTime(),
+            cancellation_token_hash: await hashCancellationToken(cancellationToken),
+            ...(reason === undefined ? {} : { reason }),
+            requested_at: Date.now(),
+        });
+
+        return {
+            scheduledDate: new Date(result.scheduled_at),
+            cancellationToken,
+        };
+    }
+
     assertProcessLocalComplianceStateAllowed('account deletion scheduling');
 
     // Check if already scheduled
@@ -605,9 +632,6 @@ export async function scheduleAccountDeletion(
             cancellationToken: existing.cancellationToken,
         };
     }
-
-    const cancellationToken = crypto.randomUUID();
-    const scheduledDate = new Date(Date.now() + DELETION_GRACE_PERIOD_MS);
 
     pendingDeletions.set(userId, {
         scheduledDate,
@@ -623,6 +647,15 @@ export async function scheduleAccountDeletion(
  * Cancel a pending account deletion using the cancellation token.
  */
 export async function cancelDeletion(userId: string, token: string): Promise<boolean> {
+    if (isConvexConfigured()) {
+        return await getConvexClient().mutation(api.compliance.cancelDeletionByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
+            workos_id: userId,
+            cancellation_token_hash: await hashCancellationToken(token),
+            cancelled_at: Date.now(),
+        });
+    }
+
     assertProcessLocalComplianceStateAllowed('account deletion cancellation');
 
     const pending = pendingDeletions.get(userId);

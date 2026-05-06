@@ -165,6 +165,19 @@ export default defineSchema({
         .index('by_event_type', ['event_type'])
         .index('by_timestamp', ['timestamp']),
 
+    pending_deletions: defineTable({
+        user_id: v.id('users'),
+        scheduled_at: v.number(),
+        cancellation_token_hash: v.string(),
+        reason: v.optional(v.string()),
+        requested_at: v.number(),
+        cancelled_at: v.optional(v.number()),
+        completed_at: v.optional(v.number()),
+        status: v.union(v.literal('pending'), v.literal('cancelled'), v.literal('completed')),
+    })
+        .index('by_user_id_and_status', ['user_id', 'status'])
+        .index('by_status_and_scheduled_at', ['status', 'scheduled_at']),
+
     organizations: defineTable({
         name: v.string(),
         slug: v.string(),

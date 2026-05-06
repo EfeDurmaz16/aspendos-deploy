@@ -12,6 +12,7 @@ import type * as actionLog from '../actionLog.js';
 import type * as approvals from '../approvals.js';
 import type * as byokCredentials from '../byokCredentials.js';
 import type * as commits from '../commits.js';
+import type * as compliance from '../compliance.js';
 import type * as conversations from '../conversations.js';
 import type * as governance from '../governance.js';
 import type * as memories from '../memories.js';
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
     approvals: typeof approvals;
     byokCredentials: typeof byokCredentials;
     commits: typeof commits;
+    compliance: typeof compliance;
     conversations: typeof conversations;
     governance: typeof governance;
     memories: typeof memories;
