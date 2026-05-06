@@ -36,10 +36,10 @@ The parent hash is excluded from the FIDES signature because API/web callers do 
 Production paths must provide external FIDES authority:
 
 - API orchestrator calls `FidesService.signGovernanceCommit()` for pre and post Convex commits.
-- Web undo and step middleware call `signGovernanceCommit()` before direct Convex `signAndCommit` usage.
+- Web undo, chat stream tool governance, and step middleware call `signGovernanceCommit()` before direct Convex `signAndCommit` usage.
 - Convex `verifyCommit` verifies external FIDES signatures cryptographically via Ed25519 DID parsing.
 
-Convex HMAC fallback is not silent. It only runs when `allow_convex_hmac_fallback=true` is explicitly provided. Direct unsigned Convex reversal is disabled; callers must use a signed undo path.
+Convex `signAndCommit` rejects unsigned commits. Direct unsigned Convex reversal is disabled; callers must use a signed undo path.
 
 ## Current verified paths
 
@@ -55,22 +55,22 @@ bun run --cwd apps/web test
 bun run release:ready
 ```
 
-`release:ready` currently runs critical API tests, API build, web build, web typecheck, Convex typecheck, and a migration readiness check. In local development, migration readiness is skipped when `DATABASE_URL` is unset; production/CI environments should provide `DATABASE_URL`.
+`release:ready` currently runs toolchain checks, duplicate-artifact checks, Prisma generation, migration readiness when required, Convex query bounds, process-local state posture checks, Helm drift checks, critical API/web tests, core deterministic flow tests, API build, web build/typecheck, and Convex typecheck. In local development, migration readiness is skipped when `DATABASE_URL` is unset; CI/release environments should provide `DATABASE_URL`.
 
 ## Fail-loud behavior
 
 These cases must fail instead of pretending to be verified:
 
 - missing external FIDES signature on production API governance commits
+- unsigned direct Convex governance commits
 - missing Convex governance in production
 - unavailable Convex verification service on `/audit/verify/:hash`
 - malformed upstream verification response in web `/api/verify/[hash]`
 - direct Convex reversal without a signed API undo path
-- implicit Convex HMAC fallback without explicit fallback opt-in
+- process-local idempotency, compliance workflow, or job queue state in production without an explicit durable backend
 
 ## Known caveats
 
 - Existing database records written before external FIDES verification may fail stricter verification if they used the old semantic payload shape.
-- The frontend still has image optimization warnings in `bun run check`; they do not fail CI today, but should be removed or explicitly budgeted.
 - Local release readiness cannot prove migration safety unless `DATABASE_URL` is set.
-- The Convex HMAC fallback remains for explicitly opted-in local/direct Convex callers and should not be used as a production authority model.
+- GDPR export/deletion and background job workflows currently fail closed in production until durable compliance/job storage is wired.

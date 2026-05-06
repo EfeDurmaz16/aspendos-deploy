@@ -26,10 +26,11 @@ Implemented and actively verified:
 - Timeline, verify, undo, and approval UI/API surfaces
 - Fail-loud release gates for Prisma generation, Convex typecheck, core deterministic tests, web/API builds, and critical API tests
 - Production guardrails against silent Prisma/FIDES/AGIT fallback success
+- Pre-execution governance wrapping for the web chat stream tool path
 
 Known hardening still in progress:
 
-- Make every browser/web AI SDK tool path enforce governance before execution, not only after `onStepFinish`
+- Replace fail-closed process-local GDPR and job queue workflows with durable compliance/job storage
 - Continue migrating stale memory-first docs and crawler metadata to the provable-agent positioning
 - Add staging canary and live deployment smoke tests
 - Close remaining Convex public-function ownership boundaries beyond approvals/allowlist
@@ -95,8 +96,11 @@ Release readiness currently checks:
 - Prisma schema and generated client
 - database migration readiness when `DATABASE_URL` is required
 - Convex query bounds guard against unbounded `.collect()`
+- process-local correctness guards for idempotency, compliance workflows, job queues, and placeholder stores
+- Helm deployment drift checks
 - server-only Convex secret posture
 - API critical tests
+- web governance, chat stream, undo, and messaging critical tests
 - core deterministic action flow
 - API build
 - web build and typecheck
@@ -135,4 +139,3 @@ YULA separates product-specific agent control from reusable trust primitives:
 YULA is not just a memory chatbot. The durable product direction is:
 
 > Prove what agents did, why they were allowed to do it, whether the action was reversible, and who can verify or undo it.
-
