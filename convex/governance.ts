@@ -129,27 +129,6 @@ async function verifyExternalFidesSignature(args: {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Helpers: FIDES signing + AGIT hashing run inside Convex mutations using
-// the Web Crypto API (available in Convex runtime).
-// ---------------------------------------------------------------------------
-
-/** HMAC-SHA256(secret, data) → hex string. Used for FIDES signatures. */
-async function hmacSha256(secret: string, data: string): Promise<string> {
-    const enc = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-        'raw',
-        enc.encode(secret),
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
-    );
-    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data));
-    return Array.from(new Uint8Array(sig))
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('');
-}
-
 /** SHA-256(input) → hex string. Used for AGIT commit hashes. */
 async function sha256Hex(input: string): Promise<string> {
     const data = new TextEncoder().encode(input);
@@ -350,10 +329,8 @@ export const verifyCommit = query({
         );
         checks.hash_integrity = expectedHash === commit.hash;
 
-        // Check 2: Verify the authority signature binding. External FIDES
-        // signatures are Ed25519 signatures over the canonical semantic
-        // governance payload; Convex HMAC is only an explicitly labeled local
-        // fallback for direct Convex callers.
+        // Check 2: Verify the authority signature binding. Only external FIDES
+        // Ed25519 signatures over the canonical semantic governance payload are valid.
         if (commit.fides_signature && commit.fides_signer_did) {
             if (commit.fides_signature_source === 'external') {
                 checks.fides_signature = await verifyExternalFidesSignature({
@@ -366,17 +343,7 @@ export const verifyCommit = query({
                     tool_name: commit.tool_name,
                 });
             } else {
-                const signaturePayload = canonicalJson(
-                    fidesSignaturePayload({
-                        args: commit.args,
-                        result: commit.result,
-                        reversibility_class: commit.reversibility_class,
-                        status: commit.status,
-                        tool_name: commit.tool_name,
-                    })
-                );
-                const expectedSig = await hmacSha256(commit.fides_signer_did, signaturePayload);
-                checks.fides_signature = expectedSig === commit.fides_signature;
+                checks.fides_signature = false;
             }
         } else {
             checks.fides_signature = false;
@@ -599,28 +566,16 @@ export const verifyChain = query({
             }
 
             const fidesSignatureValid =
-                commit.fides_signature_source === 'external'
-                    ? await verifyExternalFidesSignature({
-                          args: commit.args,
-                          fides_signature: commit.fides_signature,
-                          fides_signer_did: commit.fides_signer_did,
-                          result: commit.result,
-                          reversibility_class: commit.reversibility_class,
-                          status: commit.status,
-                          tool_name: commit.tool_name,
-                      })
-                    : (await hmacSha256(
-                          commit.fides_signer_did,
-                          canonicalJson(
-                              fidesSignaturePayload({
-                                  args: commit.args,
-                                  result: commit.result,
-                                  reversibility_class: commit.reversibility_class,
-                                  status: commit.status,
-                                  tool_name: commit.tool_name,
-                              })
-                          )
-                      )) === commit.fides_signature;
+                commit.fides_signature_source === 'external' &&
+                (await verifyExternalFidesSignature({
+                    args: commit.args,
+                    fides_signature: commit.fides_signature,
+                    fides_signer_did: commit.fides_signer_did,
+                    result: commit.result,
+                    reversibility_class: commit.reversibility_class,
+                    status: commit.status,
+                    tool_name: commit.tool_name,
+                }));
             if (!fidesSignatureValid) {
                 results.push({
                     hash: commit.hash,

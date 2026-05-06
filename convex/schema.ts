@@ -85,9 +85,7 @@ export default defineSchema({
         payload_hash: v.optional(v.string()),
         fides_signature: v.optional(v.string()),
         fides_signer_did: v.optional(v.string()),
-        fides_signature_source: v.optional(
-            v.union(v.literal('external'), v.literal('convex_hmac_fallback'))
-        ),
+        fides_signature_source: v.optional(v.literal('external')),
         counter_signature: v.optional(v.string()),
         counter_signer_did: v.optional(v.string()),
         timestamp: v.number(),

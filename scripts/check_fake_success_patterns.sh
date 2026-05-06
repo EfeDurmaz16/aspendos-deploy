@@ -28,4 +28,11 @@ if [[ -n "$API_PRISMA_FALLBACK_MATCHES" ]]; then
   exit 1
 fi
 
+FIDES_FALLBACK_MATCHES="$(rg -n 'convex_hmac_fallback|hmacSha256' convex services apps packages || true)"
+if [[ -n "$FIDES_FALLBACK_MATCHES" ]]; then
+  echo "$FIDES_FALLBACK_MATCHES"
+  echo "[ERROR] FIDES/AGIT verification fallback signatures are forbidden in production paths." >&2
+  exit 1
+fi
+
 echo "[INFO] Fake success pattern check passed."
