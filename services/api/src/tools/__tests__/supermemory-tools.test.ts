@@ -1,9 +1,21 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const supermemoryMock = vi.hoisted(() => ({
+    supermemoryTools: vi.fn(),
+}));
+
+vi.mock('@supermemory/tools/ai-sdk', () => ({
+    supermemoryTools: supermemoryMock.supermemoryTools,
+}));
 
 const previousSupermemoryKey = process.env.SUPERMEMORY_API_KEY;
 
+beforeEach(() => {
+    supermemoryMock.supermemoryTools.mockReset();
+    vi.resetModules();
+});
+
 afterEach(() => {
-    vi.doUnmock('@supermemory/tools/ai-sdk');
     vi.resetModules();
     if (previousSupermemoryKey === undefined) delete process.env.SUPERMEMORY_API_KEY;
     else process.env.SUPERMEMORY_API_KEY = previousSupermemoryKey;
@@ -19,15 +31,14 @@ describe('SuperMemory tool loading', () => {
         expect(tools).toHaveProperty('memory_search');
         expect(tools).toHaveProperty('calculator');
         expect(tools).toHaveProperty('current_time');
+        expect(supermemoryMock.supermemoryTools).not.toHaveBeenCalled();
     });
 
     it('fails loud when SuperMemory is configured but tools cannot load', async () => {
         process.env.SUPERMEMORY_API_KEY = 'test-supermemory-key';
-        vi.doMock('@supermemory/tools/ai-sdk', () => ({
-            supermemoryTools: () => {
-                throw new Error('mock SuperMemory tools failure');
-            },
-        }));
+        supermemoryMock.supermemoryTools.mockImplementationOnce(() => {
+            throw new Error('mock SuperMemory tools failure');
+        });
         const { getToolsForTierWithSupermemory } = await import('../index');
 
         await expect(getToolsForTierWithSupermemory('FREE', 'user-1')).rejects.toThrow(

@@ -1,20 +1,31 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const memoryRouterMock = vi.hoisted(() => ({
+    searchMemories: vi.fn(),
+    getUserProfile: vi.fn(),
+}));
+
+vi.mock('../../services/memory-router.service', () => ({
+    searchMemories: memoryRouterMock.searchMemories,
+    supermemory: {
+        getUserProfile: memoryRouterMock.getUserProfile,
+    },
+}));
+
+beforeEach(() => {
+    memoryRouterMock.searchMemories.mockReset();
+    memoryRouterMock.getUserProfile.mockReset();
+    vi.resetModules();
+});
 
 afterEach(() => {
-    vi.doUnmock('../../services/memory-router.service');
     vi.resetModules();
 });
 
 describe('bot prompt memory posture', () => {
     it('fails loud when memory search is unavailable for an identified user', async () => {
-        vi.doMock('../../services/memory-router.service', () => ({
-            searchMemories: async () => {
-                throw new Error('mock search failure');
-            },
-            supermemory: {
-                getUserProfile: async () => ({ static: [], dynamic: [] }),
-            },
-        }));
+        memoryRouterMock.searchMemories.mockRejectedValueOnce(new Error('mock search failure'));
+        memoryRouterMock.getUserProfile.mockResolvedValueOnce({ static: [], dynamic: [] });
         const { getSystemPrompt } = await import('../prompt');
 
         await expect(getSystemPrompt('user-1', 'hello')).rejects.toThrow(
@@ -23,14 +34,8 @@ describe('bot prompt memory posture', () => {
     });
 
     it('fails loud when SuperMemory profile loading fails for an identified user', async () => {
-        vi.doMock('../../services/memory-router.service', () => ({
-            searchMemories: async () => [],
-            supermemory: {
-                getUserProfile: async () => {
-                    throw new Error('mock profile failure');
-                },
-            },
-        }));
+        memoryRouterMock.searchMemories.mockResolvedValueOnce([]);
+        memoryRouterMock.getUserProfile.mockRejectedValueOnce(new Error('mock profile failure'));
         const { getSystemPrompt } = await import('../prompt');
 
         await expect(getSystemPrompt('user-1', 'hello')).rejects.toThrow(
