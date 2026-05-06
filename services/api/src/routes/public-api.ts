@@ -1,5 +1,6 @@
-import { type Context, Hono } from 'hono';
+import { Hono } from 'hono';
 import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
+import { apiKeyHasPermission } from '../middleware/auth';
 import { runToolStep } from '../orchestrator/step';
 import type { ToolContext } from '../reversibility/types';
 import { registry } from '../tools/registry';
@@ -11,14 +12,6 @@ function stepStatus(result: Awaited<ReturnType<typeof runToolStep>>) {
     if (result.awaitingApproval) return 'awaiting_approval';
     if (!result.result.success) return 'failed';
     return 'executed';
-}
-
-function apiKeyAllows(c: Context, permission: string) {
-    const apiKeyId = c.get('apiKeyId' as any) as string | null | undefined;
-    if (!apiKeyId) return true;
-
-    const permissions = (c.get('apiKeyPermissions' as any) as string[] | null | undefined) ?? [];
-    return permissions.includes(permission);
 }
 
 publicApi.get('/tools', (c) => {
@@ -40,7 +33,7 @@ publicApi.post('/tools/:name/execute', async (c) => {
     const { name } = c.req.param();
     const userId = c.get('userId');
     if (!userId) return c.json({ error: 'Authentication required' }, 401);
-    if (!apiKeyAllows(c, 'chat:write')) {
+    if (!apiKeyHasPermission(c, 'chat:write')) {
         return c.json({ error: 'API key missing required permission: chat:write' }, 403);
     }
 
@@ -68,7 +61,7 @@ publicApi.get('/audit/:userId/timeline', async (c) => {
     if (!currentUserId) {
         return c.json({ error: 'Authentication required' }, 401);
     }
-    if (!apiKeyAllows(c, 'chat:read')) {
+    if (!apiKeyHasPermission(c, 'chat:read')) {
         return c.json({ error: 'API key missing required permission: chat:read' }, 403);
     }
     if (userId !== currentUserId) {

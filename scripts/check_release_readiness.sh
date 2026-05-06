@@ -105,6 +105,7 @@ bun run --cwd services/api test \
   src/orchestrator/__tests__/step.test.ts \
   src/services/__tests__/approval.service.test.ts \
   src/routes/__tests__/api-keys.test.ts \
+  src/routes/__tests__/api-key-route-permissions.test.ts \
   src/middleware/__tests__/idempotency.test.ts \
   src/lib/__tests__/job-queue.test.ts
 

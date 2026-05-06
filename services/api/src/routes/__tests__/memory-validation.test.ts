@@ -14,6 +14,9 @@ vi.mock('../../middleware/auth', () => ({
         c.set('userId', 'test-user-123');
         await next();
     }),
+    requireApiKeyPermission: vi.fn(() => async (_c: any, next: any) => {
+        await next();
+    }),
     authMiddleware: vi.fn(async (c: any, next: any) => {
         c.set('userId', 'test-user-123');
         c.set('user', { userId: 'test-user-123', email: 'test@test.com' });

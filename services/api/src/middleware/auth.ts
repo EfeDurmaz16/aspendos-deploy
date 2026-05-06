@@ -115,6 +115,23 @@ export async function requireAuth(c: Context, next: Next) {
     return next();
 }
 
+export function apiKeyHasPermission(c: Context, permission: string): boolean {
+    const apiKeyId = c.get('apiKeyId');
+    if (!apiKeyId) return true;
+
+    const permissions = c.get('apiKeyPermissions') ?? [];
+    return permissions.includes(permission);
+}
+
+export function requireApiKeyPermission(permission: string) {
+    return async (c: Context, next: Next) => {
+        if (!apiKeyHasPermission(c, permission)) {
+            return c.json({ error: `API key missing required permission: ${permission}` }, 403);
+        }
+        return next();
+    };
+}
+
 export function optionalAuth(c: Context, next: Next) {
     return authMiddleware(c, next);
 }
