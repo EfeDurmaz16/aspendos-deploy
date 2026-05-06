@@ -1,8 +1,20 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+declare const process: { env: { CONVEX_SERVICE_SECRET?: string } };
+
 const DEFAULT_TOOL_REGISTRY_LIMIT = 100;
 const MAX_TOOL_REGISTRY_LIMIT = 500;
+
+function requireServiceSecret(serviceSecret: string) {
+    const expected = process.env.CONVEX_SERVICE_SECRET;
+    if (!expected) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    if (serviceSecret !== expected) {
+        throw new Error('Invalid service secret');
+    }
+}
 
 function clampLimit(value: number | undefined) {
     return Math.min(Math.max(value ?? DEFAULT_TOOL_REGISTRY_LIMIT, 1), MAX_TOOL_REGISTRY_LIMIT);
@@ -14,6 +26,7 @@ function clampLimit(value: number | undefined) {
  */
 export const registerTool = mutation({
     args: {
+        service_secret: v.string(),
         name: v.string(),
         description: v.string(),
         reversibility_class: v.union(
@@ -28,6 +41,7 @@ export const registerTool = mutation({
         registered_by: v.optional(v.id('users')),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         // Upsert: check if tool already registered
         const existing = await ctx.db
             .query('tool_registry')
@@ -57,8 +71,9 @@ export const registerTool = mutation({
  * Get metadata for a single tool by name.
  */
 export const getToolMetadata = query({
-    args: { name: v.string() },
+    args: { service_secret: v.string(), name: v.string() },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db
             .query('tool_registry')
             .withIndex('by_name', (q) => q.eq('name', args.name))
@@ -71,6 +86,7 @@ export const getToolMetadata = query({
  */
 export const listTools = query({
     args: {
+        service_secret: v.string(),
         limit: v.optional(v.number()),
         reversibility_class: v.optional(
             v.union(
@@ -83,6 +99,7 @@ export const listTools = query({
         ),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const limit = clampLimit(args.limit);
         const reversibilityClass = args.reversibility_class;
         if (reversibilityClass) {
@@ -105,8 +122,9 @@ export const listTools = query({
  * Remove a tool from the registry.
  */
 export const unregisterTool = mutation({
-    args: { name: v.string() },
+    args: { service_secret: v.string(), name: v.string() },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const tool = await ctx.db
             .query('tool_registry')
             .withIndex('by_name', (q) => q.eq('name', args.name))
