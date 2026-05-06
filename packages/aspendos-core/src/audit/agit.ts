@@ -16,7 +16,7 @@ interface AgitCommitOptions {
     fidesSignature: string;
     fidesDid: string;
     parentHash?: string | null;
-    type: 'pre' | 'post';
+    type: 'pre' | 'post' | 'blocked';
     result?: ToolResult;
 }
 

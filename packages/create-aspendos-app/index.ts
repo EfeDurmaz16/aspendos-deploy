@@ -42,8 +42,8 @@ const registry = new ToolRegistry();
 // registry.register({ name: 'my.tool', ... });
 
 app.post('/agent/execute', async (c) => {
-    const { tool, args, userId } = await c.req.json();
-    const result = await runToolStep(tool, args, { userId });
+    const { tool, args, userId, sessionId } = await c.req.json();
+    const result = await runToolStep(tool, args, { userId, sessionId });
     return c.json(result);
 });
 

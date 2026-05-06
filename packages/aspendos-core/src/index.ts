@@ -21,7 +21,20 @@ export {
     type ToolDefinition,
     type ToolResult,
 } from './reversibility/types';
-
+export {
+    BlastRadiusGuard,
+    type BlastRadiusReport,
+    createDefaultGuardChain,
+    DangerousCommandGuard,
+    GuardChain,
+    type GuardChainResult,
+    type GuardContext,
+    type GuardDecision,
+    PolicyGuard,
+    RateLimitGuard,
+    type ToolGuard,
+    ToolLoopGuard,
+} from './security/agent-guards';
 export { DANGEROUS_PATTERNS, type DangerousPattern, isDangerous } from './security/dangerous-tools';
 
 export {
