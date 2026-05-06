@@ -1,6 +1,7 @@
 import { getAgit } from '../audit/agit';
 import { commitConvexGovernance } from '../governance/convex-governance';
 import { getFides } from '../governance/fides';
+import { createDefaultGuardChain } from '../lib/agent-guards';
 import type { ReversibilityMetadata, ToolContext, ToolResult } from '../reversibility/types';
 import { registry } from '../tools/registry';
 
@@ -19,6 +20,39 @@ export async function runToolStep(
     ctx: ToolContext
 ): Promise<StepResult> {
     const metadata = registry.classify(toolName, args);
+    const guardResult = await createDefaultGuardChain().evaluate({
+        toolName,
+        toolArgs: (args && typeof args === 'object' ? args : { value: args }) as Record<
+            string,
+            unknown
+        >,
+        userId: ctx.userId,
+        sessionId: ctx.sessionId ?? 'default',
+        agentId: ctx.agentId,
+        toolCallCount: ctx.toolCallCount ?? 0,
+        toolCallCountByName: ctx.toolCallCountByName ?? {},
+        previousActions: ctx.previousActions ?? [],
+    });
+
+    if (guardResult.decision.type === 'block') {
+        return {
+            toolName,
+            metadata: {
+                ...metadata,
+                reversibility_class: 'irreversible_blocked',
+                approval_required: false,
+                rollback_strategy: { kind: 'none' },
+                human_explanation: guardResult.decision.reason,
+            },
+            commitHash: '',
+            result: {
+                success: false,
+                error: guardResult.decision.reason,
+            },
+            blocked: true,
+            awaitingApproval: false,
+        };
+    }
 
     if (metadata.reversibility_class === 'irreversible_blocked') {
         return {

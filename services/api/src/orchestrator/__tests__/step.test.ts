@@ -29,6 +29,20 @@ describe('runToolStep', () => {
         expect(result.result.success).toBe(false);
     });
 
+    it('blocks dangerous arguments before execution even for otherwise undoable tools', async () => {
+        const result = await runToolStep(
+            'file.write',
+            { path: '/workspace/.env', content: 'SECRET=value', existing_content: '' },
+            ctx
+        );
+
+        expect(result.blocked).toBe(true);
+        expect(result.awaitingApproval).toBe(false);
+        expect(result.commitHash).toBe('');
+        expect(result.metadata.reversibility_class).toBe('irreversible_blocked');
+        expect(result.result.error).toContain('Potentially dangerous operation detected');
+    });
+
     it('pauses approval_only tools', async () => {
         const result = await runToolStep(
             'db.migrate',

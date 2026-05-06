@@ -177,13 +177,8 @@ export class DangerousCommandGuard implements ToolGuard {
         for (const pattern of this.patterns) {
             if (pattern.test(argsStr)) {
                 return {
-                    type: 'require_approval',
+                    type: 'block',
                     reason: `Potentially dangerous operation detected in "${context.toolName}": pattern "${pattern.source}" matched.`,
-                    blastRadius: {
-                        riskLevel: 'high',
-                        affectedResources: [context.toolName],
-                        estimatedImpact: 'Destructive or sensitive operation detected',
-                    },
                 };
             }
         }
