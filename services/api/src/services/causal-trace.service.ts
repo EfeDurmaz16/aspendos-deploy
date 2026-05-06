@@ -13,7 +13,7 @@
  * - Rollback: action reverts a previous action
  */
 
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 // ============================================
 // TYPES
@@ -46,7 +46,10 @@ export interface CausalPath {
 export async function getCausalChain(actionId: string, maxDepth = 20): Promise<CausalPath> {
     try {
         const client = getConvexClient();
-        const allLogs = await client.query(api.actionLog.listRecent, { limit: 2000 });
+        const allLogs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 2000,
+        });
 
         // Build a lookup map by action id (stored in details)
         const logMap = new Map<string, (typeof allLogs)[0]>();
@@ -91,7 +94,10 @@ export async function getCausalChain(actionId: string, maxDepth = 20): Promise<C
 export async function getEffects(actionId: string, maxDepth = 10): Promise<CausalNode[]> {
     try {
         const client = getConvexClient();
-        const allLogs = await client.query(api.actionLog.listRecent, { limit: 2000 });
+        const allLogs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 2000,
+        });
 
         // Build parent -> children map
         const childrenOf = new Map<string, (typeof allLogs)[0][]>();
@@ -143,6 +149,7 @@ export async function getCriticalPath(userId: string, sessionId: string): Promis
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 2000,
         });
@@ -236,6 +243,7 @@ export async function getSessionSummary(userId: string, sessionId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 2000,
         });

@@ -7,7 +7,7 @@
  */
 
 import type { GuardChainResult } from '../lib/agent-guards';
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 // ============================================
 // TYPES
@@ -41,6 +41,7 @@ export async function logAction(params: LogActionParams): Promise<string> {
     try {
         const client = getConvexClient();
         const id = await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: params.userId as any,
             event_type: params.actionType,
             details: {
@@ -115,6 +116,7 @@ export async function getSessionActions(
     try {
         const client = getConvexClient();
         const all = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: options?.limit ?? 100,
         });
@@ -136,7 +138,10 @@ export async function getSessionActions(
 export async function getCausalChain(actionId: string, _maxDepth = 20) {
     try {
         const client = getConvexClient();
-        const recent = await client.query(api.actionLog.listRecent, { limit: 200 });
+        const recent = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 200,
+        });
         if (!recent) return [];
 
         // Build lookup map
@@ -167,7 +172,10 @@ export async function getCausalChain(actionId: string, _maxDepth = 20) {
 export async function getActionEffects(actionId: string, maxDepth = 10) {
     try {
         const client = getConvexClient();
-        const recent = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const recent = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
         if (!recent) return [];
 
         // Build parent->children map
@@ -210,6 +218,7 @@ export async function getRecentActions(
     try {
         const client = getConvexClient();
         let actions = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: options?.limit ?? 50,
         });

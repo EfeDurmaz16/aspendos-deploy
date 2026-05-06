@@ -356,6 +356,7 @@ export async function exportUserData(userId: string): Promise<ExportData> {
 
         // Fetch action_log for council sessions, notifications, etc.
         const actionLogs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 1000,
         });
@@ -481,7 +482,11 @@ export async function getDataSummary(userId: string): Promise<DataSummary> {
                 user_id: userId as any,
             }),
             client.query(api.memories.listByUser, { user_id: userId as any }),
-            client.query(api.actionLog.listByUser, { user_id: userId as any, limit: 5000 }),
+            client.query(api.actionLog.listByUser, {
+                service_secret: getConvexServiceSecret(),
+                user_id: userId as any,
+                limit: 5000,
+            }),
         ]);
 
         // Count messages across all conversations
@@ -664,6 +669,7 @@ export async function anonymizeUser(userId: string): Promise<void> {
 
         // Log the anonymization request
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'user_anonymization_requested',
             details: {

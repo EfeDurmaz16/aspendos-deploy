@@ -15,7 +15,7 @@
 
 import { Supermemory as SuperMemory } from 'supermemory';
 import { breakers } from '../lib/circuit-breaker';
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 import { queueFallbackWrite, searchFallback } from '../lib/memory-fallback';
 import type { MemoryResult, MemoryStats } from './memory-router.service';
 
@@ -399,6 +399,7 @@ export async function reinforceMemory(id: string): Promise<void> {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'memory_reinforced',
             details: { memoryId: id, reinforcedAt: new Date().toISOString() },
         });

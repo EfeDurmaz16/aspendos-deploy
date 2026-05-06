@@ -10,7 +10,7 @@
  * - submitFeedback: Log user feedback via action_log
  */
 
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 type Memory = any;
 type MemoryFeedback = any;
@@ -184,6 +184,7 @@ export async function updateMemory(id: string, data: UpdateMemoryInput): Promise
         const client = getConvexClient();
         // Convex memories table doesn't have update mutation — log the intent
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'memory_update',
             details: { memoryId: id, ...data },
         });
@@ -213,6 +214,7 @@ export async function submitFeedback(input: FeedbackInput): Promise<MemoryFeedba
     try {
         const client = getConvexClient();
         const id = await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: input.userId as any,
             event_type: 'memory_feedback',
             details: {

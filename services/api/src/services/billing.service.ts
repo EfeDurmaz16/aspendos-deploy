@@ -5,7 +5,7 @@
 type BillingAccount = any;
 
 import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 /**
  * Per-model pricing in USD per 1M tokens (industry standard)
@@ -159,6 +159,7 @@ export async function recordTokenUsage(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'token_usage',
             details: {
@@ -182,6 +183,7 @@ export async function recordChatUsage(userId: string) {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'chat_usage',
             details: { decremented: 1 },
@@ -235,6 +237,7 @@ export async function recordVoiceUsage(userId: string, durationMinutes: number) 
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'voice_usage',
             details: { duration_minutes: durationMinutes },
@@ -252,6 +255,7 @@ export async function upgradeTier(userId: string, newPlan: 'starter' | 'pro' | '
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'tier_upgrade',
             details: { new_plan: newPlan },
@@ -268,6 +272,7 @@ export async function resetMonthlyCredits(userId: string) {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'monthly_credit_reset',
             details: { reset_at: Date.now() },
@@ -297,6 +302,7 @@ export async function checkCostCeiling(userId: string): Promise<{
 
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -336,6 +342,7 @@ export async function getUsageHistory(userId: string, limit?: number) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: limit || 50,
         });
@@ -426,6 +433,7 @@ export async function getCostSummary(userId: string): Promise<{
     try {
         const client = getConvexClient();
         const allLogs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 1000,
         });
@@ -588,6 +596,7 @@ export async function maybeCreateSpendingNotification(userId: string): Promise<v
         // Deduplicate: check if we already logged a spending alert today
         const client = getConvexClient();
         const recentLogs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 50,
         });
@@ -603,6 +612,7 @@ export async function maybeCreateSpendingNotification(userId: string): Promise<v
 
         const topAlert = importantAlerts[0];
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'spending_alert',
             details: {
@@ -638,6 +648,7 @@ export async function getUnitEconomics(userId: string): Promise<{
     try {
         const client = getConvexClient();
         const allLogs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 1000,
         });

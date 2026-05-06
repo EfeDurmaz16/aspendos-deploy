@@ -42,6 +42,7 @@ export async function createImportJob(
         const jobId = `import_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'import_job_created',
             details: {
@@ -89,6 +90,7 @@ export async function updateImportJobStatus(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'import_job_status_updated',
             details: {
                 jobId,
@@ -113,6 +115,7 @@ export async function getImportJob(jobId: string, userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -155,6 +158,7 @@ export async function listImportJobs(userId: string, limit = 20) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -479,6 +483,7 @@ export async function storeImportEntities(jobId: string, conversations: ParsedCo
 
         for (const conv of conversations) {
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 event_type: 'import_entity_stored',
                 details: {
                     jobId,
@@ -503,6 +508,7 @@ export async function storeImportEntities(jobId: string, conversations: ParsedCo
 
         // Update job with total count
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'import_job_status_updated',
             details: { jobId, totalItems: conversations.length },
         });
@@ -521,6 +527,7 @@ export async function updateEntitySelection(entityId: string, jobId: string, sel
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'import_entity_selection_updated',
             details: { entityId, jobId, selected },
         });
@@ -538,7 +545,10 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
         const client = getConvexClient();
 
         // Get stored entities from action_log
-        const logs = await client.query(api.actionLog.listRecent, { limit: 1000 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 1000,
+        });
         const entityLogs = logs.filter(
             (l) =>
                 l.event_type === 'import_entity_stored' &&
@@ -599,6 +609,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
 
                 // Mark entity as imported
                 await client.mutation(api.actionLog.log, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     event_type: 'import_entity_imported',
                     details: { jobId, externalId: entity.externalId },
@@ -608,6 +619,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
 
                 // Update job progress
                 await client.mutation(api.actionLog.log, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     event_type: 'import_job_status_updated',
                     details: { jobId, importedItems: importedCount },
@@ -656,6 +668,7 @@ export async function getImportStats(userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -689,7 +702,10 @@ export async function getImportStats(userId: string) {
 export async function extractMemoriesFromImport(userId: string, jobId: string): Promise<number> {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 1000 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 1000,
+        });
 
         const entityLogs = logs
             .filter(

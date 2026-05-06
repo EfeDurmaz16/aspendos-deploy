@@ -7,7 +7,7 @@
 
 import { streamText } from 'ai';
 import { getModelWithFallback } from '../lib/ai-providers';
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 import * as openMemory from './memory-router.service';
 
 // Persona types
@@ -100,6 +100,7 @@ export async function getPersonaPreferenceOrder(userId: string): Promise<Persona
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 200,
         });
@@ -150,6 +151,7 @@ export async function createCouncilSession(userId: string, query: string) {
         const sessionId = `council_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'council_session_created',
             details: { sessionId, query, status: 'PENDING' },
@@ -160,6 +162,7 @@ export async function createCouncilSession(userId: string, query: string) {
 
         for (const persona of orderedPersonas) {
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 event_type: 'council_response_created',
                 details: {
@@ -187,6 +190,7 @@ export async function getCouncilSession(sessionId: string, userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 200,
         });
@@ -239,6 +243,7 @@ export async function listCouncilSessions(userId: string, limit = 20) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -280,6 +285,7 @@ export async function* streamPersonaResponse(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'council_response_updated',
             details: { sessionId, persona, status: 'STREAMING' },
@@ -329,6 +335,7 @@ export async function* streamPersonaResponse(
         try {
             const client = getConvexClient();
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 event_type: 'council_response_updated',
                 details: {
@@ -357,6 +364,7 @@ export async function* streamPersonaResponse(
         try {
             const client = getConvexClient();
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 event_type: 'council_response_updated',
                 details: {
@@ -380,7 +388,10 @@ export async function* streamPersonaResponse(
 export async function updateSessionStatus(sessionId: string) {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
 
         const responses = logs.filter(
             (l) =>
@@ -408,6 +419,7 @@ export async function updateSessionStatus(sessionId: string) {
         else if (!anyPending) status = 'STREAMING';
 
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'council_session_status_updated',
             details: { sessionId, status },
         });
@@ -433,6 +445,7 @@ export async function selectResponse(sessionId: string, userId: string, persona:
 
         // Log the selection
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'council_selection',
             details: { sessionId, persona },
@@ -479,7 +492,10 @@ export async function generateSynthesis(sessionId: string) {
     // Find the session across all users (no userId filter needed)
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
 
         const sessionLog = logs.find(
             (l) => l.event_type === 'council_session_created' && l.details?.sessionId === sessionId
@@ -542,6 +558,7 @@ Please synthesize these perspectives into a balanced recommendation.`,
 
         // Store synthesis
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'council_synthesis',
             details: { sessionId, synthesis },
         });
@@ -573,6 +590,7 @@ export async function getCouncilStats(userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 1000,
         });

@@ -6,7 +6,7 @@
  * Migrated from Prisma to Convex action_log events.
  */
 
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 type ScheduledTask = any;
 
@@ -48,6 +48,7 @@ export async function createScheduledTask(input: CreateScheduledTaskInput): Prom
     try {
         const client = getConvexClient();
         const taskId = await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: input.userId as any,
             event_type: 'scheduled_task',
             details: {
@@ -133,6 +134,7 @@ export async function getUserScheduledTasks(
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: options?.limit || 50,
         });
@@ -155,7 +157,10 @@ export async function getUserScheduledTasks(
 export async function getPendingTasksToExecute(): Promise<ScheduledTask[]> {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 200 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 200,
+        });
         const now = Date.now();
         return (logs || [])
             .filter(
@@ -176,7 +181,10 @@ export async function getPendingTasksToExecute(): Promise<ScheduledTask[]> {
 export async function getTaskById(taskId: string): Promise<ScheduledTask | null> {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
         const match = (logs || []).find(
             (l: any) => l._id === taskId && l.event_type === 'scheduled_task'
         );
@@ -200,6 +208,7 @@ export async function cancelScheduledTask(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'scheduled_task_cancel',
             details: { originalTaskId: taskId },
@@ -221,6 +230,7 @@ export async function rescheduleTask(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'scheduled_task_reschedule',
             details: { originalTaskId: taskId, newTriggerAt: newTriggerAt.getTime() },
@@ -248,6 +258,7 @@ export async function markTaskProcessing(taskId: string): Promise<ScheduledTask>
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'scheduled_task_status',
             details: { taskId, status: 'PROCESSING' },
         });
@@ -268,6 +279,7 @@ export async function markTaskCompleted(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'scheduled_task_status',
             details: {
                 taskId,
@@ -290,6 +302,7 @@ export async function markTaskFailed(taskId: string, errorMessage: string): Prom
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'scheduled_task_status',
             details: { taskId, status: 'FAILED', errorMessage, executedAt: Date.now() },
         });
@@ -507,6 +520,7 @@ export async function createRecurringSchedule(params: {
     try {
         const client = getConvexClient();
         return await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: params.userId as any,
             event_type: 'recurring_schedule',
             details: {
@@ -528,7 +542,10 @@ export async function createRecurringSchedule(params: {
 export async function getDueRecurringSchedules() {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 200 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 200,
+        });
         const now = Date.now();
         return (logs || []).filter(
             (l: any) =>
@@ -547,6 +564,7 @@ export async function advanceRecurringSchedule(scheduleId: string) {
         const client = getConvexClient();
         // Log the advance event — the original schedule log is immutable in action_log
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'recurring_schedule_advance',
             details: { scheduleId, advancedAt: Date.now() },
         });

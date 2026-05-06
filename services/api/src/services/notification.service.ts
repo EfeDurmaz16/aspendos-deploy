@@ -5,7 +5,7 @@
  * are stored via action_log entries (Convex schema doesn't have dedicated tables).
  */
 
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 // ============================================
 // TYPES
@@ -102,6 +102,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<De
             try {
                 const client = getConvexClient();
                 await client.mutation(api.actionLog.log, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     event_type: 'notification_sent',
                     details: {
@@ -304,6 +305,7 @@ export async function registerPushSubscription(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'push_subscription_registered',
             details: {
@@ -331,6 +333,7 @@ export async function updateNotificationPreferences(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'notification_preferences_updated',
             details: preferences,

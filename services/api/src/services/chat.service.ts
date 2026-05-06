@@ -361,6 +361,7 @@ export async function addMessageFeedback(
 
         // Best-effort: log feedback as action log entry
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: owned.convexUserId,
             event_type: 'message_feedback',
             details: { messageId, feedback, feedbackAt: new Date().toISOString() },
@@ -449,6 +450,7 @@ export async function createShareToken(chatId: string, userId: string): Promise<
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'share_token_created',
             details: { chatId, token, sharedAt: new Date().toISOString() },

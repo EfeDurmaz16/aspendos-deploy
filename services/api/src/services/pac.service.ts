@@ -5,7 +5,7 @@
  * Migrated from Prisma to Convex action_log events.
  */
 
-import { api, getConvexClient } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 // Types
 export type ReminderType = 'EXPLICIT' | 'IMPLICIT';
@@ -174,6 +174,7 @@ export async function createReminder(
     try {
         const client = getConvexClient();
         return await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'pac_reminder',
             details: {
@@ -199,6 +200,7 @@ export async function getPendingReminders(userId: string, limit = 20) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 200,
         });
@@ -221,7 +223,10 @@ export async function getPendingReminders(userId: string, limit = 20) {
 export async function getDueReminders(limit = 100) {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
         const now = Date.now();
         return (logs || [])
             .filter(
@@ -243,6 +248,7 @@ export async function completeReminder(reminderId: string, userId: string) {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'pac_reminder_response',
             details: {
@@ -256,6 +262,7 @@ export async function completeReminder(reminderId: string, userId: string) {
         // MOAT: Cross-system feedback loop (PAC -> Memory)
         try {
             const logs = await client.query(api.actionLog.listByUser, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 limit: 200,
             });
@@ -286,6 +293,7 @@ export async function dismissReminder(reminderId: string, userId: string) {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'pac_reminder_response',
             details: {
@@ -310,6 +318,7 @@ export async function snoozeReminder(reminderId: string, userId: string, minutes
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'pac_reminder_snooze',
             details: {
@@ -321,6 +330,7 @@ export async function snoozeReminder(reminderId: string, userId: string, minutes
 
         // Record escalation event
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'pac_escalation',
             details: {
@@ -345,6 +355,7 @@ export async function getPACSettings(userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 100,
         });
@@ -373,6 +384,7 @@ export async function getPACSettings(userId: string) {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'pac_settings',
             details: defaults,
@@ -408,6 +420,7 @@ export async function updatePACSettings(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'pac_settings',
             details: merged,
@@ -449,6 +462,7 @@ export async function getPACStats(userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -531,6 +545,7 @@ async function computeEffectiveness(userId: string): Promise<EffectivenessMetric
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });

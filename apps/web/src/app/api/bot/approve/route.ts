@@ -134,6 +134,7 @@ export async function POST(request: Request) {
 
         // Log the action
         await convex.mutation(api.actionLog.log, {
+            service_secret: serviceSecret,
             user_id: approval.user_id,
             event_type: `approval.${action}`,
             details: {
