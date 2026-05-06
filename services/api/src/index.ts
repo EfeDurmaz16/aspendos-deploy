@@ -448,7 +448,7 @@ app.route('/ready', healthRoutes);
 app.route('/status', statusRoutes);
 app.route('/', publicApi);
 
-// Better Auth routes
+// Auth routes
 app.on(['POST', 'GET'], '/api/auth/*', (c) => {
     return auth.handler(c.req.raw);
 });

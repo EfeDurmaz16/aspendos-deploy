@@ -41,6 +41,22 @@ describe('SemanticCache', () => {
         });
     });
 
+    describe('production configuration', () => {
+        it('refuses to initialize without Redis credentials in production', async () => {
+            vi.resetModules();
+            vi.stubEnv('NODE_ENV', 'production');
+            vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
+            vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '');
+
+            await expect(import('../semantic-cache')).rejects.toThrow(
+                /Semantic cache requires UPSTASH_REDIS_REST_URL/
+            );
+
+            vi.unstubAllEnvs();
+            vi.resetModules();
+        });
+    });
+
     describe('getCacheKey', () => {
         it('should generate consistent hash for same input', () => {
             const key1 = semanticCache.getCacheKey('test query', 'gpt-4');

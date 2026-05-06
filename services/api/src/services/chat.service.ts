@@ -38,8 +38,8 @@ async function getOwnedConversation(client: ConvexClient, chatId: string, userId
 // ============================================
 
 /**
- * Get or create user from Better Auth user ID
- * Better Auth already creates the user in the database via adapter.
+ * Get or create user from the authenticated application user ID.
+ * Auth provisioning creates the durable user record; Convex mirrors it for chat ownership.
  */
 export async function getOrCreateUser(
     userId: string,

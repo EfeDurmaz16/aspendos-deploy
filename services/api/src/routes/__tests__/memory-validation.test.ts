@@ -44,7 +44,7 @@ vi.mock('../../lib/audit-log', () => ({
     auditLog: vi.fn().mockResolvedValue(undefined),
 }));
 
-// Mock auth lib to prevent Better Auth initialization
+// Mock auth lib to prevent session handler initialization
 vi.mock('../../lib/auth', () => ({
     auth: {
         api: {

@@ -149,10 +149,14 @@ securityRoutes.get('/audit', (c) => {
             status:
                 process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
                     ? 'pass'
-                    : 'warn',
+                    : process.env.NODE_ENV === 'production'
+                      ? 'fail'
+                      : 'warn',
             details: process.env.UPSTASH_REDIS_REST_URL
                 ? 'Distributed rate limiting active'
-                : 'In-memory fallback (not suitable for multi-instance)',
+                : process.env.NODE_ENV === 'production'
+                  ? 'Redis missing; production startup should refuse traffic'
+                  : 'Local development fallback only; not suitable for multi-instance',
         },
     ];
 

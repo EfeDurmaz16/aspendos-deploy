@@ -19,6 +19,12 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+const WEB_OWNED_BILLING_RESPONSE = {
+    error: 'Billing lifecycle is handled by the web app Stripe routes',
+    code: 'BILLING_LIFECYCLE_OWNED_BY_WEB',
+    owner: 'apps/web/src/app/api/billing',
+};
+
 // ============================================
 // AUTHENTICATED ROUTES
 // ============================================
@@ -32,12 +38,11 @@ app.get('/', requireAuth, async (c) => {
     return c.json(status);
 });
 
-// POST /api/billing/sync - Sync user with billing provider (create customer if needed)
-// TODO(stripe-migration): re-wire to stripe.service.createCustomer
+// POST /api/billing/sync - Web app owns Stripe customer lifecycle
 app.post('/sync', requireAuth, async (c) => {
     const _userId = c.get('userId')!;
     const _user = c.get('user')!;
-    return c.json({ error: 'Billing sync is temporarily disabled during Stripe migration' }, 503);
+    return c.json(WEB_OWNED_BILLING_RESPONSE, 503);
 });
 
 // GET /api/billing/usage - Get usage history
@@ -57,33 +62,24 @@ app.get('/tiers', async (c) => {
     return c.json(comparison);
 });
 
-// POST /api/billing/checkout - Create checkout session
-// TODO(stripe-migration): re-wire to stripe.service.createCheckout
+// POST /api/billing/checkout - Web app owns Stripe checkout session creation
 app.post('/checkout', requireAuth, validateBody(createCheckoutSchema), async (c) => {
     const _userId = c.get('userId')!;
     const _user = c.get('user')!;
     const _validatedBody = c.get('validatedBody');
-    return c.json({ error: 'Checkout is temporarily disabled during Stripe migration' }, 503);
+    return c.json(WEB_OWNED_BILLING_RESPONSE, 503);
 });
 
-// POST /api/billing/cancel - Cancel subscription
-// TODO(stripe-migration): re-wire to stripe.service.cancelSubscription
+// POST /api/billing/cancel - Web app owns Stripe subscription cancellation
 app.post('/cancel', requireAuth, async (c) => {
     const _userId = c.get('userId')!;
-    return c.json(
-        { error: 'Subscription cancel is temporarily disabled during Stripe migration' },
-        503
-    );
+    return c.json(WEB_OWNED_BILLING_RESPONSE, 503);
 });
 
-// GET /api/billing/portal - Get customer portal URL
-// TODO(stripe-migration): re-wire to stripe.service.getCustomerPortalUrl
+// GET /api/billing/portal - Web app owns Stripe customer portal links
 app.get('/portal', requireAuth, async (c) => {
     const _userId = c.get('userId')!;
-    return c.json(
-        { error: 'Customer portal is temporarily disabled during Stripe migration' },
-        503
-    );
+    return c.json(WEB_OWNED_BILLING_RESPONSE, 503);
 });
 
 // GET /api/billing/cost-ceiling - Check daily cost ceiling status

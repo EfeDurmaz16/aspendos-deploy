@@ -3,7 +3,7 @@
  * Token bucket algorithm with tier-based limits.
  *
  * Uses Upstash Redis for distributed rate limiting across multiple instances.
- * Falls back to in-memory rate limiting if Redis is not configured.
+ * Falls back to in-memory rate limiting only outside production.
  */
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
@@ -35,7 +35,7 @@ const TIER_LIMITS = {
 
 type UserTier = keyof typeof TIER_LIMITS;
 
-// Initialize Redis client (optional - falls back to in-memory if not configured)
+// Initialize Redis client. Production startup fails below if Redis is not configured.
 const redis =
     process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
         ? new Redis({
@@ -162,7 +162,7 @@ function getFallbackState(userId: string, tier: UserTier): RateLimitState {
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
 /**
- * Rate limit middleware - uses Redis when available, falls back to in-memory
+ * Rate limit middleware - uses Redis in production, local memory in development/test.
  */
 export function rateLimit() {
     return async (c: Context, next: Next) => {

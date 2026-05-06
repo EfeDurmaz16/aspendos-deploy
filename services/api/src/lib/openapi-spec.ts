@@ -1048,7 +1048,7 @@ export function getOpenAPISpec(): OpenAPIV3.Document {
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
-                    description: 'JWT token from Better Auth',
+                    description: 'Session bearer token',
                 },
                 apiKey: {
                     type: 'apiKey',

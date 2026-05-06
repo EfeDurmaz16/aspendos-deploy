@@ -75,7 +75,7 @@ accountRoutes.delete('/', async (c) => {
             // Delete notifications
             await tx.notificationLog.deleteMany({ where: { userId } });
 
-            // Delete user sessions and accounts (Better Auth)
+            // Delete user sessions and linked auth accounts
             await tx.session.deleteMany({ where: { userId } });
             await tx.account.deleteMany({ where: { userId } });
 
