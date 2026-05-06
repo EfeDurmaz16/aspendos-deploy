@@ -151,8 +151,10 @@ bun run --cwd services/api test \
 info "Running web governance and messaging critical tests..."
 bun run --cwd apps/web test \
   test/app/api/chat/stream-route.test.ts \
+  src/lib/ai/__tests__/router.test.ts \
   src/lib/governance/__tests__/step-middleware.test.ts \
   test/lib/api/undo-route.test.ts \
+  test/lib/messaging/approval-card-identifiers.test.ts \
   test/lib/messaging/bot-actions.test.ts \
   test/lib/messaging/bot-approval.test.ts
 
