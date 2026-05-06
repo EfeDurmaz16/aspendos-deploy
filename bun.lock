@@ -28,6 +28,7 @@
         "@ai-sdk/anthropic": "^3.0.69",
         "@ai-sdk/react": "^3.0.41",
         "@anthropic-ai/sdk": "^0.89.0",
+        "@aspendos/db": "workspace:*",
         "@aspendos/shared-types": "workspace:*",
         "@auth/core": "^0.34.3",
         "@chat-adapter/discord": "^4.26.0",
@@ -214,7 +215,9 @@
       "name": "@aspendos/api",
       "version": "0.1.0",
       "dependencies": {
+        "@agit/sdk": "workspace:*",
         "@ai-sdk/mcp": "^1.0.10",
+        "@aspendos/core": "workspace:*",
         "@aspendos/db": "workspace:*",
         "@aspendos/shared-types": "workspace:*",
         "@chat-adapter/discord": "^4.20.2",

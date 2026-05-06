@@ -58,8 +58,9 @@ export class FidesService {
 
         const fides = await this.loadSdk();
         if (fides) {
-            this.keyPair = await fides.generateKeyPair();
-            this.did = fides.generateDID(this.keyPair.publicKey);
+            const keyPair = await fides.generateKeyPair();
+            this.keyPair = keyPair;
+            this.did = fides.generateDID(keyPair.publicKey);
             this.initialized = true;
             return;
         }
