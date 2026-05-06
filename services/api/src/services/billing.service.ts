@@ -37,7 +37,10 @@ const MODEL_PRICING: Record<string, { promptPer1M: number; completionPer1M: numb
 export async function getOrCreateBillingAccount(userId: string): Promise<BillingAccount> {
     try {
         const client = getConvexClient();
-        const sub = await client.query(api.subscriptions.getByUser, { user_id: userId as any });
+        const sub = await client.query(api.subscriptions.getByUser, {
+            service_secret: getConvexServiceSecret(),
+            user_id: userId as any,
+        });
         if (sub) {
             const tierName = (sub.tier || 'free').toUpperCase() as TierName;
             const config = getTierConfig(tierName);
