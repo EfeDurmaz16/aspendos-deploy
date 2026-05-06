@@ -150,21 +150,30 @@ function registerBotHandlers(chatBot: any) {
     chatBot.onAction(async (action: any) => {
         const { actionId, value, thread } = action;
 
-        if (actionId?.startsWith('yula_approve')) {
-            const { approveRequest } = await import('../services/approval.service');
-            await approveRequest(value, 'system');
-            await thread.post('Approved.');
-        } else if (actionId?.startsWith('yula_reject')) {
-            const { rejectRequest } = await import('../services/approval.service');
-            await rejectRequest(value, 'system');
-            await thread.post('Rejected.');
-        } else if (actionId?.startsWith('yula_always')) {
-            const { approveRequest, addToAllowlist } = await import('../services/approval.service');
-            const approval = (await approveRequest(value, 'system')) as any;
-            if (approval) {
-                await addToAllowlist('system', approval.toolName ?? 'unknown', 'permanent');
+        try {
+            const actorUserId = resolveActionActorId(action);
+
+            if (actionId?.startsWith('yula_approve')) {
+                const { approveRequest } = await import('../services/approval.service');
+                await approveRequest(value, actorUserId);
+                await thread.post('Approved.');
+            } else if (actionId?.startsWith('yula_reject')) {
+                const { rejectRequest } = await import('../services/approval.service');
+                await rejectRequest(value, actorUserId);
+                await thread.post('Rejected.');
+            } else if (actionId?.startsWith('yula_always')) {
+                const { approveRequest, addToAllowlist } = await import(
+                    '../services/approval.service'
+                );
+                const approval = (await approveRequest(value, actorUserId)) as any;
+                if (approval) {
+                    await addToAllowlist(actorUserId, approval.toolName ?? 'unknown', 'permanent');
+                }
+                await thread.post('Approved (always allowed).');
             }
-            await thread.post('Approved (always allowed).');
+        } catch (error) {
+            console.error('[Bot] Approval action failed:', error);
+            await thread?.post?.('Approval action failed.');
         }
     });
 }
@@ -248,6 +257,21 @@ async function resolveUserId(_thread: any, message: { user?: { id?: string } }):
     } catch {
         return 'anonymous';
     }
+}
+
+function resolveActionActorId(action: any): string {
+    const actorId =
+        action?.user?.id ??
+        action?.userId ??
+        action?.actor?.id ??
+        action?.member?.user?.id ??
+        action?.from?.id;
+
+    if (!actorId || typeof actorId !== 'string') {
+        throw new Error('Approval action missing actor identity');
+    }
+
+    return actorId;
 }
 
 async function getThreadHistory(

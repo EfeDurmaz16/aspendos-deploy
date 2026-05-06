@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const onAction = vi.fn();
 const onNewMention = vi.fn();
 const onSubscribedMessage = vi.fn();
+const approveRequest = vi.fn();
+const rejectRequest = vi.fn();
+const addToAllowlist = vi.fn();
 const Chat = vi.fn(function Chat(config: unknown) {
     return {
         config,
@@ -33,6 +36,11 @@ vi.mock('@chat-adapter/whatsapp', () => ({
         return { name: 'whatsapp' };
     }),
 }));
+vi.mock('../../services/approval.service', () => ({
+    addToAllowlist,
+    approveRequest,
+    rejectRequest,
+}));
 
 describe('api bot initialization', () => {
     const originalEnv = { ...process.env };
@@ -40,6 +48,9 @@ describe('api bot initialization', () => {
     beforeEach(() => {
         vi.resetModules();
         vi.clearAllMocks();
+        approveRequest.mockResolvedValue({ id: 'approval-1', status: 'approved' });
+        rejectRequest.mockResolvedValue({ id: 'approval-1', status: 'rejected' });
+        addToAllowlist.mockResolvedValue(undefined);
         process.env = { ...originalEnv };
         delete process.env.DATABASE_URL;
         delete process.env.SLACK_BOT_TOKEN;
@@ -87,5 +98,39 @@ describe('api bot initialization', () => {
                 adapters: { slack: { name: 'slack' } },
             })
         );
+    });
+
+    it('uses the button actor identity for approval decisions', async () => {
+        const { getBot } = await import('../index');
+        await getBot();
+        const actionHandler = onAction.mock.calls[0]?.[0];
+        const thread = { post: vi.fn() };
+
+        await actionHandler({
+            actionId: 'yula_approve',
+            value: 'approval-1',
+            user: { id: 'workos-user-1' },
+            thread,
+        });
+
+        expect(approveRequest).toHaveBeenCalledWith('approval-1', 'workos-user-1');
+        expect(approveRequest).not.toHaveBeenCalledWith('approval-1', 'system');
+        expect(thread.post).toHaveBeenCalledWith('Approved.');
+    });
+
+    it('does not approve button actions without actor identity', async () => {
+        const { getBot } = await import('../index');
+        await getBot();
+        const actionHandler = onAction.mock.calls[0]?.[0];
+        const thread = { post: vi.fn() };
+
+        await actionHandler({
+            actionId: 'yula_approve',
+            value: 'approval-1',
+            thread,
+        });
+
+        expect(approveRequest).not.toHaveBeenCalled();
+        expect(thread.post).toHaveBeenCalledWith('Approval action failed.');
     });
 });
