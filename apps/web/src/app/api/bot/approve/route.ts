@@ -125,18 +125,29 @@ export async function POST(request: Request) {
         if (!id) {
             // Legacy fallback for old cards. New approval surfaces must send approvalId so
             // decisions are tied to a single approval row, not a potentially reused commit hash.
-            const approval = await convex.query(api.approvals.getByCommitHash, {
-                service_secret: serviceSecret,
-                commit_hash: commitHash!,
-            });
+            const approvalResolution = await convex.query(
+                api.approvals.resolvePendingByCommitHash,
+                {
+                    service_secret: serviceSecret,
+                    commit_hash: commitHash!,
+                }
+            );
 
-            if (!approval) {
+            if (approvalResolution.outcome === 'not_found') {
                 return NextResponse.json(
                     { error: 'Approval not found for this commit hash' },
                     { status: 404 }
                 );
             }
-            id = approval._id;
+            if (approvalResolution.outcome === 'ambiguous') {
+                return NextResponse.json(
+                    {
+                        error: 'Multiple pending approvals found for this commit hash; approvalId is required',
+                    },
+                    { status: 409 }
+                );
+            }
+            id = approvalResolution.approval._id;
         }
 
         const decision = await convex.mutation(api.approvals.decide, {

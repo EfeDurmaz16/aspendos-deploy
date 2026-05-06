@@ -40,12 +40,37 @@ export const getByCommitHash = query({
     args: { service_secret: v.string(), commit_hash: v.string() },
     handler: async (ctx, args) => {
         requireServiceSecret(args.service_secret);
-        return await ctx.db
+        const matches = await ctx.db
             .query('approvals')
             .withIndex('by_commit_hash_and_status', (q) =>
                 q.eq('commit_hash', args.commit_hash).eq('status', 'pending')
             )
-            .first();
+            .take(2);
+        if (matches.length > 1) {
+            throw new Error('Multiple pending approvals found for commit hash; use approval id');
+        }
+        return matches[0] ?? null;
+    },
+});
+
+export const resolvePendingByCommitHash = query({
+    args: { service_secret: v.string(), commit_hash: v.string() },
+    handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
+        const matches = await ctx.db
+            .query('approvals')
+            .withIndex('by_commit_hash_and_status', (q) =>
+                q.eq('commit_hash', args.commit_hash).eq('status', 'pending')
+            )
+            .take(2);
+
+        if (matches.length === 0) {
+            return { outcome: 'not_found' as const };
+        }
+        if (matches.length > 1) {
+            return { outcome: 'ambiguous' as const };
+        }
+        return { outcome: 'found' as const, approval: matches[0] };
     },
 });
 

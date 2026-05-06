@@ -5,6 +5,13 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const generateTextMock = vi.hoisted(() => vi.fn());
+
+vi.mock('ai', () => ({
+    generateText: generateTextMock,
+}));
+
 import {
     fastRoute,
     isGreeting,
@@ -167,6 +174,13 @@ describe('RouteDecision types', () => {
 describe('routeUserMessage', () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        generateTextMock.mockResolvedValue({
+            text: JSON.stringify({
+                type: 'direct_reply',
+                model: 'gpt-5-mini',
+                reason: 'Mocked deterministic router decision',
+            }),
+        });
     });
 
     it('should return a valid RouteDecision', async () => {

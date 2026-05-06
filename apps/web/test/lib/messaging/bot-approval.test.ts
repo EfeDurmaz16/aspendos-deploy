@@ -17,6 +17,7 @@ vi.mock('../../../../convex/_generated/api', () => ({
     api: {
         approvals: {
             getByCommitHash: 'approvals.getByCommitHash',
+            resolvePendingByCommitHash: 'approvals.resolvePendingByCommitHash',
             decide: 'approvals.decide',
         },
     },
@@ -151,8 +152,11 @@ describe('bot approval webhook', () => {
 
     it('supports legacy commit-hash approval callbacks', async () => {
         convexQuery.mockResolvedValueOnce({
-            _id: 'approval-1',
-            user_id: 'user-1',
+            outcome: 'found',
+            approval: {
+                _id: 'approval-1',
+                user_id: 'user-1',
+            },
         });
         convexMutation.mockResolvedValueOnce({
             outcome: 'updated',
@@ -198,8 +202,11 @@ describe('bot approval webhook', () => {
     it('signs the agent resume callback for first-time approvals', async () => {
         process.env.AGENT_RESUME_URL = 'https://agent.example/resume';
         convexQuery.mockResolvedValueOnce({
-            _id: 'approval-1',
-            user_id: 'user-1',
+            outcome: 'found',
+            approval: {
+                _id: 'approval-1',
+                user_id: 'user-1',
+            },
         });
         convexMutation.mockResolvedValueOnce({
             outcome: 'updated',
@@ -274,8 +281,11 @@ describe('bot approval webhook', () => {
     it('accepts idempotent approval replays without resuming the agent again', async () => {
         process.env.AGENT_RESUME_URL = 'https://agent.example/resume';
         convexQuery.mockResolvedValueOnce({
-            _id: 'approval-1',
-            user_id: 'user-1',
+            outcome: 'found',
+            approval: {
+                _id: 'approval-1',
+                user_id: 'user-1',
+            },
         });
         convexMutation.mockResolvedValueOnce({
             outcome: 'already_decided',
@@ -318,8 +328,11 @@ describe('bot approval webhook', () => {
     it('rejects conflicting approval replays without audit logging or resuming', async () => {
         process.env.AGENT_RESUME_URL = 'https://agent.example/resume';
         convexQuery.mockResolvedValueOnce({
-            _id: 'approval-1',
-            user_id: 'user-1',
+            outcome: 'found',
+            approval: {
+                _id: 'approval-1',
+                user_id: 'user-1',
+            },
         });
         convexMutation.mockResolvedValueOnce({
             outcome: 'already_decided',
@@ -349,8 +362,11 @@ describe('bot approval webhook', () => {
     it('rejects expired approvals without audit logging or resuming', async () => {
         process.env.AGENT_RESUME_URL = 'https://agent.example/resume';
         convexQuery.mockResolvedValueOnce({
-            _id: 'approval-1',
-            user_id: 'user-1',
+            outcome: 'found',
+            approval: {
+                _id: 'approval-1',
+                user_id: 'user-1',
+            },
         });
         convexMutation.mockResolvedValueOnce({
             outcome: 'expired',
@@ -373,6 +389,31 @@ describe('bot approval webhook', () => {
         expect(response.status).toBe(410);
         expect(convexMutation).toHaveBeenCalledTimes(1);
         expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('fails loud for ambiguous legacy commit-hash approval callbacks', async () => {
+        convexQuery.mockResolvedValueOnce({
+            outcome: 'ambiguous',
+        });
+
+        const { POST } = await import('../../../src/app/api/bot/approve/route');
+        const response = await POST(
+            signedRequest(
+                {
+                    commitHash: 'commit-1',
+                    action: 'approve',
+                    platform: 'slack',
+                    platformUserId: 'user-1',
+                },
+                'test-secret'
+            )
+        );
+
+        await expect(response.json()).resolves.toEqual({
+            error: 'Multiple pending approvals found for this commit hash; approvalId is required',
+        });
+        expect(response.status).toBe(409);
+        expect(convexMutation).not.toHaveBeenCalled();
     });
 });
 
