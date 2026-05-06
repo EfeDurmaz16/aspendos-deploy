@@ -20,12 +20,14 @@ WORKDIR /app
 
 # Install bun for faster package installation
 RUN npm install -g bun@1.3.4
+RUN apk add --no-cache python3 make g++
 
-# Copy package files for monorepo
+# Copy the monorepo workspace exactly as CI sees it.
 COPY package.json bun.lock* ./
 COPY apps/web/package.json ./apps/web/
-COPY packages/db/package.json ./packages/db/
-COPY packages/shared-types/package.json ./packages/shared-types/
+COPY packages/ ./packages/
+COPY services/api/ ./services/api/
+COPY services/eval/ ./services/eval/
 
 # Install dependencies
 RUN bun install --frozen-lockfile
