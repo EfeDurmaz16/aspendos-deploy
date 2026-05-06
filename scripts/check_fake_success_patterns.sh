@@ -21,4 +21,11 @@ if [[ -n "$SCHEDULED_TASK_STATUS_MATCHES" ]]; then
   exit 1
 fi
 
+API_PRISMA_FALLBACK_MATCHES="$(rg -n 'readFallbacks|createModelProxy|safe fallback values|Prisma compatibility shim' services/api/src/lib/prisma.ts || true)"
+if [[ -n "$API_PRISMA_FALLBACK_MATCHES" ]]; then
+  echo "$API_PRISMA_FALLBACK_MATCHES"
+  echo "[ERROR] API Prisma compatibility fallback stubs are forbidden; use @aspendos/db directly." >&2
+  exit 1
+fi
+
 echo "[INFO] Fake success pattern check passed."
