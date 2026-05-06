@@ -109,6 +109,47 @@ describe('bot approval webhook', () => {
     });
 
     it('applies valid signed approvals through Convex', async () => {
+        convexMutation.mockResolvedValueOnce({
+            outcome: 'updated',
+            status: 'approved',
+            commit_hash: 'commit-1',
+        });
+
+        const { POST } = await import('../../../src/app/api/bot/approve/route');
+        const response = await POST(
+            signedRequest(
+                {
+                    approvalId: 'approval-1',
+                    action: 'approve',
+                    platform: 'slack',
+                    platformUserId: 'user-1',
+                },
+                'test-secret'
+            )
+        );
+
+        await expect(response.json()).resolves.toMatchObject({
+            success: true,
+            action: 'approve',
+            approvalId: 'approval-1',
+            commitHash: 'commit-1',
+        });
+        expect(response.status).toBe(200);
+        expect(convexQuery).not.toHaveBeenCalled();
+        expect(convexMutation).toHaveBeenCalledTimes(1);
+        expect(convexMutation.mock.calls[0]?.[1]).toEqual({
+            service_secret: 'convex-service-secret',
+            id: 'approval-1',
+            action: 'approve',
+            now: Date.now(),
+            audit: {
+                platform: 'slack',
+                platform_user_id: 'user-1',
+            },
+        });
+    });
+
+    it('supports legacy commit-hash approval callbacks', async () => {
         convexQuery.mockResolvedValueOnce({
             _id: 'approval-1',
             user_id: 'user-1',
@@ -182,7 +223,7 @@ describe('bot approval webhook', () => {
         expect(fetch).toHaveBeenCalledOnce();
         const [url, init] = (fetch as any).mock.calls[0];
         expect(url).toBe('https://agent.example/resume');
-        expect(init.body).toBe(JSON.stringify({ commitHash: 'commit-1' }));
+        expect(init.body).toBe(JSON.stringify({ approvalId: 'approval-1', commitHash: 'commit-1' }));
         expect(init.headers['x-yula-timestamp']).toBe(Date.now().toString());
         const expectedSignature = createHmac('sha256', 'test-secret')
             .update(`${Date.now()}.${init.body}`)

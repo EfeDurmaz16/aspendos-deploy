@@ -51,8 +51,15 @@ export interface DiscordMessage {
 // ============================================
 
 export function buildDiscordApprovalMessage(payload: ApprovalPayload): DiscordMessage {
-    const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
-        payload;
+    const {
+        approvalId,
+        commitHash,
+        toolName,
+        humanExplanation,
+        reversibilityClass,
+        badgeLabel,
+        expiresAt,
+    } = payload;
     const emoji = BADGE_EMOJI[reversibilityClass] || '?';
     const color = BADGE_HEX[reversibilityClass] || 0x808080;
 
@@ -83,13 +90,13 @@ export function buildDiscordApprovalMessage(payload: ApprovalPayload): DiscordMe
                         type: 2,
                         style: 3, // Success (green)
                         label: 'Approve',
-                        custom_id: `approve:${commitHash}`,
+                        custom_id: `approve:${approvalId}`,
                     },
                     {
                         type: 2,
                         style: 4, // Danger (red)
                         label: 'Reject',
-                        custom_id: `reject:${commitHash}`,
+                        custom_id: `reject:${approvalId}`,
                     },
                 ],
             },
@@ -151,11 +158,11 @@ export interface DiscordInteraction {
 
 export function parseInteractionCustomId(customId: string): {
     action: 'approve' | 'reject';
-    commitHash: string;
+    approvalId: string;
 } | null {
-    const [action, commitHash] = customId.split(':');
-    if ((action === 'approve' || action === 'reject') && commitHash) {
-        return { action, commitHash };
+    const [action, approvalId] = customId.split(':');
+    if ((action === 'approve' || action === 'reject') && approvalId) {
+        return { action, approvalId };
     }
     return null;
 }

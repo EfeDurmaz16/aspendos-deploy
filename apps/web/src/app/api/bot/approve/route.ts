@@ -2,13 +2,15 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getConvexServer } from '@/lib/convex-server';
 import { api } from '../../../../../../../convex/_generated/api';
+import type { Id } from '../../../../../../../convex/_generated/dataModel';
 
 const SIGNATURE_HEADER = 'x-yula-signature';
 const TIMESTAMP_HEADER = 'x-yula-timestamp';
 const SIGNATURE_TOLERANCE_MS = 5 * 60 * 1000;
 
 interface ApproveRequest {
-    commitHash: string;
+    approvalId?: string;
+    commitHash?: string;
     action: 'approve' | 'reject';
     platform: string;
     platformUserId: string;
@@ -100,11 +102,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
         }
 
-        const { commitHash, action, platform, platformUserId } = body;
+        const { approvalId, commitHash, action, platform, platformUserId } = body;
 
-        if (!commitHash || !action || !platform || !platformUserId) {
+        if ((!approvalId && !commitHash) || !action || !platform || !platformUserId) {
             return NextResponse.json(
-                { error: 'Missing commitHash, action, platform, or platformUserId' },
+                { error: 'Missing approvalId or commitHash, action, platform, or platformUserId' },
                 { status: 400 }
             );
         }
@@ -116,24 +118,30 @@ export async function POST(request: Request) {
             );
         }
 
-        // Look up the approval record by commit hash
         const serviceSecret = getConvexServiceSecret();
         const convex = getConvexServer();
-        const approval = await convex.query(api.approvals.getByCommitHash, {
-            service_secret: serviceSecret,
-            commit_hash: commitHash,
-        });
+        let id = approvalId as Id<'approvals'> | undefined;
 
-        if (!approval) {
-            return NextResponse.json(
-                { error: 'Approval not found for this commit hash' },
-                { status: 404 }
-            );
+        if (!id) {
+            // Legacy fallback for old cards. New approval surfaces must send approvalId so
+            // decisions are tied to a single approval row, not a potentially reused commit hash.
+            const approval = await convex.query(api.approvals.getByCommitHash, {
+                service_secret: serviceSecret,
+                commit_hash: commitHash!,
+            });
+
+            if (!approval) {
+                return NextResponse.json(
+                    { error: 'Approval not found for this commit hash' },
+                    { status: 404 }
+                );
+            }
+            id = approval._id;
         }
 
         const decision = await convex.mutation(api.approvals.decide, {
             service_secret: serviceSecret,
-            id: approval._id,
+            id,
             action,
             now: Date.now(),
             audit: {
@@ -160,12 +168,17 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Approval has expired' }, { status: 410 });
         }
 
+        const resolvedCommitHash = decision.commit_hash ?? commitHash;
         if (
             action === 'approve' &&
             process.env.AGENT_RESUME_URL &&
+            resolvedCommitHash &&
             decision.outcome !== 'already_decided'
         ) {
-            fetch(process.env.AGENT_RESUME_URL, signedJsonRequestInit({ commitHash })).catch(() => {
+            fetch(
+                process.env.AGENT_RESUME_URL,
+                signedJsonRequestInit({ approvalId: id, commitHash: resolvedCommitHash })
+            ).catch(() => {
                 // Non-critical: agent will poll for approval status
             });
         }
@@ -173,7 +186,8 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             action,
-            commitHash,
+            approvalId: id,
+            ...(resolvedCommitHash ? { commitHash: resolvedCommitHash } : {}),
             idempotent: decision.outcome === 'already_decided',
         });
     } catch (error) {

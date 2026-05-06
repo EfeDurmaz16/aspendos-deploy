@@ -24,6 +24,7 @@ export interface IncomingMessage {
 }
 
 export interface ApprovalPayload {
+    approvalId: string;
     commitHash: string;
     toolName: string;
     args: unknown;
@@ -35,6 +36,7 @@ export interface ApprovalPayload {
 
 export interface ApprovalCallbackEvent {
     platform: Platform;
+    approvalId: string;
     commitHash: string;
     action: 'approve' | 'reject';
     platformUserId: string;

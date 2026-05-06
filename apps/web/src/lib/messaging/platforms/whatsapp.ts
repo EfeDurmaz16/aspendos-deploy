@@ -64,8 +64,15 @@ export function buildWhatsAppApprovalMessage(
     to: string,
     payload: ApprovalPayload
 ): WhatsAppInteractiveMessage {
-    const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
-        payload;
+    const {
+        approvalId,
+        commitHash,
+        toolName,
+        humanExplanation,
+        reversibilityClass,
+        badgeLabel,
+        expiresAt,
+    } = payload;
     const emoji = BADGE_EMOJI[reversibilityClass] || '?';
 
     const bodyLines = [
@@ -100,11 +107,11 @@ export function buildWhatsAppApprovalMessage(
                 buttons: [
                     {
                         type: 'reply',
-                        reply: { id: `approve:${commitHash}`, title: 'Approve' },
+                        reply: { id: `approve:${approvalId}`, title: 'Approve' },
                     },
                     {
                         type: 'reply',
-                        reply: { id: `reject:${commitHash}`, title: 'Reject' },
+                        reply: { id: `reject:${approvalId}`, title: 'Reject' },
                     },
                 ],
             },
@@ -169,7 +176,7 @@ export async function sendWhatsAppMessage(
 
 export interface WhatsAppButtonReply {
     action: 'approve' | 'reject';
-    commitHash: string;
+    approvalId: string;
 }
 
 /**
@@ -177,9 +184,9 @@ export interface WhatsAppButtonReply {
  * WhatsApp sends button replies as interactive.button_reply.id
  */
 export function parseButtonReply(buttonId: string): WhatsAppButtonReply | null {
-    const [action, commitHash] = buttonId.split(':');
-    if ((action === 'approve' || action === 'reject') && commitHash) {
-        return { action, commitHash };
+    const [action, approvalId] = buttonId.split(':');
+    if ((action === 'approve' || action === 'reject') && approvalId) {
+        return { action, approvalId };
     }
     return null;
 }

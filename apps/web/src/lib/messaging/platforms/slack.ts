@@ -30,8 +30,15 @@ export function buildSlackApprovalBlocks(
     payload: ApprovalPayload,
     _callbackUrl: string
 ): SlackBlock[] {
-    const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
-        payload;
+    const {
+        approvalId,
+        commitHash,
+        toolName,
+        humanExplanation,
+        reversibilityClass,
+        badgeLabel,
+        expiresAt,
+    } = payload;
     const emoji = BADGE_EMOJI[reversibilityClass] || '?';
 
     const blocks: SlackBlock[] = [
@@ -62,21 +69,21 @@ export function buildSlackApprovalBlocks(
         },
         {
             type: 'actions',
-            block_id: `approval_${commitHash}`,
+            block_id: `approval_${approvalId}`,
             elements: [
                 {
                     type: 'button',
                     text: { type: 'plain_text', text: 'Approve', emoji: true },
                     style: 'primary',
                     action_id: 'approve',
-                    value: commitHash,
+                    value: approvalId,
                 },
                 {
                     type: 'button',
                     text: { type: 'plain_text', text: 'Reject', emoji: true },
                     style: 'danger',
                     action_id: 'reject',
-                    value: commitHash,
+                    value: approvalId,
                 },
             ],
         },

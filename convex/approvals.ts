@@ -42,7 +42,9 @@ export const getByCommitHash = query({
         requireServiceSecret(args.service_secret);
         return await ctx.db
             .query('approvals')
-            .withIndex('by_commit_hash', (q) => q.eq('commit_hash', args.commit_hash))
+            .withIndex('by_commit_hash_and_status', (q) =>
+                q.eq('commit_hash', args.commit_hash).eq('status', 'pending')
+            )
             .first();
     },
 });
@@ -141,12 +143,17 @@ export const decide = mutation({
                 outcome: 'already_decided' as const,
                 status: approval.status,
                 idempotent,
+                commit_hash: approval.commit_hash,
             };
         }
 
         if (approval.expires_at < args.now) {
             await ctx.db.patch(args.id, { status: 'expired' });
-            return { outcome: 'expired' as const, status: 'expired' as const };
+            return {
+                outcome: 'expired' as const,
+                status: 'expired' as const,
+                commit_hash: approval.commit_hash,
+            };
         }
 
         await ctx.db.patch(args.id, { status: requestedStatus });
@@ -166,7 +173,11 @@ export const decide = mutation({
                 timestamp: args.now,
             });
         }
-        return { outcome: 'updated' as const, status: requestedStatus };
+        return {
+            outcome: 'updated' as const,
+            status: requestedStatus,
+            commit_hash: approval.commit_hash,
+        };
     },
 });
 

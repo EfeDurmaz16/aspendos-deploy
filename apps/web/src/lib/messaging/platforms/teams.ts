@@ -50,8 +50,15 @@ export function buildTeamsApprovalCard(
     payload: ApprovalPayload,
     callbackUrl: string
 ): AdaptiveCard {
-    const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
-        payload;
+    const {
+        approvalId,
+        commitHash,
+        toolName,
+        humanExplanation,
+        reversibilityClass,
+        badgeLabel,
+        expiresAt,
+    } = payload;
     const emoji = BADGE_EMOJI[reversibilityClass] || '?';
 
     const facts = [
@@ -89,13 +96,13 @@ export function buildTeamsApprovalCard(
             {
                 type: 'Action.Submit',
                 title: 'Approve',
-                data: { action: 'approve', commitHash, callbackUrl },
+                data: { action: 'approve', approvalId, commitHash, callbackUrl },
                 style: 'positive',
             },
             {
                 type: 'Action.Submit',
                 title: 'Reject',
-                data: { action: 'reject', commitHash, callbackUrl },
+                data: { action: 'reject', approvalId, commitHash, callbackUrl },
                 style: 'destructive',
             },
         ],

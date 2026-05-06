@@ -124,13 +124,13 @@ function registerActionHandlers(bot: any): void {
 }
 
 export async function submitApprovalAction(event: any, action: 'approve' | 'reject') {
-    const commitHash = event.action?.value;
-    if (!commitHash) return;
+    const approvalId = event.action?.value;
+    if (!approvalId) return;
 
     const actionPastTense = action === 'approve' ? 'Approved' : 'Rejected';
     try {
         const approvalRequest = buildApprovalRequest({
-            commitHash,
+            approvalId,
             action,
             platform: detectPlatform(event),
             platformUserId: event.user?.id || 'unknown',
@@ -163,7 +163,7 @@ async function approvalErrorMessage(response: Response) {
 }
 
 function buildApprovalRequest(payload: {
-    commitHash: string;
+    approvalId: string;
     action: 'approve' | 'reject';
     platform: string;
     platformUserId: string;
@@ -263,8 +263,15 @@ const BADGE_EMOJI: Record<string, string> = {
 };
 
 export async function postApprovalCard(thread: any, payload: ApprovalPayload): Promise<void> {
-    const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
-        payload;
+    const {
+        approvalId,
+        commitHash,
+        toolName,
+        humanExplanation,
+        reversibilityClass,
+        badgeLabel,
+        expiresAt,
+    } = payload;
 
     const badgeEmoji = BADGE_EMOJI[reversibilityClass] || '?';
 
@@ -282,9 +289,9 @@ export async function postApprovalCard(thread: any, payload: ApprovalPayload): P
                         id: 'approve',
                         label: 'Approve',
                         style: 'primary',
-                        value: commitHash,
+                        value: approvalId,
                     }),
-                    Button({ id: 'reject', label: 'Reject', style: 'danger', value: commitHash }),
+                    Button({ id: 'reject', label: 'Reject', style: 'danger', value: approvalId }),
                 ]),
             ],
         })
