@@ -4,12 +4,17 @@
 FROM oven/bun:1.3.4 AS builder
 WORKDIR /app
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy the monorepo workspace exactly as CI sees it. Railway selects this
 # root Dockerfile, so it must fail on dependency, workspace, or Prisma drift.
 COPY package.json bun.lock ./
-RUN bun -e 'const fs = require("node:fs"); const pkg = JSON.parse(fs.readFileSync("package.json", "utf8")); pkg.workspaces = ["services/api", "packages/*"]; fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");'
+COPY apps/web/ ./apps/web/
 COPY packages/ ./packages/
 COPY services/api/ ./services/api/
+COPY services/eval/ ./services/eval/
 
 # Install deps with the committed lockfile.
 RUN bun install --frozen-lockfile
