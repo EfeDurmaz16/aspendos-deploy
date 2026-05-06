@@ -150,6 +150,8 @@ jobs:
       - run: docker build -f Dockerfile -t aspendos-api-railway:ci .
       - run: docker build -f services/api/Dockerfile -t aspendos-api:ci .
       - run: docker build -f apps/web/Dockerfile -t aspendos-web:ci .
+      - run: docker build -f infra/docker/Dockerfile.api -t aspendos-infra-api:ci .
+      - run: docker build -f infra/docker/Dockerfile.web -t aspendos-infra-web:ci .
 
   convex-typecheck:
     name: Convex Typecheck

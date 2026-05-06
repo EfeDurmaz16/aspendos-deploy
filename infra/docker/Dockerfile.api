@@ -1,28 +1,39 @@
-FROM oven/bun:1.1 AS base
+# Yula OS API Service Dockerfile
+# Infra profile image; keep aligned with services/api/Dockerfile.
+
+FROM oven/bun:1.3.4 AS builder
 WORKDIR /app
 
-FROM base AS deps
 COPY package.json bun.lock ./
-COPY services/api/package.json services/api/
-COPY packages/shared-types/package.json packages/shared-types/
-COPY packages/aspendos-core/package.json packages/aspendos-core/
-COPY packages/fides-sdk/package.json packages/fides-sdk/
-COPY packages/agit-sdk/package.json packages/agit-sdk/
-RUN bun install --frozen-lockfile --production
+COPY packages/db/package.json ./packages/db/
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY services/api/package.json ./services/api/
 
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN bun run --cwd services/api build
+RUN bun install --frozen-lockfile
 
-FROM base AS runner
+COPY packages/ ./packages/
+COPY services/api/ ./services/api/
+
+RUN cd packages/db && bun run db:generate
+RUN cd services/api && bun run build
+
+FROM oven/bun:1.3.4-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/services/api/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+ENV PORT=8080
 
-RUN adduser --system --uid 1001 api
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 api
+
+COPY --from=builder --chown=api:nodejs /app/services/api/package.json ./
+COPY --from=builder --chown=api:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=api:nodejs /app/packages ./packages
+COPY --from=builder --chown=api:nodejs /app/services/api/dist ./dist
+
 USER api
-EXPOSE 8787
-ENV PORT=8787
-CMD ["bun", "dist/index.js"]
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD bun -e "fetch('http://localhost:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+
+CMD ["bun", "run", "start"]
