@@ -1,239 +1,166 @@
 # YULA OS Deployment Guide
 
-> Production deployment guide for yula.dev
+> Production deployment guidance for the deterministic/provable agent OS spine.
 
-## Overview
+## Deployment Principle
 
-YULA OS is deployed as a monorepo with the following services:
+Do not deploy a build that can silently skip governance, signing, commit, approval, or verification paths.
 
-| Service | Platform | URL |
-|---------|----------|-----|
-| Web App | Vercel | https://yula.dev |
-| API | Railway | https://api.yula.dev |
-| Database | Railway (PostgreSQL) | Internal |
-| Vector Store | Qdrant Cloud | Internal |
+The production deployment must preserve this invariant:
 
-## Prerequisites
-
-- Node.js 20+
-- Bun 1.1.0+
-- Vercel CLI (`npm i -g vercel`)
-- Access to required secrets
-
-## Environment Variables
-
-### Web App (Vercel)
-
-```bash
-# AI Providers (Required)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-GROQ_API_KEY=gsk_...
-
-# API Connection
-NEXT_PUBLIC_API_URL=https://api.yula.dev
-
-# Auth
-BETTER_AUTH_SECRET=<32+ character secret>
-BETTER_AUTH_URL=https://yula.dev
-
-# Billing (Polar)
-POLAR_ACCESS_TOKEN=...
-POLAR_WEBHOOK_SECRET=...
-NEXT_PUBLIC_POLAR_ENV=production
-
-# Sentry (Optional)
-SENTRY_AUTH_TOKEN=...
-NEXT_PUBLIC_SENTRY_DSN=...
+```text
+classify -> FIDES sign -> AGIT/Convex pre-commit -> decision -> execute/await/block -> post-commit -> verify
 ```
 
-### API Service (Railway)
+## Services
+
+| Surface | Role |
+| --- | --- |
+| `apps/web` | Next.js app for chat, approvals, timeline, undo, verify, and user-facing agent control. |
+| `services/api` | Hono/Bun API for deterministic tool execution, guard chain, messaging, sandbox, and public audit routes. |
+| `convex` | Governance store for commits, approvals, snapshots, action logs, registry, and allowlists. |
+| `packages/aspendos-core` | Deterministic flow tests and reusable core primitives. |
+
+## Required Release Verification
+
+Run these before production deployment:
 
 ```bash
-# Database
+bun install
+bun run check
+bun run build
+bun run test:core
+bun run test:api
+bun run test:web
+bun run convex:typecheck
+bun run release:ready
+```
+
+`release:ready` is the final local gate. It checks duplicate artifacts, Prisma generation, migration readiness when required, Convex query bounds, service-secret posture, critical API tests, core deterministic flow tests, API build, web build/typecheck, and Convex typecheck.
+
+Do not bypass failing checks with `continue-on-error`.
+
+## Required Environment
+
+Minimum production-critical secrets:
+
+```bash
+# Convex governance
+NEXT_PUBLIC_CONVEX_URL=https://<project>.convex.cloud
+CONVEX_SERVICE_SECRET=<strong shared service secret>
+
+# Bot and approval callbacks
+BOT_APPROVAL_WEBHOOK_SECRET=<hmac secret>
+
+# Database-backed paths and release migration checks
 DATABASE_URL=postgresql://...
 
-# Auth
-JWT_SECRET=<32+ character secret>
-BETTER_AUTH_SECRET=<same as web>
+# Web app auth/session
+BETTER_AUTH_SECRET=<32+ chars>
+BETTER_AUTH_URL=https://yula.dev
 
-# Vector Store
-QDRANT_URL=https://...qdrant.io:6333
-QDRANT_API_KEY=...
+# Billing/webhooks if billing is enabled
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
-# AI Providers
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+# AI Gateway / providers
+AI_GATEWAY_API_KEY=...
+
+# Cloud tools when enabled
+STEEL_API_KEY=...
+E2B_API_KEY=...
+DAYTONA_API_KEY=...
 ```
+
+Provider-specific messaging, rate-limit, WorkOS, Sentry, and deployment platform secrets should be configured only for the surfaces that use them. See `.env.example` for the broad local inventory.
+
+## Pre-Deploy Checklist
+
+- [ ] `git status --short` is clean except intended release metadata.
+- [ ] `bun run release:ready` passes in an environment with release-critical secrets.
+- [ ] Convex typecheck passes and query bounds guard is green.
+- [ ] `CONVEX_SERVICE_SECRET` is set for API/web server-only Convex calls.
+- [ ] `BOT_APPROVAL_WEBHOOK_SECRET` is set anywhere approval callbacks are accepted.
+- [ ] `STRIPE_WEBHOOK_SECRET` is set if Stripe webhooks are reachable.
+- [ ] `DATABASE_URL` is set for release migration readiness.
+- [ ] No production path relies on local-only FIDES/AGIT/Prisma fallback behavior.
+- [ ] Browser and sandbox tools require owner/session context before cloud session creation.
 
 ## Deployment Steps
 
-### 1. Initial Setup
+1. Install dependencies:
 
 ```bash
-# Clone repository
-git clone https://github.com/your-org/aspendos.git
-cd aspendos
-
-# Install dependencies
 bun install
-
-# Generate Prisma client
-bun db:generate
 ```
 
-### 2. Vercel Setup
+2. Verify release:
 
 ```bash
-# Login to Vercel
-vercel login
-
-# Link project (first time only)
-vercel link
-
-# Set environment variables
-vercel env add OPENAI_API_KEY
-vercel env add ANTHROPIC_API_KEY
-vercel env add GROQ_API_KEY
-# ... add all required env vars
+bun run release:ready
 ```
 
-### 3. Deploy to Production
+3. Deploy web app using the configured Vercel project or equivalent platform for `apps/web`.
+
+4. Deploy API using the configured Bun-compatible service target for `services/api`.
+
+5. Deploy Convex functions with the matching project environment.
+
+6. Run smoke checks against production URLs:
 
 ```bash
-# Deploy web app
-cd apps/web
-vercel --prod
-
-# Or use GitHub integration (recommended)
-# Push to main branch triggers automatic deployment
+curl -fsS https://yula.dev/api/health
+curl -fsS https://api.yula.dev/health
 ```
 
-### 4. Verify Deployment
+7. Verify one known governance commit hash through the public verify route after a staging or production action:
 
 ```bash
-# Check health endpoint
-curl https://yula.dev/api/health
-
-# Expected response:
-# {"status":"healthy","timestamp":"...","uptime":...,"environment":"production"}
+curl -fsS https://api.yula.dev/audit/verify/<commit-hash>
 ```
 
-## CI/CD Pipeline
+## Rollback
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) handles:
+Rollback must consider both application deployment and governance schema compatibility.
 
-1. **Lint & Type Check** - Runs on all PRs and pushes
-2. **Test** - Runs API and Web tests with PostgreSQL
-3. **Build** - Verifies production builds
-4. **Deploy Preview** - Deploys PR previews to Vercel
-5. **Deploy Production** - Deploys main branch to production
+1. Promote the previous known-good web deployment.
+2. Promote or redeploy the previous known-good API deployment.
+3. Do not roll back Convex schema/functions blindly if new commits were written with a newer verification payload shape.
+4. Re-run health and audit verification checks.
+5. If verification fails, block further agent execution until the mismatch is understood.
 
-### Required GitHub Secrets
+## Failure Policy
 
-```
-VERCEL_TOKEN          # Vercel API token
-VERCEL_ORG_ID         # Vercel organization ID
-VERCEL_PROJECT_ID     # Vercel project ID
-OPENAI_API_KEY        # For AI SDK tests
-ANTHROPIC_API_KEY     # For AI SDK tests
-GROQ_API_KEY          # For AI SDK tests
-```
+Treat these as deployment blockers:
+
+- release readiness failure in CI/release mode
+- missing Convex service secret
+- missing webhook HMAC secret for enabled approval callbacks
+- unsigned production governance commits
+- unavailable audit verification service
+- tool execution path that can bypass guard chain or approval gate
+- cloud browser/sandbox session creation without owner context
+- database migration readiness failure when `DATABASE_URL` is required
+
+Treat these as local-development warnings only:
+
+- missing `DATABASE_URL` during local `release:ready`
+- missing `CONVEX_SERVICE_SECRET` during local-only verification
+- missing Stripe webhook secret when billing webhooks are intentionally disabled locally
 
 ## Monitoring
 
-### Health Checks
+Monitor:
 
-- **Endpoint**: `GET /api/health`
-- **Expected Status**: 200
-- **Response**: JSON with status, timestamp, uptime
+- web/API health endpoints
+- approval webhook signature failures
+- replay/idempotency conflicts
+- Convex governance commit failures
+- audit verification failures
+- blocked irreversible tool attempts
+- browser/sandbox owner-context failures
+- release gate drift between local and CI
 
-### Vercel Analytics
+## Current Product Frame
 
-Vercel provides built-in analytics for:
-- Core Web Vitals
-- Request volume
-- Error rates
-- Edge function performance
-
-### Sentry Integration
-
-Error tracking and performance monitoring via Sentry:
-- Automatic error capture
-- Performance tracing
-- Release tracking
-
-## Rollback Procedure
-
-### Via Vercel Dashboard
-
-1. Go to Vercel Dashboard → Project → Deployments
-2. Find the previous working deployment
-3. Click "..." → "Promote to Production"
-
-### Via CLI
-
-```bash
-# List deployments
-vercel ls
-
-# Promote specific deployment
-vercel promote <deployment-url>
-```
-
-## Database Migrations
-
-```bash
-# Generate migration
-cd packages/db
-bunx prisma migrate dev --name <migration-name>
-
-# Apply to production (be careful!)
-bunx prisma migrate deploy
-```
-
-## Troubleshooting
-
-### Build Failures
-
-1. Check environment variables are set in Vercel
-2. Run `bun run build` locally to reproduce
-3. Check for TypeScript errors: `bun run typecheck`
-
-### AI SDK Errors
-
-1. Verify API keys are valid and have credits
-2. Check rate limits on provider dashboards
-3. Review Vercel function logs
-
-### Memory/Qdrant Issues
-
-1. Verify Qdrant cluster is healthy
-2. Check QDRANT_URL and QDRANT_API_KEY
-3. Test connection: `curl $QDRANT_URL/health`
-
-### Auth Issues
-
-1. Ensure BETTER_AUTH_SECRET matches across services
-2. Verify BETTER_AUTH_URL is correct for environment
-3. Check session cookie domain settings
-
-## Security Checklist
-
-- [ ] All secrets stored in Vercel/Railway env vars
-- [ ] No secrets committed to repository
-- [ ] HTTPS enforced on all endpoints
-- [ ] CSP headers configured
-- [ ] Rate limiting enabled
-- [ ] Auth tokens have appropriate expiry
-- [ ] Database has connection limits
-
-## Support
-
-- **Documentation**: This file + CLAUDE.md
-- **Issues**: GitHub Issues
-- **Logs**: Vercel Dashboard → Functions → Logs
-
----
-
-*YULA OS - Your Universal Learning Assistant*
+YULA is not deployed as "Your Universal Learning Assistant." The deployed product should be framed as a deterministic control layer for provable agent actions.
