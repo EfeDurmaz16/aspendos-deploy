@@ -105,9 +105,8 @@ export function CompareIndexPage({ competitors }: CompareIndexPageProps) {
                 <section className="mt-16 text-center py-12 px-6 rounded-2xl bg-primary/5 border border-primary/20">
                     <h2 className="text-2xl font-semibold mb-4">Why Yula is Different</h2>
                     <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                        Yula is the only AI platform that combines multi-model access with
-                        persistent semantic memory, history import from ChatGPT/Claude, and
-                        proactive AI callbacks.
+                        Yula combines model-agnostic execution with signed action payloads, approval
+                        gates, persistent audit commits, and reversibility classes.
                     </p>
                     <Button size="lg" asChild>
                         <a href="/signup" className="gap-2">

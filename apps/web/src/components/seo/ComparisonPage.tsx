@@ -149,9 +149,9 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-muted-foreground">
-                                    Unified AI platform with access to 12+ models including{' '}
-                                    {competitor.name}, persistent semantic memory, ChatGPT/Claude
-                                    import, and proactive AI callbacks.
+                                    Deterministic AI agent platform with model-agnostic execution,
+                                    signed action payloads, approval gates, persistent audit
+                                    commits, and reversibility classes.
                                 </p>
                             </CardContent>
                         </Card>

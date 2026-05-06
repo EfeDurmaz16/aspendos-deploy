@@ -2,9 +2,9 @@ export default {
     // Welcome step
     welcome: {
         title: 'Welcome to YULA',
-        subtitle: 'Your Universal Learning Assistant',
+        subtitle: 'Deterministic agents that prove what they did',
         description:
-            "YULA isn't just another chatbot. It's an AI operating system that remembers, anticipates, and grows with you.",
+            'YULA signs, checks, logs, and reverses agent actions so you can trust it with real work.',
         startTour: 'Start the Tour',
         skipTour: 'Skip and explore on my own',
     },
