@@ -183,7 +183,6 @@ export const signAndCommit = mutation({
         human_explanation: v.optional(v.string()),
         fides_signature: v.optional(v.string()),
         fides_signer_did: v.optional(v.string()),
-        allow_convex_hmac_fallback: v.optional(v.boolean()),
         status: v.optional(
             v.union(
                 v.literal('pending'),
@@ -199,10 +198,9 @@ export const signAndCommit = mutation({
         const now = Date.now();
         const status = args.status ?? 'pending';
 
-        // 1. Resolve the user's fides_did (agent DID secret for HMAC)
+        // 1. Verify the user exists before appending to their chain.
         const user = await ctx.db.get(args.user_id);
         if (!user) throw new Error('User not found');
-        const agentDid = user.fides_did ?? `did:yula:agent:${args.user_id}`;
 
         // 2. Find the latest commit for this user to form the parent link
         const latestCommit = await ctx.db
@@ -217,30 +215,26 @@ export const signAndCommit = mutation({
             throw new Error('Both fides_signature and fides_signer_did are required together');
         }
 
-        // 3. Bind a FIDES authority signature to the commit. API callers pass
-        // a real SDK signature; Convex HMAC is kept only as an explicitly
-        // requested local fallback for direct Convex callers.
-        const signaturePayload = canonicalJson(
-            fidesSignaturePayload({
-                args: args.args,
-                result: args.result,
-                reversibility_class: args.reversibility_class,
-                status,
-                tool_name: args.tool_name,
-            })
-        );
+        // 3. Bind a verified external FIDES authority signature to the commit.
         const hasExternalFidesSignature = !!args.fides_signature && !!args.fides_signer_did;
-        if (!hasExternalFidesSignature && args.allow_convex_hmac_fallback !== true) {
-            throw new Error(
-                'External FIDES signature is required unless allow_convex_hmac_fallback=true'
-            );
+        if (!hasExternalFidesSignature) {
+            throw new Error('External FIDES signature is required');
         }
-        const fidesSignature =
-            args.fides_signature ?? (await hmacSha256(agentDid, signaturePayload));
-        const fidesSignerDid = args.fides_signer_did ?? agentDid;
-        const fidesSignatureSource = hasExternalFidesSignature
-            ? 'external'
-            : 'convex_hmac_fallback';
+        const externalSignatureValid = await verifyExternalFidesSignature({
+            args: args.args,
+            fides_signature: args.fides_signature!,
+            fides_signer_did: args.fides_signer_did!,
+            result: args.result,
+            reversibility_class: args.reversibility_class,
+            status,
+            tool_name: args.tool_name,
+        });
+        if (!externalSignatureValid) {
+            throw new Error('Invalid external FIDES signature');
+        }
+        const fidesSignature = args.fides_signature!;
+        const fidesSignerDid = args.fides_signer_did!;
+        const fidesSignatureSource = 'external';
 
         // 4. Build AGIT commit hash from the same canonical payload the
         // FIDES signature covers, so status/result mutations invalidate it.
@@ -315,7 +309,7 @@ export const signAndCommit = mutation({
             commitId,
             commitHash,
             fidesSignature,
-            fidesDid: agentDid,
+            fidesDid: fidesSignerDid,
             parentHash,
             status,
         };
