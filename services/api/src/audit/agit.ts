@@ -10,8 +10,12 @@ interface CommitRecord {
     hash: string;
     did: string;
     parentHash?: string | null;
+    rollbackStrategy?: ReversibilityMetadata['rollback_strategy'];
     signature: string;
     timestamp: number;
+    toolName?: string;
+    reversibilityClass?: ReversibilityMetadata['reversibility_class'];
+    humanExplanation?: string;
 }
 
 interface AgitCommitOptions {
@@ -99,7 +103,11 @@ export class AgitService {
                     metadata: {
                         fidesDid: opts.fidesDid,
                         fidesSignature: opts.fidesSignature,
+                        humanExplanation: opts.metadata.human_explanation,
                         parentHash: opts.parentHash ?? null,
+                        reversibilityClass: opts.metadata.reversibility_class,
+                        rollbackStrategy: opts.metadata.rollback_strategy,
+                        toolName: opts.toolName,
                         type: opts.type,
                         userId: opts.userId,
                     },
@@ -108,8 +116,12 @@ export class AgitService {
                     hash,
                     did: opts.fidesDid,
                     parentHash: opts.parentHash ?? null,
+                    rollbackStrategy: opts.metadata.rollback_strategy,
                     signature: opts.fidesSignature,
                     timestamp,
+                    toolName: opts.toolName,
+                    reversibilityClass: opts.metadata.reversibility_class,
+                    humanExplanation: opts.metadata.human_explanation,
                 };
             } catch (error) {
                 if (isProductionRuntime()) {
@@ -130,8 +142,12 @@ export class AgitService {
             hash,
             did: opts.fidesDid,
             parentHash: opts.parentHash ?? null,
+            rollbackStrategy: opts.metadata.rollback_strategy,
             signature: opts.fidesSignature,
             timestamp,
+            toolName: opts.toolName,
+            reversibilityClass: opts.metadata.reversibility_class,
+            humanExplanation: opts.metadata.human_explanation,
         };
         const history = this.localHistory.get(opts.userId) ?? [];
         history.unshift(record);
@@ -152,8 +168,12 @@ export class AgitService {
                         hash: l.hash,
                         did: l.metadata?.fidesDid ?? '',
                         parentHash: l.metadata?.parentHash ?? null,
+                        rollbackStrategy: l.metadata?.rollbackStrategy,
                         signature: l.metadata?.fidesSignature ?? '',
                         timestamp: l.timestamp ?? Date.now(),
+                        toolName: l.metadata?.toolName,
+                        reversibilityClass: l.metadata?.reversibilityClass,
+                        humanExplanation: l.metadata?.humanExplanation,
                     }));
             } catch (error) {
                 throw new Error(`AGIT log failed: ${String(error)}`);

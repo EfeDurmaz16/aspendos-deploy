@@ -162,6 +162,12 @@ describe('canonical governance primitives', () => {
         expect(first.timestamp).toBe(111);
         expect(second.timestamp).toBe(222);
         expect(second.hash).toBe(first.hash);
+        expect(first).toMatchObject({
+            toolName: 'file.write',
+            reversibilityClass: 'undoable',
+            rollbackStrategy: metadata.rollback_strategy,
+            humanExplanation: 'Test action',
+        });
     });
 
     it('refuses in-memory AGIT commits in production', async () => {
@@ -266,6 +272,9 @@ describe('canonical governance primitives', () => {
                     metadata: {
                         fidesDid: 'did:fides:other',
                         fidesSignature: 'sig-other',
+                        reversibilityClass: 'undoable',
+                        rollbackStrategy: metadata.rollback_strategy,
+                        toolName: 'file.write',
                         userId: 'user-2',
                     },
                     timestamp: 1,
@@ -275,6 +284,10 @@ describe('canonical governance primitives', () => {
                     metadata: {
                         fidesDid: 'did:fides:user-1',
                         fidesSignature: 'sig-user-1',
+                        humanExplanation: 'Write file',
+                        reversibilityClass: 'undoable',
+                        rollbackStrategy: metadata.rollback_strategy,
+                        toolName: 'file.write',
                         userId: 'user-1',
                     },
                     timestamp: 2,
@@ -287,8 +300,12 @@ describe('canonical governance primitives', () => {
                 hash: 'own-commit',
                 did: 'did:fides:user-1',
                 parentHash: null,
+                rollbackStrategy: metadata.rollback_strategy,
                 signature: 'sig-user-1',
                 timestamp: 2,
+                toolName: 'file.write',
+                reversibilityClass: 'undoable',
+                humanExplanation: 'Write file',
             },
         ]);
     });

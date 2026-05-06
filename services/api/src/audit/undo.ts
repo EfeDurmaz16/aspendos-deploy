@@ -19,25 +19,34 @@ export async function handleUndoCommand(userId: string): Promise<UndoResult> {
 
     const latest = history[0];
 
+    if (!latest.toolName || !latest.reversibilityClass || !latest.rollbackStrategy) {
+        return {
+            success: false,
+            message: 'Last action is missing rollback metadata and cannot be safely undone.',
+            commitHash: latest.hash,
+        };
+    }
+
     const ctx: ToolContext = {
         userId,
         commitHash: latest.hash,
     };
 
     const metadata: ReversibilityMetadata = {
-        reversibility_class: 'undoable',
+        reversibility_class: latest.reversibilityClass,
         approval_required: false,
-        rollback_strategy: { kind: 'snapshot_restore', snapshot_id: latest.hash },
-        human_explanation: 'Undo last action',
+        rollback_strategy: latest.rollbackStrategy,
+        human_explanation: latest.humanExplanation ?? 'Undo last action',
     };
 
-    const result = await dispatchReverse('file.write', metadata, ctx);
+    const result = await dispatchReverse(latest.toolName, metadata, ctx);
 
     if (result.success) {
         return {
             success: true,
             message: result.message,
             commitHash: latest.hash,
+            toolName: latest.toolName,
         };
     }
 
@@ -45,5 +54,6 @@ export async function handleUndoCommand(userId: string): Promise<UndoResult> {
         success: false,
         message: result.message,
         commitHash: latest.hash,
+        toolName: latest.toolName,
     };
 }
