@@ -19,6 +19,19 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+app.use('*', async (c, next) => {
+    if (process.env.NODE_ENV === 'production') {
+        return c.json(
+            {
+                error: 'Workspace API requires persistent storage and is disabled in production',
+                code: 'WORKSPACE_PERSISTENCE_UNAVAILABLE',
+            },
+            503
+        );
+    }
+    return next();
+});
+
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
 
