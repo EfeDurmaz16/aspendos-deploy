@@ -19,8 +19,10 @@ vi.mock('@aspendos/db', () => ({
             findUnique: vi.fn().mockResolvedValue({ banned: false }),
         },
         platformConnection: {
+            create: vi.fn(),
+            findUnique: vi.fn(),
             findMany: vi.fn(),
-            upsert: vi.fn(),
+            update: vi.fn(),
             updateMany: vi.fn(),
         },
     },
@@ -50,12 +52,28 @@ async function createApiKeyAuthenticatedTestApp() {
     return app;
 }
 
+async function createUserAuthenticatedTestApp() {
+    const { default: messagingRoutes } = await import('../messaging');
+    const app = new Hono();
+    app.use('*', async (c, next) => {
+        c.set('userId', 'test-user-1');
+        c.set('apiKeyId', null);
+        c.set('apiKeyPermissions', null);
+        return next();
+    });
+    app.route('/messaging', messagingRoutes);
+    return app;
+}
+
 describe('messaging webhook route allowlist', () => {
     beforeEach(() => {
         vi.resetModules();
         slackHandler.mockReset();
         experimentalHandler.mockReset();
+        mockPrisma.platformConnection.create.mockReset();
+        mockPrisma.platformConnection.findUnique.mockReset();
         mockPrisma.platformConnection.findMany.mockResolvedValue([]);
+        mockPrisma.platformConnection.update.mockReset();
     });
 
     it('routes explicitly supported POST webhooks to their adapter handler', async () => {
@@ -124,5 +142,65 @@ describe('messaging webhook route allowlist', () => {
             error: 'API key authentication is not allowed for this route',
         });
         expect(mockPrisma.platformConnection.findMany).not.toHaveBeenCalled();
+    });
+
+    it('does not reassign a platform identity linked to another user', async () => {
+        mockPrisma.platformConnection.findUnique.mockResolvedValueOnce({
+            id: 'connection-1',
+            userId: 'other-user',
+        });
+        const app = await createUserAuthenticatedTestApp();
+
+        const response = await app.request('/messaging/connections', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                platform: 'slack',
+                platformUserId: 'U123',
+            }),
+        });
+
+        expect(response.status).toBe(409);
+        await expect(response.json()).resolves.toEqual({
+            error: 'Platform identity is already linked to another account',
+        });
+        expect(mockPrisma.platformConnection.update).not.toHaveBeenCalled();
+        expect(mockPrisma.platformConnection.create).not.toHaveBeenCalled();
+    });
+
+    it('reactivates an existing platform identity for the same user without changing owner', async () => {
+        mockPrisma.platformConnection.findUnique.mockResolvedValueOnce({
+            id: 'connection-1',
+            userId: 'test-user-1',
+        });
+        mockPrisma.platformConnection.update.mockResolvedValueOnce({
+            id: 'connection-1',
+            userId: 'test-user-1',
+            platform: 'slack',
+            platformUserId: 'U123',
+            isActive: true,
+        });
+        const app = await createUserAuthenticatedTestApp();
+
+        const response = await app.request('/messaging/connections', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                platform: 'slack',
+                platformUserId: 'U123',
+                metadata: { workspace: 'T123' },
+            }),
+        });
+
+        expect(response.status).toBe(200);
+        expect(mockPrisma.platformConnection.update).toHaveBeenCalledWith({
+            where: { id: 'connection-1' },
+            data: { metadata: { workspace: 'T123' }, isActive: true },
+        });
+        expect(mockPrisma.platformConnection.create).not.toHaveBeenCalled();
     });
 });

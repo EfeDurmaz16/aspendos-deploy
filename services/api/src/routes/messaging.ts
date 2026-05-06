@@ -48,12 +48,27 @@ messagingRoutes.post(
 
         const { platform, platformUserId, metadata } = body;
 
-        const connection = await prisma.platformConnection.upsert({
+        const existingConnection = await prisma.platformConnection.findUnique({
             where: {
                 platform_platformUserId: { platform, platformUserId },
             },
-            update: { userId, metadata, isActive: true },
-            create: { userId, platform, platformUserId, metadata },
+            select: { id: true, userId: true },
+        });
+
+        if (existingConnection && existingConnection.userId !== userId) {
+            return c.json({ error: 'Platform identity is already linked to another account' }, 409);
+        }
+
+        if (existingConnection) {
+            const connection = await prisma.platformConnection.update({
+                where: { id: existingConnection.id },
+                data: { metadata, isActive: true },
+            });
+            return c.json({ connection }, 200);
+        }
+
+        const connection = await prisma.platformConnection.create({
+            data: { userId, platform, platformUserId, metadata },
         });
 
         return c.json({ connection }, 201);
