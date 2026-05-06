@@ -7,7 +7,7 @@ import { runToolStep } from './step';
 
 registerAllTools();
 
-function createAgentTools(userId: string) {
+function createAgentTools(userId: string, sessionId: string) {
     const toolDefs: Record<string, any> = {};
 
     for (const t of registry.list()) {
@@ -15,7 +15,7 @@ function createAgentTools(userId: string) {
             description: t.description,
             inputSchema: z.object({}).passthrough(),
             execute: async (args: any) => {
-                const ctx: ToolContext = { userId };
+                const ctx: ToolContext = { userId, sessionId };
                 const result = await runToolStep(t.name, args, ctx);
 
                 if (result.blocked) {
@@ -48,8 +48,8 @@ function createAgentTools(userId: string) {
     return toolDefs;
 }
 
-export function createYulaAgent(userId: string, model?: string) {
-    const agentTools = createAgentTools(userId);
+export function createYulaAgent(userId: string, sessionId: string, model?: string) {
+    const agentTools = createAgentTools(userId, sessionId);
 
     return new ToolLoopAgent({
         model: gateway(model ?? 'anthropic/claude-sonnet-4.6'),

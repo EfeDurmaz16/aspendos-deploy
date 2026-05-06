@@ -185,7 +185,7 @@ async function handleMessage(
 
         // Route through YULA orchestrator agent (FIDES sign + AGIT commit on every tool call)
         const { createYulaAgent } = await import('../orchestrator/agent');
-        const agent = createYulaAgent(userId);
+        const agent = createYulaAgent(userId, `bot:${thread.id}`);
 
         // Build conversation history from thread
         const history = await getThreadHistory(thread);

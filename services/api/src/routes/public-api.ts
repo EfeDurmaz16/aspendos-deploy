@@ -33,8 +33,13 @@ publicApi.post('/tools/:name/execute', async (c) => {
     const userId = c.get('userId');
     if (!userId) return c.json({ error: 'Authentication required' }, 401);
 
+    const sessionId = c.req.header('x-yula-session-id') ?? c.req.header('idempotency-key');
+    if (!sessionId) {
+        return c.json({ error: 'x-yula-session-id header required' }, 400);
+    }
+
     const args = await c.req.json();
-    const ctx: ToolContext = { userId };
+    const ctx: ToolContext = { userId, sessionId };
     const result = await runToolStep(name, args, ctx);
 
     return c.json({

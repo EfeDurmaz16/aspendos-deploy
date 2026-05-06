@@ -5,11 +5,17 @@ import type { ToolContext } from '../../reversibility/types';
 import { registerAllTools } from '../../tools/register-all';
 import { runToolStep } from '../step';
 
-const ctx: ToolContext = { userId: 'test-user-123' };
+const ctx: ToolContext = { userId: 'test-user-123', sessionId: 'test-session-123' };
 
 describe('runToolStep', () => {
     beforeEach(() => {
         registerAllTools();
+    });
+
+    it('fails loud when session context is missing', async () => {
+        await expect(runToolStep('file.write', {}, { userId: 'test-user-123' })).rejects.toThrow(
+            /sessionId is required/
+        );
     });
 
     it('blocks unknown tools (fail-closed)', async () => {
@@ -88,7 +94,10 @@ describe('runToolStep', () => {
 
     it('persists a verifiable pre/post action chain with a valid FIDES signature', async () => {
         const args = { path: '/tmp/provable.txt', content: 'hello', existing_content: 'old' };
-        const chainCtx: ToolContext = { userId: 'provable-flow-user' };
+        const chainCtx: ToolContext = {
+            userId: 'provable-flow-user',
+            sessionId: 'provable-flow-session',
+        };
 
         const result = await runToolStep('file.write', args, chainCtx);
 

@@ -135,7 +135,10 @@ describe('public tool execution route', () => {
         const response = await app.request('/tools/file.write/execute', {
             method: 'POST',
             body: JSON.stringify({ path: '/tmp/x', content: 'hello' }),
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-yula-session-id': 'api-session-1',
+            },
         });
 
         expect(response.status).toBe(200);
@@ -148,6 +151,32 @@ describe('public tool execution route', () => {
                 error: 'Execution failed',
             },
         });
+        expect(mocks.runToolStep).toHaveBeenCalledWith(
+            'file.write',
+            { path: '/tmp/x', content: 'hello' },
+            { userId: 'user-1', sessionId: 'api-session-1' }
+        );
+    });
+
+    it('fails closed when tool execution has no session header', async () => {
+        const app = new Hono();
+        app.use('*', async (c, next) => {
+            c.set('userId', 'user-1');
+            await next();
+        });
+        app.route('/', publicApi);
+
+        const response = await app.request('/tools/file.write/execute', {
+            method: 'POST',
+            body: JSON.stringify({ path: '/tmp/x', content: 'hello' }),
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toEqual({
+            error: 'x-yula-session-id header required',
+        });
+        expect(mocks.runToolStep).not.toHaveBeenCalled();
     });
 });
 

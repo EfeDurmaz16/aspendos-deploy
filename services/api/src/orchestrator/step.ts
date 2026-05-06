@@ -19,6 +19,10 @@ export async function runToolStep(
     args: unknown,
     ctx: ToolContext
 ): Promise<StepResult> {
+    if (!ctx.sessionId) {
+        throw new Error('Tool execution sessionId is required');
+    }
+
     const metadata = registry.classify(toolName, args);
     const guardResult = await createDefaultGuardChain().evaluate({
         toolName,
@@ -27,7 +31,7 @@ export async function runToolStep(
             unknown
         >,
         userId: ctx.userId,
-        sessionId: ctx.sessionId ?? 'default',
+        sessionId: ctx.sessionId,
         agentId: ctx.agentId,
         toolCallCount: ctx.toolCallCount ?? 0,
         toolCallCountByName: ctx.toolCallCountByName ?? {},
