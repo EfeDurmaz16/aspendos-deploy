@@ -33,10 +33,20 @@ header "Required Environment Variables"
 
 REQUIRED_VARS=(
     DATABASE_URL
-    BETTER_AUTH_SECRET
-    BETTER_AUTH_URL
-    QDRANT_URL
-    QDRANT_API_KEY
+    NEXT_PUBLIC_CONVEX_URL
+    CONVEX_SERVICE_SECRET
+    WORKOS_CLIENT_ID
+    WORKOS_API_KEY
+    WORKOS_COOKIE_PASSWORD
+    NEXT_PUBLIC_WORKOS_REDIRECT_URI
+    STRIPE_SECRET_KEY
+    STRIPE_WEBHOOK_SECRET
+    BOT_APPROVAL_WEBHOOK_SECRET
+    AGIT_REPO_PATH
+    AI_GATEWAY_API_KEY
+    CRON_SECRET
+    UPSTASH_REDIS_REST_URL
+    UPSTASH_REDIS_REST_TOKEN
 )
 
 for var in "${REQUIRED_VARS[@]}"; do
@@ -53,25 +63,30 @@ done
 header "Production-Required Variables"
 
 PROD_VARS=(
-    ENCRYPTION_KEY
-    POLAR_ACCESS_TOKEN
-    POLAR_WEBHOOK_SECRET
-    UPSTASH_REDIS_REST_URL
-    UPSTASH_REDIS_REST_TOKEN
+    STRIPE_PUBLISHABLE_KEY
+    SUPERMEMORY_API_KEY
+    BYOK_ENCRYPTION_SECRET
 )
 
 for var in "${PROD_VARS[@]}"; do
     if [ -n "${!var:-}" ]; then
         pass "$var is set"
     else
-        warn "$var is NOT set (required in production)"
+        fail "$var is NOT set (required in production)"
     fi
 done
 
 # Optional but recommended
 OPTIONAL_VARS=(
-    RESEND_API_KEY
+    AGENT_RESUME_URL
+    CONVEX_DEPLOY_KEY
     METRICS_BEARER_TOKEN
+    SENTRY_DSN
+    NEXT_PUBLIC_SENTRY_DSN
+    DAYTONA_API_KEY
+    E2B_API_KEY
+    STEEL_API_KEY
+    ANTHROPIC_API_KEY
 )
 
 for var in "${OPTIONAL_VARS[@]}"; do
@@ -87,23 +102,41 @@ done
 # ============================================
 header "Security Configuration"
 
-if [ -n "${ENCRYPTION_KEY:-}" ]; then
-    KEY_LEN=${#ENCRYPTION_KEY}
+if [ -n "${BYOK_ENCRYPTION_SECRET:-}" ]; then
+    KEY_LEN=${#BYOK_ENCRYPTION_SECRET}
     if [ "$KEY_LEN" -ge 32 ]; then
-        pass "ENCRYPTION_KEY length is sufficient ($KEY_LEN chars)"
+        pass "BYOK_ENCRYPTION_SECRET length is sufficient ($KEY_LEN chars)"
     else
-        fail "ENCRYPTION_KEY is too short ($KEY_LEN chars, need ≥32)"
+        fail "BYOK_ENCRYPTION_SECRET is too short ($KEY_LEN chars, need ≥32)"
     fi
 else
-    warn "ENCRYPTION_KEY not set — cannot verify strength"
+    warn "BYOK_ENCRYPTION_SECRET not set — BYOK routes must stay disabled"
 fi
 
-if [ -n "${BETTER_AUTH_SECRET:-}" ]; then
-    SECRET_LEN=${#BETTER_AUTH_SECRET}
+if [ -n "${WORKOS_COOKIE_PASSWORD:-}" ]; then
+    SECRET_LEN=${#WORKOS_COOKIE_PASSWORD}
     if [ "$SECRET_LEN" -ge 32 ]; then
-        pass "BETTER_AUTH_SECRET length is sufficient ($SECRET_LEN chars)"
+        pass "WORKOS_COOKIE_PASSWORD length is sufficient ($SECRET_LEN chars)"
     else
-        warn "BETTER_AUTH_SECRET is short ($SECRET_LEN chars, recommend ≥32)"
+        fail "WORKOS_COOKIE_PASSWORD is too short ($SECRET_LEN chars, need ≥32)"
+    fi
+fi
+
+if [ -n "${CONVEX_SERVICE_SECRET:-}" ]; then
+    SECRET_LEN=${#CONVEX_SERVICE_SECRET}
+    if [ "$SECRET_LEN" -ge 32 ]; then
+        pass "CONVEX_SERVICE_SECRET length is sufficient ($SECRET_LEN chars)"
+    else
+        fail "CONVEX_SERVICE_SECRET is too short ($SECRET_LEN chars, need ≥32)"
+    fi
+fi
+
+if [ -n "${BOT_APPROVAL_WEBHOOK_SECRET:-}" ]; then
+    SECRET_LEN=${#BOT_APPROVAL_WEBHOOK_SECRET}
+    if [ "$SECRET_LEN" -ge 32 ]; then
+        pass "BOT_APPROVAL_WEBHOOK_SECRET length is sufficient ($SECRET_LEN chars)"
+    else
+        fail "BOT_APPROVAL_WEBHOOK_SECRET is too short ($SECRET_LEN chars, need ≥32)"
     fi
 fi
 
@@ -168,9 +201,9 @@ else
 fi
 
 # ============================================
-# 6. QDRANT CONNECTIVITY
+# 6. OPTIONAL SELF-HOSTED QDRANT CONNECTIVITY
 # ============================================
-header "Qdrant Connectivity"
+header "Optional Qdrant Connectivity"
 
 if [ -n "${QDRANT_URL:-}" ]; then
     QDRANT_HEADERS=""
@@ -186,10 +219,10 @@ if [ -n "${QDRANT_URL:-}" ]; then
     if [ "$HTTP_CODE" = "200" ]; then
         pass "Qdrant is reachable (HTTP $HTTP_CODE)"
     else
-        warn "Qdrant unreachable (HTTP $HTTP_CODE) — memory features may not work"
+        warn "Qdrant unreachable (HTTP $HTTP_CODE) — self-hosted vector memory may not work"
     fi
 else
-    fail "QDRANT_URL not set"
+    warn "QDRANT_URL not set — assuming SuperMemory/Convex memory path"
 fi
 
 # ============================================
