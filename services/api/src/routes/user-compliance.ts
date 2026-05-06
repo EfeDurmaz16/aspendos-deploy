@@ -9,7 +9,7 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import * as userDeletionService from '../services/user-deletion.service';
 
 type Variables = {
@@ -34,10 +34,14 @@ setInterval(() => {
 
 const EXPORT_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
+function complianceStateUnavailable(error: unknown) {
+    return error instanceof Error && error.message.includes('process-local GDPR compliance state');
+}
+
 // ─── POST /api/compliance/export ─────────────────────────────────────────────
 // Request an async data export. Returns a job ID to poll.
 
-app.post('/export', requireAuth, async (c) => {
+app.post('/export', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     // Rate limit: 1 export request per hour
@@ -56,7 +60,21 @@ app.post('/export', requireAuth, async (c) => {
 
     exportRateLimiter.set(userId, Date.now());
 
-    const result = userDeletionService.queueExportJob(userId);
+    let result: ReturnType<typeof userDeletionService.queueExportJob>;
+    try {
+        result = userDeletionService.queueExportJob(userId);
+    } catch (error) {
+        if (complianceStateUnavailable(error)) {
+            exportRateLimiter.delete(userId);
+            return c.json(
+                {
+                    error: 'GDPR export is not available until durable compliance storage is configured.',
+                },
+                503
+            );
+        }
+        throw error;
+    }
 
     return c.json(result, 202);
 });
@@ -64,12 +82,29 @@ app.post('/export', requireAuth, async (c) => {
 // ─── GET /api/compliance/export/:jobId ───────────────────────────────────────
 // Check the status of an export job.
 
-app.get('/export/:jobId', requireAuth, async (c) => {
+app.get('/export/:jobId', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const jobId = c.req.param('jobId');
+    if (!jobId) return c.json({ error: 'Export job id is required' }, 400);
+
+    let owner: string | null;
+    let status: ReturnType<typeof userDeletionService.getExportJobStatus>;
+    try {
+        owner = userDeletionService.getExportJobOwner(jobId);
+        status = userDeletionService.getExportJobStatus(jobId);
+    } catch (error) {
+        if (complianceStateUnavailable(error)) {
+            return c.json(
+                {
+                    error: 'GDPR export status is not available until durable compliance storage is configured.',
+                },
+                503
+            );
+        }
+        throw error;
+    }
 
     // Verify the job belongs to this user
-    const owner = userDeletionService.getExportJobOwner(jobId);
     if (!owner) {
         return c.json({ error: 'Export job not found' }, 404);
     }
@@ -77,7 +112,6 @@ app.get('/export/:jobId', requireAuth, async (c) => {
         return c.json({ error: 'Unauthorized' }, 403);
     }
 
-    const status = userDeletionService.getExportJobStatus(jobId);
     if (!status) {
         return c.json({ error: 'Export job not found' }, 404);
     }
@@ -88,7 +122,7 @@ app.get('/export/:jobId', requireAuth, async (c) => {
 // ─── POST /api/compliance/delete-account ─────────────────────────────────────
 // Schedule account deletion with a 7-day grace period.
 
-app.post('/delete-account', requireAuth, async (c) => {
+app.post('/delete-account', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     let body: { confirm?: boolean; reason?: string };
@@ -109,7 +143,20 @@ app.post('/delete-account', requireAuth, async (c) => {
 
     const reason = typeof body.reason === 'string' ? body.reason.slice(0, 500) : undefined;
 
-    const result = await userDeletionService.scheduleAccountDeletion(userId, reason);
+    let result: Awaited<ReturnType<typeof userDeletionService.scheduleAccountDeletion>>;
+    try {
+        result = await userDeletionService.scheduleAccountDeletion(userId, reason);
+    } catch (error) {
+        if (complianceStateUnavailable(error)) {
+            return c.json(
+                {
+                    error: 'Account deletion scheduling is not available until durable compliance storage is configured.',
+                },
+                503
+            );
+        }
+        throw error;
+    }
 
     return c.json({
         scheduledDeletionDate: result.scheduledDate.toISOString(),
@@ -122,7 +169,7 @@ app.post('/delete-account', requireAuth, async (c) => {
 // ─── POST /api/compliance/cancel-deletion ────────────────────────────────────
 // Cancel a pending account deletion using the cancellation token.
 
-app.post('/cancel-deletion', requireAuth, async (c) => {
+app.post('/cancel-deletion', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     let body: { cancellationToken?: string };
@@ -136,7 +183,20 @@ app.post('/cancel-deletion', requireAuth, async (c) => {
         return c.json({ error: 'cancellationToken is required' }, 400);
     }
 
-    const cancelled = await userDeletionService.cancelDeletion(userId, body.cancellationToken);
+    let cancelled: boolean;
+    try {
+        cancelled = await userDeletionService.cancelDeletion(userId, body.cancellationToken);
+    } catch (error) {
+        if (complianceStateUnavailable(error)) {
+            return c.json(
+                {
+                    error: 'Account deletion cancellation is not available until durable compliance storage is configured.',
+                },
+                503
+            );
+        }
+        throw error;
+    }
 
     if (!cancelled) {
         return c.json({ error: 'No pending deletion found or invalid cancellation token' }, 404);
@@ -151,7 +211,7 @@ app.post('/cancel-deletion', requireAuth, async (c) => {
 // ─── GET /api/compliance/data-summary ────────────────────────────────────────
 // Returns a summary of all stored data for the authenticated user.
 
-app.get('/data-summary', requireAuth, async (c) => {
+app.get('/data-summary', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     const summary = await userDeletionService.getDataSummary(userId);
@@ -162,7 +222,7 @@ app.get('/data-summary', requireAuth, async (c) => {
 // ─── POST /api/compliance/anonymize ──────────────────────────────────────────
 // Anonymize the user account: strip PII but keep aggregate data.
 
-app.post('/anonymize', requireAuth, async (c) => {
+app.post('/anonymize', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     let body: { confirm?: boolean };

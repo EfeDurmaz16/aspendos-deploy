@@ -5,7 +5,7 @@
  */
 
 import { Hono } from 'hono';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Hoist mock variables so they're available in vi.mock factories
 const { mockGetSession } = vi.hoisted(() => ({
@@ -46,14 +46,59 @@ function createTestApp() {
     return app;
 }
 
+function createApiKeyAuthenticatedTestApp() {
+    const app = new Hono();
+    app.use('*', async (c, next) => {
+        c.set('userId', 'test-user-1');
+        c.set('apiKeyId', 'key-1');
+        c.set('apiKeyPermissions', ['chat:read']);
+        return next();
+    });
+    app.route('/workspace', workspaceRoutes);
+    return app;
+}
+
 describe('Workspace Routes', () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+
     beforeEach(() => {
         vi.clearAllMocks();
+        process.env.NODE_ENV = 'test';
         // Default: authenticated user
         mockGetSession.mockResolvedValue({
             user: { id: 'test-user-1', email: 'test@yula.dev', name: 'Test User' },
             session: { id: 'sess-1', expiresAt: new Date(Date.now() + 86400000) },
         });
+    });
+
+    afterEach(() => {
+        process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    it('returns 503 in production instead of using in-memory workspace storage', async () => {
+        process.env.NODE_ENV = 'production';
+        const app = createTestApp();
+
+        const res = await app.request('/workspace');
+
+        expect(res.status).toBe(503);
+        await expect(res.json()).resolves.toMatchObject({
+            code: 'WORKSPACE_PERSISTENCE_UNAVAILABLE',
+        });
+        expect(mockGetSession).not.toHaveBeenCalled();
+    });
+
+    it('rejects API-key authenticated access to workspace routes', async () => {
+        mockService.getUserWorkspaces.mockResolvedValue([]);
+        const app = createApiKeyAuthenticatedTestApp();
+
+        const res = await app.request('/workspace');
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
+        });
+        expect(mockService.getUserWorkspaces).not.toHaveBeenCalled();
     });
 
     describe('POST /workspace - Create workspace', () => {

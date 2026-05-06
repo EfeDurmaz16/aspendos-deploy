@@ -249,7 +249,7 @@ docsRoutes.get('/', (c) => {
             {
                 method: 'POST',
                 path: '/api/billing/sync',
-                description: 'Sync with Polar',
+                description: 'Sync with billing provider',
                 auth: true,
             },
             { method: 'GET', path: '/api/billing/usage', description: 'Usage history', auth: true },
@@ -292,7 +292,7 @@ docsRoutes.get('/', (c) => {
             {
                 method: 'POST',
                 path: '/api/billing/webhook',
-                description: 'Polar webhook',
+                description: 'Retired API webhook; Stripe webhook is handled by the web app',
                 auth: false,
             },
             {

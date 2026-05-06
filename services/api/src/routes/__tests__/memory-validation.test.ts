@@ -14,6 +14,9 @@ vi.mock('../../middleware/auth', () => ({
         c.set('userId', 'test-user-123');
         await next();
     }),
+    requireApiKeyPermission: vi.fn(() => async (_c: any, next: any) => {
+        await next();
+    }),
     authMiddleware: vi.fn(async (c: any, next: any) => {
         c.set('userId', 'test-user-123');
         c.set('user', { userId: 'test-user-123', email: 'test@test.com' });
@@ -44,7 +47,7 @@ vi.mock('../../lib/audit-log', () => ({
     auditLog: vi.fn().mockResolvedValue(undefined),
 }));
 
-// Mock auth lib to prevent Better Auth initialization
+// Mock auth lib to prevent session handler initialization
 vi.mock('../../lib/auth', () => ({
     auth: {
         api: {
@@ -573,6 +576,45 @@ describe('Memory Routes - Input Validation', () => {
             expect(json.success).toBe(true);
             expect(json.deleted).toBe(3);
         });
+
+        it('should fail loud when bulk delete persistence fails', async () => {
+            mockOpenMemory.verifyMemoryOwnership.mockResolvedValue(true);
+            mockOpenMemory.deleteMemory
+                .mockResolvedValueOnce(undefined)
+                .mockRejectedValueOnce(new Error('memory backend unavailable'));
+
+            const res = await app.request(
+                jsonRequest('POST', '/memory/dashboard/bulk-delete', {
+                    ids: ['mem-1', 'mem-2', 'mem-3'],
+                })
+            );
+
+            expect(res.status).toBe(503);
+            const json = await res.json();
+            expect(json.error).toBe('Bulk memory delete failed');
+            expect(json.failedId).toBe('mem-2');
+            expect(json.deleted).toBe(1);
+            expect(json.cause).toBe('memory backend unavailable');
+        });
+
+        it('should fail loud when bulk delete ownership verification fails', async () => {
+            mockOpenMemory.verifyMemoryOwnership.mockRejectedValueOnce(
+                new Error('ownership backend unavailable')
+            );
+
+            const res = await app.request(
+                jsonRequest('POST', '/memory/dashboard/bulk-delete', {
+                    ids: ['mem-1', 'mem-2'],
+                })
+            );
+
+            expect(res.status).toBe(503);
+            const json = await res.json();
+            expect(json.error).toBe('Bulk memory delete failed');
+            expect(json.failedId).toBe('mem-1');
+            expect(json.deleted).toBe(0);
+            expect(json.cause).toBe('ownership backend unavailable');
+        });
     });
 
     // =============================================
@@ -673,6 +715,25 @@ describe('Memory Routes - Input Validation', () => {
             expect(res.status).toBe(404);
             const json = await res.json();
             expect(json.error).toBe('Memory not found');
+        });
+
+        it('should fail loud when feedback reinforcement tracking fails', async () => {
+            mockOpenMemory.verifyMemoryOwnership.mockResolvedValue(true);
+            mockOpenMemory.reinforceMemory.mockRejectedValueOnce(
+                new Error('memory audit unavailable')
+            );
+
+            const res = await app.request(
+                jsonRequest('POST', '/memory/dashboard/feedback', {
+                    memoryId: 'valid-mem-id',
+                    wasHelpful: true,
+                })
+            );
+
+            expect(res.status).toBe(503);
+            const json = await res.json();
+            expect(json.error).toBe('Memory feedback failed');
+            expect(json.cause).toBe('memory audit unavailable');
         });
     });
 

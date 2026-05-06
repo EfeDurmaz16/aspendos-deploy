@@ -85,9 +85,9 @@ export function PacDemoStep({ onNext, onPrev, onSkip }: PacDemoStepProps) {
                     <div className="flex items-center justify-between px-4 py-2 bg-foreground/[0.03]">
                         <span className="text-xs text-muted-foreground">Yula Notification</span>
                         <div className="flex gap-1">
-                            {DEMO_NOTIFICATIONS.map((_, i) => (
+                            {DEMO_NOTIFICATIONS.map((notification, i) => (
                                 <div
-                                    key={i}
+                                    key={notification.title}
                                     className={cn(
                                         'h-1.5 w-1.5 rounded-full transition-colors',
                                         i === activeNotification

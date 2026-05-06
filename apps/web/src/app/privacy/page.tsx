@@ -47,7 +47,7 @@ export default function PrivacyPage() {
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>Email address and name (provided during account creation)</li>
                             <li>Profile image (optional)</li>
-                            <li>Billing information (processed by our payment provider, Polar)</li>
+                            <li>Billing information (processed by our payment provider, Stripe)</li>
                         </ul>
 
                         <h3 className="text-xl font-medium mb-3 mt-4">Usage Data</h3>
@@ -87,7 +87,7 @@ export default function PrivacyPage() {
                                 Send proactive AI callbacks (PAC notifications) based on your
                                 scheduled reminders
                             </li>
-                            <li>Process billing and subscription management through Polar</li>
+                            <li>Process billing and subscription management through Stripe</li>
                             <li>Improve service quality through anonymized usage analytics</li>
                             <li>Provide customer support and respond to inquiries</li>
                             <li>Detect and prevent fraud or abuse</li>
@@ -103,17 +103,17 @@ export default function PrivacyPage() {
                         <h3 className="text-xl font-medium mb-3 mt-4">AI Model Providers</h3>
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>
-                                <strong>OpenAI</strong> - GPT-4o and GPT-4o Mini models
+                                <strong>OpenAI</strong> - GPT-5.4 and GPT-5.4 Mini models
                             </li>
                             <li>
-                                <strong>Anthropic</strong> - Claude 3.5 Sonnet and Claude 3 Opus
+                                <strong>Anthropic</strong> - Claude Sonnet 4.6 and Claude Opus 4.7
                                 models
                             </li>
                             <li>
-                                <strong>Google</strong> - Gemini 2.0 Flash model
+                                <strong>Google</strong> - Gemini 3.1 Pro and Gemini 3 Flash models
                             </li>
                             <li>
-                                <strong>Groq</strong> - Llama 3.3 70B model for fast routing
+                                <strong>Groq</strong> - Llama 4 Scout / Maverick for fast routing
                             </li>
                         </ul>
                         <p className="text-sm text-muted-foreground mt-2 italic">
@@ -140,7 +140,8 @@ export default function PrivacyPage() {
                         <h3 className="text-xl font-medium mb-3 mt-4">Payment & Analytics</h3>
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>
-                                <strong>Polar</strong> - Subscription billing and payment processing
+                                <strong>Stripe</strong> - Subscription billing and payment
+                                processing
                             </li>
                             <li>
                                 <strong>Sentry</strong> - Error tracking and monitoring

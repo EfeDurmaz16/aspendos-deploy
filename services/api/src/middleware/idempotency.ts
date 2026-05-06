@@ -2,9 +2,10 @@
  * Idempotency Middleware
  * Prevents duplicate processing of requests with the same Idempotency-Key.
  *
- * Stores response in memory cache with 24-hour TTL.
- * LRU eviction when max cache size is reached.
+ * Uses Redis in production for multi-instance consistency.
+ * Falls back to an in-memory cache only outside production.
  */
+import { Redis } from '@upstash/redis';
 import type { Context, Next } from 'hono';
 
 interface CachedResponse {
@@ -18,60 +19,183 @@ interface CachedResponse {
 const MAX_CACHE_SIZE = 10000;
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// In-memory cache for idempotent responses
-const idempotencyCache = new Map<string, CachedResponse>();
+interface IdempotencyCacheStore {
+    get(key: string): CachedResponse | null | Promise<CachedResponse | null>;
+    set(key: string, response: CachedResponse, ttlMs: number): Promise<void>;
+    stats(): {
+        size: number | null;
+        maxSize: number | null;
+        expired: number | null;
+        active: number | null;
+        utilization: number | null;
+        backend: 'memory' | 'redis';
+    };
+    clearForTesting(): void | Promise<void>;
+    getForTesting?(key: string): CachedResponse | undefined | Promise<CachedResponse | undefined>;
+}
 
-// Track access order for LRU eviction
-const accessOrder: string[] = [];
+class InMemoryIdempotencyStore implements IdempotencyCacheStore {
+    private cache = new Map<string, CachedResponse>();
+    private accessOrder: string[] = [];
 
-/**
- * Cleanup expired entries every 5 minutes
- */
-setInterval(() => {
-    const now = Date.now();
-    const expiredKeys: string[] = [];
+    constructor() {
+        setInterval(() => this.cleanupExpired(), 5 * 60_000);
+    }
 
-    for (const [key, value] of idempotencyCache.entries()) {
-        if (value.expiresAt <= now) {
-            expiredKeys.push(key);
+    get(key: string): CachedResponse | null {
+        const cached = this.cache.get(key);
+        if (!cached) return null;
+        if (cached.expiresAt <= Date.now()) {
+            this.cache.delete(key);
+            this.removeAccessKey(key);
+            return null;
+        }
+        this.updateAccessOrder(key);
+        return cached;
+    }
+
+    async set(key: string, response: CachedResponse, _ttlMs: number): Promise<void> {
+        if (this.cache.size >= MAX_CACHE_SIZE) {
+            this.evictOldest();
+        }
+        this.cache.set(key, response);
+        this.updateAccessOrder(key);
+    }
+
+    stats() {
+        const now = Date.now();
+        let expired = 0;
+
+        for (const entry of this.cache.values()) {
+            if (entry.expiresAt <= now) {
+                expired++;
+            }
+        }
+
+        return {
+            size: this.cache.size,
+            maxSize: MAX_CACHE_SIZE,
+            expired,
+            active: this.cache.size - expired,
+            utilization: (this.cache.size / MAX_CACHE_SIZE) * 100,
+            backend: 'memory' as const,
+        };
+    }
+
+    clearForTesting(): void {
+        this.cache.clear();
+        this.accessOrder.length = 0;
+    }
+
+    getForTesting(key: string): CachedResponse | undefined {
+        return this.cache.get(key);
+    }
+
+    private cleanupExpired(): void {
+        const now = Date.now();
+        const expiredKeys: string[] = [];
+
+        for (const [key, value] of this.cache.entries()) {
+            if (value.expiresAt <= now) {
+                expiredKeys.push(key);
+            }
+        }
+
+        for (const key of expiredKeys) {
+            this.cache.delete(key);
+            this.removeAccessKey(key);
+        }
+
+        if (expiredKeys.length > 0) {
+            console.info(`[Idempotency] Cleaned up ${expiredKeys.length} expired entries`);
         }
     }
 
-    for (const key of expiredKeys) {
-        idempotencyCache.delete(key);
-        const index = accessOrder.indexOf(key);
+    private evictOldest(): void {
+        const oldestKey = this.accessOrder.shift();
+        if (oldestKey) {
+            this.cache.delete(oldestKey);
+        }
+    }
+
+    private removeAccessKey(key: string): void {
+        const index = this.accessOrder.indexOf(key);
         if (index !== -1) {
-            accessOrder.splice(index, 1);
+            this.accessOrder.splice(index, 1);
         }
     }
 
-    if (expiredKeys.length > 0) {
-        console.info(`[Idempotency] Cleaned up ${expiredKeys.length} expired entries`);
-    }
-}, 5 * 60_000);
-
-/**
- * Evict oldest entry using LRU policy
- */
-function evictOldest() {
-    if (accessOrder.length === 0) return;
-
-    const oldestKey = accessOrder.shift();
-    if (oldestKey) {
-        idempotencyCache.delete(oldestKey);
+    private updateAccessOrder(key: string): void {
+        this.removeAccessKey(key);
+        this.accessOrder.push(key);
     }
 }
 
-/**
- * Update access order for LRU tracking
- */
-function updateAccessOrder(key: string) {
-    const index = accessOrder.indexOf(key);
-    if (index !== -1) {
-        accessOrder.splice(index, 1);
+class RedisIdempotencyStore implements IdempotencyCacheStore {
+    constructor(private redis: Redis) {}
+
+    async get(key: string): Promise<CachedResponse | null> {
+        return (await this.redis.get<CachedResponse>(key)) ?? null;
     }
-    accessOrder.push(key);
+
+    async set(key: string, response: CachedResponse, ttlMs: number): Promise<void> {
+        await this.redis.set(key, response, { ex: Math.ceil(ttlMs / 1000) });
+    }
+
+    stats() {
+        return {
+            size: null,
+            maxSize: null,
+            expired: null,
+            active: null,
+            utilization: null,
+            backend: 'redis' as const,
+        };
+    }
+
+    async clearForTesting(): Promise<void> {
+        throw new Error('Redis idempotency store cannot be cleared through test helper');
+    }
 }
+
+export function assertIdempotencyProductionConfig(
+    redisUrl: string | undefined,
+    redisToken: string | undefined
+): void {
+    if (process.env.NODE_ENV === 'production' && (!redisUrl || !redisToken)) {
+        throw new Error(
+            'FATAL: Idempotency requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in production.'
+        );
+    }
+}
+
+function createStore(): IdempotencyCacheStore {
+    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    assertIdempotencyProductionConfig(redisUrl, redisToken);
+
+    if (redisUrl && redisToken) {
+        try {
+            console.log('[Idempotency] Using Redis store');
+            return new RedisIdempotencyStore(new Redis({ url: redisUrl, token: redisToken }));
+        } catch (error) {
+            if (process.env.NODE_ENV === 'production') {
+                throw new Error(
+                    `FATAL: Failed to initialize production idempotency Redis store: ${String(error)}`
+                );
+            }
+            console.error(
+                '[Idempotency] Failed to initialize Redis, falling back to in-memory:',
+                error
+            );
+        }
+    }
+
+    return new InMemoryIdempotencyStore();
+}
+
+const idempotencyCache = createStore();
 
 /**
  * Generate cache key from userId and idempotency key
@@ -127,13 +251,10 @@ export function idempotency() {
         const cacheKey = generateCacheKey(userId, idempotencyKey);
 
         // Check if we have a cached response
-        const cached = idempotencyCache.get(cacheKey);
+        const cached = await idempotencyCache.get(cacheKey);
         const now = Date.now();
 
         if (cached && cached.expiresAt > now) {
-            // Return cached response
-            updateAccessOrder(cacheKey);
-
             // Set headers from cache
             for (const [key, value] of Object.entries(cached.headers)) {
                 c.header(key, value);
@@ -184,11 +305,6 @@ export function idempotency() {
                     }
                 }
 
-                // Check if we need to evict
-                if (idempotencyCache.size >= MAX_CACHE_SIZE) {
-                    evictOldest();
-                }
-
                 // Store in cache
                 const cachedResponse: CachedResponse = {
                     status,
@@ -198,8 +314,7 @@ export function idempotency() {
                     expiresAt: now + TTL_MS,
                 };
 
-                idempotencyCache.set(cacheKey, cachedResponse);
-                updateAccessOrder(cacheKey);
+                await idempotencyCache.set(cacheKey, cachedResponse, TTL_MS);
             } catch (error) {
                 // If caching fails, log but don't fail the request
                 console.error('[Idempotency] Failed to cache response:', error);
@@ -212,37 +327,21 @@ export function idempotency() {
  * Get cache statistics (for monitoring)
  */
 export function getIdempotencyCacheStats() {
-    const now = Date.now();
-    let expired = 0;
-
-    for (const entry of idempotencyCache.values()) {
-        if (entry.expiresAt <= now) {
-            expired++;
-        }
-    }
-
-    return {
-        size: idempotencyCache.size,
-        maxSize: MAX_CACHE_SIZE,
-        expired,
-        active: idempotencyCache.size - expired,
-        utilization: (idempotencyCache.size / MAX_CACHE_SIZE) * 100,
-    };
+    return idempotencyCache.stats();
 }
 
 /**
  * Clear cache (for testing)
  */
 export function clearIdempotencyCache_forTesting() {
-    idempotencyCache.clear();
-    accessOrder.length = 0;
+    void idempotencyCache.clearForTesting();
 }
 
 /**
  * Get cache entry (for testing)
  */
 export function getCacheEntry_forTesting(key: string) {
-    return idempotencyCache.get(key);
+    return idempotencyCache.getForTesting?.(key);
 }
 
 export default idempotency;

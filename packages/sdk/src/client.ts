@@ -2,30 +2,29 @@
  * YULA API Client
  */
 
+import { mapStatusToError, YulaError, YulaNetworkError } from './errors';
 import type {
-    YulaConfig,
-    ChatMessage,
+    ApiResponse,
     Chat,
-    ChatSendOptions,
-    ChatHistoryOptions,
     ChatExportFormat,
+    ChatHistoryOptions,
+    ChatMessage,
+    ChatSendOptions,
+    CouncilResponse,
     ExportedChat,
+    Feature,
+    FilledTemplate,
+    HealthStatus,
     Memory,
-    MemorySearchOptions,
     MemoryListOptions,
+    MemorySearchOptions,
+    StreamChunk,
+    Subscription,
     Template,
     TemplateCreateInput,
-    FilledTemplate,
-    CouncilResponse,
     UsageStats,
-    Subscription,
-    Feature,
-    HealthStatus,
-    ApiResponse,
-    StreamChunk,
+    YulaConfig,
 } from './types';
-
-import { YulaError, YulaNetworkError, mapStatusToError } from './errors';
 
 /**
  * YULA API Client

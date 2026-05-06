@@ -19,7 +19,7 @@ export const dbMigrateTool: ToolDefinition = {
         };
     },
 
-    async execute(args: unknown, ctx: ToolContext): Promise<ToolResult> {
+    async execute(args: unknown, _ctx: ToolContext): Promise<ToolResult> {
         const { migration_sql, description } = args as {
             migration_sql: string;
             description?: string;

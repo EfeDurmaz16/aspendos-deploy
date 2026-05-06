@@ -1,6 +1,6 @@
 export default {
     appName: 'YULA',
-    tagline: 'Your Universal Learning Assistant',
+    tagline: 'Deterministic agents that prove what they did',
     loading: 'Loading...',
     save: 'Save',
     cancel: 'Cancel',

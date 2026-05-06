@@ -4,24 +4,29 @@
  */
 type BillingAccount = any;
 
-import { getConvexClient, api } from '../lib/convex';
 import { getTierConfig, TIER_CONFIG, type TierName } from '../config/tiers';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 /**
  * Per-model pricing in USD per 1M tokens (industry standard)
  * Used for actual cost tracking and billing transparency
  */
 const MODEL_PRICING: Record<string, { promptPer1M: number; completionPer1M: number }> = {
-    // Groq - Primary models (all tiers)
-    'groq/llama-3.1-70b-versatile': { promptPer1M: 0.59, completionPer1M: 0.79 },
-    'groq/llama-3.1-8b-instant': { promptPer1M: 0.05, completionPer1M: 0.08 },
-    'groq/mixtral-8x7b-32768': { promptPer1M: 0.24, completionPer1M: 0.24 },
-    'groq/llama3-8b-8192': { promptPer1M: 0.05, completionPer1M: 0.08 },
-    // ULTRA tier premium models
-    'openai/gpt-4o': { promptPer1M: 2.5, completionPer1M: 10.0 },
-    'openai/o1': { promptPer1M: 15.0, completionPer1M: 60.0 },
-    'anthropic/claude-sonnet-4-20250514': { promptPer1M: 3.0, completionPer1M: 15.0 },
-    'anthropic/claude-opus-4-20250514': { promptPer1M: 15.0, completionPer1M: 75.0 },
+    // Groq - Llama 4 family (all tiers)
+    'groq/llama-4-maverick': { promptPer1M: 0.59, completionPer1M: 0.79 },
+    'groq/llama-4-scout': { promptPer1M: 0.11, completionPer1M: 0.34 },
+    // ULTRA tier premium models (April 2026)
+    // TODO(pricing): verify OpenAI GPT-5.4 rates against official pricing docs before launch
+    'openai/gpt-5': { promptPer1M: 2.5, completionPer1M: 10.0 },
+    'openai/gpt-5-mini': { promptPer1M: 0.15, completionPer1M: 0.6 },
+    'openai/gpt-5.4-codex': { promptPer1M: 2.5, completionPer1M: 10.0 },
+    'anthropic/claude-sonnet-4-6': { promptPer1M: 3.0, completionPer1M: 15.0 },
+    'anthropic/claude-opus-4-7': { promptPer1M: 15.0, completionPer1M: 75.0 },
+    'anthropic/claude-haiku-4-5': { promptPer1M: 0.8, completionPer1M: 4.0 },
+    // Gemini 3 family (verified via ai.google.dev/gemini-api/docs/pricing, April 2026)
+    'google/gemini-3.1-pro-preview': { promptPer1M: 2.0, completionPer1M: 12.0 }, // <=200k prompts tier
+    'google/gemini-3-flash-preview': { promptPer1M: 0.5, completionPer1M: 3.0 },
+    'google/gemini-3.1-flash-lite-preview': { promptPer1M: 0.25, completionPer1M: 1.5 },
 };
 
 /**
@@ -32,7 +37,10 @@ const MODEL_PRICING: Record<string, { promptPer1M: number; completionPer1M: numb
 export async function getOrCreateBillingAccount(userId: string): Promise<BillingAccount> {
     try {
         const client = getConvexClient();
-        const sub = await client.query(api.subscriptions.getByUser, { user_id: userId as any });
+        const sub = await client.query(api.subscriptions.getByUser, {
+            service_secret: getConvexServiceSecret(),
+            user_id: userId as any,
+        });
         if (sub) {
             const tierName = (sub.tier || 'free').toUpperCase() as TierName;
             const config = getTierConfig(tierName);
@@ -49,8 +57,9 @@ export async function getOrCreateBillingAccount(userId: string): Promise<Billing
                 subscriptionId: sub.stripe_subscription_id,
             };
         }
-    } catch {
-        // fall through to default
+    } catch (error) {
+        console.error('[Billing] Failed to read billing account:', error);
+        throw error;
     }
 
     // No subscription found — return a free-tier shim (no DB write needed)
@@ -154,6 +163,7 @@ export async function recordTokenUsage(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'token_usage',
             details: {
@@ -177,6 +187,7 @@ export async function recordChatUsage(userId: string) {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'chat_usage',
             details: { decremented: 1 },
@@ -190,37 +201,25 @@ export async function recordChatUsage(userId: string) {
  * Check if user has sufficient tokens
  */
 export async function hasTokens(userId: string, _estimatedTokens: number): Promise<boolean> {
-    try {
-        const account = await getOrCreateBillingAccount(userId);
-        const estimatedCredits = _estimatedTokens / 1000;
-        return account.monthlyCredit - account.creditUsed >= estimatedCredits;
-    } catch {
-        return true; // Fail open
-    }
+    const account = await getOrCreateBillingAccount(userId);
+    const estimatedCredits = _estimatedTokens / 1000;
+    return account.monthlyCredit - account.creditUsed >= estimatedCredits;
 }
 
 /**
  * Check if user has chats remaining
  */
 export async function hasChatsRemaining(userId: string): Promise<boolean> {
-    try {
-        const account = await getOrCreateBillingAccount(userId);
-        return (account.chatsRemaining || 0) > 0;
-    } catch {
-        return true;
-    }
+    const account = await getOrCreateBillingAccount(userId);
+    return (account.chatsRemaining || 0) > 0;
 }
 
 /**
  * Check if user has voice minutes remaining
  */
 export async function hasVoiceMinutes(userId: string): Promise<boolean> {
-    try {
-        const account = await getOrCreateBillingAccount(userId);
-        return (account.voiceMinutesRemaining || 0) > 0;
-    } catch {
-        return true;
-    }
+    const account = await getOrCreateBillingAccount(userId);
+    return (account.voiceMinutesRemaining || 0) > 0;
 }
 
 /**
@@ -230,6 +229,7 @@ export async function recordVoiceUsage(userId: string, durationMinutes: number) 
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'voice_usage',
             details: { duration_minutes: durationMinutes },
@@ -247,6 +247,7 @@ export async function upgradeTier(userId: string, newPlan: 'starter' | 'pro' | '
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'tier_upgrade',
             details: { new_plan: newPlan },
@@ -263,6 +264,7 @@ export async function resetMonthlyCredits(userId: string) {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'monthly_credit_reset',
             details: { reset_at: Date.now() },
@@ -292,6 +294,7 @@ export async function checkCostCeiling(userId: string): Promise<{
 
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -319,8 +322,9 @@ export async function checkCostCeiling(userId: string): Promise<{
             percentUsed,
             warning: percentUsed >= 80,
         };
-    } catch {
-        return { allowed: true, dailySpend: 0, dailyCeiling: 999, percentUsed: 0, warning: false };
+    } catch (error) {
+        console.error('[Billing] Failed to check cost ceiling:', error);
+        throw error;
     }
 }
 
@@ -331,14 +335,16 @@ export async function getUsageHistory(userId: string, limit?: number) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: limit || 50,
         });
         return (logs || []).filter(
             (l: any) => l.event_type === 'token_usage' || l.event_type === 'voice_usage'
         );
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Billing] Failed to read usage history:', error);
+        throw error;
     }
 }
 
@@ -421,6 +427,7 @@ export async function getCostSummary(userId: string): Promise<{
     try {
         const client = getConvexClient();
         const allLogs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 1000,
         });
@@ -428,8 +435,9 @@ export async function getCostSummary(userId: string): Promise<{
         logs = (allLogs || []).filter(
             (l: any) => l.event_type === 'token_usage' && l.timestamp >= resetTs
         );
-    } catch {
-        // empty
+    } catch (error) {
+        console.error('[Billing] Failed to read cost summary:', error);
+        throw error;
     }
 
     const byModelMap = new Map<
@@ -583,6 +591,7 @@ export async function maybeCreateSpendingNotification(userId: string): Promise<v
         // Deduplicate: check if we already logged a spending alert today
         const client = getConvexClient();
         const recentLogs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 50,
         });
@@ -598,6 +607,7 @@ export async function maybeCreateSpendingNotification(userId: string): Promise<v
 
         const topAlert = importantAlerts[0];
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'spending_alert',
             details: {
@@ -633,6 +643,7 @@ export async function getUnitEconomics(userId: string): Promise<{
     try {
         const client = getConvexClient();
         const allLogs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 1000,
         });
@@ -643,8 +654,9 @@ export async function getUnitEconomics(userId: string): Promise<{
         for (const log of logs) {
             periodApiCost += log.details?.usd_cost || 0;
         }
-    } catch {
-        // empty
+    } catch (error) {
+        console.error('[Billing] Failed to read unit economics usage:', error);
+        throw error;
     }
     periodApiCost = Math.round(periodApiCost * 10000) / 10000;
 

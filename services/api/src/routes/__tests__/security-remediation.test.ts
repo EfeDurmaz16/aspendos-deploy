@@ -9,10 +9,13 @@
  * 5. /metrics requires bearer token
  * 6. CSRF exact path allowlist
  * 7. Banned user gets 403
+ * 8. Production auth rejects unverified bearer user IDs
  */
 
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { auth } from '../../lib/auth';
 
 // ============================================
 // MOCKS
@@ -42,6 +45,10 @@ vi.mock('@aspendos/db', () => ({
             findMany: vi.fn(),
             count: vi.fn(),
             create: vi.fn(),
+        },
+        apiKey: {
+            findUnique: vi.fn(),
+            update: vi.fn(),
         },
     },
 }));
@@ -268,6 +275,50 @@ describe('Security Remediation: Security routes require admin auth', () => {
         // requireAdmin on security routes checks ADMIN_USER_IDS - regular-user is not there
         expect(res.status).toBe(403);
     });
+
+    it('reports current WorkOS, Convex, governance, and webhook security posture', async () => {
+        process.env.NODE_ENV = 'production';
+        process.env.ADMIN_USER_IDS = 'admin-user-1';
+        process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/db';
+        process.env.WORKOS_CLIENT_ID = 'client_123';
+        process.env.WORKOS_API_KEY = 'sk_test_123';
+        process.env.WORKOS_COOKIE_PASSWORD = '12345678901234567890123456789012';
+        process.env.NEXT_PUBLIC_CONVEX_URL = 'https://example.convex.cloud';
+        process.env.CONVEX_SERVICE_SECRET = '12345678901234567890123456789012';
+        process.env.AGIT_REPO_PATH = '/var/lib/yula/agit';
+        process.env.STRIPE_WEBHOOK_SECRET = 'whsec_123';
+        process.env.BOT_APPROVAL_WEBHOOK_SECRET = '12345678901234567890123456789012';
+        process.env.UPSTASH_REDIS_REST_URL = 'https://redis.example';
+        process.env.UPSTASH_REDIS_REST_TOKEN = 'redis-token';
+        (auth.api.getSession as any).mockResolvedValueOnce({
+            session: { id: 'sess-1', expiresAt: new Date(Date.now() + 60_000) },
+            user: {
+                id: 'admin-user-1',
+                email: 'admin@yula.dev',
+                name: 'Admin User',
+            },
+        });
+        mockPrisma.user.findUnique.mockResolvedValueOnce({ banned: false }).mockResolvedValueOnce({
+            id: 'admin-user-1',
+            email: 'admin@yula.dev',
+        });
+
+        const securityRoutes = (await import('../security')).default;
+        const app = new Hono();
+        app.route('/security', securityRoutes);
+
+        const res = await app.request('/security/audit');
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        const names = body.checks.map((check: { name: string }) => check.name);
+
+        expect(names).toContain('WorkOS AuthKit');
+        expect(names).toContain('Convex Service Boundary');
+        expect(names).toContain('FIDES/AGIT Governance');
+        expect(names).toContain('Stripe Webhook Secret');
+        expect(names).toContain('Bot Approval Webhook Secret');
+        expect(names).not.toContain('Auth Secret');
+    });
 });
 
 // ============================================
@@ -320,7 +371,10 @@ describe('Security Remediation: Calculator rejects injection', () => {
     });
 
     it('should reject expressions with backticks', async () => {
-        const result = await calculatorTool.execute({ expression: '`${7*7}`' }, {} as any);
+        const result = await calculatorTool.execute(
+            { expression: '`' + '$' + '{7*7}' + '`' },
+            {} as any
+        );
         expect(result.success).toBe(false);
     });
 
@@ -871,5 +925,160 @@ describe('Security Remediation: Banned user gets 403', () => {
 
         const body = await res2.json();
         expect(body.code).toBe('ACCOUNT_BANNED');
+    });
+});
+
+// ============================================
+// 8. PRODUCTION AUTH REJECTS UNVERIFIED BEARER USER IDS
+// ============================================
+
+describe('Security Remediation: Production bearer auth hardening', () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        process.env.NODE_ENV = 'production';
+    });
+
+    afterEach(() => {
+        process.env.NODE_ENV = originalNodeEnv;
+        vi.restoreAllMocks();
+    });
+
+    it('does not create a user session from an arbitrary bearer token in production', async () => {
+        const { authMiddleware } = await import('../../middleware/auth');
+
+        const app = new Hono();
+        app.use('*', authMiddleware);
+        app.get('/api/chat', (c) =>
+            c.json({
+                userId: c.get('userId' as any),
+                user: c.get('user' as any),
+            })
+        );
+
+        const res = await app.request('/api/chat', {
+            headers: { Authorization: 'Bearer attacker-controlled-user-id' },
+        });
+
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.userId).toBeNull();
+        expect(body.user).toBeNull();
+    });
+
+    it('returns 401 when a protected route only receives an arbitrary bearer token in production', async () => {
+        const { authMiddleware, requireAuth } = await import('../../middleware/auth');
+
+        (auth.api.getSession as any).mockResolvedValue(null);
+
+        const app = new Hono();
+        app.use('*', authMiddleware);
+        app.use('*', requireAuth);
+        app.get('/api/chat', (c) => c.json({ userId: c.get('userId' as any) }));
+
+        const res = await app.request('/api/chat', {
+            headers: { Authorization: 'Bearer attacker-controlled-user-id' },
+        });
+
+        expect(res.status).toBe(401);
+        expect(await res.json()).toEqual({ error: 'Unauthorized' });
+    });
+
+    it('keeps the unverified bearer shortcut available outside production tests', async () => {
+        process.env.NODE_ENV = 'test';
+        const { authMiddleware } = await import('../../middleware/auth');
+
+        const app = new Hono();
+        app.use('*', authMiddleware);
+        app.get('/api/chat', (c) => c.json({ userId: c.get('userId' as any) }));
+
+        const res = await app.request('/api/chat', {
+            headers: { Authorization: 'Bearer local-test-user' },
+        });
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({ userId: 'local-test-user' });
+    });
+});
+
+// ============================================
+// 9. API KEYS ARE VERIFIED BEFORE AUTHENTICATING
+// ============================================
+
+describe('Security Remediation: API key authentication', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockPrisma.user.findUnique.mockResolvedValue({ id: 'api-user', banned: false });
+        mockPrisma.apiKey.update.mockResolvedValue({});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('authenticates a valid yula API key and updates lastUsedAt', async () => {
+        const { requireAuth } = await import('../../middleware/auth');
+
+        mockPrisma.apiKey.findUnique.mockResolvedValue({
+            id: 'key-1',
+            userId: 'api-user',
+            permissions: ['chat:write'],
+            expiresAt: null,
+        });
+
+        const app = new Hono();
+        app.use('*', requireAuth);
+        app.get('/api/tools', (c) =>
+            c.json({
+                userId: c.get('userId' as any),
+                session: c.get('session' as any),
+            })
+        );
+
+        const res = await app.request('/api/tools', {
+            headers: { Authorization: 'Bearer yula_valid_api_key' },
+        });
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toMatchObject({
+            userId: 'api-user',
+            session: { id: 'api-key:key-1' },
+        });
+        expect(mockPrisma.apiKey.findUnique).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { keyHash: expect.stringMatching(/^[a-f0-9]{64}$/) },
+            })
+        );
+        expect(mockPrisma.apiKey.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { id: 'key-1' },
+                data: { lastUsedAt: expect.any(Date) },
+            })
+        );
+    });
+
+    it('rejects expired API keys', async () => {
+        const { requireAuth } = await import('../../middleware/auth');
+
+        mockPrisma.apiKey.findUnique.mockResolvedValue({
+            id: 'expired-key',
+            userId: 'api-user',
+            permissions: ['chat:write'],
+            expiresAt: new Date(Date.now() - 1000),
+        });
+        (auth.api.getSession as any).mockResolvedValue(null);
+
+        const app = new Hono();
+        app.use('*', requireAuth);
+        app.get('/api/tools', (c) => c.json({ ok: true }));
+
+        const res = await app.request('/api/tools', {
+            headers: { 'x-api-key': 'yula_expired_api_key' },
+        });
+
+        expect(res.status).toBe(401);
+        expect(await res.json()).toEqual({ error: 'Unauthorized' });
+        expect(mockPrisma.apiKey.update).not.toHaveBeenCalled();
     });
 });

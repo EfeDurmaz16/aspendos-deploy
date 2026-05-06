@@ -5,7 +5,7 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody, validateParams, validateQuery } from '../middleware/validate';
 import * as skillService from '../services/skill.service';
 import {
@@ -21,6 +21,7 @@ import {
 const skillRoutes = new Hono();
 
 skillRoutes.use('*', requireAuth);
+skillRoutes.use('*', rejectApiKeyAuth);
 
 // GET /skills - List available skills
 skillRoutes.get('/', validateQuery(listSkillsQuerySchema), async (c) => {
@@ -38,7 +39,7 @@ skillRoutes.get('/', validateQuery(listSkillsQuerySchema), async (c) => {
 
 // GET /skills/:id - Get skill details with analytics
 skillRoutes.get('/:id', validateParams(skillIdParamSchema), async (c) => {
-    const skillId = c.req.param('id');
+    const { id: skillId } = c.get('validatedParams') as { id: string };
     const [skill, analytics] = await Promise.all([
         skillService.getSkill(skillId),
         skillService.getSkillAnalytics(skillId),
@@ -74,7 +75,7 @@ skillRoutes.patch(
     validateBody(updateSkillSchema),
     async (c) => {
         const userId = c.get('userId') as string;
-        const skillId = c.req.param('id');
+        const { id: skillId } = c.get('validatedParams') as { id: string };
         const body = await c.req.json();
 
         const existing = await skillService.getSkill(skillId);
@@ -91,7 +92,7 @@ skillRoutes.patch(
 // DELETE /skills/:id - Delete a custom skill
 skillRoutes.delete('/:id', validateParams(skillIdParamSchema), async (c) => {
     const userId = c.get('userId') as string;
-    const skillId = c.req.param('id');
+    const { id: skillId } = c.get('validatedParams') as { id: string };
 
     const existing = await skillService.getSkill(skillId);
     if (!existing) return c.json({ error: 'Skill not found' }, 404);
@@ -110,7 +111,7 @@ skillRoutes.post(
     validateBody(executeSkillSchema),
     async (c) => {
         const userId = c.get('userId') as string;
-        const skillId = c.req.param('id');
+        const { id: skillId } = c.get('validatedParams') as { id: string };
         const body = await c.req.json();
 
         const execution = await skillService.recordExecution({
@@ -134,7 +135,7 @@ skillRoutes.post(
     validateBody(feedbackSchema),
     async (c) => {
         const body = await c.req.json();
-        const executionId = c.req.param('executionId');
+        const { executionId } = c.get('validatedParams') as { executionId: string };
 
         const execution = await skillService.recordFeedback(executionId, body.rating);
         return c.json({ execution });
@@ -144,7 +145,7 @@ skillRoutes.post(
 // GET /skills/:id/executions - Get execution history
 skillRoutes.get('/:id/executions', validateParams(skillIdParamSchema), async (c) => {
     const userId = c.get('userId') as string;
-    const skillId = c.req.param('id');
+    const { id: skillId } = c.get('validatedParams') as { id: string };
 
     const executions = await skillService.getSkillExecutions(skillId, { userId });
     return c.json({ executions });

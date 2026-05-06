@@ -61,7 +61,7 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
             >
-                Your Universal Learning Assistant
+                Deterministic agents that prove what they did
             </motion.p>
 
             {/* Key differentiator */}
@@ -75,7 +75,8 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
                     <span className="font-semibold text-foreground">
                         Yula isn't just another chatbot.
                     </span>{' '}
-                    It's an AI operating system that remembers, anticipates, and grows with you.
+                    It signs, checks, logs, and reverses agent actions so you can trust it with real
+                    work.
                 </p>
             </motion.div>
 
@@ -88,18 +89,18 @@ export function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
             >
                 <FeatureHighlight
                     icon={<Download className="h-5 w-5" />}
-                    label="Import"
-                    description="Bring your history"
+                    label="Audit"
+                    description="Every action logged"
                 />
                 <FeatureHighlight
                     icon={<Bell className="h-5 w-5" />}
-                    label="PAC"
-                    description="AI reaches out"
+                    label="Approve"
+                    description="Gate risky work"
                 />
                 <FeatureHighlight
                     icon={<Users className="h-5 w-5" />}
-                    label="Council"
-                    description="4 AIs at once"
+                    label="Reverse"
+                    description="Undo what can roll back"
                 />
             </motion.div>
 

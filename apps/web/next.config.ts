@@ -4,16 +4,11 @@ import type { NextConfig } from 'next';
 // Enable in production by uncommenting the withSerwist wrapper below
 
 const nextConfig: NextConfig = {
-    // Standalone disabled — Vercel doesn't need it, and it adds ~10min to builds
-    // Re-enable only for Docker deployments: output: 'standalone',
+    // Vercel does not need standalone output, but Docker deployments do.
+    ...(process.env.NEXT_OUTPUT_STANDALONE === 'true' ? { output: 'standalone' as const } : {}),
 
     // Strict mode for React
     reactStrictMode: true,
-
-    // Skip type checking during build (pre-existing TS issues)
-    typescript: {
-        ignoreBuildErrors: true,
-    },
 
     // ESLint config removed in Next 16 — use `next lint` CLI separately
 
@@ -22,6 +17,7 @@ const nextConfig: NextConfig = {
         remotePatterns: [
             { protocol: 'https', hostname: '*.supabase.co' },
             { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+            { protocol: 'https', hostname: 'cdn.brandfetch.io' },
         ],
         formats: ['image/avif', 'image/webp'],
     },

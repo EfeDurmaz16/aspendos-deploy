@@ -28,6 +28,24 @@ export interface DeliveryResult {
     platform: string;
 }
 
+export interface InboundMessage {
+    platform: string;
+    userId?: string;
+    platformUserId?: string;
+    messageId?: string;
+    timestamp?: Date;
+    text: string;
+    metadata?: Record<string, unknown>;
+    raw?: unknown;
+}
+
+export interface MessagingGateway {
+    platform: string;
+    sendMessage(recipientId: string, content: MessageContent): Promise<DeliveryResult>;
+    parseInbound?(payload: unknown): Promise<InboundMessage[]>;
+    verifyWebhook?(request: Request): Promise<boolean>;
+}
+
 /**
  * Send a message to a user on a specific platform via Chat SDK.
  * Used by PAC delivery service for notifications and approval requests.

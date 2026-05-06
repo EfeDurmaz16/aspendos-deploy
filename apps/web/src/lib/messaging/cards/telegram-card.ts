@@ -4,8 +4,8 @@
  * Generates Telegram inline keyboard markup for approval cards.
  */
 
-import type { ApprovalPayload, PlatformCardRenderer } from '../types';
 import { formatApprovalMessage, formatResolvedMessage } from '../platforms/telegram';
+import type { ApprovalPayload, PlatformCardRenderer } from '../types';
 
 export const telegramCardRenderer: PlatformCardRenderer = {
     renderApprovalCard(payload: ApprovalPayload, _callbackUrl: string) {

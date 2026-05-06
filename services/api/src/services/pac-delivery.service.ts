@@ -6,7 +6,7 @@
  * Migrated from Prisma to Convex action_log.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 import { type MessageContent, sendToUser } from '../messaging/gateway';
 
 export interface DeliveryOptions {
@@ -31,6 +31,7 @@ export async function deliverNotification(options: DeliveryOptions): Promise<Del
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: options.userId as any,
             limit: 200,
         });
@@ -124,7 +125,8 @@ async function deliverToPlatform(
 async function deliverPush(options: DeliveryOptions, report: DeliveryReport): Promise<void> {
     try {
         const { sendNotification } = await import('./notification.service');
-        await sendNotification(options.userId, {
+        await sendNotification({
+            userId: options.userId,
             title: options.type === 'approval_request' ? 'Approval Required' : 'YULA',
             body: options.content.slice(0, 200),
             data: options.approvalId ? { approvalId: options.approvalId } : undefined,

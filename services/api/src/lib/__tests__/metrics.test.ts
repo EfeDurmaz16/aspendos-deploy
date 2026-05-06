@@ -290,31 +290,31 @@ describe('Metrics', () => {
         it('should track AI requests', () => {
             incrementCounter('ai_requests_total', {
                 provider: 'openai',
-                model: 'gpt-4o',
+                model: 'gpt-5',
                 status: 'success',
             });
             incrementCounter('ai_requests_total', {
                 provider: 'anthropic',
-                model: 'claude-3-5-haiku',
+                model: 'claude-haiku-4-5',
                 status: 'success',
             });
             incrementCounter('ai_requests_total', {
                 provider: 'openai',
-                model: 'gpt-4o',
+                model: 'gpt-5',
                 status: 'error',
             });
 
             expect(
                 getCounter('ai_requests_total', {
                     provider: 'openai',
-                    model: 'gpt-4o',
+                    model: 'gpt-5',
                     status: 'success',
                 })
             ).toBe(1);
             expect(
                 getCounter('ai_requests_total', {
                     provider: 'openai',
-                    model: 'gpt-4o',
+                    model: 'gpt-5',
                     status: 'error',
                 })
             ).toBe(1);
@@ -323,26 +323,26 @@ describe('Metrics', () => {
         it('should track token usage', () => {
             incrementCounter(
                 'ai_tokens_used_total',
-                { provider: 'openai', model: 'gpt-4o', type: 'input' },
+                { provider: 'openai', model: 'gpt-5', type: 'input' },
                 1000
             );
             incrementCounter(
                 'ai_tokens_used_total',
-                { provider: 'openai', model: 'gpt-4o', type: 'output' },
+                { provider: 'openai', model: 'gpt-5', type: 'output' },
                 500
             );
 
             expect(
                 getCounter('ai_tokens_used_total', {
                     provider: 'openai',
-                    model: 'gpt-4o',
+                    model: 'gpt-5',
                     type: 'input',
                 })
             ).toBe(1000);
             expect(
                 getCounter('ai_tokens_used_total', {
                     provider: 'openai',
-                    model: 'gpt-4o',
+                    model: 'gpt-5',
                     type: 'output',
                 })
             ).toBe(500);
@@ -389,10 +389,10 @@ describe('Metrics', () => {
         });
 
         it('should track AI costs', () => {
-            setGauge('ai_cost_total', 0.05, { provider: 'openai', model: 'gpt-4o' });
-            incrementGauge('ai_cost_total', 0.02, { provider: 'openai', model: 'gpt-4o' });
+            setGauge('ai_cost_total', 0.05, { provider: 'openai', model: 'gpt-5' });
+            incrementGauge('ai_cost_total', 0.02, { provider: 'openai', model: 'gpt-5' });
 
-            expect(getGauge('ai_cost_total', { provider: 'openai', model: 'gpt-4o' })).toBeCloseTo(
+            expect(getGauge('ai_cost_total', { provider: 'openai', model: 'gpt-5' })).toBeCloseTo(
                 0.07,
                 2
             );

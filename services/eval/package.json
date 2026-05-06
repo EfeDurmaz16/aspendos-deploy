@@ -5,8 +5,8 @@
     "type": "module",
     "scripts": {
         "gaia": "bun run runner.ts",
-        "gaia:groq": "bun run runner.ts groq/llama-3.3-70b-versatile",
-        "gaia:gpt": "bun run runner.ts openai/gpt-4o"
+        "gaia:groq": "bun run runner.ts groq/llama-4-maverick",
+        "gaia:gpt": "bun run runner.ts openai/gpt-5"
     },
     "dependencies": {
         "ai": "^6.0.49"

@@ -5,7 +5,8 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { prisma } from '../lib/prisma';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 type Variables = {
     userId?: string;
@@ -23,7 +24,7 @@ const app = new Hono<{ Variables: Variables }>();
  * Returns aggregated token usage grouped by day/week/month.
  * Includes breakdown by input tokens, output tokens, and costs.
  */
-app.get('/usage', requireAuth, async (c) => {
+app.get('/usage', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const rawInterval = c.req.query('interval') || 'day';
     const interval = ['day', 'week', 'month'].includes(rawInterval) ? rawInterval : 'day';
@@ -124,7 +125,7 @@ app.get('/usage', requireAuth, async (c) => {
  * - Average tokens per message
  * - Messages sent today/this week/this month
  */
-app.get('/usage/summary', requireAuth, async (c) => {
+app.get('/usage/summary', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     try {
@@ -163,13 +164,19 @@ app.get('/usage/summary', requireAuth, async (c) => {
 
         // Calculate total cost for billing period
         const totalCostThisPeriod = billingPeriodMessages.reduce(
-            (sum, msg) => sum + msg.costUsd,
+            (sum: number, msg: any) => sum + msg.costUsd,
             0
         );
 
         // Calculate total tokens for billing period
-        const totalTokensIn = billingPeriodMessages.reduce((sum, msg) => sum + msg.tokensIn, 0);
-        const totalTokensOut = billingPeriodMessages.reduce((sum, msg) => sum + msg.tokensOut, 0);
+        const totalTokensIn = billingPeriodMessages.reduce(
+            (sum: number, msg: any) => sum + msg.tokensIn,
+            0
+        );
+        const totalTokensOut = billingPeriodMessages.reduce(
+            (sum: number, msg: any) => sum + msg.tokensOut,
+            0
+        );
 
         // Find most used model
         const modelCounts = new Map<string, number>();
@@ -267,7 +274,7 @@ app.get('/usage/summary', requireAuth, async (c) => {
  *
  * Returns count of messages per day with breakdown by user vs assistant.
  */
-app.get('/messages', requireAuth, async (c) => {
+app.get('/messages', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const limit = Math.min(parseInt(c.req.query('limit') || '30', 10) || 30, 90);
 
@@ -339,7 +346,7 @@ app.get('/messages', requireAuth, async (c) => {
  *
  * Returns pie chart data showing usage distribution across AI models.
  */
-app.get('/models', requireAuth, async (c) => {
+app.get('/models', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const days = Math.min(parseInt(c.req.query('days') || '30', 10) || 30, 365);
 
@@ -421,7 +428,7 @@ app.get('/models', requireAuth, async (c) => {
  *
  * Returns high-level statistics for the dashboard.
  */
-app.get('/summary', requireAuth, async (c) => {
+app.get('/summary', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     try {
@@ -488,7 +495,7 @@ app.get('/summary', requireAuth, async (c) => {
  *
  * This is a moat metric: higher engagement = harder to churn.
  */
-app.get('/engagement', requireAuth, async (c) => {
+app.get('/engagement', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     try {
@@ -594,7 +601,7 @@ app.get('/engagement', requireAuth, async (c) => {
  * - Imported data: completed imports (0-20 points)
  * - Memory depth: memory interactions (0-20 points)
  */
-app.get('/switching-cost', requireAuth, async (c) => {
+app.get('/switching-cost', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     try {
@@ -712,7 +719,7 @@ app.get('/switching-cost', requireAuth, async (c) => {
  *
  * PMF signal: Users who hit 3+ milestones within 7 days have 5x retention.
  */
-app.get('/activation', requireAuth, async (c) => {
+app.get('/activation', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     try {
@@ -802,7 +809,7 @@ app.get('/activation', requireAuth, async (c) => {
  * Tracks user activity recency and predicts churn risk.
  * Used by PAC system to trigger re-engagement notifications.
  */
-app.get('/retention', requireAuth, async (c) => {
+app.get('/retention', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     try {
@@ -885,7 +892,7 @@ app.get('/retention', requireAuth, async (c) => {
  *
  * Returns detailed cost analytics broken down by provider, model, and time period.
  */
-app.get('/costs', requireAuth, async (c) => {
+app.get('/costs', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const days = Math.min(parseInt(c.req.query('days') || '30', 10) || 30, 365);
 
@@ -982,7 +989,7 @@ app.get('/costs', requireAuth, async (c) => {
  * Returns active user counts for the current user's cohort perspective.
  * For admin usage, this could be extended to show platform-wide metrics.
  */
-app.get('/active-users', requireAuth, async (c) => {
+app.get('/active-users', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     try {
@@ -1043,7 +1050,7 @@ app.get('/active-users', requireAuth, async (c) => {
  *
  * Returns a ranked list of AI models by usage count, tokens, and cost.
  */
-app.get('/popular-models', requireAuth, async (c) => {
+app.get('/popular-models', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const days = Math.min(parseInt(c.req.query('days') || '30', 10) || 30, 365);
 
@@ -1128,7 +1135,7 @@ app.get('/popular-models', requireAuth, async (c) => {
  * - Habit loops (Hooked / TARI)
  * - Retention and moat signals
  */
-app.get('/framework-scorecard', requireAuth, async (c) => {
+app.get('/framework-scorecard', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     try {

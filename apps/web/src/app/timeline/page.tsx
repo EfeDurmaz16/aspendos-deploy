@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useCallback, useTransition } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../../../convex/_generated/api';
+import { useQuery } from 'convex/react';
+import { useCallback, useState } from 'react';
 import { ReversibilityBadge } from '@/components/reversibility-badge';
-import type { ReversibilityClass } from '@/lib/reversibility/types';
-import { REVERSIBILITY_SPECS } from '@/lib/reversibility/types';
+import { useAuth } from '@/hooks/use-auth';
 import { dispatchRollback } from '@/lib/reversibility/dispatch';
-import type { AgitCommit } from '@/lib/reversibility/types';
+import type { AgitCommit, ReversibilityClass } from '@/lib/reversibility/types';
+import { REVERSIBILITY_SPECS } from '@/lib/reversibility/types';
+import { api } from '../../../../../convex/_generated/api';
 
 // ── Status indicator dot ─────────────────────────────────────
 
@@ -183,12 +183,13 @@ function FilterBar({
 // ── Main page ────────────────────────────────────────────────
 
 export default function TimelinePage() {
-    // Real-time Convex subscription for commits
-    // TODO: Replace hardcoded user_id once auth context is wired
-    const commits = useQuery(api.commits.listByUser, {
-        user_id: 'placeholder' as any,
-        limit: 200,
-    });
+    const { isLoaded, isSignedIn } = useAuth();
+
+    // Real-time Convex subscription for commits, scoped to the authenticated user
+    const commits = useQuery(
+        api.commits.listCurrentUser,
+        isLoaded && isSignedIn ? { limit: 200 } : 'skip'
+    );
 
     const [activeFilters, setActiveFilters] = useState<Set<ReversibilityClass>>(
         new Set(ALL_CLASSES)
@@ -198,8 +199,6 @@ export default function TimelinePage() {
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
         null
     );
-    const [isPending, startTransition] = useTransition();
-
     const toggleFilter = useCallback((cls: ReversibilityClass) => {
         setActiveFilters((prev) => {
             const next = new Set(prev);
@@ -285,6 +284,26 @@ export default function TimelinePage() {
 
     const filteredCommits =
         commits?.filter((c: any) => activeFilters.has(c.reversibility_class)) ?? [];
+
+    // Auth gates — loading and signed-out states
+    if (!isLoaded) {
+        return (
+            <div className="mx-auto max-w-3xl px-4 py-8">
+                <div className="text-center py-12 text-neutral-500">Loading...</div>
+            </div>
+        );
+    }
+
+    if (!isSignedIn) {
+        if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+        }
+        return (
+            <div className="mx-auto max-w-3xl px-4 py-8">
+                <div className="text-center py-12 text-neutral-500">Redirecting to sign in...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="mx-auto max-w-3xl px-4 py-8">

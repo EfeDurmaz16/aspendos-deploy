@@ -86,7 +86,13 @@ export function ChatInput({
                     disabled={disabled || !value.trim()}
                     className="p-2 rounded-lg bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                        aria-hidden="true"
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
                         <path
                             strokeLinecap="round"
                             strokeLinejoin="round"

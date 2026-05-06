@@ -5,7 +5,7 @@
  */
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
-import { requireAuth } from '../middleware/auth';
+import { requireApiKeyPermission, requireAuth } from '../middleware/auth';
 import { enforceTierLimit } from '../middleware/tier-enforcement';
 import { validateBody, validateParams } from '../middleware/validate';
 import * as pacService from '../services/pac.service';
@@ -26,6 +26,79 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+type ReminderDetails = {
+    content?: string;
+    type?: string;
+    status?: string;
+    priority?: string | number;
+    triggerAt?: number | string | Date;
+    snoozeCount?: number;
+    chatId?: string;
+};
+
+type ReminderLog = {
+    _id?: string;
+    id?: string;
+    _creationTime?: number;
+    createdAt?: string | number | Date;
+    timestamp?: number;
+    details?: ReminderDetails;
+};
+
+type ReminderResponse = {
+    id: string;
+    content?: string;
+    type?: string;
+    status?: string;
+    priority?: string | number;
+    triggerAt?: number | string | Date;
+    snoozeCount?: number;
+    chatId?: string;
+    createdAt?: string | number | Date;
+};
+
+function reminderId(value: unknown): string {
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object') {
+        const candidate = value as { id?: unknown; _id?: unknown };
+        if (typeof candidate.id === 'string') return candidate.id;
+        if (typeof candidate._id === 'string') return candidate._id;
+    }
+    return '';
+}
+
+function reminderFromLog(log: ReminderLog): ReminderResponse {
+    const details = log.details ?? {};
+    return {
+        id: log.id ?? log._id ?? '',
+        content: details.content,
+        type: details.type,
+        status: details.status,
+        priority: details.priority,
+        triggerAt: details.triggerAt,
+        snoozeCount: details.snoozeCount,
+        chatId: details.chatId,
+        createdAt: log.createdAt ?? log.timestamp ?? log._creationTime,
+    };
+}
+
+function reminderFromCommitment(
+    id: unknown,
+    commitment: pacService.DetectedCommitment,
+    conversationId?: string
+): ReminderResponse {
+    return {
+        id: reminderId(id),
+        content: commitment.content,
+        type: commitment.type,
+        status: 'PENDING',
+        priority: commitment.priority,
+        triggerAt: commitment.triggerAt,
+        chatId: conversationId,
+        createdAt: Date.now(),
+    };
+}
+
 // All routes require authentication
 app.use('*', requireAuth);
 
@@ -34,6 +107,7 @@ app.use('*', requireAuth);
  */
 app.post(
     '/detect',
+    requireApiKeyPermission('pac:write'),
     enforceTierLimit('dailyVoiceMinutes'),
     validateBody(detectCommitmentsSchema),
     async (c) => {
@@ -61,10 +135,10 @@ app.post(
         });
 
         // Create reminders for detected commitments
-        const createdReminders = [];
+        const createdReminders: ReminderResponse[] = [];
         for (const commitment of filteredCommitments) {
-            const reminder = await pacService.createReminder(userId, commitment, conversationId);
-            createdReminders.push(reminder);
+            const reminderId = await pacService.createReminder(userId, commitment, conversationId);
+            createdReminders.push(reminderFromCommitment(reminderId, commitment, conversationId));
         }
 
         return c.json({
@@ -84,110 +158,140 @@ app.post(
 /**
  * GET /api/pac/reminders - Get pending reminders
  */
-app.get('/reminders', async (c) => {
+app.get('/reminders', requireApiKeyPermission('pac:read'), async (c) => {
     const userId = c.get('userId')!;
     const limit = Math.min(parseInt(c.req.query('limit') || '20', 10) || 20, 50);
 
     const reminders = await pacService.getPendingReminders(userId, limit);
 
     return c.json({
-        reminders: reminders.map((r) => ({
-            id: r.id,
-            content: r.content,
-            type: r.type,
-            status: r.status,
-            priority: r.priority,
-            triggerAt: r.triggerAt,
-            snoozeCount: r.snoozeCount,
-            conversationId: r.chatId,
-            createdAt: r.createdAt,
-        })),
+        reminders: reminders.map((raw) => {
+            const r = reminderFromLog(raw);
+            return {
+                id: r.id,
+                content: r.content,
+                type: r.type,
+                status: r.status,
+                priority: r.priority,
+                triggerAt: r.triggerAt,
+                snoozeCount: r.snoozeCount,
+                conversationId: r.chatId,
+                createdAt: r.createdAt,
+            };
+        }),
     });
 });
 
 /**
  * POST /api/pac/reminders - Create a reminder directly
  */
-app.post('/reminders', validateBody(createReminderSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { content, type, triggerAt, conversationId } = c.get('validatedBody') as {
-        content: string;
-        type: 'EXPLICIT' | 'IMPLICIT';
-        triggerAt: string;
-        conversationId?: string;
-    };
+app.post(
+    '/reminders',
+    requireApiKeyPermission('pac:write'),
+    validateBody(createReminderSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { content, type, triggerAt, conversationId } = c.get('validatedBody') as {
+            content: string;
+            type: 'EXPLICIT' | 'IMPLICIT';
+            triggerAt: string;
+            conversationId?: string;
+        };
 
-    const parsedDate =
-        triggerAt.includes('T') || /^\d{4}-\d{2}-\d{2}/.test(triggerAt)
-            ? new Date(triggerAt)
-            : parseTimeExpression(triggerAt);
+        const parsedDate =
+            triggerAt.includes('T') || /^\d{4}-\d{2}-\d{2}/.test(triggerAt)
+                ? new Date(triggerAt)
+                : parseTimeExpression(triggerAt);
 
-    if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
-        return c.json({ error: 'Invalid triggerAt format' }, 400);
-    }
+        if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+            return c.json({ error: 'Invalid triggerAt format' }, 400);
+        }
 
-    if (parsedDate <= new Date()) {
-        return c.json({ error: 'triggerAt must be in the future' }, 400);
-    }
+        if (parsedDate <= new Date()) {
+            return c.json({ error: 'triggerAt must be in the future' }, 400);
+        }
 
-    const reminder = await pacService.createReminder(
-        userId,
-        {
-            content,
-            type,
-            priority: type === 'EXPLICIT' ? 'MEDIUM' : 'LOW',
-            triggerAt: parsedDate,
-            confidence: type === 'EXPLICIT' ? 0.95 : 0.7,
-        },
-        conversationId
-    );
-
-    return c.json(
-        {
-            reminder: {
-                id: reminder.id,
-                content: reminder.content,
-                type: reminder.type,
-                status: reminder.status,
-                priority: reminder.priority,
-                triggerAt: reminder.triggerAt,
-                conversationId: reminder.chatId,
-                createdAt: reminder.createdAt,
+        const reminderId = await pacService.createReminder(
+            userId,
+            {
+                content,
+                type,
+                priority: type === 'EXPLICIT' ? 'MEDIUM' : 'LOW',
+                triggerAt: parsedDate,
+                confidence: type === 'EXPLICIT' ? 0.95 : 0.7,
             },
-        },
-        201
-    );
-});
+            conversationId
+        );
+        const reminder = reminderFromCommitment(
+            reminderId,
+            {
+                content,
+                type,
+                priority: type === 'EXPLICIT' ? 'MEDIUM' : 'LOW',
+                triggerAt: parsedDate,
+                confidence: type === 'EXPLICIT' ? 0.95 : 0.7,
+            },
+            conversationId
+        );
+
+        return c.json(
+            {
+                reminder: {
+                    id: reminder.id,
+                    content: reminder.content,
+                    type: reminder.type,
+                    status: reminder.status,
+                    priority: reminder.priority,
+                    triggerAt: reminder.triggerAt,
+                    conversationId: reminder.chatId,
+                    createdAt: reminder.createdAt,
+                },
+            },
+            201
+        );
+    }
+);
 
 /**
  * PATCH /api/pac/reminders/:id/complete - Mark reminder as complete
  */
-app.patch('/reminders/:id/complete', validateParams(reminderIdParamSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { id: reminderId } = c.get('validatedParams') as { id: string };
+app.patch(
+    '/reminders/:id/complete',
+    requireApiKeyPermission('pac:write'),
+    validateParams(reminderIdParamSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { id: reminderId } = c.get('validatedParams') as { id: string };
 
-    await pacService.completeReminder(reminderId, userId);
+        await pacService.completeReminder(reminderId, userId);
 
-    return c.json({ success: true });
-});
+        return c.json({ success: true });
+    }
+);
 
 /**
  * PATCH /api/pac/reminders/:id/dismiss - Dismiss a reminder
  */
-app.patch('/reminders/:id/dismiss', validateParams(reminderIdParamSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { id: reminderId } = c.get('validatedParams') as { id: string };
+app.patch(
+    '/reminders/:id/dismiss',
+    requireApiKeyPermission('pac:write'),
+    validateParams(reminderIdParamSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const { id: reminderId } = c.get('validatedParams') as { id: string };
 
-    await pacService.dismissReminder(reminderId, userId);
+        await pacService.dismissReminder(reminderId, userId);
 
-    return c.json({ success: true });
-});
+        return c.json({ success: true });
+    }
+);
 
 /**
  * PATCH /api/pac/reminders/:id/snooze - Snooze a reminder
  */
 app.patch(
     '/reminders/:id/snooze',
+    requireApiKeyPermission('pac:write'),
     validateParams(reminderIdParamSchema),
     validateBody(snoozeReminderSchema),
     async (c) => {
@@ -207,7 +311,7 @@ app.patch(
 /**
  * GET /api/pac/settings - Get PAC settings
  */
-app.get('/settings', async (c) => {
+app.get('/settings', requireApiKeyPermission('pac:read'), async (c) => {
     const userId = c.get('userId')!;
 
     const settings = await pacService.getPACSettings(userId);
@@ -232,46 +336,51 @@ app.get('/settings', async (c) => {
 /**
  * PATCH /api/pac/settings - Update PAC settings
  */
-app.patch('/settings', validateBody(updatePACSettingsSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const validatedBody = c.get('validatedBody') as Record<string, boolean | string>;
+app.patch(
+    '/settings',
+    requireApiKeyPermission('pac:write'),
+    validateBody(updatePACSettingsSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const validatedBody = c.get('validatedBody') as Record<string, boolean | string>;
 
-    if (Object.keys(validatedBody).length === 0) {
-        return c.json({ error: 'No valid settings provided' }, 400);
+        if (Object.keys(validatedBody).length === 0) {
+            return c.json({ error: 'No valid settings provided' }, 400);
+        }
+
+        const settings = await pacService.updatePACSettings(userId, validatedBody);
+
+        // Audit log the settings update
+        await auditLog({
+            userId,
+            action: 'SETTINGS_UPDATE',
+            resource: 'pac_settings',
+            metadata: validatedBody,
+        });
+
+        return c.json({
+            success: true,
+            settings: {
+                enabled: settings.enabled,
+                explicitEnabled: settings.explicitEnabled,
+                implicitEnabled: settings.implicitEnabled,
+                pushEnabled: settings.pushEnabled,
+                emailEnabled: settings.emailEnabled,
+                quietHoursEnabled: !!(settings.quietHoursStart && settings.quietHoursEnd),
+                quietHoursStart: settings.quietHoursStart,
+                quietHoursEnd: settings.quietHoursEnd,
+                escalationEnabled: settings.escalationEnabled,
+                digestEnabled: settings.digestEnabled,
+                digestTime: settings.digestTime,
+            },
+        });
     }
-
-    const settings = await pacService.updatePACSettings(userId, validatedBody);
-
-    // Audit log the settings update
-    await auditLog({
-        userId,
-        action: 'SETTINGS_UPDATE',
-        resource: 'pac_settings',
-        metadata: validatedBody,
-    });
-
-    return c.json({
-        success: true,
-        settings: {
-            enabled: settings.enabled,
-            explicitEnabled: settings.explicitEnabled,
-            implicitEnabled: settings.implicitEnabled,
-            pushEnabled: settings.pushEnabled,
-            emailEnabled: settings.emailEnabled,
-            quietHoursEnabled: !!(settings.quietHoursStart && settings.quietHoursEnd),
-            quietHoursStart: settings.quietHoursStart,
-            quietHoursEnd: settings.quietHoursEnd,
-            escalationEnabled: settings.escalationEnabled,
-            digestEnabled: settings.digestEnabled,
-            digestTime: settings.digestTime,
-        },
-    });
-});
+);
 
 /**
  * GET /api/pac/stats - Get PAC statistics
  */
-app.get('/stats', async (c) => {
+app.get('/stats', requireApiKeyPermission('pac:read'), async (c) => {
     const userId = c.get('userId')!;
 
     const stats = await pacService.getPACStats(userId);

@@ -19,13 +19,15 @@ FROM base AS deps
 WORKDIR /app
 
 # Install bun for faster package installation
-RUN npm install -g bun
+RUN npm install -g bun@1.3.4
+RUN apk add --no-cache python3 make g++
 
-# Copy package files for monorepo
+# Copy the monorepo workspace exactly as CI sees it.
 COPY package.json bun.lock* ./
 COPY apps/web/package.json ./apps/web/
-COPY packages/db/package.json ./packages/db/ 2>/dev/null || true
-COPY packages/shared-types/package.json ./packages/shared-types/ 2>/dev/null || true
+COPY packages/ ./packages/
+COPY services/api/ ./services/api/
+COPY services/eval/ ./services/eval/
 
 # Install dependencies
 RUN bun install --frozen-lockfile
@@ -38,11 +40,12 @@ FROM base AS builder
 WORKDIR /app
 
 # Install bun
-RUN npm install -g bun
+RUN npm install -g bun@1.3.4
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules 2>/dev/null || true
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/packages ./packages
 
 # Copy source code
 COPY . .
@@ -51,18 +54,13 @@ COPY . .
 ARG NEXT_PUBLIC_APP_URL=https://yula.dev
 ARG NEXT_PUBLIC_API_URL=https://api.yula.dev
 ARG NEXT_PUBLIC_AGENTS_URL=https://agents.yula.dev
-ARG NEXT_PUBLIC_POLAR_STARTER_PRODUCT_ID
-ARG NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID
-ARG NEXT_PUBLIC_POLAR_ULTRA_PRODUCT_ID
 
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_AGENTS_URL=$NEXT_PUBLIC_AGENTS_URL
-ENV NEXT_PUBLIC_POLAR_STARTER_PRODUCT_ID=$NEXT_PUBLIC_POLAR_STARTER_PRODUCT_ID
-ENV NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID=$NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID
-ENV NEXT_PUBLIC_POLAR_ULTRA_PRODUCT_ID=$NEXT_PUBLIC_POLAR_ULTRA_PRODUCT_ID
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NEXT_OUTPUT_STANDALONE=true
 
 # Build the application
 WORKDIR /app/apps/web
@@ -92,8 +90,9 @@ COPY --from=builder /app/apps/web/public ./public
 # Set correct permissions for prerender cache
 RUN mkdir -p .next && chown nextjs:nodejs .next
 
-# Copy standalone server and static files
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+# Copy standalone server and static files. In monorepos Next emits the app
+# server under .next/standalone/apps/web/.
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone/apps/web ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./.next/static
 
 # Switch to non-root user

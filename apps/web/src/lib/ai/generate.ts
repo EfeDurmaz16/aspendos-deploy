@@ -60,7 +60,7 @@ export async function* createStreamingCompletion(
     messages: ChatMessage[],
     options: GenerateOptions = {}
 ): AsyncGenerator<StreamChunk> {
-    const { model = 'gpt-4o-mini', temperature = 0.7, maxTokens = 4000 } = options;
+    const { model = 'gpt-5-mini', temperature = 0.7, maxTokens = 4000 } = options;
 
     const modelsToTry = [model, ...getFallbackModels(model as ModelId)];
 
@@ -116,7 +116,7 @@ export async function createCompletion(
     messages: ChatMessage[],
     options: GenerateOptions = {}
 ): Promise<GenerateResult> {
-    const { model = 'gpt-4o-mini', temperature = 0.7, maxTokens = 4000 } = options;
+    const { model = 'gpt-5-mini', temperature = 0.7, maxTokens = 4000 } = options;
 
     const modelsToTry = [model, ...getFallbackModels(model as ModelId)];
 
@@ -165,7 +165,7 @@ export async function createRouterCompletion(
             { role: 'user', content: prompt },
         ],
         {
-            model: 'llama-3.1-8b-instant',
+            model: 'llama-4-scout',
             temperature: 0.1,
             maxTokens: 500,
         }
@@ -175,7 +175,7 @@ export async function createRouterCompletion(
 }
 
 /**
- * Complex coding task using Claude 3.5 Sonnet
+ * Complex coding task using Claude Sonnet 4.6
  */
 export async function* createCodingCompletion(
     messages: ChatMessage[],
@@ -183,12 +183,12 @@ export async function* createCodingCompletion(
 ): AsyncGenerator<StreamChunk> {
     yield* createStreamingCompletion(messages, {
         ...options,
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-6',
     });
 }
 
 /**
- * Fast completion using GPT-4o-mini
+ * Fast completion using GPT-5 Mini
  */
 export async function createFastCompletion(
     messages: ChatMessage[],
@@ -196,6 +196,6 @@ export async function createFastCompletion(
 ): Promise<GenerateResult> {
     return createCompletion(messages, {
         ...options,
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
     });
 }

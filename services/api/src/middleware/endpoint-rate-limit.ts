@@ -33,7 +33,7 @@ interface RateLimitEntry {
 // ============================================
 
 interface RateLimitStore {
-    get(key: string): Promise<RateLimitEntry | null>;
+    get(key: string): RateLimitEntry | null | Promise<RateLimitEntry | null>;
     set(key: string, entry: RateLimitEntry, ttlMs: number): Promise<void>;
 }
 
@@ -53,7 +53,7 @@ class InMemoryStore implements RateLimitStore {
         }, 60_000);
     }
 
-    async get(key: string): Promise<RateLimitEntry | null> {
+    get(key: string): RateLimitEntry | null {
         return this.store.get(key) || null;
     }
 
@@ -82,9 +82,22 @@ class RedisStore implements RateLimitStore {
 }
 
 // Initialize store based on environment
+export function assertEndpointRateLimitProductionConfig(
+    redisUrl: string | undefined,
+    redisToken: string | undefined
+) {
+    if (process.env.NODE_ENV === 'production' && (!redisUrl || !redisToken)) {
+        throw new Error(
+            'FATAL: Endpoint rate limiting requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in production.'
+        );
+    }
+}
+
 function createStore(): RateLimitStore {
     const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
     const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    assertEndpointRateLimitProductionConfig(redisUrl, redisToken);
 
     if (redisUrl && redisToken) {
         try {
@@ -92,6 +105,11 @@ function createStore(): RateLimitStore {
             console.log('[RateLimit] Endpoint rate limiting using Redis store');
             return new RedisStore(redis);
         } catch (err) {
+            if (process.env.NODE_ENV === 'production') {
+                throw new Error(
+                    `FATAL: Failed to initialize production endpoint rate limiting Redis store: ${String(err)}`
+                );
+            }
             console.error(
                 '[RateLimit] Failed to initialize Redis, falling back to in-memory:',
                 err
@@ -99,11 +117,6 @@ function createStore(): RateLimitStore {
         }
     }
 
-    if (process.env.NODE_ENV === 'production') {
-        console.warn(
-            '[RateLimit] Endpoint rate limiting: in-memory store in production. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for multi-instance support.'
-        );
-    }
     return new InMemoryStore();
 }
 
@@ -274,7 +287,19 @@ export function endpointRateLimit() {
 /**
  * Get current rate limit status for testing
  */
-export async function getRateLimitEntry_forTesting(key: string) {
+export function getRateLimitEntry_forTesting(key: string) {
+    if (store instanceof InMemoryStore) {
+        const memoryStore = (store as unknown as { store: Map<string, RateLimitEntry> }).store;
+        const direct = memoryStore.get(key);
+        if (direct) return direct;
+
+        const legacyMatch = key.match(/^endpoint:(.*):(.*):minute$/);
+        if (legacyMatch) {
+            return memoryStore.get(`eprl:${legacyMatch[1]}:${legacyMatch[2]}:m`);
+        }
+        return undefined;
+    }
+
     return store.get(key);
 }
 

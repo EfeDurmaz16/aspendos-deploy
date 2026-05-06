@@ -53,7 +53,7 @@ const geminiData: CompetitorData = {
         { feature: 'History Import', competitor: false, yula: true },
     ],
     pricingComparison: [
-        { tier: 'Free', competitor: 'Gemini 1.5 Flash', yula: 'N/A' },
+        { tier: 'Free', competitor: 'Gemini 3 Flash', yula: 'N/A' },
         { tier: 'Basic', competitor: '$20/mo (Advanced)', yula: '$20/mo (Starter)' },
         { tier: 'Pro', competitor: 'Workspace pricing', yula: '$50/mo (Pro)' },
         { tier: 'Enterprise', competitor: 'Workspace Enterprise', yula: '$100/mo (Ultra)' },
@@ -61,7 +61,7 @@ const geminiData: CompetitorData = {
     faqs: [
         {
             question: 'Does Yula have access to Gemini models?',
-            answer: 'Yes! Yula provides access to Gemini 3 Pro from Google, plus 12+ other models from OpenAI, Anthropic, Meta, and more. You can use whichever model is best for your task.',
+            answer: 'Yes! Yula provides access to Gemini 3.1 Pro, Gemini 3 Flash, and Gemini 3.1 Flash Lite from Google, plus 12+ other models from OpenAI, Anthropic, Meta, and more. You can use whichever model is best for your task.',
         },
         {
             question: 'Can I use Yula with Google Workspace?',

@@ -9,8 +9,8 @@
  * utilities for Discord-native embed + component features.
  */
 
+import { BADGE_EMOJI, BADGE_HEX } from '../../messaging/badge-constants';
 import type { ApprovalPayload } from '../types';
-import { BADGE_HEX, BADGE_EMOJI } from '../../messaging/badge-constants';
 
 // ============================================
 // Discord Embed Types
@@ -51,8 +51,15 @@ export interface DiscordMessage {
 // ============================================
 
 export function buildDiscordApprovalMessage(payload: ApprovalPayload): DiscordMessage {
-    const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
-        payload;
+    const {
+        approvalId,
+        commitHash,
+        toolName,
+        humanExplanation,
+        reversibilityClass,
+        badgeLabel,
+        expiresAt,
+    } = payload;
     const emoji = BADGE_EMOJI[reversibilityClass] || '?';
     const color = BADGE_HEX[reversibilityClass] || 0x808080;
 
@@ -83,13 +90,13 @@ export function buildDiscordApprovalMessage(payload: ApprovalPayload): DiscordMe
                         type: 2,
                         style: 3, // Success (green)
                         label: 'Approve',
-                        custom_id: `approve:${commitHash}`,
+                        custom_id: `approve:${approvalId}`,
                     },
                     {
                         type: 2,
                         style: 4, // Danger (red)
                         label: 'Reject',
-                        custom_id: `reject:${commitHash}`,
+                        custom_id: `reject:${approvalId}`,
                     },
                 ],
             },
@@ -151,11 +158,11 @@ export interface DiscordInteraction {
 
 export function parseInteractionCustomId(customId: string): {
     action: 'approve' | 'reject';
-    commitHash: string;
+    approvalId: string;
 } | null {
-    const [action, commitHash] = customId.split(':');
-    if ((action === 'approve' || action === 'reject') && commitHash) {
-        return { action, commitHash };
+    const [action, approvalId] = customId.split(':');
+    if ((action === 'approve' || action === 'reject') && approvalId) {
+        return { action, approvalId };
     }
     return null;
 }
@@ -244,18 +251,30 @@ export async function verifyDiscordSignature(
 
     try {
         const encoder = new TextEncoder();
+        const keyBytes = hexToUint8Array(publicKey);
         const key = await crypto.subtle.importKey(
             'raw',
-            hexToUint8Array(publicKey),
+            keyBytes.buffer.slice(
+                keyBytes.byteOffset,
+                keyBytes.byteOffset + keyBytes.byteLength
+            ) as ArrayBuffer,
             { name: 'Ed25519' },
             false,
             ['verify']
         );
 
         const message = encoder.encode(timestamp + body);
+        const messageBytes = message.buffer.slice(
+            message.byteOffset,
+            message.byteOffset + message.byteLength
+        ) as ArrayBuffer;
         const sig = hexToUint8Array(signature);
+        const sigBytes = sig.buffer.slice(
+            sig.byteOffset,
+            sig.byteOffset + sig.byteLength
+        ) as ArrayBuffer;
 
-        return await crypto.subtle.verify('Ed25519', key, sig, message);
+        return await crypto.subtle.verify('Ed25519', key, sigBytes, messageBytes);
     } catch {
         return false;
     }

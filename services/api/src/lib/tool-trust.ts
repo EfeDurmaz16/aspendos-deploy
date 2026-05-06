@@ -17,6 +17,8 @@
  * MCP chains: 0.85^depth transitive trust (from FIDES decay model)
  */
 
+import { prisma } from './prisma';
+
 // ============================================
 // TYPES
 // ============================================
@@ -156,7 +158,7 @@ export async function computeToolTrust(userId: string, toolName: string): Promis
  */
 export function applyMCPDepthDecay(baseTrust: number, depth: number): number {
     if (depth <= 0) return baseTrust;
-    return Math.round(baseTrust * TRUST_DECAY_PER_HOP ** depth);
+    return Math.floor(baseTrust * TRUST_DECAY_PER_HOP ** depth);
 }
 
 /**

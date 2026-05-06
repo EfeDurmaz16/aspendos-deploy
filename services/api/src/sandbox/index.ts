@@ -1,6 +1,6 @@
-import type { SandboxService } from './types';
 import { DaytonaSandboxService } from './daytona';
 import { E2BSandboxService } from './e2b';
+import type { SandboxService } from './types';
 
 let instance: SandboxService | null = null;
 
@@ -26,4 +26,4 @@ export function isSandboxConfigured(): boolean {
     return !!process.env.DAYTONA_API_KEY || !!process.env.E2B_API_KEY;
 }
 
-export type { SandboxService, SandboxOpts, ExecResult } from './types';
+export type { ExecResult, SandboxContext, SandboxOpts, SandboxService } from './types';

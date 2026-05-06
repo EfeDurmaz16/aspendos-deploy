@@ -13,16 +13,30 @@ export async function GET(_request: Request, { params }: { params: Promise<{ has
         const response = await fetch(`${apiUrl}/audit/verify/${hash}`, {
             headers: { 'Content-Type': 'application/json' },
         });
+        const data = await response.json().catch(() => null);
 
         if (!response.ok) {
-            return NextResponse.json({ error: 'Commit not found', hash }, { status: 404 });
+            return NextResponse.json(
+                {
+                    verified: false,
+                    hash,
+                    error: data?.error ?? 'Commit verification failed',
+                },
+                { status: response.status }
+            );
         }
 
-        const data = await response.json();
+        if (data?.verified !== true) {
+            return NextResponse.json(
+                { verified: false, hash, error: 'Commit verification failed' },
+                { status: 502 }
+            );
+        }
+
         return NextResponse.json({
             verified: true,
             hash,
-            signer_did: data.did,
+            signer_did: data.fides_signer_did ?? data.did,
             signature: data.signature,
             timestamp: data.timestamp,
             tool_name: data.tool_name,
@@ -33,7 +47,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ has
             {
                 verified: false,
                 hash,
-                note: 'Verification service unavailable — commit may still be valid',
+                error: 'Verification service unavailable',
             },
             { status: 503 }
         );

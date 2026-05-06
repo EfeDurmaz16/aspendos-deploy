@@ -10,18 +10,24 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { prisma } from '../lib/prisma';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody, validateParams } from '../middleware/validate';
 import { connectionIdParamSchema, createConnectionSchema } from '../validation/messaging.schema';
 
 const messagingRoutes = new Hono();
+const SUPPORTED_WEBHOOK_PLATFORMS = new Set(['slack', 'discord', 'telegram', 'whatsapp']);
+
+function isSupportedWebhookPlatform(platform: string) {
+    return SUPPORTED_WEBHOOK_PLATFORMS.has(platform);
+}
 
 // ============================================
 // PLATFORM CONNECTIONS (authenticated)
 // ============================================
 
 // GET /messaging/connections - List user's platform connections
-messagingRoutes.get('/connections', requireAuth, async (c) => {
+messagingRoutes.get('/connections', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId') as string;
     const connections = await prisma.platformConnection.findMany({
         where: { userId },
@@ -34,6 +40,7 @@ messagingRoutes.get('/connections', requireAuth, async (c) => {
 messagingRoutes.post(
     '/connections',
     requireAuth,
+    rejectApiKeyAuth,
     validateBody(createConnectionSchema),
     async (c) => {
         const userId = c.get('userId') as string;
@@ -41,12 +48,27 @@ messagingRoutes.post(
 
         const { platform, platformUserId, metadata } = body;
 
-        const connection = await prisma.platformConnection.upsert({
+        const existingConnection = await prisma.platformConnection.findUnique({
             where: {
                 platform_platformUserId: { platform, platformUserId },
             },
-            update: { userId, metadata, isActive: true },
-            create: { userId, platform, platformUserId, metadata },
+            select: { id: true, userId: true },
+        });
+
+        if (existingConnection && existingConnection.userId !== userId) {
+            return c.json({ error: 'Platform identity is already linked to another account' }, 409);
+        }
+
+        if (existingConnection) {
+            const connection = await prisma.platformConnection.update({
+                where: { id: existingConnection.id },
+                data: { metadata, isActive: true },
+            });
+            return c.json({ connection }, 200);
+        }
+
+        const connection = await prisma.platformConnection.create({
+            data: { userId, platform, platformUserId, metadata },
         });
 
         return c.json({ connection }, 201);
@@ -57,15 +79,20 @@ messagingRoutes.post(
 messagingRoutes.delete(
     '/connections/:id',
     requireAuth,
+    rejectApiKeyAuth,
     validateParams(connectionIdParamSchema),
     async (c) => {
         const userId = c.get('userId') as string;
         const id = c.req.param('id');
 
-        await prisma.platformConnection.updateMany({
+        const result = await prisma.platformConnection.updateMany({
             where: { id, userId },
             data: { isActive: false },
         });
+
+        if (result.count === 0) {
+            return c.json({ error: 'Platform connection not found' }, 404);
+        }
 
         return c.json({ success: true });
     }
@@ -93,16 +120,20 @@ async function getBot() {
 
 // POST /messaging/webhook/:platform - Universal webhook handler
 messagingRoutes.post('/webhook/:platform', async (c) => {
+    const platform = c.req.param('platform') as string;
+    if (!isSupportedWebhookPlatform(platform)) {
+        return c.json({ error: `Unknown platform: ${platform}` }, 404);
+    }
+
     const bot = await getBot();
     if (!bot) {
         return c.json({ error: 'Messaging bot not configured. Install chat SDK packages.' }, 503);
     }
 
-    const platform = c.req.param('platform') as string;
     const handler = (bot.webhooks as Record<string, any>)?.[platform];
 
     if (!handler) {
-        return c.json({ error: `Unknown platform: ${platform}` }, 404);
+        return c.json({ error: `Platform not configured: ${platform}` }, 503);
     }
 
     const response = await handler(c.req.raw, {
@@ -116,16 +147,20 @@ messagingRoutes.post('/webhook/:platform', async (c) => {
 
 // GET /messaging/webhook/:platform - Verification endpoints (WhatsApp, Slack)
 messagingRoutes.get('/webhook/:platform', async (c) => {
+    const platform = c.req.param('platform') as string;
+    if (!isSupportedWebhookPlatform(platform)) {
+        return c.json({ error: `Unknown platform: ${platform}` }, 404);
+    }
+
     const bot = await getBot();
     if (!bot) {
         return c.json({ error: 'Messaging bot not configured' }, 503);
     }
 
-    const platform = c.req.param('platform') as string;
     const handler = (bot.webhooks as Record<string, any>)?.[platform];
 
     if (!handler) {
-        return c.json({ error: `Unknown platform: ${platform}` }, 404);
+        return c.json({ error: `Platform not configured: ${platform}` }, 503);
     }
 
     return handler(c.req.raw, {

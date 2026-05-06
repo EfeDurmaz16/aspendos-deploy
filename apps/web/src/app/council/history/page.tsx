@@ -13,7 +13,6 @@ import {
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -52,7 +51,6 @@ const personaColors: Record<string, string> = {
 };
 
 export default function CouncilHistoryPage() {
-    const router = useRouter();
     const { isLoaded, isSignedIn } = useAuth();
     const [sessions, setSessions] = useState<CouncilSessionSummary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +61,7 @@ export default function CouncilHistoryPage() {
         if (isLoaded && !isSignedIn) {
             hardNavigate('/login', 'replace');
         }
-    }, [isLoaded, isSignedIn, router]);
+    }, [isLoaded, isSignedIn]);
 
     const loadSessions = useCallback(async () => {
         try {

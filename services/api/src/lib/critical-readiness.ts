@@ -1,6 +1,4 @@
-const ScheduledTaskStatus = {} as any;
-type ScheduledTaskStatus = any;
-
+import { prisma, ScheduledTaskStatus } from '@aspendos/db';
 import { COUNCIL_PERSONAS } from '../services/council.service';
 import * as openMemory from '../services/memory-router.service';
 import { parseTimeExpression } from '../services/scheduler.service';

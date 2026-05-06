@@ -1,0 +1,14 @@
+<!--
+  01 v2 — Arc, clean (no overlap)
+  Two diametrically opposed half-arcs + signed dot.
+  Each arc is ~130° and they sit on opposite sides of the circle, so
+  they never share a pixel. Reads as a broken ring = reversible.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round">
+  <!-- Upper-right arc: from ~340° to ~110° (going clockwise) -->
+  <path d="M 52.9 22 A 24 24 0 0 1 40.3 53.5" />
+  <!-- Lower-left arc: from ~160° to ~290° (going clockwise) -->
+  <path d="M 11.1 42 A 24 24 0 0 1 23.7 10.5" />
+  <!-- Center signature dot -->
+  <circle cx="32" cy="32" r="4" fill="currentColor" stroke="none" />
+</svg>

@@ -7,7 +7,7 @@
  * Migrated from Prisma to Convex action_log events.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 // ============================================
 // TYPES
@@ -35,6 +35,7 @@ export async function createSkill(params: CreateSkillParams) {
     try {
         const client = getConvexClient();
         return await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: params.createdBy ? (params.createdBy as any) : undefined,
             event_type: 'skill_created',
             details: {
@@ -60,7 +61,10 @@ export async function createSkill(params: CreateSkillParams) {
 export async function getSkill(id: string) {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
         const match = (logs || []).find(
             (l: any) => l._id === id && l.event_type === 'skill_created'
         );
@@ -79,7 +83,10 @@ export async function listSkills(options?: {
 }) {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
         let skills = (logs || [])
             .filter((l: any) => l.event_type === 'skill_created')
             .map((l: any) => ({ id: l._id, ...l.details }));
@@ -114,6 +121,7 @@ export async function updateSkill(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'skill_updated',
             details: { skillId: id, ...data },
         });
@@ -127,6 +135,7 @@ export async function deleteSkill(id: string) {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'skill_deleted',
             details: { skillId: id },
         });
@@ -152,6 +161,7 @@ export async function recordExecution(params: {
     try {
         const client = getConvexClient();
         const executionId = await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: params.userId as any,
             event_type: 'skill_execution',
             details: params,
@@ -166,6 +176,7 @@ export async function recordFeedback(executionId: string, feedback: number) {
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'skill_execution_feedback',
             details: {
                 executionId,
@@ -186,10 +197,14 @@ export async function getSkillExecutions(
         const client = getConvexClient();
         const logs = options?.userId
             ? await client.query(api.actionLog.listByUser, {
+                  service_secret: getConvexServiceSecret(),
                   user_id: options.userId as any,
                   limit: 200,
               })
-            : await client.query(api.actionLog.listRecent, { limit: 200 });
+            : await client.query(api.actionLog.listRecent, {
+                  service_secret: getConvexServiceSecret(),
+                  limit: 200,
+              });
 
         return (logs || [])
             .filter(
@@ -209,7 +224,10 @@ export async function getSkillExecutions(
 export async function getSkillAnalytics(skillId: string) {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
 
         const skill = (logs || []).find(
             (l: any) => l._id === skillId && l.event_type === 'skill_created'

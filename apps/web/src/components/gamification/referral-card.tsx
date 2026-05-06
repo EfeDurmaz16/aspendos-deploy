@@ -98,9 +98,7 @@ export function ReferralCard({
 
             {/* Referral Code */}
             <div className="mb-4">
-                <label className="text-xs text-muted-foreground mb-1 block">
-                    Your Referral Link
-                </label>
+                <p className="text-xs text-muted-foreground mb-1 block">Your Referral Link</p>
                 <div className="flex items-center gap-2">
                     <div className="flex-1 px-3 py-2 rounded-lg bg-muted/50 border text-sm font-mono truncate">
                         {fullUrl}
@@ -172,11 +170,15 @@ export function ReferralInput({
 
     return (
         <form onSubmit={handleSubmit} className={cn('', className)}>
-            <label className="text-sm font-medium text-foreground mb-2 block">
+            <label
+                htmlFor="referral-code"
+                className="text-sm font-medium text-foreground mb-2 block"
+            >
                 Have a referral code?
             </label>
             <div className="flex items-center gap-2">
                 <input
+                    id="referral-code"
                     type="text"
                     value={code}
                     onChange={(e) => setCode(e.target.value.toUpperCase())}

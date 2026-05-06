@@ -456,7 +456,7 @@ export function ImportFlow({ open, onOpenChange }: ImportFlowProps) {
 // Helper function to parse conversations from different formats
 function parseConversations(
     data: unknown,
-    source: 'CHATGPT' | 'CLAUDE' | 'UNKNOWN',
+    source: 'CHATGPT' | 'CLAUDE' | 'GEMINI' | 'PERPLEXITY' | 'UNKNOWN',
     fileId: string
 ): ParsedConversation[] {
     const conversations: ParsedConversation[] = [];

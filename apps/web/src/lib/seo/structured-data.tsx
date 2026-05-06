@@ -81,9 +81,12 @@ export const organizationSchema: Organization = {
     url: BASE_URL,
     logo: `${BASE_URL}/logo.png`,
     description:
-        'Yula is a unified AI platform providing access to multiple AI models with persistent semantic memory.',
+        'Yula is a deterministic AI agent platform — every action is signed, logged, and reversible.',
     foundingDate: '2024',
-    sameAs: ['https://twitter.com/yaboruAI', 'https://github.com/yula-ai'],
+    sameAs: [
+        'https://twitter.com/efebarandurmaz',
+        'https://github.com/EfeDurmaz16/aspendos-deploy',
+    ],
     contactPoint: {
         '@type': 'ContactPoint',
         contactType: 'customer support',
@@ -98,7 +101,8 @@ export const websiteSchema: WebSite = {
     name: 'Yula',
     alternateName: 'Yula - Unified AI Platform',
     url: BASE_URL,
-    description: 'Access GPT-5, Claude, Gemini & 12+ AI models with persistent shared memory',
+    description:
+        'Deterministic AI agents that prove what they did. Every action signed, logged, reversible.',
     publisher: {
         '@type': 'Organization',
         name: 'Yula',
@@ -135,14 +139,14 @@ export const softwareAppSchema: SoftwareApplication = {
         worstRating: '1',
     },
     featureList: [
-        'Access to 12+ AI models including GPT-5, Claude, and Gemini',
-        'Persistent semantic memory across all conversations',
-        'Import ChatGPT and Claude conversation history',
-        'Proactive AI Callbacks (PAC) for automated reminders',
-        'Council Mode for parallel multi-model queries',
-        'Offline AI with WebGPU local inference',
-        'Voice input and output with 6 voice options',
-        'Privacy-first architecture with data encryption',
+        'Deterministic guard chain before agent tool execution',
+        'FIDES-signed action payloads',
+        'Persistent pre-execution and post-execution audit commits',
+        'Human approval gates for high-risk actions',
+        'Reversibility classes for undoable, cancelable, compensatable, approval-only, and blocked actions',
+        'Webhook and messaging approval surfaces',
+        'Sandbox ownership checks for agent tools',
+        'Fail-loud production posture for missing durable infrastructure',
     ],
 };
 
@@ -156,39 +160,39 @@ export const faqSchema: FAQPage = {
             name: 'What is Yula?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'Yula (Your intelligent light in every conversation) is a unified AI platform that provides access to multiple AI models like GPT-5, Claude, and Gemini with persistent semantic memory across all conversations. Unlike single-provider AI apps, Yula lets you use the best AI for each task while maintaining context.',
+                text: 'Yula is a deterministic AI agent platform for provable actions. It checks policy before execution, signs action payloads, writes persistent audit commits, and exposes verification records so operators can trust agent work.',
             },
         },
         {
             '@type': 'Question',
-            name: 'Can I import my ChatGPT conversations to Yula?',
+            name: 'How does Yula make agent actions verifiable?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: "Yes! Yula supports importing conversation history from ChatGPT and Claude. Your imported conversations become part of Yula's semantic memory, allowing all AI models to reference your past discussions.",
+                text: 'Yula classifies the action, verifies guardrails, signs a canonical payload through FIDES, writes a pre-execution commit, executes the tool, writes a result commit, and serves the audit trail for verification.',
             },
         },
         {
             '@type': 'Question',
-            name: 'What is Council Mode in Yula?',
+            name: 'What happens when an action is risky?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'Council Mode allows you to send the same question to multiple AI models simultaneously (up to 4 with Ultra plan). You can compare responses from GPT-5, Claude, Gemini, and other models side-by-side to get the best answer.',
+                text: 'Risky actions are assigned a reversibility class. High-risk or irreversible actions require explicit human approval, and dangerous actions can be blocked before any tool executes.',
             },
         },
         {
             '@type': 'Question',
-            name: 'What is Proactive AI Callback (PAC)?',
+            name: 'Can Yula reverse agent actions?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: "Proactive Agentic Callback (PAC) is Yula's unique feature where the AI can initiate contact with you. If you ask Yula to remind you about something in a week, it will proactively send you a notification - no other AI platform offers this.",
+                text: 'Yula tracks whether an action is undoable, cancelable within a time window, compensatable, approval-only, or blocked. Undo and rollback behavior depends on that class and the tool-specific rollback strategy.',
             },
         },
         {
             '@type': 'Question',
-            name: 'Does Yula work offline?',
+            name: 'Is Yula tied to one model provider?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'Yes! Yula supports offline AI through WebGPU-powered local models. You can download models like Llama 3.2 to your browser and chat without internet connection.',
+                text: 'No. Yula is model-agnostic. Its core value is the action control plane around model output: policy checks, signatures, approvals, execution logs, and verification.',
             },
         },
         {
@@ -196,7 +200,7 @@ export const faqSchema: FAQPage = {
             name: 'How much does Yula cost?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'Yula offers three tiers: Starter at $20/month (300 chats, basic features), Pro at $50/month (1,500 chats, all models, multi-model comparison), and Ultra at $100/month (5,000+ chats, parallel queries, priority support).',
+                text: 'Yula offers tiers for different action volumes and control requirements, from signed logs and basic approvals to advanced policy, messaging approvals, and audit controls.',
             },
         },
         {
@@ -204,7 +208,7 @@ export const faqSchema: FAQPage = {
             name: 'Which AI models does Yula support?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'Yula supports 12+ AI models including: GPT-5.2, GPT-5 Nano, GPT-4o from OpenAI; Claude 4.5 Opus, Claude 4.5 Sonnet from Anthropic; Gemini 3 Pro from Google; Llama 4, Grok 4.1, DeepSeek V3.2, Mistral, Qwen 3, and more.',
+                text: 'Yula can route work across model providers, but the production contract is provider-independent: every consequential action must pass through deterministic checks, signing, commit logging, and verification.',
             },
         },
     ],
@@ -216,13 +220,14 @@ export const productSchemas: Product[] = [
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: 'Yula Starter',
-        description: 'Entry-level AI access with basic memory and 300 chats per month',
+        description:
+            'Entry-level deterministic agent controls with signed logs and basic approvals',
         brand: { '@type': 'Brand', name: 'Yula' },
         offers: {
             '@type': 'Offer',
             price: '20',
             priceCurrency: 'USD',
-            priceValidUntil: '2025-12-31',
+            priceValidUntil: '2027-12-31',
             availability: 'https://schema.org/InStock',
         },
     },
@@ -230,13 +235,13 @@ export const productSchemas: Product[] = [
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: 'Yula Pro',
-        description: 'Full AI access with all models, advanced memory, and 1,500 chats per month',
+        description: 'Deterministic agent controls with reversibility and messaging approvals',
         brand: { '@type': 'Brand', name: 'Yula' },
         offers: {
             '@type': 'Offer',
             price: '50',
             priceCurrency: 'USD',
-            priceValidUntil: '2025-12-31',
+            priceValidUntil: '2027-12-31',
             availability: 'https://schema.org/InStock',
         },
     },
@@ -244,13 +249,13 @@ export const productSchemas: Product[] = [
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: 'Yula Ultra',
-        description: 'Power user tier with 5,000+ chats, parallel queries, and priority support',
+        description: 'Advanced policy and audit controls for higher-volume agent execution',
         brand: { '@type': 'Brand', name: 'Yula' },
         offers: {
             '@type': 'Offer',
             price: '100',
             priceCurrency: 'USD',
-            priceValidUntil: '2025-12-31',
+            priceValidUntil: '2027-12-31',
             availability: 'https://schema.org/InStock',
         },
     },

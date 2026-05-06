@@ -7,8 +7,8 @@
  * Google Chat uses Card v2 JSON for interactive content.
  */
 
-import type { ApprovalPayload } from '../types';
 import { BADGE_EMOJI } from '../../messaging/badge-constants';
+import type { ApprovalPayload } from '../types';
 
 // ============================================
 // Google Chat Card Types
@@ -59,8 +59,15 @@ export type GChatWidget =
 // ============================================
 
 export function buildGChatApprovalCard(payload: ApprovalPayload, callbackUrl: string): GChatCard {
-    const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
-        payload;
+    const {
+        approvalId,
+        commitHash,
+        toolName,
+        humanExplanation,
+        reversibilityClass,
+        badgeLabel,
+        expiresAt,
+    } = payload;
     const emoji = BADGE_EMOJI[reversibilityClass] || '?';
 
     const infoWidgets: GChatWidget[] = [
@@ -102,6 +109,7 @@ export function buildGChatApprovalCard(payload: ApprovalPayload, callbackUrl: st
                                 function: 'handleApproval',
                                 parameters: [
                                     { key: 'action', value: 'approve' },
+                                    { key: 'approvalId', value: approvalId },
                                     { key: 'commitHash', value: commitHash },
                                     { key: 'callbackUrl', value: callbackUrl },
                                 ],
@@ -116,6 +124,7 @@ export function buildGChatApprovalCard(payload: ApprovalPayload, callbackUrl: st
                                 function: 'handleApproval',
                                 parameters: [
                                     { key: 'action', value: 'reject' },
+                                    { key: 'approvalId', value: approvalId },
                                     { key: 'commitHash', value: commitHash },
                                     { key: 'callbackUrl', value: callbackUrl },
                                 ],
@@ -131,7 +140,7 @@ export function buildGChatApprovalCard(payload: ApprovalPayload, callbackUrl: st
     return {
         cardsV2: [
             {
-                cardId: `approval_${commitHash}`,
+                cardId: `approval_${approvalId}`,
                 card: {
                     header: {
                         title: `${emoji} Approval Required`,
@@ -195,7 +204,7 @@ export function buildGChatResolvedCard(
  */
 export async function handleGChatWebhook(_req: Request): Promise<Response> {
     return new Response(JSON.stringify({ status: 'gchat_not_activated' }), {
-        status: 200,
+        status: 501,
         headers: { 'Content-Type': 'application/json' },
     });
 }

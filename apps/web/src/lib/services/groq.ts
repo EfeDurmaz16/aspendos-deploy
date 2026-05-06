@@ -11,8 +11,8 @@ import { gateway, generateText, streamText } from 'ai';
 // ROUTING MODELS (Fast, low-cost)
 // ============================================
 
-export const ROUTER_MODEL = 'llama-3.1-8b-instant';
-export const FALLBACK_ROUTER_MODEL = 'llama3-8b-8192';
+export const ROUTER_MODEL = 'llama-4-scout';
+export const FALLBACK_ROUTER_MODEL = 'llama-4-scout';
 
 // ============================================
 // ROUTING DECISION TYPES
@@ -35,8 +35,8 @@ Analyze the user's message and decide the best approach:
 1. **direct_reply** - For general questions, conversations, creative tasks
    - Use when: Greeting, opinion, explanation, coding help, creative writing
    - Choose model based on complexity:
-     - Simple/fast: "gpt-4o-mini" or "claude-3-haiku-20240307"
-     - Complex/reasoning: "gpt-4o" or "claude-3-5-sonnet-20241022"
+     - Simple/fast: "gpt-5-mini" or "claude-haiku-4-5"
+     - Complex/reasoning: "gpt-5" or "claude-sonnet-4-6"
 
 2. **rag_search** - When the user asks about their past conversations, memories, or specific context
    - Use when: "Remember when...", "What did I say about...", personal history
@@ -114,7 +114,7 @@ export async function routeUserMessage(
         // Default to direct reply with fast model
         return {
             type: 'direct_reply',
-            model: 'gpt-4o-mini',
+            model: 'gpt-5-mini',
             reason: 'Router fallback - defaulting to direct reply',
         };
     }
@@ -128,7 +128,7 @@ export async function* createGroqStreamingCompletion(
     messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
     options: { model?: string; temperature?: number; maxTokens?: number } = {}
 ): AsyncGenerator<{ type: 'text' | 'done'; content: string }> {
-    const { model = 'llama-3.1-70b-versatile', temperature = 0.7, maxTokens = 4000 } = options;
+    const { model = 'llama-4-maverick', temperature = 0.7, maxTokens = 4000 } = options;
 
     const result = streamText({
         model: gateway(`groq/${model}`),

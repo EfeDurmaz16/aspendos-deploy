@@ -1,6 +1,6 @@
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
-const prisma = null as any;
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 type Variables = { userId: string };
 const app = new Hono<{ Variables: Variables }>();
@@ -19,7 +19,7 @@ function escapeRegExp(input: string): string {
 }
 
 // GET / - List user's prompt templates
-app.get('/', requireAuth, async (c) => {
+app.get('/', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     const category = c.req.query('category');
 
@@ -35,7 +35,7 @@ app.get('/', requireAuth, async (c) => {
 });
 
 // POST / - Create a new prompt template
-app.post('/', requireAuth, async (c) => {
+app.post('/', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     const body = (await c.req.json()) as Record<string, unknown>;
 
@@ -63,7 +63,7 @@ app.post('/', requireAuth, async (c) => {
 });
 
 // PATCH /:id - Update template
-app.patch('/:id', requireAuth, async (c) => {
+app.patch('/:id', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     const id = c.req.param('id');
     const body = (await c.req.json()) as Record<string, unknown>;
@@ -93,7 +93,7 @@ app.patch('/:id', requireAuth, async (c) => {
 });
 
 // DELETE /:id - Delete template
-app.delete('/:id', requireAuth, async (c) => {
+app.delete('/:id', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     const id = c.req.param('id');
 
@@ -107,7 +107,7 @@ app.delete('/:id', requireAuth, async (c) => {
 });
 
 // POST /:id/use - Increment usage count and return filled template
-app.post('/:id/use', requireAuth, async (c) => {
+app.post('/:id/use', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     const id = c.req.param('id');
     const body = (await c.req.json()) as Record<string, unknown>;

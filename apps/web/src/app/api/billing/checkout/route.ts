@@ -1,11 +1,11 @@
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { convexServer } from '@/lib/convex-server';
 import {
-    getStripe,
     getOrCreateCustomer,
+    getStripe,
     resolvePriceId,
     TIER_CONFIG,
     type TierSlug,
@@ -13,6 +13,14 @@ import {
 import { api } from '../../../../../../../convex/_generated/api';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yula.dev';
+
+function getConvexServiceSecret() {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
+}
 
 /**
  * POST /api/billing/checkout
@@ -56,6 +64,7 @@ export async function POST(req: NextRequest) {
 
         // Look up the user in Convex to get their stripe_customer_id
         const convexUser = await convexServer.query(api.users.getByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
             workos_id: userId,
         });
 
@@ -70,6 +79,7 @@ export async function POST(req: NextRequest) {
         // Save the Stripe customer ID to Convex if it's new
         if (convexUser && !convexUser.stripe_customer_id) {
             await convexServer.mutation(api.users.updateStripeCustomerId, {
+                service_secret: getConvexServiceSecret(),
                 id: convexUser._id,
                 stripe_customer_id: customerId,
             });

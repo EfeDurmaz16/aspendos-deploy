@@ -51,7 +51,28 @@ fi
 
 cd ${DEPLOY_DIR}/deploy
 
+# Production preflight. This intentionally runs from repo root before any
+# containers are rebuilt or restarted.
+cd ${DEPLOY_DIR}
+export BUN_INSTALL="\$HOME/.bun"
+export PATH="\$BUN_INSTALL/bin:\$PATH"
+if ! command -v bun >/dev/null 2>&1; then
+    curl -fsSL https://bun.sh/install | bash
+    export PATH="\$BUN_INSTALL/bin:\$PATH"
+fi
+if [ ! -f deploy/.env.production ]; then
+    echo "deploy/.env.production is required for production deploys" >&2
+    exit 1
+fi
+set -a
+. deploy/.env.production
+set +a
+bun install --frozen-lockfile
+RELEASE_REQUIRE_DATABASE_URL=true CI=true bun run release:ready
+bun run --cwd packages/db db:migrate:deploy
+
 # Build and restart
+cd ${DEPLOY_DIR}/deploy
 docker compose --profile ${profile} build --no-cache
 docker compose --profile ${profile} up -d --remove-orphans
 
@@ -88,6 +109,23 @@ if [ ! -d "${DEPLOY_DIR}" ]; then
 else
     cd ${DEPLOY_DIR} && git fetch origin main && git reset --hard origin/main
 fi
+cd ${DEPLOY_DIR}
+export BUN_INSTALL="\$HOME/.bun"
+export PATH="\$BUN_INSTALL/bin:\$PATH"
+if ! command -v bun >/dev/null 2>&1; then
+    curl -fsSL https://bun.sh/install | bash
+    export PATH="\$BUN_INSTALL/bin:\$PATH"
+fi
+if [ ! -f deploy/.env.production ]; then
+    echo "deploy/.env.production is required for production deploys" >&2
+    exit 1
+fi
+set -a
+. deploy/.env.production
+set +a
+bun install --frozen-lockfile
+RELEASE_REQUIRE_DATABASE_URL=true CI=true bun run release:ready
+bun run --cwd packages/db db:migrate:deploy
 cd ${DEPLOY_DIR}/deploy
 docker compose --profile frontend --profile backend build --no-cache
 docker compose --profile frontend --profile backend up -d --remove-orphans

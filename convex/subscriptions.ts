@@ -1,5 +1,7 @@
-import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
+
+import { requireServiceSecret } from './lib/serviceSecret';
 
 const tierValidator = v.union(
     v.literal('personal'),
@@ -23,6 +25,7 @@ const statusValidator = v.union(
  */
 export const upsertFromStripe = mutation({
     args: {
+        service_secret: v.string(),
         user_id: v.id('users'),
         stripe_subscription_id: v.string(),
         tier: tierValidator,
@@ -32,6 +35,7 @@ export const upsertFromStripe = mutation({
         byok: v.boolean(),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const existing = await ctx.db
             .query('subscriptions')
             .withIndex('by_stripe_id', (q) =>
@@ -50,7 +54,17 @@ export const upsertFromStripe = mutation({
             return existing._id;
         }
 
-        return await ctx.db.insert('subscriptions', args);
+        const subscription = {
+            user_id: args.user_id,
+            stripe_subscription_id: args.stripe_subscription_id,
+            tier: args.tier,
+            status: args.status,
+            current_period_end: args.current_period_end,
+            byok: args.byok,
+            ...(args.seats === undefined ? {} : { seats: args.seats }),
+        };
+
+        return await ctx.db.insert('subscriptions', subscription);
     },
 });
 
@@ -58,8 +72,9 @@ export const upsertFromStripe = mutation({
  * Get the active subscription for a user.
  */
 export const getByUser = query({
-    args: { user_id: v.id('users') },
+    args: { service_secret: v.string(), user_id: v.id('users') },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db
             .query('subscriptions')
             .withIndex('by_user', (q) => q.eq('user_id', args.user_id))
@@ -71,8 +86,9 @@ export const getByUser = query({
  * Get a subscription by its Stripe subscription ID.
  */
 export const getByStripeId = query({
-    args: { stripe_subscription_id: v.string() },
+    args: { service_secret: v.string(), stripe_subscription_id: v.string() },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db
             .query('subscriptions')
             .withIndex('by_stripe_id', (q) =>
@@ -86,8 +102,9 @@ export const getByStripeId = query({
  * Cancel a subscription (set status to canceled).
  */
 export const cancel = mutation({
-    args: { id: v.id('subscriptions') },
+    args: { service_secret: v.string(), id: v.id('subscriptions') },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.patch(args.id, { status: 'canceled' });
     },
 });
@@ -97,10 +114,12 @@ export const cancel = mutation({
  */
 export const updateStatus = mutation({
     args: {
+        service_secret: v.string(),
         id: v.id('subscriptions'),
         status: statusValidator,
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.patch(args.id, { status: args.status });
     },
 });
@@ -110,10 +129,12 @@ export const updateStatus = mutation({
  */
 export const updateSeats = mutation({
     args: {
+        service_secret: v.string(),
         id: v.id('subscriptions'),
         seats: v.number(),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.patch(args.id, { seats: args.seats });
     },
 });

@@ -35,10 +35,14 @@ statusRoutes.get('/sla', (c) => {
 
 // GET /status - Public status page data
 statusRoutes.get('/', (c) => {
+    const start = Date.now();
     const statusData = getStatusPageData();
 
     return c.json({
         ...statusData,
+        version: '0.3.0',
+        uptime: process.uptime(),
+        responseTimeMs: Date.now() - start,
         timestamp: new Date().toISOString(),
     });
 });

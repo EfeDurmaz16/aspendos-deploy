@@ -32,9 +32,9 @@
  *
  * // Query council (multiple AI models)
  * const councilResponse = await client.council.query('What is the meaning of life?', [
- *   'gpt-4',
- *   'claude-3',
- *   'gemini-pro'
+ *   'gpt-5',
+ *   'claude-opus-4-7',
+ *   'gemini-3.1-pro-preview'
  * ]);
  *
  * // Check usage
@@ -44,37 +44,35 @@
  */
 
 export { YulaClient } from './client';
-
+export {
+    YulaAuthError,
+    YulaBadRequestError,
+    YulaError,
+    YulaNetworkError,
+    YulaNotFoundError,
+    YulaRateLimitError,
+    YulaServerError,
+} from './errors';
 export type {
-    YulaConfig,
-    ChatMessage,
+    ApiResponse,
     Chat,
-    ChatSendOptions,
-    ChatHistoryOptions,
     ChatExportFormat,
+    ChatHistoryOptions,
+    ChatMessage,
+    ChatSendOptions,
+    CouncilModelResponse,
+    CouncilResponse,
     ExportedChat,
+    Feature,
+    FilledTemplate,
+    HealthStatus,
     Memory,
-    MemorySearchOptions,
     MemoryListOptions,
+    MemorySearchOptions,
+    StreamChunk,
+    Subscription,
     Template,
     TemplateCreateInput,
-    FilledTemplate,
-    CouncilResponse,
-    CouncilModelResponse,
     UsageStats,
-    Subscription,
-    Feature,
-    HealthStatus,
-    ApiResponse,
-    StreamChunk,
+    YulaConfig,
 } from './types';
-
-export {
-    YulaError,
-    YulaAuthError,
-    YulaRateLimitError,
-    YulaNotFoundError,
-    YulaBadRequestError,
-    YulaServerError,
-    YulaNetworkError,
-} from './errors';

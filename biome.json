@@ -7,7 +7,23 @@
     },
     "files": {
         "ignoreUnknown": true,
-        "includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json"]
+        "includes": [
+            "apps/web/src/**/*.ts",
+            "apps/web/src/**/*.tsx",
+            "services/api/src/**/*.ts",
+            "packages/**/*.ts",
+            "convex/**/*.ts",
+            "scripts/**/*.ts",
+            "*.json",
+            ".github/workflows/*.json",
+            "!**/node_modules",
+            "!**/.next",
+            "!**/.turbo",
+            "!**/.claude",
+            "!**/.worktrees",
+            "!**/convex/_generated*",
+            "!apps/web/src/lib/convex/_generated"
+        ]
     },
     "formatter": {
         "enabled": true,

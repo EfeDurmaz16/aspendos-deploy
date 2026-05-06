@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/performance/noImgElement: Attachment thumbnails and previews can use blob/data URLs from local uploads. */
+
 'use client';
 
 import {
@@ -848,7 +850,7 @@ export const PromptInputTextarea = ({
 
     return (
         <InputGroupTextarea
-            className={cn('field-sizing-content max-h-48 min-h-16', className)}
+            className={cn('field-sizing-content max-h-40 min-h-10', className)}
             name="message"
             onCompositionEnd={() => setIsComposing(false)}
             onCompositionStart={() => setIsComposing(true)}
@@ -884,7 +886,7 @@ export const PromptInputFooter = ({ className, ...props }: PromptInputFooterProp
 export type PromptInputToolsProps = HTMLAttributes<HTMLDivElement>;
 
 export const PromptInputTools = ({ className, ...props }: PromptInputToolsProps) => (
-    <div className={cn('flex items-center gap-1', className)} {...props} />
+    <div className={cn('flex items-center gap-2', className)} {...props} />
 );
 
 export type PromptInputButtonProps = ComponentProps<typeof InputGroupButton>;

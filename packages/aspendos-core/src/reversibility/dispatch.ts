@@ -1,5 +1,5 @@
-import type { ReversibilityMetadata, ReverseResult, ToolContext } from './types';
 import { registry } from '../tools/registry';
+import type { ReverseResult, ReversibilityMetadata, ToolContext } from './types';
 
 export async function dispatchReverse(
     toolName: string,

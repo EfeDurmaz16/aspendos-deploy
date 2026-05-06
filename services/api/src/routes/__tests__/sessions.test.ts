@@ -52,9 +52,18 @@ vi.mock('../../middleware/auth', () => ({
         c.set('session', { id: 'current-session-id' });
         return next();
     }),
+    rejectApiKeyAuth: vi.fn((c: any, next: any) => {
+        if (c.get('apiKeyId')) {
+            return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+        }
+        return next();
+    }),
 }));
 
+import { requireAuth } from '../../middleware/auth';
 import sessionRoutes from '../sessions';
+
+const mockRequireAuth = requireAuth as any;
 
 function createTestApp() {
     const app = new Hono();
@@ -69,6 +78,12 @@ const PAST = new Date('2025-01-14T12:00:00Z');
 describe('Session Routes', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockRequireAuth.mockImplementation((c: any, next: any) => {
+            c.set('userId', 'user-1');
+            c.set('user', { userId: 'user-1', email: 'test@example.com' });
+            c.set('session', { id: 'current-session-id' });
+            return next();
+        });
         mockAuditLog.mockResolvedValue(undefined);
     });
 
@@ -386,6 +401,26 @@ describe('Session Routes', () => {
     });
 
     describe('Authentication', () => {
+        it('rejects API-key authenticated access to session management', async () => {
+            mockRequireAuth.mockImplementationOnce((c: any, next: any) => {
+                c.set('userId', 'user-1');
+                c.set('apiKeyId', 'key-1');
+                c.set('apiKeyPermissions', ['chat:read']);
+                c.set('session', { id: 'api-key:key-1' });
+                return next();
+            });
+            sessionMocks.findMany.mockResolvedValue([]);
+
+            const app = createTestApp();
+            const res = await app.request('/sessions');
+
+            expect(res.status).toBe(403);
+            await expect(res.json()).resolves.toEqual({
+                error: 'API key authentication is not allowed for this route',
+            });
+            expect(sessionMocks.findMany).not.toHaveBeenCalled();
+        });
+
         it('should use requireAuth middleware', async () => {
             // Verify that the sessions route module imports and uses requireAuth.
             // The mock sets userId on the context; if it were not wired up,

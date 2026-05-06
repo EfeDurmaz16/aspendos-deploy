@@ -1,3 +1,4 @@
+import { prisma } from '@aspendos/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@aspendos/db', () => ({
@@ -29,10 +30,10 @@ vi.mock('../../services/scheduler.service', () => ({
 
 vi.mock('../../services/council.service', () => ({
     COUNCIL_PERSONAS: {
-        SCHOLAR: { modelId: 'groq/llama-3.1-70b-versatile' },
-        CREATIVE: { modelId: 'groq/mixtral-8x7b-32768' },
-        PRACTICAL: { modelId: 'groq/llama-3.1-8b-instant' },
-        DEVILS_ADVOCATE: { modelId: 'groq/llama-3.1-70b-versatile' },
+        SCHOLAR: { modelId: 'groq/llama-4-maverick' },
+        CREATIVE: { modelId: 'groq/llama-4-maverick' },
+        PRACTICAL: { modelId: 'groq/llama-4-scout' },
+        DEVILS_ADVOCATE: { modelId: 'groq/llama-4-maverick' },
     },
 }));
 

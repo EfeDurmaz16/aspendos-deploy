@@ -659,7 +659,7 @@ describe('Bot Detection', () => {
         });
 
         it('should handle User-Agent with special regex characters', () => {
-            const result = isBotUserAgent('Mozilla/5.0 (.*+?^${}|[])');
+            const result = isBotUserAgent('Mozilla/5.0 (.*+?^$' + '{}|[])');
             expect(result.isBot).toBe(false);
         });
 

@@ -1,4 +1,7 @@
+/* biome-ignore-all lint/performance/noImgElement: Orbit icons are remote SVG logos with fixed pixel sizing. */
+
 'use client';
+
 import { useEffect, useState } from 'react';
 
 const ICONS = [
@@ -37,18 +40,18 @@ function SemiCircleOrbit({ radius, centerX, centerY, count, iconSize }: SemiCirc
             </div>
 
             {/* Orbit icons */}
-            {Array.from({ length: count }).map((_, index) => {
-                const angle = (index / (count - 1)) * 180;
+            {Array.from({ length: count }, (_, index) => index).map((orbitIndex) => {
+                const angle = (orbitIndex / (count - 1)) * 180;
                 const x = radius * Math.cos((angle * Math.PI) / 180);
                 const y = radius * Math.sin((angle * Math.PI) / 180);
-                const icon = ICONS[index % ICONS.length];
+                const icon = ICONS[orbitIndex % ICONS.length];
 
                 // Tooltip positioning — above or below based on angle
                 const tooltipAbove = angle > 90;
 
                 return (
                     <div
-                        key={index}
+                        key={`orbit-${count}-${orbitIndex}`}
                         className="absolute flex flex-col items-center group"
                         style={{
                             left: `${centerX + x - iconSize / 2}px`,
@@ -58,7 +61,7 @@ function SemiCircleOrbit({ radius, centerX, centerY, count, iconSize }: SemiCirc
                     >
                         <img
                             src={icon}
-                            alt={`icon-${index}`}
+                            alt={`icon-${orbitIndex}`}
                             width={iconSize}
                             height={iconSize}
                             className="object-contain cursor-pointer transition-transform hover:scale-110"
@@ -71,7 +74,7 @@ function SemiCircleOrbit({ radius, centerX, centerY, count, iconSize }: SemiCirc
                                 tooltipAbove ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]'
                             } hidden group-hover:block w-28 rounded-lg bg-black px-2 py-1 text-xs text-white shadow-lg text-center`}
                         >
-                            App {index + 1}
+                            App {orbitIndex + 1}
                             <div
                                 className={`absolute left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-black ${
                                     tooltipAbove ? 'top-full' : 'bottom-full'

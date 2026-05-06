@@ -1,6 +1,6 @@
 import type {
-    ReversibilityMetadata,
     ReverseResult,
+    ReversibilityMetadata,
     ToolContext,
     ToolDefinition,
     ToolResult,
@@ -25,7 +25,7 @@ export const calendarCreateEventTool: ToolDefinition = {
         };
     },
 
-    async execute(args: unknown, ctx: ToolContext): Promise<ToolResult> {
+    async execute(args: unknown, _ctx: ToolContext): Promise<ToolResult> {
         const { title, start, end, calendar_id } = args as {
             title: string;
             start: string;

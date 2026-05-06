@@ -6,7 +6,7 @@
  */
 
 import { nanoid } from 'nanoid';
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 // ==========================================
 // LEVEL SYSTEM
@@ -256,6 +256,7 @@ async function reconstructProfile(userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 1000,
         });
@@ -347,12 +348,14 @@ export async function getOrCreateProfile(userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 100,
         });
         const hasProfile = logs.some((l) => l.event_type === 'gamification_profile_created');
         if (!hasProfile) {
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 event_type: 'gamification_profile_created',
                 details: { referralCode: profile.referralCode },
@@ -415,6 +418,7 @@ export async function awardXp(
 
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'xp_awarded',
             details: {
@@ -515,6 +519,7 @@ async function checkAchievementCriteria(
             try {
                 const client = getConvexClient();
                 const logs = await client.query(api.actionLog.listByUser, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     limit: 10001,
                 });
@@ -561,6 +566,7 @@ export async function unlockAchievement(_userId: string, code: AchievementCode) 
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: _userId as any,
             event_type: 'achievement_unlocked',
             details: { code },
@@ -569,6 +575,7 @@ export async function unlockAchievement(_userId: string, code: AchievementCode) 
         // Award XP for the achievement
         if (achievement.xpReward > 0) {
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 user_id: _userId as any,
                 event_type: 'xp_awarded',
                 details: {
@@ -661,6 +668,7 @@ export async function updateStreak(userId: string): Promise<{
         try {
             const client = getConvexClient();
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 event_type: 'streak_freeze_used',
                 details: { freezesUsed: profile.freezesUsed + 1 },
@@ -679,6 +687,7 @@ export async function updateStreak(userId: string): Promise<{
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'streak_updated',
             details: {
@@ -715,7 +724,10 @@ export async function processReferral(
         const client = getConvexClient();
 
         // Find the referrer by scanning profiles (referralCode is stored in profile_created events)
-        const allLogs = await client.query(api.actionLog.listRecent, { limit: 1000 });
+        const allLogs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 1000,
+        });
         const referrerLog = allLogs.find(
             (l) =>
                 l.event_type === 'gamification_profile_created' &&
@@ -733,6 +745,7 @@ export async function processReferral(
 
         // Log referral for new user
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: newUserId as any,
             event_type: 'gamification_profile_created',
             details: { referredBy: referrerUserId, referralCode: nanoid(8).toUpperCase() },
@@ -741,6 +754,7 @@ export async function processReferral(
         // Log referral for referrer
         const proDaysEarned = 7;
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: referrerUserId,
             event_type: 'referral_processed',
             details: { newUserId, proDaysEarned },
@@ -769,6 +783,7 @@ export async function getReferralStats(userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 200,
         });
@@ -804,7 +819,10 @@ export async function getReferralStats(userId: string) {
 export async function getLeaderboard(limit = 10) {
     try {
         const client = getConvexClient();
-        const allLogs = await client.query(api.actionLog.listRecent, { limit: 5000 });
+        const allLogs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 5000,
+        });
 
         // Aggregate XP per user
         const userXp = new Map<string, number>();
@@ -840,7 +858,6 @@ export async function getLeaderboard(limit = 10) {
  */
 export async function getUserRank(userId: string): Promise<number> {
     try {
-        const profile = await getOrCreateProfile(userId);
         const leaderboard = await getLeaderboard(1000);
 
         const rank = leaderboard.findIndex((p) => p.userId === userId);

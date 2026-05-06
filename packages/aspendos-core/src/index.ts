@@ -1,33 +1,5 @@
-export {
-    type ReversibilityClass,
-    type ReversibilityMetadata,
-    type RollbackStrategy,
-    type ToolDefinition,
-    type ToolContext,
-    type ToolResult,
-    type ReverseResult,
-    BADGE_COLOR,
-    BADGE_LABEL,
-} from './reversibility/types';
-
-export { dispatchReverse } from './reversibility/dispatch';
-
-export { ToolRegistry } from './tools/registry';
-
-export { runToolStep, type StepResult } from './orchestrator/step';
-
-export { FidesService, getFides } from './governance/fides';
-
 export { AgitService, getAgit } from './audit/agit';
-
-export { isDangerous, DANGEROUS_PATTERNS, type DangerousPattern } from './security/dangerous-tools';
-
-export {
-    wrapExternalContent,
-    stripExternalTags,
-    isExternalContent,
-} from './security/external-content';
-
+export { FidesService, getFides } from './governance/fides';
 export {
     type ApprovalCard,
     BADGE_COLORS,
@@ -35,3 +7,39 @@ export {
     BADGE_HEX,
     createApprovalCard,
 } from './messaging/types';
+
+export { runToolStep, type StepResult } from './orchestrator/step';
+export { dispatchReverse } from './reversibility/dispatch';
+export {
+    BADGE_COLOR,
+    BADGE_LABEL,
+    type ReverseResult,
+    type ReversibilityClass,
+    type ReversibilityMetadata,
+    type RollbackStrategy,
+    type ToolContext,
+    type ToolDefinition,
+    type ToolResult,
+} from './reversibility/types';
+export {
+    BlastRadiusGuard,
+    type BlastRadiusReport,
+    createDefaultGuardChain,
+    DangerousCommandGuard,
+    GuardChain,
+    type GuardChainResult,
+    type GuardContext,
+    type GuardDecision,
+    PolicyGuard,
+    RateLimitGuard,
+    type ToolGuard,
+    ToolLoopGuard,
+} from './security/agent-guards';
+export { DANGEROUS_PATTERNS, type DangerousPattern, isDangerous } from './security/dangerous-tools';
+
+export {
+    isExternalContent,
+    stripExternalTags,
+    wrapExternalContent,
+} from './security/external-content';
+export { ToolRegistry } from './tools/registry';

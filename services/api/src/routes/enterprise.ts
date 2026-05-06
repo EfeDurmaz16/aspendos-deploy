@@ -1,11 +1,12 @@
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { requireTier } from '../middleware/tier-gate';
-import { getConvexClient, api } from '../lib/convex';
 
 const enterprise = new Hono();
 
 enterprise.use('*', requireAuth);
+enterprise.use('*', rejectApiKeyAuth);
 enterprise.use('*', requireTier('team', 'Enterprise features'));
 
 enterprise.post('/organizations', async (c) => {
@@ -19,6 +20,7 @@ enterprise.post('/organizations', async (c) => {
     try {
         const client = getConvexClient();
         const orgId = await client.mutation(api.organizations.create, {
+            service_secret: getConvexServiceSecret(),
             name,
             slug,
             owner_id: userId as any,
@@ -35,6 +37,7 @@ enterprise.get('/organizations', async (c) => {
     try {
         const client = getConvexClient();
         const orgs = await client.query(api.organizations.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
         return c.json({ organizations: orgs });
@@ -47,7 +50,10 @@ enterprise.get('/organizations/:slug', async (c) => {
     const { slug } = c.req.param();
     try {
         const client = getConvexClient();
-        const org = await client.query(api.organizations.getBySlug, { slug });
+        const org = await client.query(api.organizations.getBySlug, {
+            service_secret: getConvexServiceSecret(),
+            slug,
+        });
         if (!org) return c.json({ error: 'Not found' }, 404);
         return c.json(org);
     } catch {
@@ -59,9 +65,13 @@ enterprise.get('/organizations/:slug/members', async (c) => {
     const { slug } = c.req.param();
     try {
         const client = getConvexClient();
-        const org = await client.query(api.organizations.getBySlug, { slug });
+        const org = await client.query(api.organizations.getBySlug, {
+            service_secret: getConvexServiceSecret(),
+            slug,
+        });
         if (!org) return c.json({ error: 'Not found' }, 404);
         const members = await client.query(api.organizations.getMembers, {
+            service_secret: getConvexServiceSecret(),
             org_id: org._id,
         });
         return c.json({ members });
@@ -76,10 +86,14 @@ enterprise.post('/organizations/:slug/members', async (c) => {
 
     try {
         const client = getConvexClient();
-        const org = await client.query(api.organizations.getBySlug, { slug });
+        const org = await client.query(api.organizations.getBySlug, {
+            service_secret: getConvexServiceSecret(),
+            slug,
+        });
         if (!org) return c.json({ error: 'Not found' }, 404);
 
         await client.mutation(api.organizations.addMember, {
+            service_secret: getConvexServiceSecret(),
             org_id: org._id,
             user_id: user_id as any,
             role: role || 'member',

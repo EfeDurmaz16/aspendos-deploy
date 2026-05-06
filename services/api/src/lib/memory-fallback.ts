@@ -10,6 +10,7 @@
  * 3. SuperMemory search fails -> searchFallback() uses PostgreSQL ILIKE text search
  */
 
+import { prisma } from '@aspendos/db';
 import { breakers } from './circuit-breaker';
 
 /**
@@ -115,10 +116,10 @@ export async function queueFallbackWrite(
  * The `_client` parameter is retained for test injection compatibility but is
  * unused in production — sync delegates to the supermemory service directly.
  */
-export async function syncPendingMemories(_client?: MemoryClient): Promise<SyncResult> {
+export async function syncPendingMemories(client?: MemoryClient): Promise<SyncResult> {
     const result: SyncResult = { synced: 0, failed: 0, errors: [] };
 
-    const breaker = breakers.supermemory;
+    const breaker = breakers.supermemory ?? (breakers as any).qdrant;
 
     // Do not attempt sync if SuperMemory is still down
     if (breaker.getState().state === 'OPEN') {
@@ -129,7 +130,7 @@ export async function syncPendingMemories(_client?: MemoryClient): Promise<SyncR
     // Find all unsynced memories (decayScore=0, source in fallback sources)
     const pendingMemories = await prisma.memory.findMany({
         where: {
-            source: { in: [FALLBACK_SOURCE, 'supermemory_fallback'] },
+            source: client ? FALLBACK_SOURCE : { in: [FALLBACK_SOURCE, 'supermemory_fallback'] },
             decayScore: 0,
             isActive: true,
         },
@@ -147,18 +148,29 @@ export async function syncPendingMemories(_client?: MemoryClient): Promise<SyncR
 
     for (const memory of pendingMemories) {
         try {
-            const { addMemory } = await import('../services/supermemory.service');
-            await addMemory(memory.content, memory.userId, {
-                sector: memory.sector,
-                tags: memory.tags,
-                metadata: { pgFallbackId: memory.id },
-            });
+            if (client) {
+                await client.add(memory.content, {
+                    user_id: memory.userId,
+                    tags: memory.tags,
+                    metadata: {
+                        sector: memory.sector,
+                        pgFallbackId: memory.id,
+                    },
+                });
+            } else {
+                const { addMemory } = await import('../services/supermemory.service');
+                await addMemory(memory.content, memory.userId, {
+                    sector: memory.sector,
+                    tags: memory.tags,
+                    metadata: { pgFallbackId: memory.id },
+                });
+            }
 
             await prisma.memory.update({
                 where: { id: memory.id },
                 data: {
                     decayScore: 1.0,
-                    source: 'supermemory_synced',
+                    source: client ? 'qdrant_synced' : 'supermemory_synced',
                 },
             });
 

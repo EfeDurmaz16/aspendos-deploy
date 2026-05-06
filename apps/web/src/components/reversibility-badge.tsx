@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReversibilityClass } from '@/lib/reversibility/types';
 import { REVERSIBILITY_SPECS } from '@/lib/reversibility/types';
 
@@ -38,8 +38,11 @@ export function ReversibilityBadge({
     };
 
     return (
-        <span
-            className="relative inline-flex"
+        <button
+            type="button"
+            className="relative inline-flex border-0 bg-transparent p-0"
+            onBlur={handleMouseLeave}
+            onFocus={handleMouseEnter}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
         >
@@ -68,6 +71,6 @@ export function ReversibilityBadge({
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neutral-700" />
                 </span>
             )}
-        </span>
+        </button>
     );
 }

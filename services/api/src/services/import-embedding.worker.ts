@@ -8,7 +8,7 @@
  * This worker picks them up and creates embeddings lazily in batches.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 import * as openMemory from './memory-router.service';
 
 const BATCH_SIZE = 10;
@@ -30,13 +30,14 @@ export async function processImportEmbeddings(
 
         // Fetch all memories for this user from Convex
         const allMemories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
 
         // Filter to pending import memories (source starts with 'import')
         const pendingMemories = allMemories.filter(
-            (m) => m.source && m.source.startsWith('import') && m.source !== 'import_synced'
+            (m) => m.source?.startsWith('import') && m.source !== 'import_synced'
         );
 
         if (pendingMemories.length === 0) {

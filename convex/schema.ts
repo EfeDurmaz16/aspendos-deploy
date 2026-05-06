@@ -4,6 +4,7 @@ import { v } from 'convex/values';
 export default defineSchema({
     users: defineTable({
         workos_id: v.string(),
+        auth_token_identifier: v.optional(v.string()),
         email: v.string(),
         name: v.optional(v.string()),
         avatar_url: v.optional(v.string()),
@@ -20,6 +21,7 @@ export default defineSchema({
         created_at: v.number(),
     })
         .index('by_workos_id', ['workos_id'])
+        .index('by_auth_token_identifier', ['auth_token_identifier'])
         .index('by_email', ['email'])
         .index('by_stripe_customer_id', ['stripe_customer_id']),
 
@@ -69,6 +71,7 @@ export default defineSchema({
             v.literal('reverted'),
             v.literal('failed')
         ),
+        reverted_hash: v.optional(v.string()),
         result: v.optional(v.any()),
         reversibility_class: v.union(
             v.literal('undoable'),
@@ -80,14 +83,17 @@ export default defineSchema({
         rollback_strategy: v.optional(v.any()),
         rollback_deadline: v.optional(v.number()),
         human_explanation: v.optional(v.string()),
+        payload_hash: v.optional(v.string()),
         fides_signature: v.optional(v.string()),
         fides_signer_did: v.optional(v.string()),
+        fides_signature_source: v.optional(v.literal('external')),
         counter_signature: v.optional(v.string()),
         counter_signer_did: v.optional(v.string()),
         timestamp: v.number(),
     })
         .index('by_user', ['user_id'])
         .index('by_user_time', ['user_id', 'timestamp'])
+        .index('by_user_and_reverted_hash', ['user_id', 'reverted_hash'])
         .index('by_hash', ['hash']),
 
     approvals: defineTable({
@@ -104,7 +110,9 @@ export default defineSchema({
         ),
     })
         .index('by_user', ['user_id'])
+        .index('by_user_and_status', ['user_id', 'status'])
         .index('by_commit_hash', ['commit_hash'])
+        .index('by_commit_hash_and_status', ['commit_hash', 'status'])
         .index('by_status', ['status']),
 
     snapshots: defineTable({
@@ -157,6 +165,19 @@ export default defineSchema({
         .index('by_user', ['user_id'])
         .index('by_event_type', ['event_type'])
         .index('by_timestamp', ['timestamp']),
+
+    pending_deletions: defineTable({
+        user_id: v.id('users'),
+        scheduled_at: v.number(),
+        cancellation_token_hash: v.string(),
+        reason: v.optional(v.string()),
+        requested_at: v.number(),
+        cancelled_at: v.optional(v.number()),
+        completed_at: v.optional(v.number()),
+        status: v.union(v.literal('pending'), v.literal('cancelled'), v.literal('completed')),
+    })
+        .index('by_user_id_and_status', ['user_id', 'status'])
+        .index('by_status_and_scheduled_at', ['status', 'scheduled_at']),
 
     organizations: defineTable({
         name: v.string(),
@@ -211,5 +232,6 @@ export default defineSchema({
         registered_at: v.number(),
     })
         .index('by_name', ['name'])
-        .index('by_reversibility_class', ['reversibility_class']),
+        .index('by_reversibility_class', ['reversibility_class'])
+        .index('by_registered_at', ['registered_at']),
 });

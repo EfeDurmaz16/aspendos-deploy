@@ -8,7 +8,7 @@
  * Rollback: compensation — DELETE the created event
  */
 
-import type { ReversibleToolDef, AgitCommit } from '@/lib/reversibility/types';
+import type { AgitCommit, ReversibleToolDef } from '@/lib/reversibility/types';
 
 export const calendarCreate: ReversibleToolDef = {
     name: 'calendar-create',

@@ -11,3 +11,12 @@ klaros
 **/node_modules
 **/.turbo
 **/node_modules/.bun
+
+# Untracked in-progress files that reference uninstalled deps.
+apps/web/src/app/checkout
+apps/web/src/app/portal
+
+# Concept / local artifacts
+brand/concepts
+yula-launch-video
+.agents

@@ -3,58 +3,86 @@
 
 ## About YULA
 
-YULA (Your Universal Learning Assistant) is a unified AI chat platform that provides access to multiple AI models with persistent semantic memory across all conversations.
+YULA is a deterministic control layer for AI agents. It helps users prove what an agent did, why the action was allowed, whether it was reversible, and how the action can be approved, audited, verified, or undone.
+
+YULA is not positioned as a generic multi-model chatbot. The current product direction is a provable agent operating layer built around signed actions, deterministic governance, approval-aware execution, reversibility classes, and an audit timeline.
 
 ## Core Value Proposition
 
-YULA solves three major problems with current AI assistants:
-1. Fragmented conversations across multiple AI providers
-2. Loss of context when switching between AI models
-3. Passive AI that only responds when prompted
+YULA addresses four production problems for autonomous agents:
 
-## Key Features
+1. Agents can perform tool actions without a durable proof trail.
+2. Users cannot easily see whether an action was reversible or required approval.
+3. Audit logs often depend on trusted application state instead of verifiable signatures and hashes.
+4. Browser, sandbox, messaging, payment, and infrastructure actions need fail-loud guardrails before execution.
 
-### IMPORT - Bring Your AI History
-- Import ChatGPT conversation history with one click
-- Import Claude conversation history
-- All imported conversations become searchable semantic memory
-- No more starting from scratch with a new AI
+## Core Action Flow
 
-### PAC - Proactive Agentic Callback
-- First AI platform where the AI can message YOU first
-- Schedule reminders: "Remind me about this in a week"
-- AI-initiated follow-ups based on context
-- Get notified via push notification or email
+```text
+classify tool call
+  -> sign authority with FIDES
+  -> create AGIT-style pre-commit
+  -> block / await approval / execute
+  -> append result commit
+  -> audit, verify, undo, or replay from the timeline
+```
 
-### COUNCIL - Multi-Model Parallel Queries
-- Query up to 4 AI models simultaneously
-- Compare GPT-5, Claude, Gemini, Llama responses side-by-side
-- Choose the best answer for your specific question
-- Ultra plan supports 4x parallel queries
+## Key Capabilities
 
-### Persistent Semantic Memory
-- Every conversation is stored in vector database
-- AI remembers your preferences, projects, and context
-- Memory works across all AI models
-- Search your entire conversation history semantically
+### FIDES-Signed Authority
+- Every governed action is signed against a canonical payload.
+- Production paths reject silent fallback signatures.
+- Signer DID and signature source are surfaced for audit.
 
-## Supported AI Models
+### AGIT-Style Commit Provenance
+- Agent actions produce deterministic commit hashes.
+- Pre-commit and result-commit records make execution auditable.
+- Verification checks hash integrity, payload integrity, parent linkage, and FIDES signature validity.
 
-- OpenAI: GPT-5.2, GPT-5 Nano, GPT-4o
-- Anthropic: Claude 4.5 Opus, Claude 4.5 Sonnet
-- Google: Gemini 3 Pro
-- Meta: Llama 4
-- xAI: Grok 4.1
-- DeepSeek: DeepSeek V3.2
-- Mistral: Mistral Large
-- Alibaba: Qwen 3
-- And more...
+### Reversibility Classification
+- `undoable`: snapshot or inverse operation can restore prior state.
+- `cancelable_window`: queued action can be cancelled before a deadline.
+- `compensatable`: follow-up action can compensate, such as refunding or deleting an event.
+- `approval_only`: human approval is required before execution.
+- `irreversible_blocked`: agent must not execute; audit-only, not approvable.
 
-## Pricing
+### Approval and Messaging Surfaces
+- Approval cards can be delivered through messaging surfaces.
+- Approval webhook requests use timestamped HMAC signatures.
+- Replays, stale signatures, tampered bodies, malformed bodies, expired approvals, and conflicting decisions are handled explicitly.
 
-- Starter: $20/month - 300 chats, basic models, semantic memory
-- Pro: $50/month - 1,500 chats, all models, multi-model comparison
-- Ultra: $100/month - 5,000+ chats, 4x parallel queries, priority support
+### Timeline, Undo, and Verify
+- Users can inspect a timeline of governed actions.
+- Undo and compensation flows are tied to reversibility metadata.
+- Verification endpoints use Convex governance checks rather than local-only history.
+
+### Agent Safety
+- Unknown tools fail closed.
+- Dangerous commands, secret paths, metadata endpoints, private browser targets, and unsafe sandbox operations are blocked before execution.
+- Sandbox and browser providers use explicit validation for commands, paths, URLs, and session existence.
+
+## Current Implementation Notes
+
+- Frontend: Next.js 16 app under `apps/web`.
+- API: Hono/Bun service under `services/api`.
+- Governance state: Convex schema/functions under `convex`.
+- Core deterministic flow: `packages/aspendos-core`.
+- FIDES and AGIT primitives: `packages/fides-sdk` and `packages/agit-sdk`.
+- Release gate: `bun run release:ready`.
+
+## Verification Commands
+
+Recommended pre-release checks:
+
+```bash
+bun run check
+bun run build
+bun run test:core
+bun run test:api
+bun run test:web
+bun run convex:typecheck
+bun run release:ready
+```
 
 ## Key URLs
 
@@ -62,40 +90,12 @@ YULA solves three major problems with current AI assistants:
 - Pricing: https://yula.dev/pricing
 - Sign Up: https://yula.dev/signup
 - Login: https://yula.dev/login
-
-## Comparison with Alternatives
-
-### YULA vs ChatGPT
-- YULA: Access 12+ models vs ChatGPT: OpenAI models only
-- YULA: Import ChatGPT history vs ChatGPT: No import
-- YULA: Persistent memory across models vs ChatGPT: Per-conversation context
-- YULA: Proactive AI callbacks vs ChatGPT: Only responds to prompts
-
-### YULA vs Claude
-- YULA: Multi-model access vs Claude: Anthropic only
-- YULA: Import Claude history vs Claude: No import
-- YULA: Council mode comparison vs Claude: Single response
-- YULA: PAC proactive reminders vs Claude: No proactive features
-
-### YULA vs Perplexity
-- YULA: Deep conversation with memory vs Perplexity: Search-focused
-- YULA: All major AI models vs Perplexity: Limited models
-- YULA: Long-form assistance vs Perplexity: Quick answers
-- YULA: History import vs Perplexity: No import
-
-## Technical Details
-
-- Platform: Web, iOS, Android (PWA)
-- Offline: WebGPU-powered local models available
-- Privacy: End-to-end encryption for conversations
-- API: REST API available for Pro and Ultra plans
+- Timeline: https://yula.dev/timeline
 
 ## Contact
 
 - Website: https://yula.dev
-- Support: support@yula.dev
-- Twitter: @YulaOS
-- GitHub: github.com/yula-ai
+- GitHub: https://github.com/EfeDurmaz16/aspendos-deploy
 
 ## Last Updated
-2025-01-24
+2026-05-06

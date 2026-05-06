@@ -1,10 +1,10 @@
 'use client';
 
+import type { ReversibilityClass } from '@aspendos/shared-types';
+import { useMutation } from 'convex/react';
 import { useState } from 'react';
-import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import type { Id } from '../../../../convex/_generated/dataModel';
-import type { ReversibilityClass } from '@aspendos/shared-types';
 
 // ============================================
 // Types
@@ -66,9 +66,7 @@ export function ApprovalCard({
     const [processing, setProcessing] = useState<'approve' | 'reject' | null>(null);
     const [resolved, setResolved] = useState<'approved' | 'rejected' | null>(null);
 
-    const approveMutation = useMutation(api.approvals.approve);
-    const rejectMutation = useMutation(api.approvals.reject);
-    const logMutation = useMutation(api.actionLog.log);
+    const decideMutation = useMutation(api.approvals.decideCurrentUser);
 
     const badgeStyle = BADGE_STYLES[reversibilityClass] ?? BADGE_STYLES.irreversible_blocked;
     const emoji = BADGE_EMOJI[reversibilityClass] ?? '?';
@@ -76,11 +74,15 @@ export function ApprovalCard({
     async function handleApprove() {
         setProcessing('approve');
         try {
-            await approveMutation({ id: approvalId });
-            await logMutation({
-                event_type: 'approval.approve',
-                details: { commit_hash: commitHash, surface: 'web' },
+            const result = await decideMutation({
+                id: approvalId,
+                action: 'approve',
+                now: Date.now(),
             });
+            if (result.outcome === 'expired') throw new Error('Approval has expired');
+            if (result.outcome === 'already_decided' && !result.idempotent) {
+                throw new Error(`Approval already ${result.status}`);
+            }
             setResolved('approved');
             onApprove?.();
         } catch (err) {
@@ -93,11 +95,15 @@ export function ApprovalCard({
     async function handleReject() {
         setProcessing('reject');
         try {
-            await rejectMutation({ id: approvalId });
-            await logMutation({
-                event_type: 'approval.reject',
-                details: { commit_hash: commitHash, surface: 'web' },
+            const result = await decideMutation({
+                id: approvalId,
+                action: 'reject',
+                now: Date.now(),
             });
+            if (result.outcome === 'expired') throw new Error('Approval has expired');
+            if (result.outcome === 'already_decided' && !result.idempotent) {
+                throw new Error(`Approval already ${result.status}`);
+            }
             setResolved('rejected');
             onReject?.();
         } catch (err) {

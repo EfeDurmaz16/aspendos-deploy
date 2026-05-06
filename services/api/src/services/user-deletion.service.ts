@@ -10,7 +10,8 @@
  * Backed by Convex for data access.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { prisma } from '@aspendos/db';
+import { api, getConvexClient, getConvexServiceSecret, isConvexConfigured } from '../lib/convex';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -127,6 +128,25 @@ const DELETION_GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 // Export expiry: 24 hours
 const EXPORT_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
+async function hashCancellationToken(token: string): Promise<string> {
+    const bytes = new TextEncoder().encode(token);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+export function assertProcessLocalComplianceStateAllowed(feature: string): void {
+    if (
+        process.env.NODE_ENV === 'production' &&
+        process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE !== 'true'
+    ) {
+        throw new Error(
+            `FATAL: ${feature} uses process-local GDPR compliance state. Configure a durable compliance store before enabling this workflow in production.`
+        );
+    }
+}
+
 // ─── Export Job Processing ───────────────────────────────────────────────────
 
 /**
@@ -138,6 +158,8 @@ export function queueExportJob(userId: string): {
     status: 'queued';
     estimatedCompletionMs: number;
 } {
+    assertProcessLocalComplianceStateAllowed('GDPR export jobs');
+
     const jobId = crypto.randomUUID();
 
     exportJobs.set(jobId, {
@@ -173,6 +195,8 @@ export function getExportJobStatus(jobId: string): {
     status: 'queued' | 'processing' | 'ready' | 'expired';
     downloadUrl?: string;
 } | null {
+    assertProcessLocalComplianceStateAllowed('GDPR export job status');
+
     const job = exportJobs.get(jobId);
     if (!job) return null;
 
@@ -198,6 +222,8 @@ export function getExportJobStatus(jobId: string): {
  * Get the userId that owns a specific export job (for authorization checks).
  */
 export function getExportJobOwner(jobId: string): string | null {
+    assertProcessLocalComplianceStateAllowed('GDPR export job ownership');
+
     const job = exportJobs.get(jobId);
     return job?.userId ?? null;
 }
@@ -223,15 +249,98 @@ async function processExportJob(jobId: string, userId: string): Promise<void> {
 
 // ─── Data Export ─────────────────────────────────────────────────────────────
 
+async function exportUserDataFromPrisma(userId: string): Promise<ExportData> {
+    const [user, chats, memories, reminders, billing, councilSessions, notifications] =
+        await Promise.all([
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, email: true, name: true, createdAt: true },
+            }),
+            prisma.chat.findMany({
+                where: { userId },
+                include: { messages: true },
+                orderBy: { createdAt: 'asc' },
+            }),
+            prisma.memory.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } }),
+            prisma.pACReminder.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } }),
+            prisma.billingAccount.findUnique({ where: { userId } }),
+            prisma.councilSession.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } }),
+            prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } }),
+        ]);
+
+    return {
+        exportedAt: new Date().toISOString(),
+        format: 'YULA_GDPR_EXPORT_V1',
+        user: user
+            ? {
+                  id: user.id,
+                  email: user.email,
+                  name: user.name ?? null,
+                  createdAt: user.createdAt,
+              }
+            : null,
+        chats: chats.map((chat: any) => ({
+            id: chat.id,
+            title: chat.title ?? null,
+            createdAt: chat.createdAt,
+            messages: (chat.messages ?? []).map((message: any) => ({
+                role: message.role,
+                content: message.content,
+                createdAt: message.createdAt,
+                modelUsed: message.modelUsed ?? message.model ?? null,
+            })),
+        })),
+        memories: memories.map((memory: any) => ({
+            content: memory.content,
+            type: memory.type ?? null,
+            sector: memory.sector ?? null,
+            createdAt: memory.createdAt,
+        })),
+        reminders: reminders.map((reminder: any) => ({
+            content: reminder.content,
+            type: reminder.type,
+            status: reminder.status,
+            triggerAt: reminder.triggerAt ?? null,
+            createdAt: reminder.createdAt,
+        })),
+        billing: billing
+            ? {
+                  plan: billing.plan,
+                  creditUsed: billing.creditUsed,
+                  monthlyCredit: billing.monthlyCredit,
+                  createdAt: billing.createdAt,
+              }
+            : null,
+        councilSessions: councilSessions.map((session: any) => ({
+            id: session.id,
+            query: session.query,
+            status: session.status,
+            createdAt: session.createdAt,
+            responses: session.responses ?? [],
+        })),
+        notifications: notifications.map((notification: any) => ({
+            type: notification.type,
+            title: notification.title,
+            body: notification.body ?? null,
+            createdAt: notification.createdAt,
+        })),
+    };
+}
+
 /**
  * Gather all user data for export (GDPR Art. 20 - Data Portability).
  */
 export async function exportUserData(userId: string): Promise<ExportData> {
     try {
+        if (!isConvexConfigured()) {
+            return exportUserDataFromPrisma(userId);
+        }
+
         const client = getConvexClient();
 
         // Fetch conversations
         const conversations = await client.query(api.conversations.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
 
@@ -240,6 +349,7 @@ export async function exportUserData(userId: string): Promise<ExportData> {
         for (const conv of conversations) {
             try {
                 const messages = await client.query(api.messages.listByConversation, {
+                    service_secret: getConvexServiceSecret(),
                     conversation_id: conv._id,
                 });
                 chats.push({
@@ -260,6 +370,7 @@ export async function exportUserData(userId: string): Promise<ExportData> {
 
         // Fetch memories
         const memoriesRaw = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
         const memories = memoriesRaw.map((m) => ({
@@ -271,6 +382,7 @@ export async function exportUserData(userId: string): Promise<ExportData> {
 
         // Fetch action_log for council sessions, notifications, etc.
         const actionLogs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 1000,
         });
@@ -323,17 +435,87 @@ export async function exportUserData(userId: string): Promise<ExportData> {
 
 // ─── Data Summary ────────────────────────────────────────────────────────────
 
+async function getDataSummaryFromPrisma(userId: string): Promise<DataSummary> {
+    const [
+        user,
+        chats,
+        messages,
+        memories,
+        reminders,
+        councilSessions,
+        importJobs,
+        achievements,
+        notifications,
+        auditLogs,
+        apiKeys,
+        lastMessage,
+    ] = await Promise.all([
+        prisma.user.findUnique({
+            where: { id: userId },
+            select: { createdAt: true },
+        }),
+        prisma.chat.count({ where: { userId } }),
+        prisma.message.count({ where: { userId } }),
+        prisma.memory.count({ where: { userId } }),
+        prisma.pACReminder.count({ where: { userId } }),
+        prisma.councilSession.count({ where: { userId } }),
+        prisma.importJob.count({ where: { userId } }),
+        prisma.achievement.count({ where: { userId } }),
+        prisma.notification.count({ where: { userId } }),
+        prisma.auditLog.count({ where: { userId } }),
+        prisma.apiKey.count({ where: { userId } }),
+        prisma.message.findFirst({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true },
+        }),
+    ]);
+
+    return {
+        userId,
+        counts: {
+            chats,
+            messages,
+            memories,
+            reminders,
+            councilSessions,
+            importJobs,
+            achievements,
+            notifications,
+            auditLogs,
+            apiKeys,
+        },
+        storageEstimateBytes: messages * 2048 + memories * 1024 + notifications * 512 + chats * 256,
+        accountCreatedAt: user?.createdAt ?? null,
+        lastActiveAt: lastMessage?.createdAt ?? null,
+    };
+}
+
 /**
  * Get a summary of all stored data for a user (GDPR Art. 15 - Right of Access).
  */
 export async function getDataSummary(userId: string): Promise<DataSummary> {
     try {
+        if (!isConvexConfigured()) {
+            return getDataSummaryFromPrisma(userId);
+        }
+
         const client = getConvexClient();
 
         const [conversations, memoriesRaw, actionLogs] = await Promise.all([
-            client.query(api.conversations.listByUser, { user_id: userId as any }),
-            client.query(api.memories.listByUser, { user_id: userId as any }),
-            client.query(api.actionLog.listByUser, { user_id: userId as any, limit: 5000 }),
+            client.query(api.conversations.listByUser, {
+                service_secret: getConvexServiceSecret(),
+                user_id: userId as any,
+            }),
+            client.query(api.memories.listByUser, {
+                service_secret: getConvexServiceSecret(),
+                user_id: userId as any,
+            }),
+            client.query(api.actionLog.listByUser, {
+                service_secret: getConvexServiceSecret(),
+                user_id: userId as any,
+                limit: 5000,
+            }),
         ]);
 
         // Count messages across all conversations
@@ -341,6 +523,7 @@ export async function getDataSummary(userId: string): Promise<DataSummary> {
         for (const conv of conversations.slice(0, 50)) {
             try {
                 const msgs = await client.query(api.messages.listByConversation, {
+                    service_secret: getConvexServiceSecret(),
                     conversation_id: conv._id,
                 });
                 messageCount += msgs.length;
@@ -420,6 +603,27 @@ export async function scheduleAccountDeletion(
     userId: string,
     reason?: string
 ): Promise<DeletionSchedule> {
+    const cancellationToken = crypto.randomUUID();
+    const scheduledDate = new Date(Date.now() + DELETION_GRACE_PERIOD_MS);
+
+    if (isConvexConfigured()) {
+        const result = await getConvexClient().mutation(api.compliance.scheduleDeletionByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
+            workos_id: userId,
+            scheduled_at: scheduledDate.getTime(),
+            cancellation_token_hash: await hashCancellationToken(cancellationToken),
+            ...(reason === undefined ? {} : { reason }),
+            requested_at: Date.now(),
+        });
+
+        return {
+            scheduledDate: new Date(result.scheduled_at),
+            cancellationToken,
+        };
+    }
+
+    assertProcessLocalComplianceStateAllowed('account deletion scheduling');
+
     // Check if already scheduled
     const existing = pendingDeletions.get(userId);
     if (existing) {
@@ -428,9 +632,6 @@ export async function scheduleAccountDeletion(
             cancellationToken: existing.cancellationToken,
         };
     }
-
-    const cancellationToken = crypto.randomUUID();
-    const scheduledDate = new Date(Date.now() + DELETION_GRACE_PERIOD_MS);
 
     pendingDeletions.set(userId, {
         scheduledDate,
@@ -446,6 +647,17 @@ export async function scheduleAccountDeletion(
  * Cancel a pending account deletion using the cancellation token.
  */
 export async function cancelDeletion(userId: string, token: string): Promise<boolean> {
+    if (isConvexConfigured()) {
+        return await getConvexClient().mutation(api.compliance.cancelDeletionByWorkOSId, {
+            service_secret: getConvexServiceSecret(),
+            workos_id: userId,
+            cancellation_token_hash: await hashCancellationToken(token),
+            cancelled_at: Date.now(),
+        });
+    }
+
+    assertProcessLocalComplianceStateAllowed('account deletion cancellation');
+
     const pending = pendingDeletions.get(userId);
 
     if (!pending) {
@@ -466,12 +678,39 @@ export async function cancelDeletion(userId: string, token: string): Promise<boo
 export function getPendingDeletion(
     userId: string
 ): { scheduledDate: Date; reason?: string } | null {
+    assertProcessLocalComplianceStateAllowed('pending account deletion lookup');
+
     const pending = pendingDeletions.get(userId);
     if (!pending) return null;
     return { scheduledDate: pending.scheduledDate, reason: pending.reason };
 }
 
 // ─── Account Anonymization ───────────────────────────────────────────────────
+
+async function anonymizeUserWithPrisma(userId: string): Promise<void> {
+    const anonymizedEmail = `anon-${userId}-${Date.now()}@deleted.yula.dev`;
+
+    await prisma.$transaction(async (tx: any) => {
+        await tx.user.update({
+            where: { id: userId },
+            data: {
+                email: anonymizedEmail,
+                name: 'Anonymized User',
+                image: null,
+            },
+        });
+        await tx.session.deleteMany({ where: { userId } });
+        await tx.account.deleteMany({ where: { userId } });
+        await tx.notification.updateMany({
+            where: { userId },
+            data: {
+                title: '[anonymized]',
+                body: '[anonymized]',
+            },
+        });
+        await tx.apiKey.deleteMany({ where: { userId } });
+    });
+}
 
 /**
  * Anonymize a user account: strip PII but keep aggregate/analytical data.
@@ -481,10 +720,16 @@ export function getPendingDeletion(
  */
 export async function anonymizeUser(userId: string): Promise<void> {
     try {
+        if (!isConvexConfigured()) {
+            await anonymizeUserWithPrisma(userId);
+            return;
+        }
+
         const client = getConvexClient();
 
         // Log the anonymization request
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'user_anonymization_requested',
             details: {
@@ -495,11 +740,15 @@ export async function anonymizeUser(userId: string): Promise<void> {
 
         // Delete all user memories from Convex
         const memories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
         for (const memory of memories) {
             try {
-                await client.mutation(api.memories.remove, { id: memory._id });
+                await client.mutation(api.memories.remove, {
+                    service_secret: getConvexServiceSecret(),
+                    id: memory._id,
+                });
             } catch {
                 /* continue */
             }
@@ -507,17 +756,25 @@ export async function anonymizeUser(userId: string): Promise<void> {
 
         // Delete all conversations and messages
         const conversations = await client.query(api.conversations.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
         for (const conv of conversations) {
             try {
                 const messages = await client.query(api.messages.listByConversation, {
+                    service_secret: getConvexServiceSecret(),
                     conversation_id: conv._id,
                 });
                 for (const msg of messages) {
-                    await client.mutation(api.messages.remove, { id: msg._id });
+                    await client.mutation(api.messages.remove, {
+                        service_secret: getConvexServiceSecret(),
+                        id: msg._id,
+                    });
                 }
-                await client.mutation(api.conversations.remove, { id: conv._id });
+                await client.mutation(api.conversations.remove, {
+                    service_secret: getConvexServiceSecret(),
+                    id: conv._id,
+                });
             } catch {
                 /* continue */
             }

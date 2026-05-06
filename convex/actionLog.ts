@@ -1,35 +1,54 @@
-import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
+import { requireServiceSecret } from './lib/serviceSecret';
+
+const DEFAULT_ACTION_LOG_LIMIT = 100;
+const MAX_ACTION_LOG_LIMIT = 500;
+
+function clampLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_ACTION_LOG_LIMIT, 1), MAX_ACTION_LOG_LIMIT);
+}
 
 export const log = mutation({
     args: {
+        service_secret: v.string(),
         user_id: v.optional(v.id('users')),
         event_type: v.string(),
         details: v.optional(v.any()),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.insert('action_log', {
-            ...args,
+        requireServiceSecret(args.service_secret);
+        const row = {
+            event_type: args.event_type,
             timestamp: Date.now(),
+            ...(args.user_id === undefined ? {} : { user_id: args.user_id }),
+            ...(args.details === undefined ? {} : { details: args.details }),
+        };
+        return await ctx.db.insert('action_log', {
+            ...row,
         });
     },
 });
 
 export const listByUser = query({
-    args: { user_id: v.id('users'), limit: v.optional(v.number()) },
+    args: { service_secret: v.string(), user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
+        const limit = clampLimit(args.limit);
         const q = ctx.db
             .query('action_log')
             .withIndex('by_user', (q) => q.eq('user_id', args.user_id))
             .order('desc');
-        return args.limit ? await q.take(args.limit) : await q.collect();
+        return await q.take(limit);
     },
 });
 
 export const listRecent = query({
-    args: { limit: v.optional(v.number()) },
+    args: { service_secret: v.string(), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
+        const limit = clampLimit(args.limit);
         const q = ctx.db.query('action_log').withIndex('by_timestamp').order('desc');
-        return args.limit ? await q.take(args.limit) : await q.take(100);
+        return await q.take(limit);
     },
 });

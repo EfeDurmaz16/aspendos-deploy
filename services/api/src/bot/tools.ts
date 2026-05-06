@@ -71,7 +71,7 @@ function safeMathEval(expr: string): number {
  * Includes memory tools, utility tools, and sensitive tools with approval gates.
  */
 export async function getAgentTools(userId: string) {
-    const tools: Record<string, ReturnType<typeof tool>> = {};
+    const tools: Record<string, any> = {};
 
     // Memory search — always available, no approval needed
     tools.memory_search = tool({
@@ -80,7 +80,7 @@ export async function getAgentTools(userId: string) {
             query: z.string().describe('Search query'),
             limit: z.number().optional().default(5),
         }),
-        execute: async ({ query, limit }) => {
+        execute: async ({ query, limit }: { query: string; limit: number }) => {
             const memoryRouter = await import('../services/memory-router.service');
             const results = await memoryRouter.searchMemories(query, userId, { limit });
             return {
@@ -103,7 +103,13 @@ export async function getAgentTools(userId: string) {
                 .optional()
                 .default('semantic'),
         }),
-        execute: async ({ content, sector }) => {
+        execute: async ({
+            content,
+            sector,
+        }: {
+            content: string;
+            sector: 'episodic' | 'semantic' | 'procedural' | 'emotional' | 'reflective';
+        }) => {
             const memoryRouter = await import('../services/memory-router.service');
             const result = await memoryRouter.addMemory(content, userId, { sector });
             return { success: true, id: result.id };
@@ -118,7 +124,7 @@ export async function getAgentTools(userId: string) {
             reason: z.string().describe('Why this memory should be forgotten'),
         }),
         needsApproval: true,
-        execute: async ({ memoryContent, reason }) => {
+        execute: async ({ memoryContent, reason }: { memoryContent: string; reason: string }) => {
             const memoryRouter = await import('../services/memory-router.service');
             await memoryRouter.supermemory.forgetMemory(userId, { memoryContent, reason });
             return { success: true, message: 'Memory forgotten' };
@@ -136,7 +142,13 @@ export async function getAgentTools(userId: string) {
                 .describe('When to remind (e.g., "in 2 hours", "tomorrow at 9am")'),
         }),
         needsApproval: true,
-        execute: async ({ content, timeExpression }) => {
+        execute: async ({
+            content,
+            timeExpression,
+        }: {
+            content: string;
+            timeExpression: string;
+        }) => {
             const { parseTimeExpression, createScheduledTask } = await import(
                 '../services/scheduler.service'
             );
@@ -160,7 +172,7 @@ export async function getAgentTools(userId: string) {
         inputSchema: z.object({
             expression: z.string().describe('Math expression (e.g., "2 + 2", "100 * 0.15")'),
         }),
-        execute: async ({ expression }) => {
+        execute: async ({ expression }: { expression: string }) => {
             if (!/^[0-9+\-*/.() \t]+$/.test(expression)) {
                 return { success: false, error: 'Invalid characters' };
             }
@@ -181,13 +193,23 @@ export async function getAgentTools(userId: string) {
         inputSchema: z.object({
             timezone: z.string().optional().default('UTC'),
         }),
-        execute: async ({ timezone }) => {
-            const now = new Date();
-            return {
-                datetime: now.toLocaleString('en-US', { timeZone: timezone }),
-                iso: now.toISOString(),
-                timezone,
-            };
+        execute: async ({ timezone }: { timezone: string }) => {
+            try {
+                const requestedTimezone = timezone ?? 'UTC';
+                const now = new Date();
+                return {
+                    success: true,
+                    datetime: now.toLocaleString('en-US', { timeZone: requestedTimezone }),
+                    iso: now.toISOString(),
+                    timezone: requestedTimezone,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Invalid timezone',
+                    timezone,
+                };
+            }
         },
     });
 
@@ -195,10 +217,7 @@ export async function getAgentTools(userId: string) {
     try {
         if (process.env.SUPERMEMORY_API_KEY) {
             const { supermemoryTools } = await import('@supermemory/tools/ai-sdk');
-            const smTools = supermemoryTools({
-                apiKey: process.env.SUPERMEMORY_API_KEY,
-                containerTags: [`user_${userId}`],
-            });
+            const smTools = supermemoryTools(process.env.SUPERMEMORY_API_KEY);
             // Merge, but don't override our custom tools with approval gates
             for (const [name, t] of Object.entries(smTools)) {
                 if (!tools[name]) {
@@ -206,8 +225,12 @@ export async function getAgentTools(userId: string) {
                 }
             }
         }
-    } catch {
-        // SuperMemory tools not available
+    } catch (error) {
+        throw new Error(
+            `Bot SuperMemory tools are configured but unavailable: ${
+                error instanceof Error ? error.message : String(error)
+            }`
+        );
     }
 
     return tools;

@@ -3,7 +3,7 @@
 import { Microphone, Paperclip, PaperPlaneRight } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ModePicker, type YulaMode } from './model-picker';
 
@@ -18,13 +18,13 @@ export function PromptInputBox({ onSubmit, isGenerating, className }: PromptInpu
     const [mode, setMode] = useState<YulaMode>('auto');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const adjustHeight = () => {
+    const adjustHeight = useCallback(() => {
         const textarea = textareaRef.current;
         if (textarea) {
             textarea.style.height = 'auto';
             textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
         }
-    };
+    }, []);
 
     useEffect(() => {
         adjustHeight();

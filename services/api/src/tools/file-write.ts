@@ -1,6 +1,6 @@
 import type {
-    ReversibilityMetadata,
     ReverseResult,
+    ReversibilityMetadata,
     ToolContext,
     ToolDefinition,
     ToolResult,
@@ -22,7 +22,7 @@ export const fileWriteTool: ToolDefinition = {
         };
     },
 
-    async execute(args: unknown, ctx: ToolContext): Promise<ToolResult> {
+    async execute(args: unknown, _ctx: ToolContext): Promise<ToolResult> {
         const { path, content, existing_content } = args as {
             path: string;
             content: string;

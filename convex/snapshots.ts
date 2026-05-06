@@ -1,24 +1,39 @@
-import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
+import { requireAuthenticatedUser } from './lib/auth';
+import { requireServiceSecret } from './lib/serviceSecret';
+
+const DEFAULT_SNAPSHOT_LIMIT = 50;
+const MAX_SNAPSHOT_LIMIT = 200;
+
+function clampLimit(value: number | undefined) {
+    return Math.min(Math.max(value ?? DEFAULT_SNAPSHOT_LIMIT, 1), MAX_SNAPSHOT_LIMIT);
+}
 
 export const create = mutation({
     args: {
+        service_secret: v.string(),
         user_id: v.id('users'),
         snapshot_id: v.string(),
         target_path: v.string(),
         prior_content: v.string(),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db.insert('snapshots', {
-            ...args,
+            user_id: args.user_id,
+            snapshot_id: args.snapshot_id,
+            target_path: args.target_path,
+            prior_content: args.prior_content,
             created_at: Date.now(),
         });
     },
 });
 
 export const getBySnapshotId = query({
-    args: { snapshot_id: v.string() },
+    args: { service_secret: v.string(), snapshot_id: v.string() },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db
             .query('snapshots')
             .withIndex('by_snapshot_id', (q) => q.eq('snapshot_id', args.snapshot_id))
@@ -26,20 +41,40 @@ export const getBySnapshotId = query({
     },
 });
 
-export const listByUser = query({
-    args: { user_id: v.id('users'), limit: v.optional(v.number()) },
+export const getCurrentUserBySnapshotId = query({
+    args: { snapshot_id: v.string() },
     handler: async (ctx, args) => {
+        const user = await requireAuthenticatedUser(ctx);
+        const snapshot = await ctx.db
+            .query('snapshots')
+            .withIndex('by_snapshot_id', (q) => q.eq('snapshot_id', args.snapshot_id))
+            .first();
+
+        if (!snapshot || snapshot.user_id !== user._id) {
+            return null;
+        }
+
+        return snapshot;
+    },
+});
+
+export const listByUser = query({
+    args: { service_secret: v.string(), user_id: v.id('users'), limit: v.optional(v.number()) },
+    handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
+        const limit = clampLimit(args.limit);
         const q = ctx.db
             .query('snapshots')
             .withIndex('by_user', (q) => q.eq('user_id', args.user_id))
             .order('desc');
-        return args.limit ? await q.take(args.limit) : await q.collect();
+        return await q.take(limit);
     },
 });
 
 export const remove = mutation({
-    args: { id: v.id('snapshots') },
+    args: { service_secret: v.string(), id: v.id('snapshots') },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         await ctx.db.delete(args.id);
     },
 });

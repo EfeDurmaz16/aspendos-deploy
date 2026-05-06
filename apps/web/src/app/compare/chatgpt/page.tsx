@@ -24,11 +24,11 @@ const chatgptData: CompetitorData = {
     tagline:
         'Yula gives you everything ChatGPT offers, plus persistent memory, multi-model access, and the ability to import your ChatGPT history.',
     description:
-        'ChatGPT by OpenAI is the most popular AI assistant, offering GPT-4 and GPT-4o models with a clean interface and plugin ecosystem.',
+        'ChatGPT by OpenAI is the most popular AI assistant, offering GPT-5.4 and GPT-5.4 Mini models with a clean interface and plugin ecosystem.',
     logoColor: 'bg-zinc-700',
     strengths: [
         'First-mover advantage with massive user base',
-        'GPT-4o with fast response times',
+        'GPT-5.4 with fast response times',
         'Plugin ecosystem for third-party integrations',
         'Mobile apps for iOS and Android',
         'Voice conversations with Advanced Voice Mode',
@@ -42,7 +42,7 @@ const chatgptData: CompetitorData = {
         'Lower cost for similar usage with more features included',
     ],
     featureComparison: [
-        { feature: 'GPT-5/GPT-4o Access', competitor: true, yula: true },
+        { feature: 'GPT-5.4 Access', competitor: true, yula: true },
         { feature: 'Claude Access', competitor: false, yula: true },
         { feature: 'Gemini Access', competitor: false, yula: true },
         {
@@ -69,7 +69,7 @@ const chatgptData: CompetitorData = {
         },
         {
             question: 'Does Yula use the same GPT models as ChatGPT?',
-            answer: 'Yula provides access to OpenAI models including GPT-5.2, GPT-5 Nano, and GPT-4o, plus 12+ other models from Anthropic, Google, Meta, and more. You get more model choices than ChatGPT alone.',
+            answer: 'Yula provides access to OpenAI models including GPT-5.4, GPT-5.4 Mini, and GPT-5.4 Codex, plus 12+ other models from Anthropic, Google, Meta, and more. You get more model choices than ChatGPT alone.',
         },
         {
             question: 'Is Yula better than ChatGPT?',

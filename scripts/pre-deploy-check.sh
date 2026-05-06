@@ -43,7 +43,10 @@ log_info "Checking migration status..."
 
 cd "$PRISMA_DIR"
 
-STATUS_OUTPUT=$(npx prisma migrate status 2>&1) || true
+set +e
+STATUS_OUTPUT=$(npx prisma migrate status 2>&1)
+STATUS_CODE=$?
+set -e
 
 echo ""
 echo "$STATUS_OUTPUT"
@@ -65,6 +68,18 @@ fi
 if echo "$STATUS_OUTPUT" | grep -qi "failed"; then
   log_error "One or more migrations have failed."
   log_error "Inspect the migration status and resolve before deploying."
+  exit 1
+fi
+
+if [ "$STATUS_CODE" -ne 0 ]; then
+  log_error "prisma migrate status exited with code $STATUS_CODE."
+  log_error "Unknown migration status is not safe to deploy."
+  exit 1
+fi
+
+if ! echo "$STATUS_OUTPUT" | grep -Eqi "database schema is up to date|already in sync"; then
+  log_error "Could not confirm that database migrations are up to date."
+  log_error "Unknown migration status is not safe to deploy."
   exit 1
 fi
 

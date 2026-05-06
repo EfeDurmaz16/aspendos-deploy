@@ -152,7 +152,7 @@ describe('exportToMarkdown', () => {
                 createdAt: '2026-02-13T10:00:00Z',
                 messages: [
                     { role: 'user', content: 'Hello' },
-                    { role: 'assistant', content: 'Hi there!', model: 'gpt-4' },
+                    { role: 'assistant', content: 'Hi there!', model: 'gpt-5' },
                 ],
             },
         ];
@@ -163,7 +163,7 @@ describe('exportToMarkdown', () => {
         expect(result.content).toContain('# Yula Chat Export');
         expect(result.content).toContain('## Test Chat');
         expect(result.content).toContain('**User:** Hello');
-        expect(result.content).toContain('**AI (gpt-4):** Hi there!');
+        expect(result.content).toContain('**AI (gpt-5):** Hi there!');
     });
 
     test('preserves code blocks in messages', () => {

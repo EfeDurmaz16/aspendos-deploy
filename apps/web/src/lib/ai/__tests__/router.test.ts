@@ -5,6 +5,13 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const generateTextMock = vi.hoisted(() => vi.fn());
+
+vi.mock('ai', () => ({
+    generateText: generateTextMock,
+}));
+
 import {
     fastRoute,
     isGreeting,
@@ -26,7 +33,7 @@ describe('fastRoute', () => {
             expect(result).not.toBeNull();
             expect(result?.type).toBe('direct_reply');
             if (result?.type === 'direct_reply') {
-                expect(result.model).toBe('gpt-4o-mini');
+                expect(result.model).toBe('gpt-5-mini');
             }
             expect(result?.reason).toContain('greeting');
         }
@@ -120,7 +127,7 @@ describe('RouteDecision types', () => {
     it('should have correct structure for direct_reply', () => {
         const decision: RouteDecision = {
             type: 'direct_reply',
-            model: 'gpt-4o-mini',
+            model: 'gpt-5-mini',
             reason: 'Simple question',
         };
         expect(decision.type).toBe('direct_reply');
@@ -131,7 +138,7 @@ describe('RouteDecision types', () => {
         const decision: RouteDecision = {
             type: 'rag_search',
             query: 'user preferences',
-            model: 'gpt-4o',
+            model: 'gpt-5',
             reason: 'Memory query',
         };
         expect(decision.type).toBe('rag_search');
@@ -167,6 +174,13 @@ describe('RouteDecision types', () => {
 describe('routeUserMessage', () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        generateTextMock.mockResolvedValue({
+            text: JSON.stringify({
+                type: 'direct_reply',
+                model: 'gpt-5-mini',
+                reason: 'Mocked deterministic router decision',
+            }),
+        });
     });
 
     it('should return a valid RouteDecision', async () => {
@@ -205,19 +219,19 @@ describe('routeUserMessage', () => {
 // ============================================
 
 describe('Model Selection', () => {
-    it('fast route should select gpt-4o-mini for simple tasks', () => {
+    it('fast route should select gpt-5-mini for simple tasks', () => {
         const result = fastRoute('Hi');
         expect(result?.type).toBe('direct_reply');
         if (result?.type === 'direct_reply') {
-            expect(result.model).toBe('gpt-4o-mini');
+            expect(result.model).toBe('gpt-5-mini');
         }
     });
 
-    it('fast route should select gpt-4o-mini for memory queries', () => {
+    it('fast route should select gpt-5-mini for memory queries', () => {
         const result = fastRoute('What did I say last time?');
         expect(result?.type).toBe('rag_search');
         if (result?.type === 'rag_search') {
-            expect(result.model).toBe('gpt-4o-mini');
+            expect(result.model).toBe('gpt-5-mini');
         }
     });
 });

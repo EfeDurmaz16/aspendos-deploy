@@ -74,26 +74,26 @@ describe('DangerousCommandGuard', () => {
         expect(result.type).toBe('allow');
     });
 
-    it('requires approval for rm -rf', async () => {
+    it('blocks rm -rf', async () => {
         const result = await guard.check(makeContext({ toolArgs: { command: 'rm -rf /' } }));
-        expect(result.type).toBe('require_approval');
+        expect(result.type).toBe('block');
     });
 
-    it('requires approval for DROP TABLE', async () => {
+    it('blocks DROP TABLE', async () => {
         const result = await guard.check(makeContext({ toolArgs: { sql: 'DROP TABLE users' } }));
-        expect(result.type).toBe('require_approval');
+        expect(result.type).toBe('block');
     });
 
-    it('requires approval for .env file access', async () => {
+    it('blocks .env file access', async () => {
         const result = await guard.check(makeContext({ toolArgs: { path: '/app/.env' } }));
-        expect(result.type).toBe('require_approval');
+        expect(result.type).toBe('block');
     });
 
-    it('requires approval for localhost access', async () => {
+    it('blocks localhost access', async () => {
         const result = await guard.check(
             makeContext({ toolArgs: { url: 'http://localhost:3000' } })
         );
-        expect(result.type).toBe('require_approval');
+        expect(result.type).toBe('block');
     });
 });
 

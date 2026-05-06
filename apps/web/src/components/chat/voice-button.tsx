@@ -113,7 +113,9 @@ export function VoiceButton({ onTranscription, disabled = false, className }: Vo
                 if (event.data.size > 0) audioChunksRef.current.push(event.data);
             };
             mediaRecorder.onstop = async () => {
-                stream.getTracks().forEach((track) => track.stop());
+                stream.getTracks().forEach((track) => {
+                    track.stop();
+                });
                 if (audioChunksRef.current.length > 0) await processAudio();
             };
 

@@ -10,6 +10,9 @@ dist/
 .next/
 .turbo/
 out/
+.claude/worktrees/
+.worktrees/
+apps/web/src/lib/convex/_generated/
 
 # Environment
 .env.local
@@ -73,9 +76,20 @@ conversations_gpt.json
 landing-2/
 *pitch-deck*
 *audit*
+!services/api/src/audit/
+!services/api/src/audit/**
+!services/api/src/lib/audit-log.ts
+!services/api/src/lib/audit-store.ts
+!services/api/src/middleware/audit-trail.ts
+!services/api/src/routes/admin-audit.ts
+!packages/aspendos-core/src/audit/
+!packages/aspendos-core/src/audit/**
 # Local tool state
 .omc/
 .claude/plugins/
+.claude/ralph-loop.local.md
+.agent-progress.*.json
+.agent-issues.*.json
 .playwright-mcp/
 .serena/
 
@@ -97,6 +111,7 @@ better-min-time.txt
 # Build artifacts
 apps/yula-video/build/
 klaros/build/
+klaros/test-output/
 
 .vercel
 

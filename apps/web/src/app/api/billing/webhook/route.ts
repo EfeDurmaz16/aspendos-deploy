@@ -1,15 +1,23 @@
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { getStripe, type TierSlug } from '@/lib/stripe';
+import { type NextRequest, NextResponse } from 'next/server';
+import type Stripe from 'stripe';
 import { convexServer } from '@/lib/convex-server';
+import { getStripe, type TierSlug } from '@/lib/stripe';
 import { api } from '../../../../../../../convex/_generated/api';
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
 if (!WEBHOOK_SECRET) {
     console.warn('[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not set — webhooks will be rejected');
+}
+
+function getConvexServiceSecret() {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
 }
 
 /**
@@ -109,6 +117,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     // Find the Convex user
     const convexUser = await convexServer.query(api.users.getByWorkOSId, {
+        service_secret: getConvexServiceSecret(),
         workos_id: workosId,
     });
 
@@ -125,6 +134,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     if (customerId && !convexUser.stripe_customer_id) {
         await convexServer.mutation(api.users.updateStripeCustomerId, {
+            service_secret: getConvexServiceSecret(),
             id: convexUser._id,
             stripe_customer_id: customerId,
         });
@@ -138,6 +148,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     // Upsert subscription in Convex
     await convexServer.mutation(api.subscriptions.upsertFromStripe, {
+        service_secret: getConvexServiceSecret(),
         user_id: convexUser._id,
         stripe_subscription_id: subscriptionId,
         tier,
@@ -149,6 +160,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     // Update user tier
     await convexServer.mutation(api.users.updateTier, {
+        service_secret: getConvexServiceSecret(),
         id: convexUser._id,
         tier,
     });
@@ -170,6 +182,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     }
 
     const convexUser = await convexServer.query(api.users.getByWorkOSId, {
+        service_secret: getConvexServiceSecret(),
         workos_id: workosId,
     });
 
@@ -180,6 +193,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
     // If tier changed (plan switch), use the new tier; otherwise keep existing
     const existingSub = await convexServer.query(api.subscriptions.getByUser, {
+        service_secret: getConvexServiceSecret(),
         user_id: convexUser._id,
     });
 
@@ -197,6 +211,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     const periodEnd = firstItem?.current_period_end ?? Math.floor(Date.now() / 1000) + 30 * 86400;
 
     await convexServer.mutation(api.subscriptions.upsertFromStripe, {
+        service_secret: getConvexServiceSecret(),
         user_id: convexUser._id,
         stripe_subscription_id: subscription.id,
         tier: effectiveTier,
@@ -209,11 +224,13 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     // Sync user tier
     if (status === 'active' || status === 'trialing') {
         await convexServer.mutation(api.users.updateTier, {
+            service_secret: getConvexServiceSecret(),
             id: convexUser._id,
             tier: effectiveTier,
         });
     } else if (status === 'canceled') {
         await convexServer.mutation(api.users.updateTier, {
+            service_secret: getConvexServiceSecret(),
             id: convexUser._id,
             tier: 'free',
         });
@@ -235,6 +252,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     }
 
     const convexUser = await convexServer.query(api.users.getByWorkOSId, {
+        service_secret: getConvexServiceSecret(),
         workos_id: workosId,
     });
 
@@ -245,17 +263,20 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
     // Mark subscription as canceled
     const existingSub = await convexServer.query(api.subscriptions.getByUser, {
+        service_secret: getConvexServiceSecret(),
         user_id: convexUser._id,
     });
 
     if (existingSub) {
         await convexServer.mutation(api.subscriptions.cancel, {
+            service_secret: getConvexServiceSecret(),
             id: existingSub._id,
         });
     }
 
     // Downgrade user to free tier
     await convexServer.mutation(api.users.updateTier, {
+        service_secret: getConvexServiceSecret(),
         id: convexUser._id,
         tier: 'free',
     });
@@ -277,6 +298,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     if (!workosId) return;
 
     const convexUser = await convexServer.query(api.users.getByWorkOSId, {
+        service_secret: getConvexServiceSecret(),
         workos_id: workosId,
     });
 
@@ -284,12 +306,14 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
     // Update subscription status to past_due
     const existingSub = await convexServer.query(api.subscriptions.getByUser, {
+        service_secret: getConvexServiceSecret(),
         user_id: convexUser._id,
     });
 
     if (existingSub) {
         const isByok = existingSub.tier === 'pro_byok' || existingSub.tier === 'team_byok';
         await convexServer.mutation(api.subscriptions.upsertFromStripe, {
+            service_secret: getConvexServiceSecret(),
             user_id: convexUser._id,
             stripe_subscription_id: subscriptionId,
             tier: existingSub.tier,
@@ -323,8 +347,6 @@ function mapSubscriptionStatus(
             return 'canceled';
         case 'trialing':
             return 'trialing';
-        case 'incomplete':
-        case 'paused':
         default:
             return 'active';
     }

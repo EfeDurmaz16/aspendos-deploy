@@ -26,9 +26,7 @@ vi.mock('../circuit-breaker', () => ({
 // Mock openmemory-js to prevent real SDK initialization at module load
 // Must use regular function (not arrow) since it's called with `new`
 vi.mock('openmemory-js', () => ({
-    Memory: vi.fn(function () {
-        return { add: vi.fn().mockResolvedValue({ id: 'default-qdrant-id' }) };
-    }),
+    Memory: vi.fn(() => ({ add: vi.fn().mockResolvedValue({ id: 'default-qdrant-id' }) })),
 }));
 
 import { prisma } from '@aspendos/db';

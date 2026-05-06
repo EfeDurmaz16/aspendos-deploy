@@ -157,7 +157,9 @@ const SpotlightMask = ({
 
     return (
         <svg
+            aria-hidden="true"
             className="absolute inset-0 h-full w-full pointer-events-none"
+            focusable="false"
             preserveAspectRatio="none"
         >
             <defs>
@@ -258,15 +260,17 @@ const SpotlightTooltip = ({
                 {/* Progress indicator */}
                 <div className="mb-3 flex items-center justify-between">
                     <div className="flex gap-1">
-                        {Array.from({ length: totalSteps }).map((_, i) => (
+                        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((stepNumber) => (
                             <div
-                                key={i}
+                                key={`spotlight-step-${stepNumber}`}
                                 className={cn(
                                     'h-1.5 w-6 rounded-full transition-colors',
-                                    i <= currentIndex ? 'bg-foreground' : 'bg-foreground/20'
+                                    stepNumber - 1 <= currentIndex
+                                        ? 'bg-foreground'
+                                        : 'bg-foreground/20'
                                 )}
                                 style={
-                                    i === currentIndex
+                                    stepNumber - 1 === currentIndex
                                         ? { backgroundColor: config.accentColor }
                                         : undefined
                                 }
@@ -440,12 +444,17 @@ export function SpotlightOverlay({ children, className }: SpotlightOverlayProps)
                 aria-label="Onboarding tour"
             >
                 {/* Overlay with spotlight cutout */}
-                <div className="absolute inset-0 pointer-events-auto" onClick={skipTour}>
+                <button
+                    type="button"
+                    className="absolute inset-0 pointer-events-auto border-0 bg-transparent p-0"
+                    onClick={skipTour}
+                    aria-label="Skip onboarding tour"
+                >
                     <SpotlightMask
                         spotlight={spotlight}
                         prefersReducedMotion={prefersReducedMotion}
                     />
-                </div>
+                </button>
 
                 {/* Spotlight ring effect (optional visual enhancement) */}
                 {spotlight && (

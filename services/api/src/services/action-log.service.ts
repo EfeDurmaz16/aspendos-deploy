@@ -6,8 +6,8 @@
  * Adapted from AGIT's hash-chained commit model.
  */
 
-import { getConvexClient, api } from '../lib/convex';
 import type { GuardChainResult } from '../lib/agent-guards';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 // ============================================
 // TYPES
@@ -41,6 +41,7 @@ export async function logAction(params: LogActionParams): Promise<string> {
     try {
         const client = getConvexClient();
         const id = await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: params.userId as any,
             event_type: params.actionType,
             details: {
@@ -68,7 +69,7 @@ export async function logAction(params: LogActionParams): Promise<string> {
         return id as string;
     } catch (err) {
         console.error('[action-log.service] logAction error:', err);
-        return '';
+        throw new Error('Failed to persist action log', { cause: err });
     }
 }
 
@@ -115,17 +116,22 @@ export async function getSessionActions(
     try {
         const client = getConvexClient();
         const all = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: options?.limit ?? 100,
         });
+        if (!Array.isArray(all)) {
+            throw new Error('Convex action log returned an invalid session action list');
+        }
 
         // Filter by sessionId in JS (Convex action_log doesn't have sessionId index)
-        const filtered = (all || []).filter((a: any) => a.details?.sessionId === sessionId);
+        const filtered = all.filter((a: any) => a.details?.sessionId === sessionId);
 
         const offset = options?.offset ?? 0;
         return filtered.slice(offset, offset + (options?.limit ?? 100));
-    } catch {
-        return [];
+    } catch (err) {
+        console.error('[action-log.service] getSessionActions error:', err);
+        throw new Error('Failed to load session actions', { cause: err });
     }
 }
 
@@ -136,8 +142,13 @@ export async function getSessionActions(
 export async function getCausalChain(actionId: string, _maxDepth = 20) {
     try {
         const client = getConvexClient();
-        const recent = await client.query(api.actionLog.listRecent, { limit: 200 });
-        if (!recent) return [];
+        const recent = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 200,
+        });
+        if (!Array.isArray(recent)) {
+            throw new Error('Convex action log returned an invalid causal chain list');
+        }
 
         // Build lookup map
         const byId = new Map<string, any>();
@@ -156,8 +167,9 @@ export async function getCausalChain(actionId: string, _maxDepth = 20) {
         }
 
         return chain;
-    } catch {
-        return [];
+    } catch (err) {
+        console.error('[action-log.service] getCausalChain error:', err);
+        throw new Error('Failed to load causal chain', { cause: err });
     }
 }
 
@@ -167,8 +179,13 @@ export async function getCausalChain(actionId: string, _maxDepth = 20) {
 export async function getActionEffects(actionId: string, maxDepth = 10) {
     try {
         const client = getConvexClient();
-        const recent = await client.query(api.actionLog.listRecent, { limit: 500 });
-        if (!recent) return [];
+        const recent = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
+        if (!Array.isArray(recent)) {
+            throw new Error('Convex action log returned an invalid action effects list');
+        }
 
         // Build parent->children map
         const childrenMap = new Map<string, any[]>();
@@ -195,8 +212,9 @@ export async function getActionEffects(actionId: string, maxDepth = 10) {
         }
 
         return effects;
-    } catch {
-        return [];
+    } catch (err) {
+        console.error('[action-log.service] getActionEffects error:', err);
+        throw new Error('Failed to load action effects', { cause: err });
     }
 }
 
@@ -210,11 +228,14 @@ export async function getRecentActions(
     try {
         const client = getConvexClient();
         let actions = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: options?.limit ?? 50,
         });
 
-        if (!actions) return [];
+        if (!Array.isArray(actions)) {
+            throw new Error('Convex action log returned an invalid recent actions list');
+        }
 
         // Filter by toolName in JS if requested
         if (options?.toolName) {
@@ -222,7 +243,8 @@ export async function getRecentActions(
         }
 
         return actions;
-    } catch {
-        return [];
+    } catch (err) {
+        console.error('[action-log.service] getRecentActions error:', err);
+        throw new Error('Failed to load recent actions', { cause: err });
     }
 }

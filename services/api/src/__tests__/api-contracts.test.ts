@@ -58,6 +58,20 @@ describe('API Contract Tests - Health & System', () => {
         expect(typeof body.services).toBe('object');
     });
 
+    test('GET /audit/verify/:hash - fails closed without authoritative governance', async () => {
+        const res = await app.request('/audit/verify/contracthash123');
+
+        expect(res.status).toBe(503);
+        expect(res.headers.get('content-type')).toContain('application/json');
+
+        const body = await res.json();
+        expect(body).toEqual({
+            hash: 'contracthash123',
+            verified: false,
+            error: 'Verification service unavailable',
+        });
+    });
+
     test('GET /api/models - returns models list contract', async () => {
         const res = await app.request('/api/models');
 
@@ -406,18 +420,12 @@ describe('API Contract Tests - Tracing Endpoints', () => {
 
         if (isRateLimited(res.status)) return;
 
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(401);
         expect(res.headers.get('content-type')).toContain('application/json');
         expect(res.headers.get('x-request-id')).toBeDefined();
 
         const body = await res.json();
-        expect(body).toHaveProperty('traces');
-        expect(body).toHaveProperty('pagination');
-        expect(body).toHaveProperty('stats');
-        expect(Array.isArray(body.traces)).toBe(true);
-        expect(body.pagination).toHaveProperty('limit');
-        expect(body.pagination).toHaveProperty('offset');
-        expect(body.pagination).toHaveProperty('total');
+        expect(body).toHaveProperty('error');
     });
 
     test('GET /api/traces/:traceId - returns 404 for non-existent trace', async () => {
@@ -425,13 +433,13 @@ describe('API Contract Tests - Tracing Endpoints', () => {
 
         if (isRateLimited(res.status)) return;
 
-        expect(res.status).toBe(404);
+        expect(res.status).toBe(401);
         expect(res.headers.get('content-type')).toContain('application/json');
         expect(res.headers.get('x-request-id')).toBeDefined();
 
         const body = await res.json();
         expect(body).toHaveProperty('error');
-        expect(body.error).toBe('Trace not found');
+        expect(body.error).toBe('Unauthorized');
     });
 
     test('GET /api/traces/export/otlp - returns OTLP export contract', async () => {
@@ -677,13 +685,12 @@ describe('API Contract Tests - Retention Policies', () => {
 
         if (isRateLimited(res.status)) return;
 
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(401);
         expect(res.headers.get('content-type')).toContain('application/json');
         expect(res.headers.get('x-request-id')).toBeDefined();
 
         const body = await res.json();
-        expect(body).toHaveProperty('policies');
-        expect(Array.isArray(body.policies)).toBe(true);
+        expect(body).toHaveProperty('error');
     });
 
     test('POST /api/cron/retention - requires cron secret', async () => {
@@ -746,12 +753,11 @@ describe('API Contract Tests - Pagination Patterns', () => {
 
         if (isRateLimited(res.status)) return;
 
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(401);
         expect(res.headers.get('x-request-id')).toBeDefined();
 
         const body = await res.json();
-        expect(body.pagination.limit).toBe(10);
-        expect(body.pagination.offset).toBe(0);
+        expect(body).toHaveProperty('error');
     });
 
     test('GET /api/changelog - supports limit param', async () => {

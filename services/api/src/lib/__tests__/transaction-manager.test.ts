@@ -4,7 +4,7 @@ import { OptimisticLockError, Saga, SagaError, withOptimisticLock } from '../tra
 // Mock prisma
 vi.mock('@aspendos/db', () => ({
     prisma: {
-        $transaction: vi.fn(async (fn: Function) => fn({})),
+        $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn({})),
     },
 }));
 

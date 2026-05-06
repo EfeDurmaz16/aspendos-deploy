@@ -1,9 +1,9 @@
 export {
     createGovernanceCallbacks,
-    withGovernance,
     type GovernanceOptions,
-    type ToolGovernanceMetadata,
     type ReversibilityClass,
     type RollbackStrategy,
     type StepResult,
+    type ToolGovernanceMetadata,
+    withGovernance,
 } from './step-middleware';

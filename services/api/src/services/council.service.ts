@@ -7,7 +7,7 @@
 
 import { streamText } from 'ai';
 import { getModelWithFallback } from '../lib/ai-providers';
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 import * as openMemory from './memory-router.service';
 
 // Persona types
@@ -29,7 +29,7 @@ export const COUNCIL_PERSONAS: Record<
         name: 'The Scholar',
         role: 'Academic & Research Perspective',
         color: '#3B82F6', // Blue
-        modelId: 'groq/llama-3.1-70b-versatile',
+        modelId: 'openai/gpt-5',
         systemPrompt: `You are The Scholar, an academic advisor providing well-researched, evidence-based perspectives.
 Your approach:
 - Cite relevant research, theories, and academic frameworks
@@ -44,7 +44,7 @@ Respond thoughtfully but concisely (150-200 words). Focus on what the research a
         name: 'The Visionary',
         role: 'Creative & Innovative Perspective',
         color: '#F59E0B', // Amber
-        modelId: 'groq/mixtral-8x7b-32768',
+        modelId: 'anthropic/claude-sonnet-4-6',
         systemPrompt: `You are The Visionary, a creative thinker who explores unconventional possibilities.
 Your approach:
 - Challenge assumptions and conventional thinking
@@ -59,7 +59,7 @@ Respond with imagination and energy (150-200 words). Focus on creative possibili
         name: 'The Pragmatist',
         role: 'Practical & Actionable Perspective',
         color: '#10B981', // Emerald
-        modelId: 'groq/llama-3.1-8b-instant',
+        modelId: 'groq/llama-4-scout',
         systemPrompt: `You are The Pragmatist, focused on practical implementation and real-world results.
 Your approach:
 - Break down into concrete, actionable steps
@@ -74,7 +74,7 @@ Respond with clarity and practicality (150-200 words). Focus on what can be done
         name: "Devil's Advocate",
         role: 'Critical & Contrarian Perspective',
         color: '#EF4444', // Red
-        modelId: 'groq/llama-3.1-70b-versatile',
+        modelId: 'openai/gpt-5',
         systemPrompt: `You are the Devil's Advocate, challenging assumptions to strengthen thinking.
 Your approach:
 - Question underlying assumptions
@@ -100,6 +100,7 @@ export async function getPersonaPreferenceOrder(userId: string): Promise<Persona
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 200,
         });
@@ -150,6 +151,7 @@ export async function createCouncilSession(userId: string, query: string) {
         const sessionId = `council_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'council_session_created',
             details: { sessionId, query, status: 'PENDING' },
@@ -160,6 +162,7 @@ export async function createCouncilSession(userId: string, query: string) {
 
         for (const persona of orderedPersonas) {
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 event_type: 'council_response_created',
                 details: {
@@ -175,8 +178,7 @@ export async function createCouncilSession(userId: string, query: string) {
         return { id: sessionId, userId, query, status: 'PENDING' };
     } catch (error) {
         console.error('[Council] createCouncilSession failed:', error);
-        const sessionId = `council_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        return { id: sessionId, userId, query, status: 'PENDING' };
+        throw error;
     }
 }
 
@@ -187,6 +189,7 @@ export async function getCouncilSession(sessionId: string, userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 200,
         });
@@ -227,8 +230,9 @@ export async function getCouncilSession(sessionId: string, userId: string) {
                 createdAt: new Date(r.timestamp),
             })),
         };
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Council] getCouncilSession failed:', error);
+        throw error;
     }
 }
 
@@ -239,6 +243,7 @@ export async function listCouncilSessions(userId: string, limit = 20) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -254,8 +259,9 @@ export async function listCouncilSessions(userId: string, limit = 20) {
             }));
 
         return sessions;
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Council] listCouncilSessions failed:', error);
+        throw error;
     }
 }
 
@@ -280,6 +286,7 @@ export async function* streamPersonaResponse(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'council_response_updated',
             details: { sessionId, persona, status: 'STREAMING' },
@@ -329,6 +336,7 @@ export async function* streamPersonaResponse(
         try {
             const client = getConvexClient();
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 event_type: 'council_response_updated',
                 details: {
@@ -357,6 +365,7 @@ export async function* streamPersonaResponse(
         try {
             const client = getConvexClient();
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 event_type: 'council_response_updated',
                 details: {
@@ -380,7 +389,10 @@ export async function* streamPersonaResponse(
 export async function updateSessionStatus(sessionId: string) {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
 
         const responses = logs.filter(
             (l) =>
@@ -408,13 +420,15 @@ export async function updateSessionStatus(sessionId: string) {
         else if (!anyPending) status = 'STREAMING';
 
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'council_session_status_updated',
             details: { sessionId, status },
         });
 
         return status;
-    } catch {
-        return 'PENDING' as const;
+    } catch (error) {
+        console.error('[Council] updateSessionStatus failed:', error);
+        throw error;
     }
 }
 
@@ -433,6 +447,7 @@ export async function selectResponse(sessionId: string, userId: string, persona:
 
         // Log the selection
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'council_selection',
             details: { sessionId, persona },
@@ -468,7 +483,7 @@ export async function selectResponse(sessionId: string, userId: string, persona:
     } catch (error) {
         if (error instanceof Error && error.message === 'Session not found') throw error;
         console.error('[Council] selectResponse failed:', error);
-        return { success: true };
+        throw error;
     }
 }
 
@@ -479,7 +494,10 @@ export async function generateSynthesis(sessionId: string) {
     // Find the session across all users (no userId filter needed)
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
 
         const sessionLog = logs.find(
             (l) => l.event_type === 'council_session_created' && l.details?.sessionId === sessionId
@@ -514,7 +532,7 @@ export async function generateSynthesis(sessionId: string) {
             })
             .join('\n\n');
 
-        const { model: synthesisModel } = getModelWithFallback('groq/llama-3.1-70b-versatile');
+        const { model: synthesisModel } = getModelWithFallback('groq/llama-4-maverick');
 
         const result = await streamText({
             model: synthesisModel,
@@ -542,6 +560,7 @@ Please synthesize these perspectives into a balanced recommendation.`,
 
         // Store synthesis
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'council_synthesis',
             details: { sessionId, synthesis },
         });
@@ -573,6 +592,7 @@ export async function getCouncilStats(userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 1000,
         });
@@ -614,13 +634,9 @@ export async function getCouncilStats(userId: string) {
             latency: { avgMs, minMs, maxMs },
             insights: qualityInsights,
         };
-    } catch {
-        return {
-            totalSessions: 0,
-            preferences: {},
-            latency: { avgMs: 0, minMs: 0, maxMs: 0 },
-            insights: computeCouncilInsights({}, 0),
-        };
+    } catch (error) {
+        console.error('[Council] getCouncilStats failed:', error);
+        throw error;
     }
 }
 

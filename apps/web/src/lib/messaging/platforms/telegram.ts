@@ -9,8 +9,8 @@
  * utilities for Telegram-native features.
  */
 
-import type { ApprovalPayload } from '../types';
 import { BADGE_EMOJI } from '../../messaging/badge-constants';
+import type { ApprovalPayload } from '../types';
 
 const TELEGRAM_API = 'https://api.telegram.org/bot';
 
@@ -33,12 +33,12 @@ export interface TelegramInlineKeyboard {
     >;
 }
 
-export function buildApprovalKeyboard(commitHash: string): TelegramInlineKeyboard {
+export function buildApprovalKeyboard(approvalId: string): TelegramInlineKeyboard {
     return {
         inline_keyboard: [
             [
-                { text: '✅ Approve', callback_data: `approve:${commitHash}` },
-                { text: '❌ Reject', callback_data: `reject:${commitHash}` },
+                { text: '✅ Approve', callback_data: `approve:${approvalId}` },
+                { text: '❌ Reject', callback_data: `reject:${approvalId}` },
             ],
         ],
     };
@@ -52,8 +52,15 @@ export function formatApprovalMessage(payload: ApprovalPayload): {
     reply_markup: TelegramInlineKeyboard;
     parse_mode: string;
 } {
-    const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
-        payload;
+    const {
+        approvalId,
+        commitHash,
+        toolName,
+        humanExplanation,
+        reversibilityClass,
+        badgeLabel,
+        expiresAt,
+    } = payload;
     const emoji = BADGE_EMOJI[reversibilityClass] || '?';
 
     const lines = [
@@ -71,7 +78,7 @@ export function formatApprovalMessage(payload: ApprovalPayload): {
 
     return {
         text: lines.join('\n'),
-        reply_markup: buildApprovalKeyboard(commitHash),
+        reply_markup: buildApprovalKeyboard(approvalId),
         parse_mode: 'MarkdownV2',
     };
 }
@@ -172,13 +179,13 @@ export async function answerCallbackQuery(callbackQueryId: string, text?: string
 
 export interface TelegramCallbackData {
     action: 'approve' | 'reject';
-    commitHash: string;
+    approvalId: string;
 }
 
 export function parseCallbackData(data: string): TelegramCallbackData | null {
-    const [action, commitHash] = data.split(':');
-    if ((action === 'approve' || action === 'reject') && commitHash) {
-        return { action, commitHash };
+    const [action, approvalId] = data.split(':');
+    if ((action === 'approve' || action === 'reject') && approvalId) {
+        return { action, approvalId };
     }
     return null;
 }
@@ -191,5 +198,5 @@ export function parseCallbackData(data: string): TelegramCallbackData | null {
  * Escape special characters for Telegram MarkdownV2.
  */
 function escapeMarkdown(text: string): string {
-    return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+    return text.replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
 }

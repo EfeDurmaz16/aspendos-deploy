@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/performance/noImgElement: Provider logos are tiny remote SVG badges; next/image adds SVG config and layout risk here. */
+
 import type { ComponentProps, ReactNode } from 'react';
 import {
     Command,

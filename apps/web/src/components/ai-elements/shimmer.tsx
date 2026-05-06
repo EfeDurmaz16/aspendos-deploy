@@ -17,13 +17,13 @@ export function Shimmer({ className, lines = 3 }: ShimmerProps) {
     return (
         <div className={cn('space-y-2', className)} role="status" aria-label="Loading content">
             <span className="sr-only">Loading...</span>
-            {Array.from({ length: lines }).map((_, i) => (
+            {Array.from({ length: lines }, (_, i) => i + 1).map((lineNumber) => (
                 <div
-                    key={`shimmer-line-${lines}-${i}`}
+                    key={`shimmer-line-${lines}-${lineNumber}`}
                     className="h-4 rounded bg-gradient-to-r from-white/5 via-white/15 to-white/5 motion-safe:animate-shimmer"
                     style={{
-                        width: i === lines - 1 ? '60%' : '100%',
-                        animationDelay: `${i * 0.1}s`,
+                        width: lineNumber === lines ? '60%' : '100%',
+                        animationDelay: `${(lineNumber - 1) * 0.1}s`,
                     }}
                 />
             ))}

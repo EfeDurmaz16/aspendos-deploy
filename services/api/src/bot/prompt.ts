@@ -34,18 +34,26 @@ Guidelines:
 ${memories.map((m) => `- [${m.sector || 'semantic'}] ${m.content}`).join('\n')}`;
             }
 
-            // Get user profile from SuperMemory if available
+            // Get user profile from SuperMemory.
             try {
                 const profile = await memoryRouter.supermemory.getUserProfile(userId, query);
                 if (profile.static.length > 0 || profile.dynamic.length > 0) {
                     prompt += `\n\n## User Profile
 ${[...profile.static, ...profile.dynamic].join('\n')}`;
                 }
-            } catch {
-                // Profile not available
+            } catch (error) {
+                throw new Error(
+                    `Bot SuperMemory profile unavailable: ${
+                        error instanceof Error ? error.message : String(error)
+                    }`
+                );
             }
-        } catch {
-            // Memory not available, continue without context
+        } catch (error) {
+            throw new Error(
+                `Bot memory context unavailable: ${
+                    error instanceof Error ? error.message : String(error)
+                }`
+            );
         }
     }
 

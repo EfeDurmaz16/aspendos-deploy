@@ -1,9 +1,9 @@
 /**
  * Anthropic Computer Use Tool — Desktop interaction via screenshots + mouse/keyboard
  *
- * Wraps Anthropic's computer-use beta (computer_20251124) as Vercel AI SDK tools.
- * The actual computer use happens through Anthropic's API; these tools bridge
- * the AI SDK tool-calling interface to the Anthropic computer use protocol.
+ * Computer Use requires an Anthropic model loop plus a real desktop/sandbox
+ * executor. This module exposes the governed tool surface, but refuses to
+ * report success until that execution loop exists.
  *
  * Reversibility: approval_only (high-risk, arbitrary desktop actions)
  * Tier: Pro+ only
@@ -24,22 +24,18 @@ export const COMPUTER_USE_TOOL_META = {
     } satisfies RollbackStrategy,
 };
 
-// ── Anthropic beta header for computer use ──────────────────────
-const COMPUTER_USE_BETA = 'computer-use-2025-01-24';
-const COMPUTER_USE_TOOL_TYPE = 'computer_20250124';
-
 // Default display dimensions
 const DEFAULT_DISPLAY_WIDTH = 1280;
 const DEFAULT_DISPLAY_HEIGHT = 800;
 
-// ── Internal: create Anthropic client ───────────────────────────
-async function getAnthropicClient() {
-    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+const COMPUTER_USE_NOT_IMPLEMENTED =
+    'Computer Use sandbox loop is not implemented. Refusing to report success without executing the desktop action.';
+
+function requireAnthropicApiKey() {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
         throw new Error('ANTHROPIC_API_KEY not configured');
     }
-    return new Anthropic({ apiKey });
 }
 
 // ── Computer use action types ───────────────────────────────────
@@ -90,7 +86,7 @@ const ComputerActionSchema = z.discriminatedUnion('action', [
 
 // ── Tool: computerAction ────────────────────────────────────────
 export const computerAction = tool({
-    description: `Execute a computer use action via Anthropic's Computer Use API. This enables mouse clicks, keyboard input, screenshots, and scrolling on a virtual desktop. REQUIRES Pro+ tier. Actions are sent to the Anthropic API which controls a virtual display.`,
+    description: `Computer use action surface for mouse clicks, keyboard input, screenshots, and scrolling. REQUIRES Pro+ tier. Currently fails closed until a real desktop execution loop is connected.`,
     inputSchema: z.object({
         action: ComputerActionSchema.describe('The computer action to perform'),
         displayWidth: z
@@ -104,61 +100,18 @@ export const computerAction = tool({
         model: z
             .string()
             .optional()
-            .describe('Anthropic model to use. Default "claude-sonnet-4-20250514".'),
+            .describe('Anthropic model to use. Default "claude-sonnet-4-6".'),
     }),
     execute: async ({ action, displayWidth, displayHeight, model }) => {
         try {
-            const client = await getAnthropicClient();
-
-            const width = displayWidth ?? DEFAULT_DISPLAY_WIDTH;
-            const height = displayHeight ?? DEFAULT_DISPLAY_HEIGHT;
-            const modelId = model ?? 'claude-sonnet-4-20250514';
-
-            // Build the computer use tool definition for the Anthropic API
-            const computerTool = {
-                type: COMPUTER_USE_TOOL_TYPE as any,
-                name: 'computer',
-                display_width_px: width,
-                display_height_px: height,
-            };
-
-            // Build the tool_use content block representing the action result
-            // For the initial call, we ask Claude to perform the action
-            const actionDescription = formatActionDescription(action);
-
-            const response = await client.messages.create({
-                model: modelId,
-                max_tokens: 1024,
-                tools: [computerTool],
-                messages: [
-                    {
-                        role: 'user',
-                        content: `Perform this computer action: ${actionDescription}`,
-                    },
-                ],
-                betas: [COMPUTER_USE_BETA],
-            } as any);
-
-            // Extract tool use blocks from the response
-            const toolUseBlocks = response.content.filter(
-                (block: any) => block.type === 'tool_use'
-            );
-            const textBlocks = response.content.filter((block: any) => block.type === 'text');
-
+            requireAnthropicApiKey();
             return {
-                success: true,
+                success: false,
+                error: COMPUTER_USE_NOT_IMPLEMENTED,
                 action: action.action,
-                toolCalls: toolUseBlocks.map((block: any) => ({
-                    id: block.id,
-                    name: block.name,
-                    input: block.input,
-                })),
-                text: textBlocks.map((block: any) => block.text).join('\n'),
-                stopReason: response.stop_reason,
-                usage: {
-                    inputTokens: response.usage.input_tokens,
-                    outputTokens: response.usage.output_tokens,
-                },
+                displayWidth: displayWidth ?? DEFAULT_DISPLAY_WIDTH,
+                displayHeight: displayHeight ?? DEFAULT_DISPLAY_HEIGHT,
+                model: model ?? 'claude-sonnet-4-6',
             };
         } catch (error) {
             return {
@@ -172,7 +125,7 @@ export const computerAction = tool({
 // ── Tool: computerScreenshot ────────────────────────────────────
 export const computerScreenshot = tool({
     description:
-        'Take a screenshot of the virtual desktop via Anthropic Computer Use. Returns the model interpretation of the current screen state. REQUIRES Pro+ tier.',
+        'Computer screenshot surface. REQUIRES Pro+ tier. Currently fails closed until a real desktop execution loop is connected.',
     inputSchema: z.object({
         displayWidth: z
             .number()
@@ -186,49 +139,13 @@ export const computerScreenshot = tool({
     }),
     execute: async ({ displayWidth, displayHeight, prompt }) => {
         try {
-            const client = await getAnthropicClient();
-
-            const width = displayWidth ?? DEFAULT_DISPLAY_WIDTH;
-            const height = displayHeight ?? DEFAULT_DISPLAY_HEIGHT;
-
-            const computerTool = {
-                type: COMPUTER_USE_TOOL_TYPE as any,
-                name: 'computer',
-                display_width_px: width,
-                display_height_px: height,
-            };
-
-            const response = await client.messages.create({
-                model: 'claude-sonnet-4-20250514',
-                max_tokens: 1024,
-                tools: [computerTool],
-                messages: [
-                    {
-                        role: 'user',
-                        content:
-                            prompt ?? 'Take a screenshot and describe what you see on the screen.',
-                    },
-                ],
-                betas: [COMPUTER_USE_BETA],
-            } as any);
-
-            const textBlocks = response.content.filter((block: any) => block.type === 'text');
-            const toolUseBlocks = response.content.filter(
-                (block: any) => block.type === 'tool_use'
-            );
-
+            requireAnthropicApiKey();
             return {
-                success: true,
-                description: textBlocks.map((block: any) => block.text).join('\n'),
-                toolCalls: toolUseBlocks.map((block: any) => ({
-                    id: block.id,
-                    name: block.name,
-                    input: block.input,
-                })),
-                usage: {
-                    inputTokens: response.usage.input_tokens,
-                    outputTokens: response.usage.output_tokens,
-                },
+                success: false,
+                error: COMPUTER_USE_NOT_IMPLEMENTED,
+                displayWidth: displayWidth ?? DEFAULT_DISPLAY_WIDTH,
+                displayHeight: displayHeight ?? DEFAULT_DISPLAY_HEIGHT,
+                prompt: prompt ?? 'Take a screenshot and describe what you see on the screen.',
             };
         } catch (error) {
             return {
@@ -238,32 +155,6 @@ export const computerScreenshot = tool({
         }
     },
 });
-
-// ── Helper: format action for prompt ────────────────────────────
-function formatActionDescription(action: z.infer<typeof ComputerActionSchema>): string {
-    switch (action.action) {
-        case 'screenshot':
-            return 'Take a screenshot of the current screen';
-        case 'left_click':
-            return `Left click at coordinates (${action.coordinate[0]}, ${action.coordinate[1]})`;
-        case 'right_click':
-            return `Right click at coordinates (${action.coordinate[0]}, ${action.coordinate[1]})`;
-        case 'double_click':
-            return `Double click at coordinates (${action.coordinate[0]}, ${action.coordinate[1]})`;
-        case 'triple_click':
-            return `Triple click at coordinates (${action.coordinate[0]}, ${action.coordinate[1]})`;
-        case 'mouse_move':
-            return `Move mouse to coordinates (${action.coordinate[0]}, ${action.coordinate[1]})`;
-        case 'type':
-            return `Type the text: "${action.text}"`;
-        case 'key':
-            return `Press the key combination: ${action.text}`;
-        case 'scroll':
-            return `Scroll at (${action.coordinate[0]}, ${action.coordinate[1]}) by delta (${action.delta_x}, ${action.delta_y})`;
-        case 'wait':
-            return 'Wait for the screen to update';
-    }
-}
 
 // ── Convenience: all computer use tools as a record ─────────────
 export const computerUseTools = {

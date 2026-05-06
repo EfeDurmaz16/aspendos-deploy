@@ -1,18 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { createEmbedding } from '@/lib/ai';
 import { analyzeContextForPAC } from '@/lib/pac/analyzer';
 import { prisma } from '@/lib/prisma';
-
-// TODO(phase-a-day-3): Qdrant removed — conversation search will use Convex + SuperMemory
-async function searchConversations(
-    _userId: string,
-    _embedding: number[],
-    _limit: number
-): Promise<Array<{ content: string }>> {
-    return [];
-}
 
 // ============================================
 // PAC CRON ENDPOINT
@@ -70,28 +60,13 @@ export async function GET(req: NextRequest) {
                     select: { role: true, content: true },
                 });
 
-                // Get recent memories via semantic search
-                let recentMemories: string[] = [];
-                try {
-                    const queryEmbedding = await createEmbedding(
-                        recentMessages
-                            .map((m: { content: string }) => m.content)
-                            .join(' ')
-                            .slice(0, 1000)
-                    );
-                    const searchResults = await searchConversations(user.id, queryEmbedding, 3);
-                    recentMemories = searchResults.map((r: { content: string }) => r.content);
-                } catch {
-                    // Memory search failed, continue without
-                }
-
                 // Analyze context for PAC
                 const analysis = await analyzeContextForPAC(user.id, {
                     recentMessages: recentMessages.map(
                         (m: { role: string; content: string }) =>
                             `${m.role}: ${m.content.slice(0, 200)}`
                     ),
-                    recentMemories,
+                    recentMemories: [],
                     currentTime: new Date(),
                 });
 

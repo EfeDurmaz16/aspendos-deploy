@@ -149,9 +149,9 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-muted-foreground">
-                                    Unified AI platform with access to 12+ models including{' '}
-                                    {competitor.name}, persistent semantic memory, ChatGPT/Claude
-                                    import, and proactive AI callbacks.
+                                    Deterministic AI agent platform with model-agnostic execution,
+                                    signed action payloads, approval gates, persistent audit
+                                    commits, and reversibility classes.
                                 </p>
                             </CardContent>
                         </Card>
@@ -279,8 +279,8 @@ export function ComparisonPage({ competitor }: ComparisonPageProps) {
                         Frequently Asked Questions
                     </h2>
                     <Accordion type="single" collapsible className="w-full">
-                        {competitor.faqs.map((faq, index) => (
-                            <AccordionItem key={index} value={`faq-${index}`}>
+                        {competitor.faqs.map((faq) => (
+                            <AccordionItem key={faq.question} value={`faq-${faq.question}`}>
                                 <AccordionTrigger>{faq.question}</AccordionTrigger>
                                 <AccordionContent>{faq.answer}</AccordionContent>
                             </AccordionItem>

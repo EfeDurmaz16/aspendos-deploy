@@ -45,6 +45,11 @@ export interface ToolDefinition {
 
 export interface ToolContext {
     userId: string;
+    sessionId?: string;
+    agentId?: string;
+    toolCallCount?: number;
+    toolCallCountByName?: Record<string, number>;
+    previousActions?: Array<{ toolName: string; success: boolean; timestamp: number }>;
     commitHash?: string;
     snapshotId?: string;
 }

@@ -2,14 +2,13 @@ import { createAnthropicStreamingCompletion } from './anthropic';
 import { createGroqStreamingCompletion, type RouteDecision, routeUserMessage } from './groq';
 import { createEmbedding, createStreamingChatCompletion as createOpenAIStream } from './openai';
 
-// TODO(phase-a-day-3): Qdrant removed — memory search will use Convex + SuperMemory
 async function searchMemories(
     _userId: string,
     _embedding: number[],
     _limit: number,
     _type?: string
 ): Promise<Array<{ content: string; score: number }>> {
-    return [];
+    throw new Error('Web hybrid memory search is not wired to Convex/SuperMemory');
 }
 
 // ============================================
@@ -20,18 +19,15 @@ type ModelProvider = 'openai' | 'anthropic' | 'groq';
 
 const MODEL_PROVIDERS: Record<string, ModelProvider> = {
     // OpenAI models
-    'gpt-4o': 'openai',
-    'gpt-4o-mini': 'openai',
-    'gpt-4-turbo': 'openai',
-    'gpt-3.5-turbo': 'openai',
+    'gpt-5': 'openai',
+    'gpt-5-mini': 'openai',
     // Anthropic models
-    'claude-3-5-sonnet-20241022': 'anthropic',
-    'claude-3-haiku-20240307': 'anthropic',
-    'claude-3-opus-20240229': 'anthropic',
-    // Groq models (fast inference)
-    'llama-3.1-70b-versatile': 'groq',
-    'llama-3.1-8b-instant': 'groq',
-    'mixtral-8x7b-32768': 'groq',
+    'claude-sonnet-4-6': 'anthropic',
+    'claude-haiku-4-5': 'anthropic',
+    'claude-opus-4-7': 'anthropic',
+    // Groq models (fast inference) — Llama 4 family
+    'llama-4-maverick': 'groq',
+    'llama-4-scout': 'groq',
 };
 
 // ============================================
@@ -39,11 +35,13 @@ const MODEL_PROVIDERS: Record<string, ModelProvider> = {
 // ============================================
 
 const FALLBACK_CHAIN: Record<string, string[]> = {
-    'gpt-4o': ['claude-3-5-sonnet-20241022', 'llama-3.1-70b-versatile'],
-    'gpt-4o-mini': ['claude-3-haiku-20240307', 'llama-3.1-8b-instant'],
-    'claude-3-5-sonnet-20241022': ['gpt-4o', 'llama-3.1-70b-versatile'],
-    'claude-3-haiku-20240307': ['gpt-4o-mini', 'llama-3.1-8b-instant'],
-    'llama-3.1-70b-versatile': ['gpt-4o', 'claude-3-5-sonnet-20241022'],
+    'gpt-5': ['claude-sonnet-4-6', 'llama-4-maverick'],
+    'gpt-5-mini': ['claude-haiku-4-5', 'llama-4-scout'],
+    'claude-sonnet-4-6': ['gpt-5', 'llama-4-maverick'],
+    'claude-opus-4-7': ['claude-sonnet-4-6', 'gpt-5'],
+    'claude-haiku-4-5': ['gpt-5-mini', 'llama-4-scout'],
+    'llama-4-maverick': ['gpt-5', 'claude-sonnet-4-6'],
+    'llama-4-scout': ['llama-4-maverick', 'gpt-5-mini'],
 };
 
 // ============================================
@@ -166,18 +164,14 @@ export async function executeHybridRoute(
     let memories: Array<{ content: string; score: number }> = [];
 
     if (decision.type === 'rag_search') {
-        try {
-            const queryEmbedding = await createEmbedding(
-                decision.type === 'rag_search' ? (decision as { query: string }).query : userMessage
-            );
-            const searchResults = await searchMemories(userId, queryEmbedding, 5);
+        const queryEmbedding = await createEmbedding(
+            decision.type === 'rag_search' ? (decision as { query: string }).query : userMessage
+        );
+        const searchResults = await searchMemories(userId, queryEmbedding, 5);
 
-            if (searchResults.length > 0) {
-                memories = searchResults.map((m) => ({ content: m.content, score: m.score }));
-                memoryContext = searchResults.map((m) => `- ${m.content}`).join('\n');
-            }
-        } catch (error) {
-            console.warn('[HybridRouter] Memory search failed:', error);
+        if (searchResults.length > 0) {
+            memories = searchResults.map((m) => ({ content: m.content, score: m.score }));
+            memoryContext = searchResults.map((m) => `- ${m.content}`).join('\n');
         }
     }
 

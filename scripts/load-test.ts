@@ -156,7 +156,7 @@ async function main() {
             process.exit(1);
         }
         console.log('Health check passed. Starting load test...\n');
-    } catch (e) {
+    } catch {
         console.error(`Cannot reach ${BASE_URL}/health - is the server running?`);
         process.exit(1);
     }
@@ -173,7 +173,7 @@ async function main() {
     }
 
     // Summary table
-    console.log('\n' + '='.repeat(70));
+    console.log(`\n${'='.repeat(70)}`);
     console.log('RESULTS SUMMARY');
     console.log('='.repeat(70));
     console.log(
@@ -221,7 +221,7 @@ async function main() {
         minRps: 50,
     };
 
-    console.log('\n' + '='.repeat(70));
+    console.log(`\n${'='.repeat(70)}`);
     console.log('PASS/FAIL CRITERIA');
     console.log('='.repeat(70));
 

@@ -50,7 +50,9 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
         }
 
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach((track) => track.stop());
+            streamRef.current.getTracks().forEach((track) => {
+                track.stop();
+            });
             streamRef.current = null;
         }
 
@@ -152,7 +154,7 @@ export function useGeminiLive(options: UseGeminiLiveOptions = {}) {
                 ws.send(
                     JSON.stringify({
                         setup: {
-                            model: 'models/gemini-2.0-flash-live',
+                            model: 'models/gemini-3.1-flash-live-preview',
                             generation_config: { response_modalities: ['AUDIO'] },
                         },
                     })

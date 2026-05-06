@@ -3,6 +3,7 @@
  * Tests data export, account deletion, data summary, anonymization, and rate limiting.
  */
 
+import { prisma } from '@aspendos/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Mock @aspendos/db before imports (factory must not reference outer variables) ─
@@ -67,13 +68,22 @@ vi.mock('@aspendos/db', () => {
 
 // Mock auth middleware to always set a test user
 vi.mock('../../middleware/auth', () => ({
-    requireAuth: vi.fn().mockImplementation(async (_c: any, next: any) => {
+    requireAuth: vi.fn().mockImplementation(async (c: any, next: any) => {
+        c.set('userId', 'test-user-gdpr-001');
+        return next();
+    }),
+    rejectApiKeyAuth: vi.fn().mockImplementation(async (c: any, next: any) => {
+        if (c.get('apiKeyId')) {
+            return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+        }
         return next();
     }),
     authMiddleware: vi.fn().mockImplementation(async (_c: any, next: any) => {
         return next();
     }),
 }));
+
+import { requireAuth } from '../../middleware/auth';
 
 // Mock the auth lib (required by middleware/auth)
 vi.mock('../../lib/auth', () => ({
@@ -84,8 +94,22 @@ vi.mock('../../lib/auth', () => ({
     },
 }));
 
+vi.mock('../../lib/convex', () => ({
+    api: {
+        compliance: {
+            scheduleDeletionByWorkOSId: 'compliance.scheduleDeletionByWorkOSId',
+            cancelDeletionByWorkOSId: 'compliance.cancelDeletionByWorkOSId',
+        },
+    },
+    getConvexClient: vi.fn(),
+    getConvexServiceSecret: vi.fn(() => 'test-service-secret'),
+    isConvexConfigured: vi.fn(() => false),
+}));
+
+import * as convexLib from '../../lib/convex';
 import {
     anonymizeUser,
+    assertProcessLocalComplianceStateAllowed,
     cancelDeletion,
     clearStores_forTesting,
     exportUserData,
@@ -93,12 +117,14 @@ import {
     getExportJobOwner,
     getExportJobStatus,
     getPendingDeletion,
+    getPendingDeletions_forTesting,
     queueExportJob,
     scheduleAccountDeletion,
 } from '../../services/user-deletion.service';
 
 // Cast prisma to access mocked methods
 const mockPrisma = prisma as any;
+const mockRequireAuth = requireAuth as any;
 
 // ─── Test Constants ──────────────────────────────────────────────────────────
 
@@ -109,8 +135,46 @@ const TEST_USER_ID_2 = 'test-user-gdpr-002';
 
 beforeEach(() => {
     vi.clearAllMocks();
+    mockRequireAuth.mockImplementation(async (c: any, next: any) => {
+        c.set('userId', TEST_USER_ID);
+        return next();
+    });
     clearStores_forTesting();
+    delete process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE;
+    vi.mocked(convexLib.isConvexConfigured).mockReturnValue(false);
+    vi.mocked(convexLib.getConvexServiceSecret).mockReturnValue('test-service-secret');
+    vi.mocked(convexLib.getConvexClient).mockReturnValue({
+        mutation: vi.fn(),
+        query: vi.fn(),
+    } as any);
     setupDefaultMocks();
+});
+
+describe('GDPR Compliance - Route Session Boundaries', () => {
+    it('rejects API-key authenticated access to compliance export routes', async () => {
+        process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE = 'true';
+        mockRequireAuth.mockImplementationOnce(async (c: any, next: any) => {
+            c.set('userId', TEST_USER_ID);
+            c.set('apiKeyId', 'key-1');
+            c.set('apiKeyPermissions', ['memory:read']);
+            return next();
+        });
+
+        const { default: complianceRoutes, clearExportRateLimiter_forTesting } = await import(
+            '../../routes/user-compliance'
+        );
+        clearExportRateLimiter_forTesting();
+        const { Hono } = await import('hono');
+        const app = new Hono();
+        app.route('/compliance', complianceRoutes);
+
+        const res = await app.request('/compliance/export', { method: 'POST' });
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
+        });
+    });
 });
 
 afterEach(() => {
@@ -136,13 +200,13 @@ function setupDefaultMocks() {
                     role: 'user',
                     content: 'Hello',
                     createdAt: new Date('2025-06-01'),
-                    modelUsed: 'openai/gpt-4o',
+                    modelUsed: 'openai/gpt-5',
                 },
                 {
                     role: 'assistant',
                     content: 'Hi there!',
                     createdAt: new Date('2025-06-01'),
-                    modelUsed: 'openai/gpt-4o',
+                    modelUsed: 'openai/gpt-5',
                 },
             ],
         },
@@ -218,6 +282,37 @@ function setupDefaultMocks() {
 // ─── Export Tests ────────────────────────────────────────────────────────────
 
 describe('GDPR Compliance - Data Export', () => {
+    describe('production state posture', () => {
+        it('refuses process-local compliance state in production by default', () => {
+            const originalNodeEnv = process.env.NODE_ENV;
+            process.env.NODE_ENV = 'production';
+
+            try {
+                expect(() => assertProcessLocalComplianceStateAllowed('GDPR export jobs')).toThrow(
+                    /durable compliance store/
+                );
+                expect(() => queueExportJob(TEST_USER_ID)).toThrow(/durable compliance store/);
+            } finally {
+                process.env.NODE_ENV = originalNodeEnv;
+            }
+        });
+
+        it('allows explicit local compliance state opt-in in production-like tests', () => {
+            const originalNodeEnv = process.env.NODE_ENV;
+            process.env.NODE_ENV = 'production';
+            process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE = 'true';
+
+            try {
+                expect(() =>
+                    assertProcessLocalComplianceStateAllowed('GDPR export jobs')
+                ).not.toThrow();
+            } finally {
+                process.env.NODE_ENV = originalNodeEnv;
+                delete process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE;
+            }
+        });
+    });
+
     describe('queueExportJob', () => {
         it('returns a job ID with queued status', () => {
             const result = queueExportJob(TEST_USER_ID);
@@ -354,6 +449,27 @@ describe('GDPR Compliance - Account Deletion', () => {
 
             expect(result1.cancellationToken).not.toBe(result2.cancellationToken);
         });
+
+        it('uses Convex durable deletion state when configured', async () => {
+            const mutation = vi.fn().mockResolvedValue({ scheduled_at: 1_800_000_000_000 });
+            vi.mocked(convexLib.isConvexConfigured).mockReturnValue(true);
+            vi.mocked(convexLib.getConvexClient).mockReturnValue({ mutation } as any);
+
+            const result = await scheduleAccountDeletion(TEST_USER_ID, 'durable request');
+
+            expect(result.scheduledDate.toISOString()).toBe('2027-01-15T08:00:00.000Z');
+            expect(result.cancellationToken).toEqual(expect.any(String));
+            expect(mutation).toHaveBeenCalledWith(
+                convexLib.api.compliance.scheduleDeletionByWorkOSId,
+                expect.objectContaining({
+                    service_secret: 'test-service-secret',
+                    workos_id: TEST_USER_ID,
+                    reason: 'durable request',
+                    cancellation_token_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+                })
+            );
+            expect(getPendingDeletions_forTesting().size).toBe(0);
+        });
     });
 
     describe('cancelDeletion', () => {
@@ -388,6 +504,24 @@ describe('GDPR Compliance - Account Deletion', () => {
             // Try to cancel user 1's deletion with user 2
             const cancelled = await cancelDeletion(TEST_USER_ID_2, cancellationToken);
             expect(cancelled).toBe(false);
+        });
+
+        it('cancels through Convex durable deletion state when configured', async () => {
+            const mutation = vi.fn().mockResolvedValue(true);
+            vi.mocked(convexLib.isConvexConfigured).mockReturnValue(true);
+            vi.mocked(convexLib.getConvexClient).mockReturnValue({ mutation } as any);
+
+            const cancelled = await cancelDeletion(TEST_USER_ID, 'token-to-hash');
+
+            expect(cancelled).toBe(true);
+            expect(mutation).toHaveBeenCalledWith(
+                convexLib.api.compliance.cancelDeletionByWorkOSId,
+                expect.objectContaining({
+                    service_secret: 'test-service-secret',
+                    workos_id: TEST_USER_ID,
+                    cancellation_token_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+                })
+            );
         });
     });
 

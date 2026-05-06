@@ -92,11 +92,8 @@ function MessageActions({
             <AudioPlayer text={content} className="ml-1" />
 
             {/* Feedback buttons */}
-            <div
-                className="flex items-center gap-0.5 ml-auto"
-                role="group"
-                aria-label="Response feedback"
-            >
+            <fieldset className="flex items-center gap-0.5 ml-auto">
+                <legend className="sr-only">Response feedback</legend>
                 <button
                     type="button"
                     onClick={() => handleFeedback('up')}
@@ -131,7 +128,7 @@ function MessageActions({
                         aria-hidden="true"
                     />
                 </button>
-            </div>
+            </fieldset>
         </div>
     );
 }
@@ -306,7 +303,7 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
             className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}
             role={isUser ? 'listitem' : 'listitem'}
         >
-            <div
+            <article
                 className={`max-w-[85%] rounded-2xl px-4 py-3 transition-all ${
                     isUser
                         ? 'bg-primary text-primary-foreground shadow-md'
@@ -320,6 +317,7 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
                 {message.error && (
                     <div className="flex items-center gap-2 text-foreground/60 mb-2">
                         <svg
+                            aria-hidden="true"
                             className="w-4 h-4"
                             fill="none"
                             stroke="currentColor"
@@ -414,7 +412,7 @@ function StreamingMessageComponent({ message, onFeedback }: StreamingMessageProp
                         />
                     </div>
                 )}
-            </div>
+            </article>
         </div>
     );
 }

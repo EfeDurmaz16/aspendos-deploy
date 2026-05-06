@@ -13,7 +13,7 @@
  * - Rollback: action reverts a previous action
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 // ============================================
 // TYPES
@@ -46,7 +46,10 @@ export interface CausalPath {
 export async function getCausalChain(actionId: string, maxDepth = 20): Promise<CausalPath> {
     try {
         const client = getConvexClient();
-        const allLogs = await client.query(api.actionLog.listRecent, { limit: 2000 });
+        const allLogs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 2000,
+        });
 
         // Build a lookup map by action id (stored in details)
         const logMap = new Map<string, (typeof allLogs)[0]>();
@@ -80,7 +83,7 @@ export async function getCausalChain(actionId: string, maxDepth = 20): Promise<C
         return { nodes, totalLatencyMs: totalLatency, depth: nodes.length };
     } catch (error) {
         console.error('[CausalTrace] getCausalChain failed:', error);
-        return { nodes: [], totalLatencyMs: 0, depth: 0 };
+        throw new Error('Failed to load causal chain', { cause: error });
     }
 }
 
@@ -91,7 +94,10 @@ export async function getCausalChain(actionId: string, maxDepth = 20): Promise<C
 export async function getEffects(actionId: string, maxDepth = 10): Promise<CausalNode[]> {
     try {
         const client = getConvexClient();
-        const allLogs = await client.query(api.actionLog.listRecent, { limit: 2000 });
+        const allLogs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 2000,
+        });
 
         // Build parent -> children map
         const childrenOf = new Map<string, (typeof allLogs)[0][]>();
@@ -131,7 +137,7 @@ export async function getEffects(actionId: string, maxDepth = 10): Promise<Causa
         return effects;
     } catch (error) {
         console.error('[CausalTrace] getEffects failed:', error);
-        return [];
+        throw new Error('Failed to load action effects', { cause: error });
     }
 }
 
@@ -143,6 +149,7 @@ export async function getCriticalPath(userId: string, sessionId: string): Promis
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 2000,
         });
@@ -225,7 +232,7 @@ export async function getCriticalPath(userId: string, sessionId: string): Promis
         };
     } catch (error) {
         console.error('[CausalTrace] getCriticalPath failed:', error);
-        return { nodes: [], totalLatencyMs: 0, depth: 0 };
+        throw new Error('Failed to load critical path', { cause: error });
     }
 }
 
@@ -236,6 +243,7 @@ export async function getSessionSummary(userId: string, sessionId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 2000,
         });
@@ -271,14 +279,6 @@ export async function getSessionSummary(userId: string, sessionId: string) {
         };
     } catch (error) {
         console.error('[CausalTrace] getSessionSummary failed:', error);
-        return {
-            totalActions: 0,
-            toolCalls: 0,
-            blockedActions: 0,
-            approvalRequests: 0,
-            totalLatencyMs: 0,
-            avgLatencyMs: 0,
-            toolUsage: {},
-        };
+        throw new Error('Failed to load session summary', { cause: error });
     }
 }

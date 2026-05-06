@@ -1,22 +1,21 @@
-import { ToolLoopAgent, tool, stepCountIs } from 'ai';
-import { gateway } from 'ai';
+import { gateway, stepCountIs, ToolLoopAgent, tool } from 'ai';
 import { z } from 'zod';
-import { runToolStep } from './step';
+import type { ToolContext } from '../reversibility/types';
 import { registerAllTools } from '../tools/register-all';
 import { registry } from '../tools/registry';
-import type { ToolContext } from '../reversibility/types';
+import { runToolStep } from './step';
 
 registerAllTools();
 
-function createAgentTools(userId: string) {
-    const toolDefs: Record<string, ReturnType<typeof tool>> = {};
+function createAgentTools(userId: string, sessionId: string) {
+    const toolDefs: Record<string, any> = {};
 
     for (const t of registry.list()) {
         toolDefs[t.name] = tool({
             description: t.description,
             inputSchema: z.object({}).passthrough(),
-            execute: async (args) => {
-                const ctx: ToolContext = { userId };
+            execute: async (args: any) => {
+                const ctx: ToolContext = { userId, sessionId };
                 const result = await runToolStep(t.name, args, ctx);
 
                 if (result.blocked) {
@@ -49,8 +48,8 @@ function createAgentTools(userId: string) {
     return toolDefs;
 }
 
-export function createYulaAgent(userId: string, model?: string) {
-    const agentTools = createAgentTools(userId);
+export function createYulaAgent(userId: string, sessionId: string, model?: string) {
+    const agentTools = createAgentTools(userId, sessionId);
 
     return new ToolLoopAgent({
         model: gateway(model ?? 'anthropic/claude-sonnet-4.6'),

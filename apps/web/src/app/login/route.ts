@@ -1,5 +1,5 @@
 import { getSignInUrl } from '@workos-inc/authkit-nextjs';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 

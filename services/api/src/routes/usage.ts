@@ -5,10 +5,11 @@
  * Provides cost breakdowns, burn rate projections, and budget monitoring.
  */
 
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { usageLedger } from '../lib/usage-ledger';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 type Variables = {
     userId?: string;
@@ -36,6 +37,10 @@ async function requireAdmin(c: any, next: any) {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    if (c.get('apiKeyId')) {
+        return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
     }
 
     // Check if user is in admin list
@@ -81,7 +86,7 @@ async function requireAdmin(c: any, next: any) {
  * - byModel: Cost breakdown by model with tokens and request count
  * - byDay: Daily cost breakdown
  */
-app.get('/costs', requireAuth, async (c) => {
+app.get('/costs', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
@@ -148,7 +153,7 @@ app.get('/admin/costs', requireAdmin, async (c) => {
             },
         });
 
-        const userMap = new Map(users.map((u) => [u.id, u]));
+        const userMap = new Map<string, any>(users.map((u: any) => [u.id, u]));
 
         const enrichedSpenders = topSpenders.map((spender) => {
             const user = userMap.get(spender.userId);

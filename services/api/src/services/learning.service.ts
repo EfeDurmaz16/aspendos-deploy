@@ -15,7 +15,7 @@
  * Backed by Convex action_log.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 import * as skillService from './skill.service';
 
 // ============================================
@@ -43,6 +43,7 @@ export async function detectPatterns(userId: string): Promise<DetectedPattern[]>
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 2000,
         });
@@ -136,7 +137,11 @@ export async function createSkillFromPattern(
         createdBy: userId,
     });
 
-    return skill.id;
+    if (!skill) {
+        throw new Error('Failed to create skill from detected pattern');
+    }
+
+    return skill;
 }
 
 /**
@@ -146,7 +151,10 @@ export async function createSkillFromPattern(
 export async function getSkillsNeedingRefinement(userId?: string): Promise<string[]> {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 2000 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 2000,
+        });
 
         // Filter to skill_execution events
         const execLogs = logs.filter(
@@ -204,7 +212,10 @@ export async function getSkillsNeedingRefinement(userId?: string): Promise<strin
 export async function refineSkill(skillId: string): Promise<boolean> {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 1000 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 1000,
+        });
 
         // Find the skill definition
         const skillLog = logs.find(
@@ -235,6 +246,7 @@ export async function refineSkill(skillId: string): Promise<boolean> {
 
         // Log the refinement
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'skill_refined',
             details: {
                 skillId,

@@ -1,3 +1,4 @@
+import { checkDatabaseHealth } from '@aspendos/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -15,10 +16,6 @@ vi.mock('../db-pool-manager', () => ({
     getPoolMetrics: vi.fn(),
     getPoolHealth: vi.fn(),
 }));
-
-// TODO(phase-a-day-3): replaced by Convex — see convex/schema.ts
-// import { checkDatabaseHealth } from '@aspendos/db';
-const checkDatabaseHealth = {} as any;
 
 import { checkPoolUtilization, computeBackoff, withRetry } from '../db-health';
 import { getPoolHealth, getPoolMetrics } from '../db-pool-manager';

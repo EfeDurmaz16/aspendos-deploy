@@ -49,8 +49,8 @@ export default function TermsPage() {
                         </p>
                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                             <li>
-                                Access to multiple AI language models (GPT-4o, Claude, Gemini,
-                                Llama)
+                                Access to multiple AI language models (GPT-5.4, Claude, Gemini 3,
+                                Llama 4)
                             </li>
                             <li>Persistent memory across conversations using semantic search</li>
                             <li>Voice chat capabilities</li>
@@ -123,7 +123,7 @@ export default function TermsPage() {
                             <li>
                                 Subscriptions are billed weekly, monthly, or annually in advance
                             </li>
-                            <li>Payment processing is handled by Polar, our payment provider</li>
+                            <li>Payment processing is handled by Stripe, our payment provider</li>
                             <li>
                                 You authorize us to charge your payment method for recurring
                                 subscriptions

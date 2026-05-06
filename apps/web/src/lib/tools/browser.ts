@@ -5,9 +5,11 @@
  * Tier: Personal+
  */
 
-import { tool } from 'ai';
+import { type ToolExecutionOptions, tool } from 'ai';
 import { z } from 'zod';
 import type { ReversibilityClass, RollbackStrategy } from '@/lib/reversibility/types';
+import { assertToolOwner, getToolOwnerKey } from './execution-context';
+import { validateExternalUrl } from './url-safety';
 
 // ── Metadata ────────────────────────────────────────────────────
 export const BROWSER_TOOL_META = {
@@ -21,7 +23,7 @@ export const BROWSER_TOOL_META = {
 };
 
 // ── Session cache ───────────────────────────────────────────────
-const sessionCache = new Map<string, { client: any; session: any }>();
+const sessionCache = new Map<string, { client: any; session: any; ownerKey: string }>();
 
 async function getSteelClient() {
     const Steel = (await import('steel-sdk')).default;
@@ -47,8 +49,9 @@ export const createSession = tool({
             .optional()
             .describe('Session timeout in milliseconds. Default 300000 (5 min).'),
     }),
-    execute: async ({ useProxy, solveCaptcha, timeout }) => {
+    execute: async ({ useProxy, solveCaptcha, timeout }, options: ToolExecutionOptions) => {
         try {
+            const ownerKey = getToolOwnerKey(options);
             const client = await getSteelClient();
             const opts: Record<string, unknown> = {};
             if (useProxy !== undefined) opts.useProxy = useProxy;
@@ -56,7 +59,7 @@ export const createSession = tool({
             if (timeout !== undefined) opts.timeout = timeout;
 
             const session = await client.sessions.create(opts);
-            sessionCache.set(session.id, { client, session });
+            sessionCache.set(session.id, { client, session, ownerKey });
 
             return {
                 success: true,
@@ -84,12 +87,14 @@ export const navigate = tool({
             .optional()
             .describe('Additional wait time in ms after page load. Default 0.'),
     }),
-    execute: async ({ sessionId, url, waitFor }) => {
+    execute: async ({ sessionId, url, waitFor }, options: ToolExecutionOptions) => {
         try {
+            validateExternalUrl(url);
             const cached = sessionCache.get(sessionId);
             if (!cached) {
                 return { success: false, error: 'Session not found. Create a session first.' };
             }
+            assertToolOwner(cached.ownerKey, options);
 
             // Steel SDK scrape endpoint navigates and returns page content
             const result = await cached.client.scrape({
@@ -125,12 +130,13 @@ export const screenshot = tool({
             .optional()
             .describe('Capture full scrollable page. Default false (viewport only).'),
     }),
-    execute: async ({ sessionId, fullPage }) => {
+    execute: async ({ sessionId, fullPage }, options: ToolExecutionOptions) => {
         try {
             const cached = sessionCache.get(sessionId);
             if (!cached) {
                 return { success: false, error: 'Session not found. Create a session first.' };
             }
+            assertToolOwner(cached.ownerKey, options);
 
             const result = await cached.client.screenshot({
                 sessionId,
@@ -164,12 +170,14 @@ export const extractContent = tool({
             .optional()
             .describe('Output format. Default "markdown".'),
     }),
-    execute: async ({ sessionId, url, format }) => {
+    execute: async ({ sessionId, url, format }, options: ToolExecutionOptions) => {
         try {
+            validateExternalUrl(url);
             const cached = sessionCache.get(sessionId);
             if (!cached) {
                 return { success: false, error: 'Session not found. Create a session first.' };
             }
+            assertToolOwner(cached.ownerKey, options);
 
             const result = await cached.client.scrape({
                 url,
@@ -202,15 +210,16 @@ export const click = tool({
             .string()
             .describe('CSS selector of the element to click (e.g. "button.submit", "#login-btn")'),
     }),
-    execute: async ({ sessionId, selector }) => {
+    execute: async ({ sessionId, selector }, options: ToolExecutionOptions) => {
         try {
             const cached = sessionCache.get(sessionId);
             if (!cached) {
                 return { success: false, error: 'Session not found. Create a session first.' };
             }
+            assertToolOwner(cached.ownerKey, options);
 
             // Use Steel's action API to perform click
-            const result = await cached.client.actions.click({
+            await cached.client.actions.click({
                 sessionId,
                 selector,
             });
@@ -235,12 +244,13 @@ export const closeSession = tool({
     inputSchema: z.object({
         sessionId: z.string().describe('Session ID to release'),
     }),
-    execute: async ({ sessionId }) => {
+    execute: async ({ sessionId }, options: ToolExecutionOptions) => {
         try {
             const cached = sessionCache.get(sessionId);
             if (!cached) {
                 return { success: false, error: 'Session not found or already released.' };
             }
+            assertToolOwner(cached.ownerKey, options);
 
             await cached.client.sessions.release(sessionId);
             sessionCache.delete(sessionId);

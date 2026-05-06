@@ -1,0 +1,224 @@
+import {
+    allowsInMemoryGovernance,
+    canonicalJson,
+    isProductionRuntime,
+    sha256Hex,
+} from '../governance/canonical';
+import type { ReversibilityMetadata, ToolResult } from '../reversibility/types';
+
+interface CommitRecord {
+    hash: string;
+    did: string;
+    parentHash?: string | null;
+    rollbackStrategy?: ReversibilityMetadata['rollback_strategy'];
+    signature: string;
+    timestamp: number;
+    toolName?: string;
+    reversibilityClass?: ReversibilityMetadata['reversibility_class'];
+    humanExplanation?: string;
+}
+
+interface AgitCommitOptions {
+    userId: string;
+    toolName: string;
+    args: unknown;
+    metadata: ReversibilityMetadata;
+    fidesSignature: string;
+    fidesDid: string;
+    parentHash?: string | null;
+    type: 'pre' | 'post' | 'blocked';
+    result?: ToolResult;
+}
+
+let agitSingleton: AgitService | null = null;
+
+export class AgitService {
+    private client: any = null;
+    private initialized = false;
+    private localHistory = new Map<string, CommitRecord[]>();
+
+    async initialize(): Promise<void> {
+        if (this.initialized) return;
+
+        const repoPath = process.env.AGIT_REPO_PATH;
+        if (!repoPath) {
+            if (isProductionRuntime()) {
+                throw new Error(
+                    'AGIT_REPO_PATH is required in production. Refusing in-memory AGIT commits.'
+                );
+            }
+            if (!allowsInMemoryGovernance()) {
+                throw new Error(
+                    'AGIT_REPO_PATH is required unless ALLOW_IN_MEMORY_GOVERNANCE=true is set for local development. Refusing in-memory AGIT commits.'
+                );
+            }
+            this.initialized = true;
+            return;
+        }
+
+        try {
+            const agit = await import('@agit/sdk');
+            this.client = await agit.AgitClient.open(repoPath, {
+                agentId: 'yula-api',
+                requireNative: isProductionRuntime() || !allowsInMemoryGovernance(),
+            });
+            this.initialized = true;
+        } catch (error) {
+            if (isProductionRuntime()) {
+                throw new Error(`Failed to initialize AGIT repository: ${String(error)}`);
+            }
+            if (!allowsInMemoryGovernance()) {
+                throw new Error(
+                    `Failed to initialize AGIT repository and in-memory governance fallback is disabled: ${String(error)}`
+                );
+            }
+            this.initialized = true;
+        }
+    }
+
+    async commitAction(opts: AgitCommitOptions): Promise<CommitRecord> {
+        await this.initialize();
+
+        const message = `${opts.type}:${opts.toolName}:${opts.metadata.reversibility_class}`;
+        const timestamp = Date.now();
+        const deterministicState = {
+            args: opts.args,
+            class: opts.metadata.reversibility_class,
+            explanation: opts.metadata.human_explanation,
+            result: opts.result,
+            tool: opts.toolName,
+            type: opts.type,
+            userId: opts.userId,
+        };
+        const state = {
+            ...deterministicState,
+            timestamp,
+        };
+
+        if (this.client) {
+            try {
+                const hash = await this.client.commit({
+                    memory: state,
+                    message,
+                    metadata: {
+                        fidesDid: opts.fidesDid,
+                        fidesSignature: opts.fidesSignature,
+                        humanExplanation: opts.metadata.human_explanation,
+                        parentHash: opts.parentHash ?? null,
+                        reversibilityClass: opts.metadata.reversibility_class,
+                        rollbackStrategy: opts.metadata.rollback_strategy,
+                        toolName: opts.toolName,
+                        type: opts.type,
+                        userId: opts.userId,
+                    },
+                });
+                return {
+                    hash,
+                    did: opts.fidesDid,
+                    parentHash: opts.parentHash ?? null,
+                    rollbackStrategy: opts.metadata.rollback_strategy,
+                    signature: opts.fidesSignature,
+                    timestamp,
+                    toolName: opts.toolName,
+                    reversibilityClass: opts.metadata.reversibility_class,
+                    humanExplanation: opts.metadata.human_explanation,
+                };
+            } catch (error) {
+                if (isProductionRuntime()) {
+                    throw new Error(`AGIT commit failed: ${String(error)}`);
+                }
+            }
+        }
+
+        const hash = await sha256Hex(
+            canonicalJson({
+                message,
+                parent_hash: opts.parentHash ?? null,
+                state: deterministicState,
+                signature: opts.fidesSignature,
+            })
+        );
+        const record = {
+            hash,
+            did: opts.fidesDid,
+            parentHash: opts.parentHash ?? null,
+            rollbackStrategy: opts.metadata.rollback_strategy,
+            signature: opts.fidesSignature,
+            timestamp,
+            toolName: opts.toolName,
+            reversibilityClass: opts.metadata.reversibility_class,
+            humanExplanation: opts.metadata.human_explanation,
+        };
+        const history = this.localHistory.get(opts.userId) ?? [];
+        history.unshift(record);
+        this.localHistory.set(opts.userId, history);
+        return record;
+    }
+
+    async historyForUser(userId: string, limit = 50): Promise<CommitRecord[]> {
+        await this.initialize();
+
+        if (this.client) {
+            try {
+                const logs = await this.client.log({ limit });
+                return logs
+                    .filter((l: any) => l.metadata?.userId === userId)
+                    .slice(0, limit)
+                    .map((l: any) => ({
+                        hash: l.hash,
+                        did: l.metadata?.fidesDid ?? '',
+                        parentHash: l.metadata?.parentHash ?? null,
+                        rollbackStrategy: l.metadata?.rollbackStrategy,
+                        signature: l.metadata?.fidesSignature ?? '',
+                        timestamp: l.timestamp ?? Date.now(),
+                        toolName: l.metadata?.toolName,
+                        reversibilityClass: l.metadata?.reversibilityClass,
+                        humanExplanation: l.metadata?.humanExplanation,
+                    }));
+            } catch (error) {
+                throw new Error(`AGIT log failed: ${String(error)}`);
+            }
+        }
+        return (this.localHistory.get(userId) ?? []).slice(0, limit);
+    }
+
+    async verifyCommit(hash: string): Promise<boolean> {
+        await this.initialize();
+
+        if (this.client) {
+            try {
+                await this.client.getState(hash);
+                return true;
+            } catch (error) {
+                throw new Error(`AGIT verify failed: ${String(error)}`);
+            }
+        }
+        const records = [...this.localHistory.values()].flat();
+        const record = records.find((candidate) => candidate.hash === hash);
+        if (!record) return false;
+        return (
+            !record.parentHash || records.some((candidate) => candidate.hash === record.parentHash)
+        );
+    }
+
+    async revert(_userId: string, hash: string): Promise<{ success: boolean; message: string }> {
+        await this.initialize();
+
+        if (this.client) {
+            try {
+                await this.client.revert(hash);
+                return { success: true, message: `Reverted to ${hash}` };
+            } catch (e: any) {
+                throw new Error(`AGIT revert failed: ${e?.message ?? String(e)}`);
+            }
+        }
+        return { success: false, message: 'AGIT client not initialized' };
+    }
+}
+
+export function getAgit(): AgitService {
+    if (!agitSingleton) {
+        agitSingleton = new AgitService();
+    }
+    return agitSingleton;
+}

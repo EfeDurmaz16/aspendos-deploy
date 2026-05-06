@@ -1,8 +1,10 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+    assertIdempotencyProductionConfig,
     clearIdempotencyCache_forTesting,
     getCacheEntry_forTesting,
+    getIdempotencyCacheStats,
     idempotency,
 } from '../idempotency';
 
@@ -31,6 +33,44 @@ describe('Idempotency Middleware', () => {
         app.patch('/api/settings', (c) => c.json({ message: 'Settings updated' }));
         app.get('/api/models', (c) => c.json({ models: ['gpt-4', 'claude'] }));
         app.delete('/api/chat/:id', (c) => c.json({ deleted: true }));
+    });
+
+    describe('Production store configuration', () => {
+        it('refuses production idempotency without Redis configuration', () => {
+            const originalNodeEnv = process.env.NODE_ENV;
+            process.env.NODE_ENV = 'production';
+
+            try {
+                expect(() => assertIdempotencyProductionConfig(undefined, undefined)).toThrow(
+                    /Idempotency requires UPSTASH_REDIS_REST_URL/
+                );
+                expect(() =>
+                    assertIdempotencyProductionConfig('https://redis.example', undefined)
+                ).toThrow(/Idempotency requires UPSTASH_REDIS_REST_URL/);
+                expect(() => assertIdempotencyProductionConfig(undefined, 'token')).toThrow(
+                    /Idempotency requires UPSTASH_REDIS_REST_URL/
+                );
+            } finally {
+                process.env.NODE_ENV = originalNodeEnv;
+            }
+        });
+
+        it('allows production idempotency with Redis configuration', () => {
+            const originalNodeEnv = process.env.NODE_ENV;
+            process.env.NODE_ENV = 'production';
+
+            try {
+                expect(() =>
+                    assertIdempotencyProductionConfig('https://redis.example', 'token')
+                ).not.toThrow();
+            } finally {
+                process.env.NODE_ENV = originalNodeEnv;
+            }
+        });
+
+        it('reports the in-memory backend only in local test mode', () => {
+            expect(getIdempotencyCacheStats().backend).toBe('memory');
+        });
     });
 
     describe('Idempotent replay', () => {

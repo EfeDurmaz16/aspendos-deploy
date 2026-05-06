@@ -5,7 +5,7 @@
  * are stored via action_log entries (Convex schema doesn't have dedicated tables).
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 // ============================================
 // TYPES
@@ -102,6 +102,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<De
             try {
                 const client = getConvexClient();
                 await client.mutation(api.actionLog.log, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     event_type: 'notification_sent',
                     details: {
@@ -212,7 +213,10 @@ async function sendEmailNotification(
     let user: any = null;
     try {
         const client = getConvexClient();
-        user = await client.query(api.users.get, { id: userId as any });
+        user = await client.query(api.users.get, {
+            service_secret: getConvexServiceSecret(),
+            id: userId as any,
+        });
     } catch {
         return { success: false, channel: 'email', error: 'User lookup failed' };
     }
@@ -304,6 +308,7 @@ export async function registerPushSubscription(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'push_subscription_registered',
             details: {
@@ -331,6 +336,7 @@ export async function updateNotificationPreferences(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'notification_preferences_updated',
             details: preferences,

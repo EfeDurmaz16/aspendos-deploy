@@ -4,7 +4,7 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import * as workspaceService from '../services/workspace.service';
 import {
@@ -19,8 +19,22 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+app.use('*', async (c, next) => {
+    if (process.env.NODE_ENV === 'production') {
+        return c.json(
+            {
+                error: 'Workspace API requires persistent storage and is disabled in production',
+                code: 'WORKSPACE_PERSISTENCE_UNAVAILABLE',
+            },
+            503
+        );
+    }
+    return next();
+});
+
 // Apply auth middleware to all routes
 app.use('*', requireAuth);
+app.use('*', rejectApiKeyAuth);
 
 // POST /api/workspace - Create workspace
 app.post('/', validateBody(createWorkspaceSchema), async (c) => {
@@ -55,6 +69,7 @@ app.get('/', async (c) => {
 app.get('/:id', async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
+    if (!workspaceId) return c.json({ error: 'Workspace id is required' }, 400);
 
     try {
         const result = await workspaceService.getWorkspace(workspaceId);
@@ -80,6 +95,7 @@ app.get('/:id', async (c) => {
 app.patch('/:id', async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
+    if (!workspaceId) return c.json({ error: 'Workspace id is required' }, 400);
 
     try {
         const body = await c.req.json();
@@ -116,6 +132,7 @@ app.patch('/:id', async (c) => {
 app.delete('/:id', async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
+    if (!workspaceId) return c.json({ error: 'Workspace id is required' }, 400);
 
     try {
         // Check if user is the owner
@@ -141,6 +158,7 @@ app.delete('/:id', async (c) => {
 app.post('/:id/members', validateBody(addMemberSchema), async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
+    if (!workspaceId) return c.json({ error: 'Workspace id is required' }, 400);
 
     try {
         const { userId: newUserId, role } = c.get('validatedBody') as {
@@ -178,6 +196,9 @@ app.delete('/:id/members/:userId', async (c) => {
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
     const memberUserId = c.req.param('userId');
+    if (!workspaceId || !memberUserId) {
+        return c.json({ error: 'Workspace id and user id are required' }, 400);
+    }
 
     try {
         // Check if user has admin permission
@@ -207,6 +228,9 @@ app.patch('/:id/members/:userId', validateBody(updateMemberRoleSchema), async (c
     const userId = c.get('userId')!;
     const workspaceId = c.req.param('id');
     const memberUserId = c.req.param('userId');
+    if (!workspaceId || !memberUserId) {
+        return c.json({ error: 'Workspace id and user id are required' }, 400);
+    }
 
     try {
         const { role } = c.get('validatedBody') as { role: 'member' | 'admin' };

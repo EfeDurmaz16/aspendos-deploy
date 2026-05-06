@@ -1,26 +1,11 @@
 /**
- * Tests for webhook idempotency and billing atomic saves (Commits 4.2, 4.3, 7.1)
+ * Tests for retired billing webhooks and billing atomic saves.
  */
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Prisma
-const mockFindUnique = vi.fn();
-const mockCreate = vi.fn();
 vi.mock('@aspendos/db', () => ({
-    prisma: {
-        processedWebhookEvent: {
-            findUnique: (...args: unknown[]) => mockFindUnique(...args),
-            create: (...args: unknown[]) => mockCreate(...args),
-        },
-    },
-}));
-
-// Mock polar service
-const mockHandleWebhook = vi.fn();
-const mockVerifyWebhookSignature = vi.fn();
-vi.mock('../../services/polar.service', () => ({
-    handleWebhook: (...args: unknown[]) => mockHandleWebhook(...args),
-    verifyWebhookSignature: (...args: unknown[]) => mockVerifyWebhookSignature(...args),
+    prisma: {},
 }));
 
 // Mock billing service
@@ -40,8 +25,21 @@ vi.mock('../../services/billing.service', () => ({
 
 // Mock auth middleware
 vi.mock('../../middleware/auth', () => ({
-    requireAuth: vi.fn((_c: unknown, next: () => Promise<void>) => next()),
+    requireAuth: vi.fn((c: any, next: () => Promise<void>) => {
+        c.set('userId', 'billing-user-1');
+        return next();
+    }),
+    rejectApiKeyAuth: vi.fn((c: any, next: () => Promise<void>) => {
+        if (c.get('apiKeyId')) {
+            return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+        }
+        return next();
+    }),
 }));
+
+import { requireAuth } from '../../middleware/auth';
+
+const mockRequireAuth = requireAuth as any;
 
 // Mock validate middleware
 vi.mock('../../middleware/validate', () => ({
@@ -65,14 +63,12 @@ vi.mock('../../lib/logger', () => ({
 
 import { Hono } from 'hono';
 
-describe('Webhook Idempotency', () => {
+describe('Retired API billing webhook', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        process.env.POLAR_WEBHOOK_SECRET = 'test-secret';
-        mockVerifyWebhookSignature.mockReturnValue(true);
     });
 
-    async function createWebhookRequest(body: Record<string, unknown>, signature = 'valid-sig') {
+    async function createWebhookRequest(body: Record<string, unknown>) {
         // Dynamically import billing route to get the Hono app
         const { default: billingApp } = await import('../billing');
         const app = new Hono();
@@ -82,101 +78,55 @@ describe('Webhook Idempotency', () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'polar-signature': signature,
+                'stripe-signature': 'sig',
             },
             body: JSON.stringify(body),
         });
     }
 
-    it('should skip duplicate webhook events', async () => {
-        const eventId = 'evt-123';
-        mockFindUnique.mockResolvedValue({ id: eventId, type: 'subscription.created' });
-
+    it('should fail loudly instead of processing legacy provider events', async () => {
         const res = await createWebhookRequest({
-            id: eventId,
+            id: 'evt-legacy',
             type: 'subscription.created',
             data: {},
         });
 
+        expect(res.status).toBe(410);
         const json = await res.json();
-        expect(json.duplicate).toBe(true);
-        expect(mockHandleWebhook).not.toHaveBeenCalled();
-    });
-
-    it('should process new webhook events and record them', async () => {
-        const eventId = 'evt-456';
-        mockFindUnique.mockResolvedValue(null);
-        mockHandleWebhook.mockResolvedValue(undefined);
-        mockCreate.mockResolvedValue({ id: eventId });
-
-        const res = await createWebhookRequest({
-            id: eventId,
-            type: 'subscription.updated',
-            data: {},
+        expect(json).toMatchObject({
+            code: 'BILLING_WEBHOOK_RETIRED',
+            provider: 'stripe',
+            owner: 'apps/web/src/app/api/billing/webhook/route.ts',
         });
+    });
+});
 
-        const json = await res.json();
-        expect(json.received).toBe(true);
-        expect(json.duplicate).toBeUndefined();
-        expect(mockHandleWebhook).toHaveBeenCalledTimes(1);
-        expect(mockCreate).toHaveBeenCalledWith({
-            data: { id: eventId, type: 'subscription.updated' },
+describe('Billing session boundaries', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockRequireAuth.mockImplementation((c: any, next: () => Promise<void>) => {
+            c.set('userId', 'billing-user-1');
+            return next();
         });
     });
 
-    it('should process events without id (no idempotency check)', async () => {
-        mockHandleWebhook.mockResolvedValue(undefined);
-
-        const res = await createWebhookRequest({
-            type: 'ping',
-            data: {},
+    it('rejects API-key authenticated access to billing routes', async () => {
+        mockRequireAuth.mockImplementationOnce((c: any, next: () => Promise<void>) => {
+            c.set('userId', 'billing-user-1');
+            c.set('apiKeyId', 'key-1');
+            c.set('apiKeyPermissions', ['chat:read']);
+            return next();
         });
+        const { default: billingApp } = await import('../billing');
+        const app = new Hono();
+        app.route('/billing', billingApp);
 
-        const json = await res.json();
-        expect(json.received).toBe(true);
-        expect(mockFindUnique).not.toHaveBeenCalled();
-        expect(mockCreate).not.toHaveBeenCalled();
-    });
+        const res = await app.request('/billing');
 
-    it('should reject webhooks with invalid signature', async () => {
-        mockVerifyWebhookSignature.mockReturnValue(false);
-
-        const res = await createWebhookRequest(
-            { id: 'evt-789', type: 'test', data: {} },
-            'bad-sig'
-        );
-
-        expect(res.status).toBe(401);
-        const json = await res.json();
-        expect(json.error).toContain('Invalid signature');
-    });
-
-    it('should reject webhooks when secret is not configured', async () => {
-        delete process.env.POLAR_WEBHOOK_SECRET;
-
-        // Need to re-import to pick up env change — but since the module
-        // is already cached, we test the existing route which reads env at runtime
-        const res = await createWebhookRequest({ id: 'evt-000', type: 'test', data: {} });
-
-        // The module reads POLAR_WEBHOOK_SECRET at request time
-        expect(res.status).toBe(500);
-    });
-
-    it('should handle concurrent duplicate events gracefully', async () => {
-        mockFindUnique.mockResolvedValue(null);
-        mockHandleWebhook.mockResolvedValue(undefined);
-        // Simulate unique constraint violation on concurrent insert
-        mockCreate.mockRejectedValue(new Error('Unique constraint failed'));
-
-        const res = await createWebhookRequest({
-            id: 'evt-concurrent',
-            type: 'subscription.created',
-            data: {},
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
         });
-
-        // Should still return success — the catch handler logs but doesn't fail
-        const json = await res.json();
-        expect(json.received).toBe(true);
     });
 });
 

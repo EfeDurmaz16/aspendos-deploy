@@ -4,6 +4,7 @@
  * Tests for push subscription management, notification preferences, and SSE stream.
  */
 
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,6 +18,12 @@ vi.mock('../../middleware/auth', () => ({
     requireAuth: vi.fn((c: any, next: any) => {
         c.set('userId', 'test-user-1');
         c.set('user', { userId: 'test-user-1', email: 'test@yula.dev', name: 'Test User' });
+        return next();
+    }),
+    rejectApiKeyAuth: vi.fn((c: any, next: any) => {
+        if (c.get('apiKeyId')) {
+            return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+        }
         return next();
     }),
 }));
@@ -74,6 +81,25 @@ describe('Notification Routes', () => {
             c.set('user', { userId: 'test-user-1', email: 'test@yula.dev', name: 'Test User' });
             return next();
         });
+    });
+
+    it('rejects API-key authenticated access to notification preferences', async () => {
+        mockRequireAuth.mockImplementationOnce((c: any, next: any) => {
+            c.set('userId', 'test-user-1');
+            c.set('apiKeyId', 'key-1');
+            c.set('apiKeyPermissions', ['chat:read']);
+            return next();
+        });
+        mockGetPrefs.mockResolvedValue({});
+        const app = await createTestApp();
+
+        const res = await app.request('/notifications/preferences');
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
+        });
+        expect(mockGetPrefs).not.toHaveBeenCalled();
     });
 
     describe('POST /notifications/subscribe - Register push subscription', () => {

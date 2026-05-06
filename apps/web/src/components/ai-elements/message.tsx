@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/performance/noImgElement: Attachment previews can use blob/data URLs that next/image cannot optimize safely. */
+
 'use client';
 
 import { CaretLeft, CaretRight, Paperclip, X } from '@phosphor-icons/react';

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cavea + Flame · Integration</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; font: 15px/1.5 'Manrope', system-ui, sans-serif; color: #0a0a0a; background: #fafafa; }
+  h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; padding: 40px 40px 8px; margin: 0; }
+  .lede { padding: 0 40px 24px; color: #555; max-width: 820px; }
+  section { padding: 48px 40px; border-top: 1px solid rgba(0,0,0,0.08); }
+  h2 { font-size: 22px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .tag { font: 11px/1 'JetBrains Mono', monospace; color: #888; letter-spacing: 0.15em; margin-bottom: 14px; }
+  p { color: #555; margin: 0 0 28px; max-width: 820px; font-size: 14.5px; }
+  .row { display: flex; align-items: center; gap: 36px; flex-wrap: wrap; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .cell label { font: 11px/1 'JetBrains Mono', monospace; color: #888; letter-spacing: 0.12em; }
+  .swatch { padding: 28px; border-radius: 14px; display: flex; align-items: center; justify-content: center; min-width: 148px; min-height: 140px; }
+  .swatch.light { background: #fafafa; color: #0a0a0a; border: 1px solid rgba(0,0,0,0.1); }
+  .swatch.dark { background: #0a0a0a; color: #f5f5f5; border: 1px solid rgba(255,255,255,0.08); }
+  .swatch.flame { background: #0a0a0a; color: #FF8A3D; border: 1px solid rgba(255,255,255,0.08); }
+  .sizes { display: flex; gap: 26px; align-items: flex-end; margin-top: 26px; padding: 18px 26px; background: rgba(0,0,0,0.03); border-radius: 10px; }
+  .sizes .sz { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .sizes .sz span { font: 10px/1 'JetBrains Mono', monospace; color: #888; }
+</style>
+</head>
+<body>
+
+<h1>Cavea + Yula · Integration</h1>
+<div class="lede">Meşale ve sahne arasındaki kopukluk sorunu. 3 farklı çözüm:</div>
+
+<!-- ═══════════ V1 · Flame sitting on stage ═══════════ -->
+<section>
+  <div class="tag">V1 · OTURUYOR (flame taban sahnenin üstünde)</div>
+  <h2>Flame sitting on stage</h2>
+  <p>Meşale tabanı sahnenin tam üstüne oturuyor, hiç boşluk yok. Hâlâ iki form ama fiziksel temas var — "sahneden yükseliyor" okunur.</p>
+  <div class="row">
+    <div class="cell"><label>LIGHT</label><div class="swatch light"><svg width="140" height="122" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><rect x="24" y="46" width="16" height="4" fill="currentColor" stroke="none"/><path d="M 32 18 C 27.5 24, 26 30, 28 38 C 29 41, 31 42, 32 42 C 33 42, 35 41, 36 38 C 38 30, 36.5 24, 32 18 Z" fill="currentColor" stroke="none"/><path d="M 32 26 C 30.5 29, 30 33, 31 37 C 31.5 38, 32.5 38, 33 37 C 34 33, 33.5 29, 32 26 Z" fill="#fafafa" stroke="none"/></svg></div></div>
+    <div class="cell"><label>DARK</label><div class="swatch dark"><svg width="140" height="122" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><rect x="24" y="46" width="16" height="4" fill="currentColor" stroke="none"/><path d="M 32 18 C 27.5 24, 26 30, 28 38 C 29 41, 31 42, 32 42 C 33 42, 35 41, 36 38 C 38 30, 36.5 24, 32 18 Z" fill="currentColor" stroke="none"/><path d="M 32 26 C 30.5 29, 30 33, 31 37 C 31.5 38, 32.5 38, 33 37 C 34 33, 33.5 29, 32 26 Z" fill="#0a0a0a" stroke="none"/></svg></div></div>
+    <div class="cell"><label>FLAME ORANGE</label><div class="swatch dark"><svg width="140" height="122" viewBox="0 0 64 56" fill="none" stroke="#f5f5f5" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><rect x="24" y="46" width="16" height="4" fill="#f5f5f5" stroke="none"/><path d="M 32 18 C 27.5 24, 26 30, 28 38 C 29 41, 31 42, 32 42 C 33 42, 35 41, 36 38 C 38 30, 36.5 24, 32 18 Z" fill="#FF8A3D" stroke="none"/><path d="M 32 26 C 30.5 29, 30 33, 31 37 C 31.5 38, 32.5 38, 33 37 C 34 33, 33.5 29, 32 26 Z" fill="#0a0a0a" stroke="none"/></svg></div></div>
+  </div>
+</section>
+
+<!-- ═══════════ V2 · Flame IS the stage ═══════════ -->
+<section>
+  <div class="tag">V2 · BÜTÜNLEŞMİŞ (flame = sahne)</div>
+  <h2>Flame IS the stage</h2>
+  <p>Sahne rectangle'ı kaldırıldı. Meşalenin geniş tabanı sahne zeminine oturuyor. Tek bütün form. Cavea tierleri meşaleye doğru açılıyor — "seyirci yula'yı (meşale) izliyor" okunur. Minimal, unified, no floating elements.</p>
+  <div class="row">
+    <div class="cell"><label>LIGHT</label><div class="swatch light"><svg width="140" height="122" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><path d="M 32 10 C 24 20, 22 32, 24 42 C 25 46, 27 48, 32 48 C 37 48, 39 46, 40 42 C 42 32, 40 20, 32 10 Z" fill="currentColor" stroke="none"/><path d="M 32 22 C 29 28, 28 36, 30 42 C 30.5 44, 31.5 44.5, 32 44.5 C 32.5 44.5, 33.5 44, 34 42 C 36 36, 35 28, 32 22 Z" fill="#fafafa" stroke="none"/></svg></div></div>
+    <div class="cell"><label>DARK</label><div class="swatch dark"><svg width="140" height="122" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><path d="M 32 10 C 24 20, 22 32, 24 42 C 25 46, 27 48, 32 48 C 37 48, 39 46, 40 42 C 42 32, 40 20, 32 10 Z" fill="currentColor" stroke="none"/><path d="M 32 22 C 29 28, 28 36, 30 42 C 30.5 44, 31.5 44.5, 32 44.5 C 32.5 44.5, 33.5 44, 34 42 C 36 36, 35 28, 32 22 Z" fill="#0a0a0a" stroke="none"/></svg></div></div>
+    <div class="cell"><label>FLAME ORANGE</label><div class="swatch dark"><svg width="140" height="122" viewBox="0 0 64 56" fill="none" stroke="#f5f5f5" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><path d="M 32 10 C 24 20, 22 32, 24 42 C 25 46, 27 48, 32 48 C 37 48, 39 46, 40 42 C 42 32, 40 20, 32 10 Z" fill="#FF8A3D" stroke="none"/><path d="M 32 22 C 29 28, 28 36, 30 42 C 30.5 44, 31.5 44.5, 32 44.5 C 32.5 44.5, 33.5 44, 34 42 C 36 36, 35 28, 32 22 Z" fill="#0a0a0a" stroke="none"/></svg></div></div>
+  </div>
+  <div class="sizes">
+    <div class="sz"><svg width="144" height="126" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><path d="M 32 10 C 24 20, 22 32, 24 42 C 25 46, 27 48, 32 48 C 37 48, 39 46, 40 42 C 42 32, 40 20, 32 10 Z" fill="currentColor"/><path d="M 32 22 C 29 28, 28 36, 30 42 C 30.5 44, 31.5 44.5, 32 44.5 C 32.5 44.5, 33.5 44, 34 42 C 36 36, 35 28, 32 22 Z" fill="#fafafa"/></svg><span>128</span></div>
+    <div class="sz"><svg width="72" height="63" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><path d="M 32 10 C 24 20, 22 32, 24 42 C 25 46, 27 48, 32 48 C 37 48, 39 46, 40 42 C 42 32, 40 20, 32 10 Z" fill="currentColor"/><path d="M 32 22 C 29 28, 28 36, 30 42 C 30.5 44, 31.5 44.5, 32 44.5 C 32.5 44.5, 33.5 44, 34 42 C 36 36, 35 28, 32 22 Z" fill="#fafafa"/></svg><span>64</span></div>
+    <div class="sz"><svg width="36" height="32" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 32 10 C 24 20, 22 32, 24 42 C 25 46, 27 48, 32 48 C 37 48, 39 46, 40 42 C 42 32, 40 20, 32 10 Z" fill="currentColor"/></svg><span>32</span></div>
+    <div class="sz"><svg width="24" height="21" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="5"/><path d="M 32 10 C 24 20, 22 32, 24 42 C 25 46, 27 48, 32 48 C 37 48, 39 46, 40 42 C 42 32, 40 20, 32 10 Z" fill="currentColor"/></svg><span>24</span></div>
+  </div>
+</section>
+
+<!-- ═══════════ V3 · Flame growing out of stage ═══════════ -->
+<section>
+  <div class="tag">V3 · BİRLEŞTİRİLMİŞ (flame sahneden organik yükseliyor)</div>
+  <h2>Flame growing from stage</h2>
+  <p>Sahne rectangle var ama meşalenin tabanı sahneye organik olarak kavuşuyor — sanki sahne kumaşı yanmaya başlamış gibi. Hem stage-as-platform korundu hem flame-rises netleşti. En "yana yana sahnede meşale" hissi.</p>
+  <div class="row">
+    <div class="cell"><label>LIGHT</label><div class="swatch light"><svg width="140" height="122" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><path d="M 24 48 L 40 48 L 40 46 L 24 46 Z M 32 14 C 27 20, 25 27, 26 34 C 26.5 38, 28 42, 26 46 L 38 46 C 36 42, 37.5 38, 38 34 C 39 27, 37 20, 32 14 Z" fill="currentColor" stroke="none"/><path d="M 32 22 C 29.5 26, 28.5 30, 29 33.5 C 29.3 36, 30 40, 29 44 L 35 44 C 34 40, 34.7 36, 35 33.5 C 35.5 30, 34.5 26, 32 22 Z" fill="#fafafa" stroke="none"/></svg></div></div>
+    <div class="cell"><label>DARK</label><div class="swatch dark"><svg width="140" height="122" viewBox="0 0 64 56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><path d="M 24 48 L 40 48 L 40 46 L 24 46 Z M 32 14 C 27 20, 25 27, 26 34 C 26.5 38, 28 42, 26 46 L 38 46 C 36 42, 37.5 38, 38 34 C 39 27, 37 20, 32 14 Z" fill="currentColor" stroke="none"/><path d="M 32 22 C 29.5 26, 28.5 30, 29 33.5 C 29.3 36, 30 40, 29 44 L 35 44 C 34 40, 34.7 36, 35 33.5 C 35.5 30, 34.5 26, 32 22 Z" fill="#0a0a0a" stroke="none"/></svg></div></div>
+    <div class="cell"><label>FLAME ORANGE</label><div class="swatch dark"><svg width="140" height="122" viewBox="0 0 64 56" fill="none" stroke="#f5f5f5" stroke-linecap="round" stroke-linejoin="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><rect x="24" y="46" width="16" height="4" fill="#f5f5f5"/><path d="M 32 14 C 27 20, 25 27, 26 34 C 26.5 38, 28 42, 26 46 L 38 46 C 36 42, 37.5 38, 38 34 C 39 27, 37 20, 32 14 Z" fill="#FF8A3D" stroke="none"/><path d="M 32 22 C 29.5 26, 28.5 30, 29 33.5 C 29.3 36, 30 40, 29 44 L 35 44 C 34 40, 34.7 36, 35 33.5 C 35.5 30, 34.5 26, 32 22 Z" fill="#0a0a0a" stroke="none"/></svg></div></div>
+  </div>
+</section>
+
+<!-- Side by side -->
+<section style="background:#0a0a0a;color:#f5f5f5">
+  <h2 style="color:#f5f5f5">Üç entegrasyon · dark · 160px</h2>
+  <div class="row" style="justify-content:space-around;margin-top:28px;gap:60px">
+    <div class="cell"><label style="color:#888">V1 · OTURUYOR</label><svg width="180" height="158" viewBox="0 0 64 56" fill="none" stroke="#f5f5f5" stroke-linecap="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><rect x="24" y="46" width="16" height="4" fill="#f5f5f5"/><path d="M 32 18 C 27.5 24, 26 30, 28 38 C 29 41, 31 42, 32 42 C 33 42, 35 41, 36 38 C 38 30, 36.5 24, 32 18 Z" fill="#FF8A3D"/><path d="M 32 26 C 30.5 29, 30 33, 31 37 C 31.5 38, 32.5 38, 33 37 C 34 33, 33.5 29, 32 26 Z" fill="#0a0a0a"/></svg></div>
+    <div class="cell"><label style="color:#888">V2 · BÜTÜNLEŞMİŞ</label><svg width="180" height="158" viewBox="0 0 64 56" fill="none" stroke="#f5f5f5" stroke-linecap="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><path d="M 32 10 C 24 20, 22 32, 24 42 C 25 46, 27 48, 32 48 C 37 48, 39 46, 40 42 C 42 32, 40 20, 32 10 Z" fill="#FF8A3D"/><path d="M 32 22 C 29 28, 28 36, 30 42 C 30.5 44, 31.5 44.5, 32 44.5 C 32.5 44.5, 33.5 44, 34 42 C 36 36, 35 28, 32 22 Z" fill="#0a0a0a"/></svg></div>
+    <div class="cell"><label style="color:#888">V3 · ORGANIK</label><svg width="180" height="158" viewBox="0 0 64 56" fill="none" stroke="#f5f5f5" stroke-linecap="round"><path d="M 4 48 A 28 28 0 0 1 60 48" stroke-width="4"/><path d="M 12 48 A 20 20 0 0 1 52 48" stroke-width="3" opacity="0.7"/><path d="M 20 48 A 12 12 0 0 1 44 48" stroke-width="2.5" opacity="0.42"/><rect x="24" y="46" width="16" height="4" fill="#f5f5f5"/><path d="M 32 14 C 27 20, 25 27, 26 34 C 26.5 38, 28 42, 26 46 L 38 46 C 36 42, 37.5 38, 38 34 C 39 27, 37 20, 32 14 Z" fill="#FF8A3D"/><path d="M 32 22 C 29.5 26, 28.5 30, 29 33.5 C 29.3 36, 30 40, 29 44 L 35 44 C 34 40, 34.7 36, 35 33.5 C 35.5 30, 34.5 26, 32 22 Z" fill="#0a0a0a"/></svg></div>
+  </div>
+</section>
+
+</body>
+</html>

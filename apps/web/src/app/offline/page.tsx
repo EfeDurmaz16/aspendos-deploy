@@ -12,6 +12,8 @@ export default function OfflinePage() {
             <div className="text-center space-y-6">
                 <div className="text-6xl">
                     <svg
+                        aria-label="Offline"
+                        role="img"
                         xmlns="http://www.w3.org/2000/svg"
                         width="64"
                         height="64"

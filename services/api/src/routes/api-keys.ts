@@ -2,23 +2,13 @@
  * API Key Management Routes
  * Handles CRUD operations for user API keys.
  */
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
-const prisma = null as any;
-import { requireAuth } from '../middleware/auth';
+import { hashApiKey } from '../lib/api-key-auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 type Variables = { userId: string };
 const app = new Hono<{ Variables: Variables }>();
-
-/**
- * Hash API key for secure storage
- */
-async function hashApiKey(key: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(key);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
 
 /**
  * Generate a new API key
@@ -32,7 +22,7 @@ function generateApiKey(): string {
 // ============================================
 
 // GET /api/api-keys - List user's API keys (masked)
-app.get('/', requireAuth, async (c) => {
+app.get('/', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
@@ -53,7 +43,7 @@ app.get('/', requireAuth, async (c) => {
     });
 
     return c.json({
-        keys: apiKeys.map((key) => ({
+        keys: apiKeys.map((key: any) => ({
             id: key.id,
             name: key.name,
             key: `${key.keyPrefix}...${key.keyPrefix.slice(-4)}`, // Show prefix and last 4 chars
@@ -66,7 +56,7 @@ app.get('/', requireAuth, async (c) => {
 });
 
 // POST /api/api-keys - Create a new API key
-app.post('/', requireAuth, async (c) => {
+app.post('/', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
@@ -154,7 +144,7 @@ app.post('/', requireAuth, async (c) => {
 });
 
 // DELETE /api/api-keys/:id - Revoke/delete an API key
-app.delete('/:id', requireAuth, async (c) => {
+app.delete('/:id', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);

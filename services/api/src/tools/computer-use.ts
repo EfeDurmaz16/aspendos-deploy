@@ -31,7 +31,7 @@ export const computerUseTool: ToolDefinition = {
         };
     },
 
-    async execute(args: unknown, ctx: ToolContext): Promise<ToolResult> {
+    async execute(args: unknown, _ctx: ToolContext): Promise<ToolResult> {
         const { action, coordinate, text } = args as {
             action: 'screenshot' | 'click' | 'type' | 'key' | 'scroll' | 'move' | 'zoom';
             coordinate?: [number, number];
@@ -47,12 +47,12 @@ export const computerUseTool: ToolDefinition = {
         }
 
         return {
-            success: true,
+            success: false,
+            error: 'Computer Use sandbox loop is not implemented. Refusing to report success without executing the desktop action.',
             data: {
                 action,
                 coordinate,
                 text,
-                note: 'Computer Use execution delegated to sandbox + Anthropic API loop',
             },
         };
     },

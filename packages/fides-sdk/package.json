@@ -3,8 +3,20 @@
     "version": "0.1.0",
     "description": "Ed25519 signing + DID identity for AI agents",
     "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./index.js",
+    "types": "./index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "import": "./index.js"
+        }
+    },
     "license": "MIT",
-    "private": true
+    "private": true,
+    "dependencies": {
+        "@fides/shared": "workspace:*",
+        "@noble/ed25519": "^3.1.0",
+        "@noble/hashes": "^2.0.1",
+        "bs58": "^6.0.0"
+    }
 }

@@ -348,7 +348,7 @@ const defaultSettings: YulaSettings = {
     notifications: true,
     soundEffects: true,
     hasSeenWelcome: false,
-    preferredModels: ['gpt-4', 'claude-3'],
+    preferredModels: ['gpt-5', 'claude-opus-4-7'],
 };
 
 export const useSettingsStore = create<SettingsState>()(

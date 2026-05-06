@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import { authenticateApiKey, extractApiKey } from './lib/api-key-auth';
 import { auth } from './lib/auth';
 import { validateEnv } from './lib/env';
 import { AppError } from './lib/errors';
@@ -10,10 +11,12 @@ import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
 import { initSentry, Sentry, setSentryRequestContext, setSentryUserContext } from './lib/sentry';
 import { apiVersion } from './middleware/api-version';
 import { auditTrail } from './middleware/audit-trail';
+import { getUnverifiedBearerUserId } from './middleware/auth';
 import { botProtection } from './middleware/bot-protection';
 import { cacheControl } from './middleware/cache';
 import { compression } from './middleware/compression';
 import { correlationIdMiddleware } from './middleware/correlation-id';
+import { isCsrfExemptPath } from './middleware/csrf';
 import { endpointRateLimit } from './middleware/endpoint-rate-limit';
 import { featureHealthMiddleware } from './middleware/feature-health';
 import { idempotency } from './middleware/idempotency';
@@ -48,6 +51,7 @@ import modelsRoutes from './routes/models';
 import notificationsRoutes from './routes/notifications';
 import pacRoutes from './routes/pac';
 import promptTemplatesRoutes from './routes/prompt-templates';
+import publicApi from './routes/public-api';
 import schedulerRoutes from './routes/scheduler';
 import searchRoutes from './routes/search';
 import securityRoutes from './routes/security';
@@ -69,6 +73,7 @@ initSentry();
 
 // Register governance tools at startup
 import { registerAllTools } from './tools/register-all';
+
 registerAllTools();
 
 type Variables = {
@@ -192,6 +197,19 @@ app.use(
 );
 
 // Input sanitization middleware
+app.use('*', async (c, next) => {
+    const contentType = c.req.header('content-type') || '';
+    if (contentType.includes('application/json') && !['GET', 'HEAD'].includes(c.req.method)) {
+        try {
+            const body = await c.req.raw.clone().text();
+            if (body.trim()) JSON.parse(body);
+        } catch {
+            return c.json({ error: 'Invalid JSON', code: 'INVALID_JSON' }, 400);
+        }
+    }
+    return next();
+});
+
 app.use('*', sanitizeBody());
 
 // Bot protection middleware (blocks automated abuse)
@@ -228,13 +246,7 @@ app.use('*', async (c, next) => {
 
         // Capture error in Sentry
         // Sanitize headers before sending to Sentry (never log auth tokens)
-        const SENSITIVE_HEADERS = [
-            'authorization',
-            'cookie',
-            'x-cron-secret',
-            'x-polar-signature',
-            'polar-signature',
-        ];
+        const SENSITIVE_HEADERS = ['authorization', 'cookie', 'x-cron-secret', 'stripe-signature'];
         const safeHeaders = Object.fromEntries(
             [...c.req.raw.headers.entries()].filter(
                 ([key]) => !SENSITIVE_HEADERS.includes(key.toLowerCase())
@@ -252,18 +264,29 @@ app.use('*', async (c, next) => {
     }
 });
 
-// Session middleware — checks Bearer token first, then WorkOS session
+// Session middleware — local/test bearer shortcut, then WorkOS session.
 app.use('*', async (c, next) => {
-    const authHeader = c.req.header('Authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.slice(7);
-        if (token && token !== 'null' && token !== 'undefined') {
-            c.set('user', { id: token, email: '' });
-            c.set('session', { id: token });
-            c.set('userId', token);
+    const rawApiKey = extractApiKey(c.req.raw.headers);
+    if (rawApiKey) {
+        const apiKey = await authenticateApiKey(rawApiKey);
+        if (apiKey) {
+            c.set('user', { id: apiKey.userId, email: '' });
+            c.set('session', { id: `api-key:${apiKey.id}` });
+            c.set('userId', apiKey.userId);
+            c.set('apiKeyId', apiKey.id);
+            c.set('apiKeyPermissions', apiKey.permissions);
             await next();
             return;
         }
+    }
+
+    const bearerUserId = getUnverifiedBearerUserId(c.req.header('Authorization'));
+    if (bearerUserId) {
+        c.set('user', { id: bearerUserId, email: '' });
+        c.set('session', { id: bearerUserId });
+        c.set('userId', bearerUserId);
+        await next();
+        return;
     }
 
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
@@ -296,9 +319,7 @@ app.use('*', async (c, next) => {
 
     // Skip CSRF check for specific exempt paths (auth, webhooks with signature verification, cron with secret)
     const path = c.req.path;
-    const CSRF_EXEMPT_PATHS = new Set(['/api/billing/webhook', '/health']);
-    const CSRF_EXEMPT_PREFIXES = ['/api/auth/', '/api/scheduler/webhook', '/api/cron'];
-    if (CSRF_EXEMPT_PATHS.has(path) || CSRF_EXEMPT_PREFIXES.some((p) => path.startsWith(p))) {
+    if (isCsrfExemptPath(path)) {
         return next();
     }
 
@@ -432,7 +453,14 @@ app.get('/metrics', async (c) => {
     });
 });
 
-// Better Auth routes
+// Root probe aliases used by load balancers, Kubernetes probes, and public API
+// contract tests. Canonical API paths remain under /api/* below.
+app.route('/health', healthRoutes);
+app.route('/ready', healthRoutes);
+app.route('/status', statusRoutes);
+app.route('/', publicApi);
+
+// Auth routes
 app.on(['POST', 'GET'], '/api/auth/*', (c) => {
     return auth.handler(c.req.raw);
 });
@@ -503,6 +531,7 @@ app.route('/api/experiments', experimentsRoutes);
 app.route('/api/features', featuresRoutes);
 app.route('/api/feedback', feedbackRoutes);
 app.route('/api/health', healthRoutes);
+app.route('/api', miscRoutes);
 app.route('/api/misc', miscRoutes);
 app.route('/api/models', modelsRoutes);
 app.route('/api/traces', tracesRoutes);
@@ -583,13 +612,18 @@ async function initialize() {
 }
 
 // Don't start server when running tests
-console.log('[Boot] Module loaded, calling initialize...');
+if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+    console.log('[Boot] Module loaded, calling initialize...');
+}
 if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
     initialize().catch(console.error);
 }
 
 // Bun auto-serves this via Bun.serve() when detecting export default with .fetch
-export default {
-    port,
-    fetch: app.fetch,
-};
+// and an optional port. Hono already provides fetch/request; attach port directly
+// so tests keep the Hono app type instead of a production/test union.
+export const server = Object.assign(app, { port });
+
+export { app };
+
+export default server;

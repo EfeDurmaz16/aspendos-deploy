@@ -1,3 +1,4 @@
+import { validateExternalUrl } from '../lib/external-url';
 import type {
     ReversibilityMetadata,
     ToolContext,
@@ -22,34 +23,34 @@ export const browserTool: ToolDefinition = {
         };
     },
 
-    async execute(args: unknown, ctx: ToolContext): Promise<ToolResult> {
+    async execute(args: unknown, _ctx: ToolContext): Promise<ToolResult> {
         const { url, action } = args as {
             url: string;
             action?: 'navigate' | 'screenshot' | 'extract';
         };
 
         if (!url) return { success: false, error: 'Missing url' };
+        try {
+            validateExternalUrl(url);
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'URL failed safety validation',
+            };
+        }
 
         const apiKey = process.env.STEEL_API_KEY;
         if (!apiKey) {
             return { success: false, error: 'STEEL_API_KEY not configured' };
         }
 
-        try {
-            const Steel = await import('steel-sdk');
-            const client = new Steel.default({ steelAPIKey: apiKey });
-            const session = await client.sessions.create();
-
-            return {
-                success: true,
-                data: {
-                    sessionId: session.id,
-                    url,
-                    action: action ?? 'navigate',
-                },
-            };
-        } catch (e: any) {
-            return { success: false, error: e?.message ?? 'Steel.dev request failed' };
-        }
+        return {
+            success: false,
+            error: 'Browser navigation is not implemented. Refusing to report success without navigating or capturing the requested URL.',
+            data: {
+                url,
+                action: action ?? 'navigate',
+            },
+        };
     },
 };

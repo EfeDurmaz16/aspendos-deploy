@@ -7,10 +7,10 @@
  * - Tier gating info (for the tools API route)
  */
 
-import { sandboxTools, SANDBOX_TOOL_META } from './sandbox';
-import { browserTools, BROWSER_TOOL_META } from './browser';
-import { computerUseTools, COMPUTER_USE_TOOL_META } from './computer-use';
 import type { ReversibilityClass } from '@/lib/reversibility/types';
+import { BROWSER_TOOL_META, browserTools } from './browser';
+import { COMPUTER_USE_TOOL_META, computerUseTools } from './computer-use';
+import { SANDBOX_TOOL_META, sandboxTools } from './sandbox';
 
 // ── Tier definitions ────────────────────────────────────────────
 export type UserTier = 'free' | 'personal' | 'pro' | 'enterprise';
@@ -58,12 +58,59 @@ export const TOOL_GROUPS: ToolGroupMeta[] = [
     },
 ];
 
+function governedTool(toolName: string, rawTool: any, group: ToolGroupMeta) {
+    if (typeof rawTool?.execute !== 'function') {
+        return rawTool;
+    }
+
+    return {
+        ...rawTool,
+        execute: async (...args: unknown[]) => {
+            if (group.reversibility_class === 'irreversible_blocked') {
+                return {
+                    success: false,
+                    status: 'blocked',
+                    toolName,
+                    class: group.reversibility_class,
+                    error: `Tool "${toolName}" is blocked by governance policy.`,
+                };
+            }
+
+            if (group.reversibility_class === 'approval_only') {
+                return {
+                    success: false,
+                    status: 'awaiting_approval',
+                    toolName,
+                    class: group.reversibility_class,
+                    error: `Tool "${toolName}" requires approval before execution.`,
+                };
+            }
+
+            return rawTool.execute(...args);
+        },
+    };
+}
+
+function addGovernedGroup(
+    target: Record<string, any>,
+    rawTools: Record<string, any>,
+    group: ToolGroupMeta
+) {
+    for (const [toolName, rawTool] of Object.entries(rawTools)) {
+        target[toolName] = governedTool(toolName, rawTool, group);
+    }
+}
+
 // ── All tools (ungated) ─────────────────────────────────────────
 export const allAgentTools = {
-    ...sandboxTools,
-    ...browserTools,
-    ...computerUseTools,
-} as const;
+    ...(() => {
+        const tools: Record<string, any> = {};
+        addGovernedGroup(tools, sandboxTools, TOOL_GROUPS[0]!);
+        addGovernedGroup(tools, browserTools, TOOL_GROUPS[1]!);
+        addGovernedGroup(tools, computerUseTools, TOOL_GROUPS[2]!);
+        return tools;
+    })(),
+};
 
 // ── Tier-gated tool resolver ────────────────────────────────────
 export function getToolsForTier(tier: UserTier): Record<string, any> {
@@ -71,15 +118,15 @@ export function getToolsForTier(tier: UserTier): Record<string, any> {
     const tools: Record<string, any> = {};
 
     if (tierLevel >= TIER_ORDER[SANDBOX_TOOL_META.tier_minimum as UserTier]) {
-        Object.assign(tools, sandboxTools);
+        addGovernedGroup(tools, sandboxTools, TOOL_GROUPS[0]!);
     }
 
     if (tierLevel >= TIER_ORDER[BROWSER_TOOL_META.tier_minimum as UserTier]) {
-        Object.assign(tools, browserTools);
+        addGovernedGroup(tools, browserTools, TOOL_GROUPS[1]!);
     }
 
     if (tierLevel >= TIER_ORDER[COMPUTER_USE_TOOL_META.tier_minimum as UserTier]) {
-        Object.assign(tools, computerUseTools);
+        addGovernedGroup(tools, computerUseTools, TOOL_GROUPS[2]!);
     }
 
     return tools;
@@ -99,7 +146,7 @@ export function getToolManifest(tier: UserTier) {
     }));
 }
 
+export { BROWSER_TOOL_META, browserTools } from './browser';
+export { COMPUTER_USE_TOOL_META, computerUseTools } from './computer-use';
 // ── Re-exports ──────────────────────────────────────────────────
-export { sandboxTools, SANDBOX_TOOL_META } from './sandbox';
-export { browserTools, BROWSER_TOOL_META } from './browser';
-export { computerUseTools, COMPUTER_USE_TOOL_META } from './computer-use';
+export { SANDBOX_TOOL_META, sandboxTools } from './sandbox';

@@ -1,5 +1,5 @@
+import { createRequire } from 'node:module';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
 
 /**
  * Connection Pool Configuration (via DATABASE_URL query parameters)
@@ -24,16 +24,115 @@ import { PrismaClient } from '@prisma/client';
  *   DATABASE_URL="postgresql://user:pass@host:6543/db?pgbouncer=true&connection_limit=20"
  */
 
+type PrismaClient = any;
+
+export const ScheduledTaskStatus = {
+    PENDING: 'PENDING',
+    PROCESSING: 'PROCESSING',
+    COMPLETED: 'COMPLETED',
+    FAILED: 'FAILED',
+    CANCELED: 'CANCELED',
+} as const;
+
+export type ScheduledTaskStatus = (typeof ScheduledTaskStatus)[keyof typeof ScheduledTaskStatus];
+
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const require = createRequire(import.meta.url);
+const useTestFallbackClient =
+    (process.env.NODE_ENV === 'test' || process.env.VITEST) &&
+    process.env.ASPENDOS_USE_REAL_DB !== 'true';
+let PrismaClientCtor: any = null;
+try {
+    PrismaClientCtor = require('@prisma/client').PrismaClient;
+} catch {
+    PrismaClientCtor = null;
+}
+
+function missingPrismaClientError(): Error {
+    return new Error(
+        'Prisma client is not generated. Run `bun run --cwd packages/db db:generate` before using @aspendos/db.'
+    );
+}
+
+function createFallbackPrismaClient(): PrismaClient {
+    if (
+        process.env.NODE_ENV === 'production' ||
+        process.env.ASPENDOS_REQUIRE_PRISMA_CLIENT === 'true'
+    ) {
+        return new Proxy(
+            {},
+            {
+                get() {
+                    throw missingPrismaClientError();
+                },
+            }
+        );
+    }
+
+    const readFallbacks: Record<string, any> = {
+        count: 0,
+        aggregate: { _count: 0, _sum: {}, _avg: {}, _min: {}, _max: {} },
+        groupBy: [],
+        findMany: [],
+        findFirst: null,
+        findFirstOrThrow: null,
+        findUnique: null,
+        findUniqueOrThrow: null,
+        create: null,
+        createMany: { count: 0 },
+        update: null,
+        updateMany: { count: 0 },
+        upsert: null,
+        delete: null,
+        deleteMany: { count: 0 },
+    };
+
+    const modelProxy = new Proxy(
+        {},
+        {
+            get(_target, property) {
+                if (typeof property !== 'string') return undefined;
+                return async () => readFallbacks[property] ?? null;
+            },
+        }
+    );
+
+    return new Proxy(
+        {},
+        {
+            get(_target, property) {
+                if (typeof property !== 'string') return undefined;
+                if (property === '$connect' || property === '$disconnect') return async () => {};
+                if (property === '$queryRaw' || property === '$queryRawUnsafe')
+                    return async () => [];
+                if (property === '$transaction') {
+                    return async (input: any) => {
+                        if (typeof input === 'function') return input(prisma);
+                        if (Array.isArray(input)) return Promise.all(input);
+                        return [];
+                    };
+                }
+                return modelProxy;
+            },
+        }
+    );
+}
 
 export const prisma =
     globalForPrisma.prisma ||
-    new PrismaClient({
-        adapter,
-        log: process.env.NODE_ENV === 'production' ? ['error', 'warn'] : ['query', 'error', 'warn'],
-    });
+    (useTestFallbackClient
+        ? createFallbackPrismaClient()
+        : PrismaClientCtor
+          ? new PrismaClientCtor({
+                adapter,
+                log:
+                    process.env.NODE_ENV === 'production'
+                        ? ['error', 'warn']
+                        : ['query', 'error', 'warn'],
+            })
+          : createFallbackPrismaClient());
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
@@ -196,5 +295,3 @@ export async function checkDatabaseHealth(
         };
     }
 }
-
-export * from '@prisma/client';

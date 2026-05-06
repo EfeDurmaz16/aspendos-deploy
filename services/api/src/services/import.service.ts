@@ -7,7 +7,7 @@
 
 import { randomUUID } from 'node:crypto';
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 import { jobQueue } from '../lib/job-queue';
 import * as importParsers from './import-parsers';
 
@@ -42,6 +42,7 @@ export async function createImportJob(
         const jobId = `import_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'import_job_created',
             details: {
@@ -65,8 +66,7 @@ export async function createImportJob(
         };
     } catch (error) {
         console.error('[Import] createImportJob failed:', error);
-        const jobId = `import_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        return { id: jobId, userId, source, fileName, fileSize, status: 'PENDING' };
+        throw error;
     }
 }
 
@@ -89,6 +89,7 @@ export async function updateImportJobStatus(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'import_job_status_updated',
             details: {
                 jobId,
@@ -102,7 +103,7 @@ export async function updateImportJobStatus(
         return { id: jobId, status };
     } catch (err) {
         console.error('[Import] updateImportJobStatus failed:', err);
-        return { id: jobId, status };
+        throw err;
     }
 }
 
@@ -113,6 +114,7 @@ export async function getImportJob(jobId: string, userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -143,8 +145,9 @@ export async function getImportJob(jobId: string, userId: string) {
             status: latestStatus,
             entities,
         };
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Import] getImportJob failed:', error);
+        throw error;
     }
 }
 
@@ -155,6 +158,7 @@ export async function listImportJobs(userId: string, limit = 20) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -180,8 +184,9 @@ export async function listImportJobs(userId: string, limit = 20) {
                 createdAt: new Date(job.timestamp),
             };
         });
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Import] listImportJobs failed:', error);
+        throw error;
     }
 }
 
@@ -479,6 +484,7 @@ export async function storeImportEntities(jobId: string, conversations: ParsedCo
 
         for (const conv of conversations) {
             await client.mutation(api.actionLog.log, {
+                service_secret: getConvexServiceSecret(),
                 event_type: 'import_entity_stored',
                 details: {
                     jobId,
@@ -503,6 +509,7 @@ export async function storeImportEntities(jobId: string, conversations: ParsedCo
 
         // Update job with total count
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'import_job_status_updated',
             details: { jobId, totalItems: conversations.length },
         });
@@ -510,7 +517,7 @@ export async function storeImportEntities(jobId: string, conversations: ParsedCo
         return conversations.length;
     } catch (error) {
         console.error('[Import] storeImportEntities failed:', error);
-        return 0;
+        throw error;
     }
 }
 
@@ -521,12 +528,14 @@ export async function updateEntitySelection(entityId: string, jobId: string, sel
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'import_entity_selection_updated',
             details: { entityId, jobId, selected },
         });
         return { id: entityId, jobId, selected };
-    } catch {
-        return { id: entityId, jobId, selected };
+    } catch (error) {
+        console.error('[Import] updateEntitySelection failed:', error);
+        throw error;
     }
 }
 
@@ -538,7 +547,10 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
         const client = getConvexClient();
 
         // Get stored entities from action_log
-        const logs = await client.query(api.actionLog.listRecent, { limit: 1000 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 1000,
+        });
         const entityLogs = logs.filter(
             (l) =>
                 l.event_type === 'import_entity_stored' &&
@@ -568,6 +580,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
 
                 // Create conversation in Convex
                 const convId = await client.mutation(api.conversations.create, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     title: entity.title || 'Imported Conversation',
                 });
@@ -576,6 +589,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
                 for (const msg of content.messages) {
                     const role = msg.role as 'user' | 'assistant' | 'system';
                     await client.mutation(api.messages.create, {
+                        service_secret: getConvexServiceSecret(),
                         conversation_id: convId,
                         user_id: userId as any,
                         role,
@@ -590,6 +604,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
                     .slice(0, 10000);
 
                 await client.mutation(api.memories.create, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     content_preview: memoryContent.slice(0, 500),
                     source: 'import_pending',
@@ -597,6 +612,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
 
                 // Mark entity as imported
                 await client.mutation(api.actionLog.log, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     event_type: 'import_entity_imported',
                     details: { jobId, externalId: entity.externalId },
@@ -606,6 +622,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
 
                 // Update job progress
                 await client.mutation(api.actionLog.log, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     event_type: 'import_job_status_updated',
                     details: { jobId, importedItems: importedCount },
@@ -630,7 +647,14 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
             });
 
             // Queue background embedding job for all pending memories
-            queueEmbeddingJobs(userId, jobId);
+            try {
+                queueEmbeddingJobs(userId, jobId);
+            } catch (error) {
+                console.error(
+                    '[Import] Embedding queue unavailable; memories remain pending:',
+                    error
+                );
+            }
         }
 
         return {
@@ -643,7 +667,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
             throw error;
         }
         console.error('[Import] executeImport failed:', error);
-        return { total: 0, imported: 0, failed: 0 };
+        throw error;
     }
 }
 
@@ -654,6 +678,7 @@ export async function getImportStats(userId: string) {
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });
@@ -673,8 +698,9 @@ export async function getImportStats(userId: string) {
             totalJobs: jobs.length,
             totalImported,
         };
-    } catch {
-        return { totalJobs: 0, totalImported: 0 };
+    } catch (error) {
+        console.error('[Import] getImportStats failed:', error);
+        throw error;
     }
 }
 
@@ -687,7 +713,10 @@ export async function getImportStats(userId: string) {
 export async function extractMemoriesFromImport(userId: string, jobId: string): Promise<number> {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 1000 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 1000,
+        });
 
         const entityLogs = logs
             .filter(
@@ -730,6 +759,7 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
                 const summary = `${entity.title || 'Imported conversation'}: ${firstUserMsg.slice(0, 200)}`;
 
                 await client.mutation(api.memories.create, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     content_preview: summary.slice(0, 500),
                     source: 'import_extraction_pending',
@@ -751,6 +781,7 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
                         if (matches && matches.length >= 3) {
                             const topic = matches[0];
                             await client.mutation(api.memories.create, {
+                                service_secret: getConvexServiceSecret(),
                                 user_id: userId as any,
                                 content_preview: `User discussed ${topic} in imported conversation from ${content.source}`,
                                 source: 'import_extraction_pending',

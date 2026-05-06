@@ -49,8 +49,8 @@ function PACItemCard({ item, onDismiss, onSnooze, onAct }: PACItemCardProps) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             className={cn(
-                'p-3 rounded-lg border border-zinc-800 bg-zinc-900/50',
-                'hover:border-zinc-700 transition-colors'
+                'p-3 rounded-lg border border-border bg-card/50',
+                'hover:border-foreground/30 transition-colors'
             )}
         >
             <div className="flex items-start gap-3">
@@ -58,8 +58,10 @@ function PACItemCard({ item, onDismiss, onSnooze, onAct }: PACItemCardProps) {
                     <Icon className={cn('h-4 w-4', style.color)} weight="fill" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-white truncate">{item.title}</h4>
-                    <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{item.description}</p>
+                    <h4 className="text-sm font-medium text-foreground truncate">{item.title}</h4>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {item.description}
+                    </p>
                     <div className="flex items-center gap-2 mt-2">
                         <Button
                             variant="ghost"
@@ -74,7 +76,7 @@ function PACItemCard({ item, onDismiss, onSnooze, onAct }: PACItemCardProps) {
                             variant="ghost"
                             size="sm"
                             onClick={() => onSnooze(item.id)}
-                            className="h-6 px-2 text-xs text-zinc-400 hover:text-zinc-300"
+                            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
                         >
                             <Clock className="h-3 w-3 mr-1" />
                             Later
@@ -83,7 +85,7 @@ function PACItemCard({ item, onDismiss, onSnooze, onAct }: PACItemCardProps) {
                             variant="ghost"
                             size="sm"
                             onClick={() => onDismiss(item.id)}
-                            className="h-6 px-2 text-xs text-zinc-500 hover:text-zinc-400"
+                            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
                         >
                             <X className="h-3 w-3" />
                         </Button>
@@ -165,34 +167,32 @@ export function PACNotifications({
                 type="button"
                 onClick={onToggleCollapse}
                 className={cn(
-                    'flex flex-col items-center gap-2 p-2 border-r border-zinc-800 bg-zinc-900/50',
+                    'flex flex-col items-center gap-2 p-2 border-r border-border bg-card/50',
                     className
                 )}
             >
                 <div className="relative">
-                    <Bell className="h-5 w-5 text-zinc-400" />
+                    <Bell className="h-5 w-5 text-muted-foreground" />
                     {pendingItems.length > 0 && (
                         <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-foreground text-[10px] font-bold text-background flex items-center justify-center">
                             {pendingItems.length}
                         </span>
                     )}
                 </div>
-                <span className="text-[10px] text-zinc-500 writing-vertical">PAC</span>
+                <span className="text-[10px] text-muted-foreground writing-vertical">PAC</span>
             </button>
         );
     }
 
     return (
-        <aside
-            className={cn('w-72 border-r border-zinc-800 bg-zinc-900/50 flex flex-col', className)}
-        >
+        <aside className={cn('w-72 border-r border-border bg-card/50 flex flex-col', className)}>
             {/* Header */}
-            <div className="p-3 border-b border-zinc-800">
+            <div className="p-3 border-b border-border">
                 <div className="flex items-center justify-between">
                     <button
                         type="button"
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="flex items-center gap-2 text-sm font-medium text-white"
+                        className="flex items-center gap-2 text-sm font-medium text-foreground"
                     >
                         {isExpanded ? (
                             <CaretDown className="h-4 w-4" />
@@ -210,7 +210,7 @@ export function PACNotifications({
                     <button
                         type="button"
                         onClick={onToggleCollapse}
-                        className="text-xs text-zinc-500 hover:text-zinc-300"
+                        className="text-xs text-muted-foreground hover:text-foreground"
                     >
                         Hide
                     </button>
@@ -229,7 +229,7 @@ export function PACNotifications({
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="text-center py-8 text-zinc-500"
+                            className="text-center py-8 text-muted-foreground"
                         >
                             <Bell className="h-8 w-8 mx-auto mb-2 opacity-50 animate-pulse" />
                             <p className="text-sm">Loading notifications...</p>
@@ -250,7 +250,7 @@ export function PACNotifications({
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    className="text-center py-8 text-zinc-500"
+                                    className="text-center py-8 text-muted-foreground"
                                 >
                                     <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                     <p className="text-sm">No notifications yet</p>

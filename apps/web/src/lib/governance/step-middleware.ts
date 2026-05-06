@@ -1,28 +1,31 @@
 /**
  * Governance step middleware for Vercel AI SDK v6 tool calls.
  *
- * Wraps around the AI SDK's `onStepFinish` callback to inject FIDES signing
- * and AGIT audit trail into every tool invocation:
+ * Wraps AI SDK tools to inject FIDES signing and AGIT audit trail into every
+ * tool invocation:
  *
  *   Pre-step  → check tool trust, create pending commit, FIDES sign
- *   Post-step → update commit with result, store snapshot if undoable
+ *   Post-step → append result commit, store snapshot if undoable
  *
  * Usage:
  *   import { createGovernanceCallbacks } from '@/lib/governance/step-middleware';
  *
  *   const gov = createGovernanceCallbacks({ convex, userId });
  *
- *   const result = await streamText({
- *     model: openai('gpt-4o'),
+ *   const result = await streamText(withGovernance({
+ *     convex, userId
+ *   }, {
+ *     model: openai('gpt-5'),
  *     messages,
  *     tools,
- *     onStepFinish: gov.onStepFinish,
- *   });
+ *   }));
  */
-import type { ConvexReactClient } from 'convex/react';
+
 import type { ConvexClient } from 'convex/browser';
+import type { ConvexReactClient } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import type { Id } from '../../../../../convex/_generated/dataModel';
+import { signGovernanceCommit } from './fides';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -39,6 +42,7 @@ export type ReversibilityClass =
 /** Tool metadata used for governance decisions. */
 export interface ToolGovernanceMetadata {
     reversibility_class: ReversibilityClass;
+    approval_required?: boolean;
     rollback_strategy?: RollbackStrategy;
     human_explanation: string;
 }
@@ -70,6 +74,18 @@ export interface StepResult {
 
 /** Convex client — supports both reactive and imperative clients. */
 type AnyConvexClient = ConvexReactClient | ConvexClient;
+type GovernedTool = {
+    execute?: (args: unknown, options?: { toolCallId?: string }) => unknown | Promise<unknown>;
+    [key: string]: unknown;
+};
+
+function getConvexServiceSecret() {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
+}
 
 export interface GovernanceOptions {
     /** Convex client for mutations/queries. */
@@ -83,8 +99,8 @@ export interface GovernanceOptions {
     toolMetadata?: Record<string, ToolGovernanceMetadata>;
     /**
      * Optional callback invoked when a tool requires approval.
-     * If not provided, approval_only and irreversible_blocked tools will
-     * proceed with a pending commit (the UI should present the approval).
+     * If not provided, approval_only tools proceed with a pending commit
+     * that the UI should present for human approval.
      */
     onApprovalRequired?: (commitHash: string, toolName: string) => Promise<void>;
     /**
@@ -98,6 +114,15 @@ interface PendingCommit {
     commitHash: string;
     toolName: string;
     metadata: ToolGovernanceMetadata;
+}
+
+async function getLatestCommitHash(convex: AnyConvexClient, userId: Id<'users'>) {
+    const [latestCommit] = await (convex as any).query(api.commits.listByUser, {
+        service_secret: getConvexServiceSecret(),
+        user_id: userId,
+        limit: 1,
+    });
+    return latestCommit?.hash ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +150,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
 
     // Track pending commits by toolCallId so post-step can resolve them
     const pendingCommits = new Map<string, PendingCommit>();
+    const completedToolCalls = new Set<string>();
 
     // -----------------------------------------------------------------------
     // Resolve tool governance metadata: local map → Convex registry → fallback
@@ -168,9 +194,20 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
             rollbackDeadline = new Date(rollbackStrategy.deadline).getTime();
         }
 
+        const parentHash = await getLatestCommitHash(convex, userId);
+        const signature = await signGovernanceCommit({
+            args: toolArgs,
+            parent_hash: parentHash,
+            reversibility_class: meta.reversibility_class,
+            status: 'pending',
+            tool_name: toolName,
+        });
+
         // Create the signed commit via Convex
         const result = await (convex as any).mutation(api.governance.signAndCommit, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId,
+            expected_parent_hash: parentHash,
             tool_name: toolName,
             args: toolArgs,
             reversibility_class: meta.reversibility_class,
@@ -178,6 +215,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
             rollback_deadline: rollbackDeadline,
             human_explanation: meta.human_explanation,
             status: 'pending' as const,
+            ...signature,
         });
 
         const commitHash = result.commitHash as string;
@@ -190,8 +228,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
         });
 
         const requiresApproval =
-            meta.reversibility_class === 'approval_only' ||
-            meta.reversibility_class === 'irreversible_blocked';
+            meta.approval_required === true || meta.reversibility_class === 'approval_only';
 
         if (requiresApproval && onApprovalRequired) {
             await onApprovalRequired(commitHash, toolName);
@@ -205,19 +242,45 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
     }
 
     // -----------------------------------------------------------------------
-    // Post-step: update the commit with the execution result.
+    // Post-step: append an immutable result commit after tool execution.
     // -----------------------------------------------------------------------
     async function postStep(toolCallId: string, result: unknown, success: boolean): Promise<void> {
         const pending = pendingCommits.get(toolCallId);
-        if (!pending) return; // No governance tracking for this call
+        if (!pending) {
+            throw new Error(`Tool result ${toolCallId} has no pre-execution governance commit`);
+        }
 
-        await (convex as any).mutation(api.governance.updateCommitResult, {
-            hash: pending.commitHash,
+        const signature = await signGovernanceCommit({
+            args: {
+                prior_commit_hash: pending.commitHash,
+                outcome: 'tool_result',
+            },
+            parent_hash: pending.commitHash,
+            result,
+            reversibility_class: pending.metadata.reversibility_class,
+            status: success ? 'executed' : 'failed',
+            tool_name: pending.toolName,
+        });
+
+        await (convex as any).mutation(api.governance.signAndCommit, {
+            service_secret: getConvexServiceSecret(),
+            user_id: userId,
+            expected_parent_hash: pending.commitHash,
+            tool_name: pending.toolName,
+            args: {
+                prior_commit_hash: pending.commitHash,
+                outcome: 'tool_result',
+            },
             status: success ? ('executed' as const) : ('failed' as const),
             result,
+            reversibility_class: pending.metadata.reversibility_class,
+            rollback_strategy: pending.metadata.rollback_strategy,
+            human_explanation: `Result for ${pending.metadata.human_explanation}`,
+            ...signature,
         });
 
         pendingCommits.delete(toolCallId);
+        completedToolCalls.add(toolCallId);
     }
 
     // -----------------------------------------------------------------------
@@ -228,22 +291,25 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
         // Handle tool results (post-step for completed tools)
         if (step.toolResults && step.toolResults.length > 0) {
             const postStepPromises = step.toolResults.map(async (tr) => {
+                if (completedToolCalls.has(tr.toolCallId)) {
+                    return;
+                }
                 await postStep(tr.toolCallId, tr.result, true);
             });
             await Promise.all(postStepPromises);
         }
 
-        // Pre-sign any NEW tool calls that haven't been processed yet.
-        // In AI SDK v6, tool calls in onStepFinish represent calls that
-        // have already been made. We sign them retroactively if not
-        // already tracked (for tools that bypass the pre-step flow).
         if (step.toolCalls && step.toolCalls.length > 0) {
-            const preStepPromises = step.toolCalls
-                .filter((tc) => !pendingCommits.has(tc.toolCallId))
-                .map(async (tc) => {
-                    await preStep(tc.toolName, tc.args, tc.toolCallId);
-                });
-            await Promise.all(preStepPromises);
+            const ungoverned = step.toolCalls.filter(
+                (tc) => !pendingCommits.has(tc.toolCallId) && !completedToolCalls.has(tc.toolCallId)
+            );
+            if (ungoverned.length > 0) {
+                throw new Error(
+                    `Tool calls reached onStepFinish without pre-execution governance: ${ungoverned
+                        .map((tc) => tc.toolName)
+                        .join(', ')}`
+                );
+            }
         }
     }
 
@@ -252,6 +318,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
     // -----------------------------------------------------------------------
     async function revert(commitHash: string) {
         return (convex as any).mutation(api.governance.revertCommit, {
+            service_secret: getConvexServiceSecret(),
             hash: commitHash,
             user_id: userId,
         });
@@ -280,6 +347,56 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
     };
 }
 
+function wrapGovernedTools(
+    gov: ReturnType<typeof createGovernanceCallbacks>,
+    tools: Record<string, GovernedTool>
+) {
+    let generatedToolCallId = 0;
+    return Object.fromEntries(
+        Object.entries(tools).map(([toolName, tool]) => {
+            if (typeof tool.execute !== 'function') {
+                return [toolName, tool];
+            }
+
+            const originalExecute = tool.execute.bind(tool);
+            return [
+                toolName,
+                {
+                    ...tool,
+                    execute: async (args: unknown, options?: { toolCallId?: string }) => {
+                        const toolCallId =
+                            options?.toolCallId ?? `${toolName}:${generatedToolCallId++}`;
+                        const pre = await gov.preStep(toolName, args, toolCallId);
+                        if (pre.blocked) {
+                            throw new Error(
+                                `Tool ${toolName} blocked by governance before execution`
+                            );
+                        }
+                        if (pre.requiresApproval) {
+                            throw new Error(`Tool ${toolName} requires approval before execution`);
+                        }
+
+                        try {
+                            const result = await originalExecute(args, options);
+                            await gov.postStep(toolCallId, result, true);
+                            return result;
+                        } catch (error) {
+                            await gov.postStep(
+                                toolCallId,
+                                {
+                                    error: error instanceof Error ? error.message : 'Unknown error',
+                                },
+                                false
+                            );
+                            throw error;
+                        }
+                    },
+                },
+            ];
+        })
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Convenience: wrap streamText options with governance
 // ---------------------------------------------------------------------------
@@ -292,22 +409,25 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
  *   const options = withGovernance({
  *     convex, userId, toolMetadata: { ... }
  *   }, {
- *     model: openai('gpt-4o'),
+ *     model: openai('gpt-5'),
  *     messages,
  *     tools,
  *   });
  *
  *   const result = await streamText(options);
  */
-export function withGovernance<T extends { onStepFinish?: (step: StepResult) => Promise<void> }>(
-    governanceOpts: GovernanceOptions,
-    sdkOptions: T
-): T {
+export function withGovernance<
+    T extends {
+        onStepFinish?: (step: StepResult) => Promise<void>;
+        tools?: Record<string, GovernedTool>;
+    },
+>(governanceOpts: GovernanceOptions, sdkOptions: T): T {
     const gov = createGovernanceCallbacks(governanceOpts);
     const originalOnStepFinish = sdkOptions.onStepFinish;
 
     return {
         ...sdkOptions,
+        ...(sdkOptions.tools ? { tools: wrapGovernedTools(gov, sdkOptions.tools) } : {}),
         onStepFinish: async (step: StepResult) => {
             // Run governance hooks first
             await gov.onStepFinish(step);

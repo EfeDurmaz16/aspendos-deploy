@@ -8,8 +8,8 @@
  * Teams uses Adaptive Cards v1.5+ for interactive content.
  */
 
-import type { ApprovalPayload } from '../types';
 import { BADGE_EMOJI } from '../../messaging/badge-constants';
+import type { ApprovalPayload } from '../types';
 
 // ============================================
 // Adaptive Card Types
@@ -50,8 +50,15 @@ export function buildTeamsApprovalCard(
     payload: ApprovalPayload,
     callbackUrl: string
 ): AdaptiveCard {
-    const { commitHash, toolName, humanExplanation, reversibilityClass, badgeLabel, expiresAt } =
-        payload;
+    const {
+        approvalId,
+        commitHash,
+        toolName,
+        humanExplanation,
+        reversibilityClass,
+        badgeLabel,
+        expiresAt,
+    } = payload;
     const emoji = BADGE_EMOJI[reversibilityClass] || '?';
 
     const facts = [
@@ -89,13 +96,13 @@ export function buildTeamsApprovalCard(
             {
                 type: 'Action.Submit',
                 title: 'Approve',
-                data: { action: 'approve', commitHash, callbackUrl },
+                data: { action: 'approve', approvalId, commitHash, callbackUrl },
                 style: 'positive',
             },
             {
                 type: 'Action.Submit',
                 title: 'Reject',
-                data: { action: 'reject', commitHash, callbackUrl },
+                data: { action: 'reject', approvalId, commitHash, callbackUrl },
                 style: 'destructive',
             },
         ],
@@ -150,7 +157,7 @@ export function buildTeamsResolvedCard(
  */
 export async function handleTeamsWebhook(_req: Request): Promise<Response> {
     return new Response(JSON.stringify({ status: 'teams_not_activated' }), {
-        status: 200,
+        status: 501,
         headers: { 'Content-Type': 'application/json' },
     });
 }

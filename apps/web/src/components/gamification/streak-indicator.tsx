@@ -110,13 +110,15 @@ export function StreakIndicator({
                 {/* Streak freeze badges */}
                 {streakFreezes > 0 && (
                     <div className="flex items-center gap-1 ml-2">
-                        {Array.from({ length: streakFreezes - freezesUsed }).map((_, i) => (
-                            <SnowflakeIcon
-                                key={i}
-                                className="w-4 h-4 text-foreground/60"
-                                aria-label="Streak Freeze Available"
-                            />
-                        ))}
+                        {Array.from({ length: streakFreezes - freezesUsed }, (_, i) => i + 1).map(
+                            (freezeNumber) => (
+                                <SnowflakeIcon
+                                    key={`freeze-${freezeNumber}`}
+                                    className="w-4 h-4 text-foreground/60"
+                                    aria-label="Streak Freeze Available"
+                                />
+                            )
+                        )}
                     </div>
                 )}
             </div>
@@ -209,9 +211,20 @@ export function StreakCalendar({
 
             {/* Day headers */}
             <div className="grid grid-cols-7 gap-1 mb-2">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                    <div key={i} className="text-center text-xs text-muted-foreground font-medium">
-                        {day}
+                {[
+                    ['sun', 'S'],
+                    ['mon', 'M'],
+                    ['tue', 'T'],
+                    ['wed', 'W'],
+                    ['thu', 'T'],
+                    ['fri', 'F'],
+                    ['sat', 'S'],
+                ].map(([dayId, dayLabel]) => (
+                    <div
+                        key={dayId}
+                        className="text-center text-xs text-muted-foreground font-medium"
+                    >
+                        {dayLabel}
                     </div>
                 ))}
             </div>
@@ -219,8 +232,8 @@ export function StreakCalendar({
             {/* Calendar grid */}
             <div className="grid grid-cols-7 gap-1">
                 {/* Empty cells for days before the 1st */}
-                {Array.from({ length: startDayOfWeek }).map((_, i) => (
-                    <div key={`empty-${i}`} className="aspect-square" />
+                {Array.from({ length: startDayOfWeek }, (_, i) => i + 1).map((emptyDay) => (
+                    <div key={`empty-day-${emptyDay}`} className="aspect-square" />
                 ))}
 
                 {/* Day cells */}

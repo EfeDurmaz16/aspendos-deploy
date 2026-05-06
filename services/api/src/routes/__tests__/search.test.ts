@@ -4,6 +4,7 @@
  * Tests for unified search across chats and memories with full-text search.
  */
 
+import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,6 +23,7 @@ const mockPrisma = prisma as any;
 
 vi.mock('../../middleware/auth', () => ({
     requireAuth: vi.fn((_c, next) => next()),
+    rejectApiKeyAuth: vi.fn((_c, next) => next()),
 }));
 
 import searchRoutes from '../search';

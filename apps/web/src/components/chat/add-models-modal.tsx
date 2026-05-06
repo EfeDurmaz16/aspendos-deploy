@@ -35,40 +35,28 @@ export function AddModelsModal({
     const allModels: Model[] = [
         // OpenAI
         {
-            id: 'openai/gpt-5.2-pro',
-            name: 'GPT-5.2 Pro',
+            id: 'openai/gpt-5.4-pro',
+            name: 'GPT-5.4 Pro',
             provider: 'openai',
-            description: 'Most advanced GPT-5.2, best quality.',
+            description: 'Most advanced GPT-5.4, best quality.',
         },
         {
-            id: 'openai/gpt-5.2',
-            name: 'GPT-5.2',
+            id: 'openai/gpt-5',
+            name: 'GPT-5.4',
             provider: 'openai',
             description: 'General-purpose, strong reasoning & coding.',
         },
         {
-            id: 'openai/gpt-5.2-codex',
-            name: 'GPT-5.2 Codex',
+            id: 'openai/gpt-5.4-codex',
+            name: 'GPT-5.4 Codex',
             provider: 'openai',
             description: 'Optimized for code generation and edits.',
         },
         {
-            id: 'openai/gpt-5.1',
-            name: 'GPT-5.1',
-            provider: 'openai',
-            description: 'Reliable chat model for everyday work.',
-        },
-        {
-            id: 'openai/gpt-5.1-chat',
-            name: 'GPT-5.1 Chat',
+            id: 'openai/gpt-5-mini',
+            name: 'GPT-5.4 Mini',
             provider: 'openai',
             description: 'Instant responses, good default chat.',
-        },
-        {
-            id: 'openai/gpt-5.1-codex',
-            name: 'GPT-5.1 Codex',
-            provider: 'openai',
-            description: 'Faster code-focused GPT-5.1 variant.',
         },
         {
             id: 'openai/gpt-5-nano',
@@ -91,72 +79,42 @@ export function AddModelsModal({
 
         // Anthropic (Claude)
         {
-            id: 'anthropic/claude-opus-4.5',
-            name: 'Claude Opus 4.5',
+            id: 'anthropic/claude-opus-4-7',
+            name: 'Claude Opus 4.7',
             provider: 'anthropic',
             description: 'Premier Claude for deep reasoning & writing.',
         },
         {
-            id: 'anthropic/claude-haiku-4.5',
+            id: 'anthropic/claude-haiku-4-5',
             name: 'Claude Haiku 4.5',
             provider: 'anthropic',
             description: 'Fast, lightweight Claude for quick tasks.',
         },
         {
-            id: 'anthropic/claude-sonnet-4.5',
-            name: 'Claude Sonnet 4.5',
+            id: 'anthropic/claude-sonnet-4-6',
+            name: 'Claude Sonnet 4.6',
             provider: 'anthropic',
             description: 'Balanced speed and quality, daily driver.',
-        },
-        {
-            id: 'anthropic/claude-opus-4.1',
-            name: 'Claude Opus 4.1',
-            provider: 'anthropic',
-            description: 'Earlier Opus, still strong for analysis.',
-        },
-        {
-            id: 'anthropic/claude-opus-4',
-            name: 'Claude Opus 4',
-            provider: 'anthropic',
-            description: 'Legacy Opus for compatibility use cases.',
-        },
-        {
-            id: 'anthropic/claude-sonnet-4',
-            name: 'Claude Sonnet 4',
-            provider: 'anthropic',
-            description: 'Previous Sonnet, stable and reliable.',
         },
 
         // Google (Gemini)
         {
-            id: 'google/gemini-3-pro-preview',
-            name: 'Gemini 3 Pro',
+            id: 'google/gemini-3.1-pro-preview',
+            name: 'Gemini 3.1 Pro',
             provider: 'google',
-            description: 'Newest Gemini Pro, advanced multimodal.',
+            description: 'Flagship Gemini 3.1, top reasoning & multimodal.',
         },
         {
             id: 'google/gemini-3-flash-preview',
             name: 'Gemini 3 Flash',
             provider: 'google',
-            description: 'Very fast Gemini for low-latency tasks.',
+            description: 'Fast Gemini 3 with Pro-level intelligence.',
         },
         {
-            id: 'google/gemini-2.5-flash-lite-preview-09-2025',
-            name: 'Gemini 2.5 Flash Lite',
+            id: 'google/gemini-3.1-flash-lite-preview',
+            name: 'Gemini 3.1 Flash Lite',
             provider: 'google',
-            description: 'Extremely cost-efficient Gemini Flash.',
-        },
-        {
-            id: 'google/gemini-2.5-flash-preview-09-2025',
-            name: 'Gemini 2.5 Flash',
-            provider: 'google',
-            description: 'Fast Gemini with good quality tradeoff.',
-        },
-        {
-            id: 'google/gemini-2.5-pro',
-            name: 'Gemini 2.5 Pro',
-            provider: 'google',
-            description: 'Strong reasoning and multimodal for production.',
+            description: 'Most cost-efficient Gemini 3, high-volume agentic.',
         },
 
         // Meta (Llama)

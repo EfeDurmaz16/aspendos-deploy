@@ -1,7 +1,6 @@
 'use client';
 
 import { ChartLine, ChatCircle, CircleNotch, Sparkle } from '@phosphor-icons/react';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
     Area,
@@ -99,7 +98,6 @@ interface FrameworkScorecard {
 }
 
 export default function AnalyticsPage() {
-    const router = useRouter();
     const { isLoaded, isSignedIn } = useAuth();
 
     const [summary, setSummary] = useState<Summary | null>(null);
@@ -170,7 +168,7 @@ export default function AnalyticsPage() {
         };
 
         loadAnalytics();
-    }, [isLoaded, isSignedIn, router, interval]);
+    }, [isLoaded, isSignedIn, interval]);
 
     if (!isLoaded || !isSignedIn) {
         return (

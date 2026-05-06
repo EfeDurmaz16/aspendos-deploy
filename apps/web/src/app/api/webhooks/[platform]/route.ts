@@ -1,23 +1,18 @@
-import { after } from 'next/server';
-import { getBot } from '@/lib/messaging/bot';
+import { dispatchWebhook } from '@/lib/messaging/webhook-dispatch';
 
-type Platform = keyof typeof bot.webhooks;
+const SUPPORTED_WEBHOOK_PLATFORMS = new Set(['slack', 'discord', 'telegram', 'whatsapp']);
 
 /**
  * Catch-all webhook route for any platform.
  * Individual platform routes (slack/, telegram/, etc.) take priority
- * in Next.js routing. This handles any new platforms added to the bot
- * without needing new route files.
+ * in Next.js routing. New platforms must be explicitly added here after
+ * their verification and idempotency behavior is production-ready.
  */
 export async function POST(request: Request, context: { params: Promise<{ platform: string }> }) {
     const { platform } = await context.params;
-
-    const handler = bot.webhooks[platform as Platform];
-    if (!handler) {
+    if (!SUPPORTED_WEBHOOK_PLATFORMS.has(platform)) {
         return new Response(`Unknown platform: ${platform}`, { status: 404 });
     }
 
-    return handler(request, {
-        waitUntil: (task) => after(() => task),
-    });
+    return dispatchWebhook(platform, request);
 }

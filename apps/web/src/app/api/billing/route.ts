@@ -90,7 +90,7 @@ export async function GET() {
             },
 
             subscription: {
-                hasSubscription: !!(billing.polarCustomerId && billing.subscriptionId),
+                hasSubscription: !!(billing.stripeCustomerId && billing.subscriptionId),
             },
 
             recentActivity: billing.creditHistory.map(

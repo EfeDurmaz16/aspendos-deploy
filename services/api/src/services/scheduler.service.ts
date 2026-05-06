@@ -6,7 +6,7 @@
  * Migrated from Prisma to Convex action_log events.
  */
 
-import { getConvexClient, api } from '../lib/convex';
+import { api, getConvexClient, getConvexServiceSecret } from '../lib/convex';
 
 type ScheduledTask = any;
 
@@ -48,6 +48,7 @@ export async function createScheduledTask(input: CreateScheduledTaskInput): Prom
     try {
         const client = getConvexClient();
         const taskId = await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: input.userId as any,
             event_type: 'scheduled_task',
             details: {
@@ -80,12 +81,14 @@ export async function createScheduledTask(input: CreateScheduledTaskInput): Prom
                 task.externalJobId = externalJobId;
             } catch (error) {
                 console.error('Failed to schedule QStash webhook:', error);
+                throw error;
             }
         }
 
         return task;
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] createScheduledTask failed:', error);
+        throw error;
     }
 }
 
@@ -133,6 +136,7 @@ export async function getUserScheduledTasks(
     try {
         const client = getConvexClient();
         const logs = await client.query(api.actionLog.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: options?.limit || 50,
         });
@@ -144,8 +148,9 @@ export async function getUserScheduledTasks(
                 return true;
             })
             .map(logToTask);
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Scheduler] getUserScheduledTasks failed:', error);
+        throw error;
     }
 }
 
@@ -155,7 +160,10 @@ export async function getUserScheduledTasks(
 export async function getPendingTasksToExecute(): Promise<ScheduledTask[]> {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 200 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 200,
+        });
         const now = Date.now();
         return (logs || [])
             .filter(
@@ -165,8 +173,9 @@ export async function getPendingTasksToExecute(): Promise<ScheduledTask[]> {
                     l.details?.triggerAt <= now
             )
             .map(logToTask);
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Scheduler] getPendingTasksToExecute failed:', error);
+        throw error;
     }
 }
 
@@ -176,13 +185,17 @@ export async function getPendingTasksToExecute(): Promise<ScheduledTask[]> {
 export async function getTaskById(taskId: string): Promise<ScheduledTask | null> {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 500 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 500,
+        });
         const match = (logs || []).find(
             (l: any) => l._id === taskId && l.event_type === 'scheduled_task'
         );
         return match ? logToTask(match) : null;
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] getTaskById failed:', error);
+        throw error;
     }
 }
 
@@ -200,13 +213,15 @@ export async function cancelScheduledTask(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'scheduled_task_cancel',
             details: { originalTaskId: taskId },
         });
         return { id: taskId, status: 'CANCELED' };
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] cancelScheduledTask failed:', error);
+        throw error;
     }
 }
 
@@ -221,6 +236,7 @@ export async function rescheduleTask(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             event_type: 'scheduled_task_reschedule',
             details: { originalTaskId: taskId, newTriggerAt: newTriggerAt.getTime() },
@@ -232,12 +248,14 @@ export async function rescheduleTask(
                 await scheduleQStashWebhook(taskId, newTriggerAt);
             } catch (error) {
                 console.error('Failed to reschedule QStash job:', error);
+                throw error;
             }
         }
 
         return { id: taskId, triggerAt: newTriggerAt, status: 'PENDING' };
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] rescheduleTask failed:', error);
+        throw error;
     }
 }
 
@@ -248,11 +266,13 @@ export async function markTaskProcessing(taskId: string): Promise<ScheduledTask>
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'scheduled_task_status',
             details: { taskId, status: 'PROCESSING' },
         });
-    } catch {
-        // Non-blocking
+    } catch (error) {
+        console.error('[Scheduler] markTaskProcessing failed:', error);
+        throw error;
     }
     return { id: taskId, status: 'PROCESSING' };
 }
@@ -268,6 +288,7 @@ export async function markTaskCompleted(
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'scheduled_task_status',
             details: {
                 taskId,
@@ -277,8 +298,9 @@ export async function markTaskCompleted(
                 executedAt: Date.now(),
             },
         });
-    } catch {
-        // Non-blocking
+    } catch (error) {
+        console.error('[Scheduler] markTaskCompleted failed:', error);
+        throw error;
     }
     return { id: taskId, status: 'COMPLETED', resultMessage };
 }
@@ -290,11 +312,13 @@ export async function markTaskFailed(taskId: string, errorMessage: string): Prom
     try {
         const client = getConvexClient();
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'scheduled_task_status',
             details: { taskId, status: 'FAILED', errorMessage, executedAt: Date.now() },
         });
-    } catch {
-        // Non-blocking
+    } catch (error) {
+        console.error('[Scheduler] markTaskFailed failed:', error);
+        throw error;
     }
     return { id: taskId, status: 'FAILED', errorMessage };
 }
@@ -318,6 +342,9 @@ function logToTask(log: any): ScheduledTask {
         status: d.status || 'PENDING',
         externalJobId: d.externalJobId || null,
         metadata: d.metadata || {},
+        createdAt: new Date(log.timestamp),
+        executedAt: d.executedAt ? new Date(d.executedAt) : undefined,
+        resultMessage: d.resultMessage,
     };
 }
 
@@ -507,6 +534,7 @@ export async function createRecurringSchedule(params: {
     try {
         const client = getConvexClient();
         return await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             user_id: params.userId as any,
             event_type: 'recurring_schedule',
             details: {
@@ -520,15 +548,19 @@ export async function createRecurringSchedule(params: {
                 isActive: true,
             },
         });
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] createRecurringSchedule failed:', error);
+        throw error;
     }
 }
 
 export async function getDueRecurringSchedules() {
     try {
         const client = getConvexClient();
-        const logs = await client.query(api.actionLog.listRecent, { limit: 200 });
+        const logs = await client.query(api.actionLog.listRecent, {
+            service_secret: getConvexServiceSecret(),
+            limit: 200,
+        });
         const now = Date.now();
         return (logs || []).filter(
             (l: any) =>
@@ -537,8 +569,9 @@ export async function getDueRecurringSchedules() {
                 l.details?.nextRunAt != null &&
                 l.details.nextRunAt <= now
         );
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Scheduler] getDueRecurringSchedules failed:', error);
+        throw error;
     }
 }
 
@@ -547,10 +580,12 @@ export async function advanceRecurringSchedule(scheduleId: string) {
         const client = getConvexClient();
         // Log the advance event — the original schedule log is immutable in action_log
         await client.mutation(api.actionLog.log, {
+            service_secret: getConvexServiceSecret(),
             event_type: 'recurring_schedule_advance',
             details: { scheduleId, advancedAt: Date.now() },
         });
-    } catch {
-        // Non-blocking
+    } catch (error) {
+        console.error('[Scheduler] advanceRecurringSchedule failed:', error);
+        throw error;
     }
 }

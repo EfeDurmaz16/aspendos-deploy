@@ -58,7 +58,7 @@ function SimpleModelSelector() {
             <div className="w-4 h-4 rounded-sm bg-foreground/15 text-foreground flex items-center justify-center text-[10px] font-bold">
                 4
             </div>
-            GPT-4o
+            GPT-5
         </button>
     );
 }

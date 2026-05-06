@@ -43,7 +43,7 @@ const MAX_CACHE_SIZE = 5000;
 const CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 minutes
 
 class SemanticCache {
-    private cache: Map<string, CacheEntry>; // In-memory fallback / dev store
+    private cache: Map<string, CacheEntry>; // Local hot cache / dev store
     private accessOrder: string[]; // For LRU eviction (in-memory only)
     private totalHits: number;
     private totalMisses: number;
@@ -70,9 +70,18 @@ class SemanticCache {
                 this.redis = new Redis({ url: redisUrl, token: redisToken });
                 console.log('[SemanticCache] Using Redis backing store');
             } catch (err) {
-                console.warn('[SemanticCache] Failed to init Redis, using in-memory:', err);
+                if (process.env.NODE_ENV === 'production') {
+                    throw new Error(
+                        `Semantic cache Redis initialization failed in production: ${String(err)}`
+                    );
+                }
+                console.warn('[SemanticCache] Failed to init Redis, using local dev cache:', err);
                 this.redis = null;
             }
+        } else if (process.env.NODE_ENV === 'production') {
+            throw new Error(
+                'Semantic cache requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in production.'
+            );
         }
     }
 
@@ -146,31 +155,12 @@ class SemanticCache {
     /**
      * Find cached response (checks local cache first, then Redis)
      */
-    async lookupCache(query: string, model: string): Promise<CacheLookupResult> {
+    lookupCache(query: string, model: string): CacheLookupResult {
         const normalizedQuery = this.normalizeQuery(query);
         const key = this.getCacheKey(normalizedQuery, model);
         const now = new Date();
 
-        // Check local cache first
-        let entry = this.cache.get(key);
-
-        // On local miss, check Redis
-        if (!entry && this.redis) {
-            try {
-                const raw = await this.redis.get<string>(this.REDIS_PREFIX + key);
-                if (raw) {
-                    entry =
-                        typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as CacheEntry);
-                    // Populate local cache for subsequent fast reads
-                    if (entry) {
-                        this.cache.set(key, entry);
-                        this.updateAccessOrder(key);
-                    }
-                }
-            } catch {
-                // Redis read failed — treat as miss
-            }
-        }
+        const entry = this.cache.get(key);
 
         if (!entry) {
             this.totalMisses++;

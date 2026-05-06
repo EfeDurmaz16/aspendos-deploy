@@ -1,0 +1,20 @@
+<!--
+  E · Favicon fallback — yula (flame) alone
+  For tiny contexts (16-32px) where the full cavea won't read, use the
+  flame alone. Still semantically on-brand: yula literally means flame.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <path
+    d="M 16 4
+       C 10 11, 8 18, 11 24
+       C 12.5 27, 14.5 28, 16 28
+       C 17.5 28, 19.5 27, 21 24
+       C 24 18, 22 11, 16 4 Z"
+    fill="currentColor" />
+  <path
+    d="M 16 12
+       C 14 16, 13.5 20, 14.8 23
+       C 15.3 24, 16.7 24, 17.2 23
+       C 18.5 20, 18 16, 16 12 Z"
+    fill="var(--bg, #0a0a0a)" opacity="0.92" />
+</svg>

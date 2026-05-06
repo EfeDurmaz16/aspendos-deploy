@@ -55,6 +55,18 @@ function createTestApp() {
     return app;
 }
 
+function createApiKeyAuthenticatedTestApp() {
+    const app = new Hono();
+    app.use('*', async (c, next) => {
+        c.set('userId', 'test-user-1');
+        c.set('apiKeyId', 'key-1');
+        c.set('apiKeyPermissions', ['chat:read']);
+        return next();
+    });
+    app.route('/voice', voiceRoutes);
+    return app;
+}
+
 describe('Voice Routes', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -66,6 +78,19 @@ describe('Voice Routes', () => {
         });
         mockHasVoiceMinutes.mockResolvedValue(true);
         mockRecordVoiceUsage.mockResolvedValue(undefined);
+    });
+
+    it('rejects API-key authenticated access to voice routes', async () => {
+        const app = createApiKeyAuthenticatedTestApp();
+
+        const res = await app.request('/voice/token', {
+            method: 'POST',
+        });
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
+        });
     });
 
     describe('POST /voice/transcribe', () => {

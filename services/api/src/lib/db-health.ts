@@ -12,9 +12,7 @@
  * - Exponential backoff with decorrelated jitter to avoid thundering herd
  */
 
-// import { checkDatabaseHealth, type DatabaseHealthResult } from '@aspendos/db';
-const checkDatabaseHealth = async (): Promise<any> => ({}) as any;
-type DatabaseHealthResult = any;
+import { checkDatabaseHealth, type DatabaseHealthResult } from '@aspendos/db';
 
 import {
     getPoolHealth,

@@ -4,8 +4,8 @@
  * Generates Discord embed + button components for approval cards.
  */
 
-import type { ApprovalPayload, PlatformCardRenderer } from '../types';
 import { buildDiscordApprovalMessage, buildDiscordResolvedMessage } from '../platforms/discord';
+import type { ApprovalPayload, PlatformCardRenderer } from '../types';
 
 export const discordCardRenderer: PlatformCardRenderer = {
     renderApprovalCard(payload: ApprovalPayload, _callbackUrl: string) {

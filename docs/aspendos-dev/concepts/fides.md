@@ -1,14 +1,14 @@
 # FIDES — Cryptographic Signing
 
-FIDES provides Ed25519 signatures for every agent action. This is the accountability layer — it proves who did what and when.
+FIDES provides Ed25519 signatures for agent authority. This is the accountability layer — it proves which agent authority signed a governed action payload.
 
 ## How it works
 
 1. Agent generates an Ed25519 keypair at startup
-2. Agent gets a `did:key:z6Mk...` decentralized identifier
-3. Before every tool execution, FIDES signs the intent
-4. After user approval (for `approval_only` tools), the user counter-signs
-5. Both signatures are stored with the AGIT commit
+2. Agent gets a `did:fides:<public-key>` decentralized identifier
+3. Before every governed Convex commit, FIDES signs the canonical semantic governance payload
+4. Convex appends the commit and binds it to a deterministic parent-linked commit hash
+5. `/audit/verify/:hash` recomputes hash integrity and cryptographically verifies the FIDES signature
 
 ## Usage
 
@@ -29,6 +29,19 @@ const { signature, did, timestamp } = await fides.signToolCall(
 const valid = await fides.verifySignature(payload, signature, did);
 ```
 
+For Convex-backed production governance commits, use `signGovernanceCommit()` instead of reusing the generic tool-call payload:
+
+```typescript
+const signed = await fides.signGovernanceCommit(
+    'email.send',
+    { to: 'alice@example.com' },
+    metadata,
+    { status: 'pending' },
+);
+```
+
+The governance payload covers `tool_name`, canonical `args`, `reversibility_class`, `status`, and optional `result`. Convex separately binds the commit to `parent_hash` through `payload_hash` and the final commit hash.
+
 ## Dual signatures
 
 For `approval_only` tools, two signatures are required:
@@ -37,6 +50,12 @@ For `approval_only` tools, two signatures are required:
 2. **User counter-signature** — proves the human approved it
 
 Both signatures are stored in the AGIT commit and can be independently verified.
+
+## Fallback policy
+
+Production paths must not silently create local fallback signatures. If `@fides/sdk` is unavailable, fallback signing is allowed only in explicit test/local governance modes. Convex HMAC fallback is labeled and requires explicit opt-in via `allow_convex_hmac_fallback=true`.
+
+See [production-spine.md](./production-spine.md) for the current production invariants.
 
 ## External verification
 

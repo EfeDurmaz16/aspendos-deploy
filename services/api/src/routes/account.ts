@@ -3,6 +3,7 @@
  */
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
+import { rejectApiKeyAuth } from '../middleware/auth';
 
 const accountRoutes = new Hono();
 
@@ -17,7 +18,7 @@ setInterval(() => {
 }, 5 * 60_000);
 
 // DELETE / - Delete user account and all associated data (GDPR Art. 17)
-accountRoutes.delete('/', async (c) => {
+accountRoutes.delete('/', rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId') as string | null;
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 
@@ -26,7 +27,7 @@ accountRoutes.delete('/', async (c) => {
         const openMemory = await import('../services/memory-router.service');
 
         // Delete all user data in dependency order
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             // Delete PAC data
             const reminders = await tx.pACReminder.findMany({
                 where: { userId },
@@ -75,7 +76,7 @@ accountRoutes.delete('/', async (c) => {
             // Delete notifications
             await tx.notificationLog.deleteMany({ where: { userId } });
 
-            // Delete user sessions and accounts (Better Auth)
+            // Delete user sessions and linked auth accounts
             await tx.session.deleteMany({ where: { userId } });
             await tx.account.deleteMany({ where: { userId } });
 
@@ -109,7 +110,7 @@ accountRoutes.delete('/', async (c) => {
 });
 
 // GET /export - GDPR Art. 20 data portability (full structured export)
-accountRoutes.get('/export', async (c) => {
+accountRoutes.get('/export', rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId') as string | null;
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 
@@ -187,7 +188,7 @@ accountRoutes.get('/export', async (c) => {
             exportedAt: new Date().toISOString(),
             gdprArticle: '20',
             user,
-            chats: chats.map((chat) => ({
+            chats: chats.map((chat: any) => ({
                 title: chat.title,
                 model: chat.modelPreference,
                 createdAt: chat.createdAt,
@@ -197,7 +198,7 @@ accountRoutes.get('/export', async (c) => {
             billing: billingAccount,
             pacReminders,
             pacSettings,
-            councilSessions: councilSessions.map((s) => ({
+            councilSessions: councilSessions.map((s: any) => ({
                 query: s.query,
                 responses: s.responses,
                 createdAt: s.createdAt,
