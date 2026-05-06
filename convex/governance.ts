@@ -578,6 +578,7 @@ export const verifyChain = query({
                     args: commit.args,
                     fides_signature: commit.fides_signature,
                     fides_signer_did: commit.fides_signer_did,
+                    parent_hash: commit.parent_hash ?? null,
                     result: commit.result,
                     reversibility_class: commit.reversibility_class,
                     status: commit.status,
