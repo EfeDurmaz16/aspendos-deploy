@@ -602,6 +602,7 @@ export async function executeImport(jobId: string, userId: string, selectedIds?:
                     .slice(0, 10000);
 
                 await client.mutation(api.memories.create, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     content_preview: memoryContent.slice(0, 500),
                     source: 'import_pending',
@@ -748,6 +749,7 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
                 const summary = `${entity.title || 'Imported conversation'}: ${firstUserMsg.slice(0, 200)}`;
 
                 await client.mutation(api.memories.create, {
+                    service_secret: getConvexServiceSecret(),
                     user_id: userId as any,
                     content_preview: summary.slice(0, 500),
                     source: 'import_extraction_pending',
@@ -769,6 +771,7 @@ export async function extractMemoriesFromImport(userId: string, jobId: string): 
                         if (matches && matches.length >= 3) {
                             const topic = matches[0];
                             await client.mutation(api.memories.create, {
+                                service_secret: getConvexServiceSecret(),
                                 user_id: userId as any,
                                 content_preview: `User discussed ${topic} in imported conversation from ${content.source}`,
                                 source: 'import_extraction_pending',

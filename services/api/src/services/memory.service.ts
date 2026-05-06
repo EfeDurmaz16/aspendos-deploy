@@ -95,6 +95,7 @@ export async function getMemoryStats(userId: string): Promise<MemoryStats> {
     try {
         const client = getConvexClient();
         const allMemories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
 
@@ -137,6 +138,7 @@ export async function listMemoriesForDashboard(
     try {
         const client = getConvexClient();
         let memories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
 
@@ -200,7 +202,10 @@ export async function updateMemory(id: string, data: UpdateMemoryInput): Promise
 export async function softDeleteMemory(id: string): Promise<Memory> {
     try {
         const client = getConvexClient();
-        await client.mutation(api.memories.remove, { id: id as any });
+        await client.mutation(api.memories.remove, {
+            service_secret: getConvexServiceSecret(),
+            id: id as any,
+        });
         return { id, isActive: false };
     } catch {
         return null;
@@ -241,6 +246,7 @@ export async function createMemory(input: CreateMemoryInput): Promise<Memory> {
     try {
         const client = getConvexClient();
         const id = await client.mutation(api.memories.create, {
+            service_secret: getConvexServiceSecret(),
             user_id: input.userId as any,
             content_preview: input.content,
             source: input.source || 'user_input',
@@ -264,6 +270,7 @@ export async function searchMemories(options: SearchMemoriesOptions): Promise<Me
     try {
         const client = getConvexClient();
         const memories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: options.userId as any,
             limit: options.limit || 20,
         });
@@ -300,7 +307,10 @@ export async function touchMemory(_id: string) {
 export async function deleteMemory(id: string, _userId: string) {
     try {
         const client = getConvexClient();
-        await client.mutation(api.memories.remove, { id: id as any });
+        await client.mutation(api.memories.remove, {
+            service_secret: getConvexServiceSecret(),
+            id: id as any,
+        });
         return { count: 1 };
     } catch {
         return { count: 0 };
@@ -314,6 +324,7 @@ export async function getGlobalMemories(userId: string, limit?: number): Promise
     try {
         const client = getConvexClient();
         const memories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: limit || 50,
         });
@@ -331,6 +342,7 @@ export async function synthesizeMemories(userId: string): Promise<string> {
     try {
         const client = getConvexClient();
         const recentMemories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 20,
         });

@@ -256,6 +256,7 @@ export async function searchMemories(
         try {
             const client = getConvexClient();
             const convexMemories = await client.query(api.memories.listByUser, {
+                service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
                 limit: options?.limit || 5,
             });
@@ -415,6 +416,7 @@ export async function getMemoryStats(userId: string): Promise<MemoryStats> {
     try {
         const client = getConvexClient();
         const memories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
 
@@ -443,6 +445,7 @@ export async function verifyMemoryOwnership(memoryId: string, userId: string): P
     try {
         const client = getConvexClient();
         const memories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
             limit: 500,
         });

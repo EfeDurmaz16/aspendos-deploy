@@ -345,6 +345,7 @@ export async function exportUserData(userId: string): Promise<ExportData> {
 
         // Fetch memories
         const memoriesRaw = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
         const memories = memoriesRaw.map((m) => ({
@@ -481,7 +482,10 @@ export async function getDataSummary(userId: string): Promise<DataSummary> {
                 service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
             }),
-            client.query(api.memories.listByUser, { user_id: userId as any }),
+            client.query(api.memories.listByUser, {
+                service_secret: getConvexServiceSecret(),
+                user_id: userId as any,
+            }),
             client.query(api.actionLog.listByUser, {
                 service_secret: getConvexServiceSecret(),
                 user_id: userId as any,
@@ -680,11 +684,15 @@ export async function anonymizeUser(userId: string): Promise<void> {
 
         // Delete all user memories from Convex
         const memories = await client.query(api.memories.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: userId as any,
         });
         for (const memory of memories) {
             try {
-                await client.mutation(api.memories.remove, { id: memory._id });
+                await client.mutation(api.memories.remove, {
+                    service_secret: getConvexServiceSecret(),
+                    id: memory._id,
+                });
             } catch {
                 /* continue */
             }
