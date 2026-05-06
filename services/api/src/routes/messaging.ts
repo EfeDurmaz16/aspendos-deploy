@@ -16,6 +16,11 @@ import { validateBody, validateParams } from '../middleware/validate';
 import { connectionIdParamSchema, createConnectionSchema } from '../validation/messaging.schema';
 
 const messagingRoutes = new Hono();
+const SUPPORTED_WEBHOOK_PLATFORMS = new Set(['slack', 'discord', 'telegram', 'whatsapp']);
+
+function isSupportedWebhookPlatform(platform: string) {
+    return SUPPORTED_WEBHOOK_PLATFORMS.has(platform);
+}
 
 // ============================================
 // PLATFORM CONNECTIONS (authenticated)
@@ -94,12 +99,16 @@ async function getBot() {
 
 // POST /messaging/webhook/:platform - Universal webhook handler
 messagingRoutes.post('/webhook/:platform', async (c) => {
+    const platform = c.req.param('platform') as string;
+    if (!isSupportedWebhookPlatform(platform)) {
+        return c.json({ error: `Unknown platform: ${platform}` }, 404);
+    }
+
     const bot = await getBot();
     if (!bot) {
         return c.json({ error: 'Messaging bot not configured. Install chat SDK packages.' }, 503);
     }
 
-    const platform = c.req.param('platform') as string;
     const handler = (bot.webhooks as Record<string, any>)?.[platform];
 
     if (!handler) {
@@ -117,12 +126,16 @@ messagingRoutes.post('/webhook/:platform', async (c) => {
 
 // GET /messaging/webhook/:platform - Verification endpoints (WhatsApp, Slack)
 messagingRoutes.get('/webhook/:platform', async (c) => {
+    const platform = c.req.param('platform') as string;
+    if (!isSupportedWebhookPlatform(platform)) {
+        return c.json({ error: `Unknown platform: ${platform}` }, 404);
+    }
+
     const bot = await getBot();
     if (!bot) {
         return c.json({ error: 'Messaging bot not configured' }, 503);
     }
 
-    const platform = c.req.param('platform') as string;
     const handler = (bot.webhooks as Record<string, any>)?.[platform];
 
     if (!handler) {
