@@ -60,6 +60,27 @@ function getConvexServiceSecret() {
     return secret;
 }
 
+function signedJsonRequestInit(payload: Record<string, unknown>): RequestInit {
+    const secret = process.env.BOT_APPROVAL_WEBHOOK_SECRET;
+    if (!secret) {
+        throw new Error('BOT_APPROVAL_WEBHOOK_SECRET is required to sign agent resume callbacks');
+    }
+
+    const body = JSON.stringify(payload);
+    const timestamp = Date.now().toString();
+    return {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            [TIMESTAMP_HEADER]: timestamp,
+            [SIGNATURE_HEADER]: `sha256=${createHmac('sha256', secret)
+                .update(`${timestamp}.${body}`)
+                .digest('hex')}`,
+        },
+        body,
+    };
+}
+
 /**
  * POST /api/bot/approve
  *
@@ -144,11 +165,7 @@ export async function POST(request: Request) {
             process.env.AGENT_RESUME_URL &&
             decision.outcome !== 'already_decided'
         ) {
-            fetch(process.env.AGENT_RESUME_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ commitHash }),
-            }).catch(() => {
+            fetch(process.env.AGENT_RESUME_URL, signedJsonRequestInit({ commitHash })).catch(() => {
                 // Non-critical: agent will poll for approval status
             });
         }

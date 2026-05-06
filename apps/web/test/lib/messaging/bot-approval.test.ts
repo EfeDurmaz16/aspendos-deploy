@@ -154,6 +154,42 @@ describe('bot approval webhook', () => {
         });
     });
 
+    it('signs the agent resume callback for first-time approvals', async () => {
+        process.env.AGENT_RESUME_URL = 'https://agent.example/resume';
+        convexQuery.mockResolvedValueOnce({
+            _id: 'approval-1',
+            user_id: 'user-1',
+        });
+        convexMutation.mockResolvedValueOnce({
+            outcome: 'updated',
+            status: 'approved',
+        });
+
+        const { POST } = await import('../../../src/app/api/bot/approve/route');
+        const response = await POST(
+            signedRequest(
+                {
+                    commitHash: 'commit-1',
+                    action: 'approve',
+                    platform: 'slack',
+                    platformUserId: 'user-1',
+                },
+                'test-secret'
+            )
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetch).toHaveBeenCalledOnce();
+        const [url, init] = (fetch as any).mock.calls[0];
+        expect(url).toBe('https://agent.example/resume');
+        expect(init.body).toBe(JSON.stringify({ commitHash: 'commit-1' }));
+        expect(init.headers['x-yula-timestamp']).toBe(Date.now().toString());
+        const expectedSignature = createHmac('sha256', 'test-secret')
+            .update(`${Date.now()}.${init.body}`)
+            .digest('hex');
+        expect(init.headers['x-yula-signature']).toBe(`sha256=${expectedSignature}`);
+    });
+
     it('rejects tampered signed approval bodies before touching Convex', async () => {
         const { POST } = await import('../../../src/app/api/bot/approve/route');
 
