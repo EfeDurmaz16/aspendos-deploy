@@ -19,10 +19,19 @@ export async function findAuthenticatedUser(ctx: AuthenticatedCtx): Promise<Doc<
         return byTokenIdentifier;
     }
 
-    return await ctx.db
+    const legacyBySubject = await ctx.db
         .query('users')
         .withIndex('by_workos_id', (q) => q.eq('workos_id', identity.subject))
         .first();
+    if (!legacyBySubject) {
+        return null;
+    }
+
+    if (legacyBySubject.auth_token_identifier) {
+        throw new Error('Authenticated tokenIdentifier does not match provisioned user');
+    }
+
+    return legacyBySubject;
 }
 
 export async function requireAuthenticatedUser(ctx: AuthenticatedCtx): Promise<Doc<'users'>> {

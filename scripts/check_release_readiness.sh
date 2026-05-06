@@ -97,6 +97,9 @@ bash scripts/check_convex_query_bounds.sh
 info "Checking Convex service-secret public surface..."
 bash scripts/check_convex_service_secret_surface.sh
 
+info "Running Convex auth boundary unit tests..."
+bunx vitest run convex/lib/auth.test.ts
+
 info "Checking process-local correctness posture..."
 bash scripts/check_process_local_state.sh
 
