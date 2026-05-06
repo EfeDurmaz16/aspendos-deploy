@@ -81,12 +81,14 @@ export async function createScheduledTask(input: CreateScheduledTaskInput): Prom
                 task.externalJobId = externalJobId;
             } catch (error) {
                 console.error('Failed to schedule QStash webhook:', error);
+                throw error;
             }
         }
 
         return task;
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] createScheduledTask failed:', error);
+        throw error;
     }
 }
 
@@ -146,8 +148,9 @@ export async function getUserScheduledTasks(
                 return true;
             })
             .map(logToTask);
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Scheduler] getUserScheduledTasks failed:', error);
+        throw error;
     }
 }
 
@@ -170,8 +173,9 @@ export async function getPendingTasksToExecute(): Promise<ScheduledTask[]> {
                     l.details?.triggerAt <= now
             )
             .map(logToTask);
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Scheduler] getPendingTasksToExecute failed:', error);
+        throw error;
     }
 }
 
@@ -189,8 +193,9 @@ export async function getTaskById(taskId: string): Promise<ScheduledTask | null>
             (l: any) => l._id === taskId && l.event_type === 'scheduled_task'
         );
         return match ? logToTask(match) : null;
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] getTaskById failed:', error);
+        throw error;
     }
 }
 
@@ -214,8 +219,9 @@ export async function cancelScheduledTask(
             details: { originalTaskId: taskId },
         });
         return { id: taskId, status: 'CANCELED' };
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] cancelScheduledTask failed:', error);
+        throw error;
     }
 }
 
@@ -242,12 +248,14 @@ export async function rescheduleTask(
                 await scheduleQStashWebhook(taskId, newTriggerAt);
             } catch (error) {
                 console.error('Failed to reschedule QStash job:', error);
+                throw error;
             }
         }
 
         return { id: taskId, triggerAt: newTriggerAt, status: 'PENDING' };
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] rescheduleTask failed:', error);
+        throw error;
     }
 }
 
@@ -262,8 +270,9 @@ export async function markTaskProcessing(taskId: string): Promise<ScheduledTask>
             event_type: 'scheduled_task_status',
             details: { taskId, status: 'PROCESSING' },
         });
-    } catch {
-        // Non-blocking
+    } catch (error) {
+        console.error('[Scheduler] markTaskProcessing failed:', error);
+        throw error;
     }
     return { id: taskId, status: 'PROCESSING' };
 }
@@ -289,8 +298,9 @@ export async function markTaskCompleted(
                 executedAt: Date.now(),
             },
         });
-    } catch {
-        // Non-blocking
+    } catch (error) {
+        console.error('[Scheduler] markTaskCompleted failed:', error);
+        throw error;
     }
     return { id: taskId, status: 'COMPLETED', resultMessage };
 }
@@ -306,8 +316,9 @@ export async function markTaskFailed(taskId: string, errorMessage: string): Prom
             event_type: 'scheduled_task_status',
             details: { taskId, status: 'FAILED', errorMessage, executedAt: Date.now() },
         });
-    } catch {
-        // Non-blocking
+    } catch (error) {
+        console.error('[Scheduler] markTaskFailed failed:', error);
+        throw error;
     }
     return { id: taskId, status: 'FAILED', errorMessage };
 }
@@ -331,6 +342,9 @@ function logToTask(log: any): ScheduledTask {
         status: d.status || 'PENDING',
         externalJobId: d.externalJobId || null,
         metadata: d.metadata || {},
+        createdAt: new Date(log.timestamp),
+        executedAt: d.executedAt ? new Date(d.executedAt) : undefined,
+        resultMessage: d.resultMessage,
     };
 }
 
@@ -534,8 +548,9 @@ export async function createRecurringSchedule(params: {
                 isActive: true,
             },
         });
-    } catch {
-        return null;
+    } catch (error) {
+        console.error('[Scheduler] createRecurringSchedule failed:', error);
+        throw error;
     }
 }
 
@@ -554,8 +569,9 @@ export async function getDueRecurringSchedules() {
                 l.details?.nextRunAt != null &&
                 l.details.nextRunAt <= now
         );
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Scheduler] getDueRecurringSchedules failed:', error);
+        throw error;
     }
 }
 
@@ -568,7 +584,8 @@ export async function advanceRecurringSchedule(scheduleId: string) {
             event_type: 'recurring_schedule_advance',
             details: { scheduleId, advancedAt: Date.now() },
         });
-    } catch {
-        // Non-blocking
+    } catch (error) {
+        console.error('[Scheduler] advanceRecurringSchedule failed:', error);
+        throw error;
     }
 }
