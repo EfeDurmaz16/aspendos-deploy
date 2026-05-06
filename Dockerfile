@@ -1,7 +1,7 @@
 # Yula OS API Service Dockerfile
 # Railway/root production image for the API service.
 
-FROM oven/bun:1 AS builder
+FROM oven/bun:1.3.4 AS builder
 WORKDIR /app
 
 # Copy the monorepo workspace exactly as CI sees it. Railway selects this
@@ -21,7 +21,7 @@ RUN cd packages/db && bun run db:generate
 RUN cd services/api && bun run build
 
 # ============================================
-FROM oven/bun:1-slim AS runner
+FROM oven/bun:1.3.4-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 

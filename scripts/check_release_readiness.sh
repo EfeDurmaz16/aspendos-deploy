@@ -35,6 +35,9 @@ require_secret_for_release() {
 
 info "Running release readiness checks for critical capabilities..."
 
+info "Checking pinned toolchain..."
+bash scripts/check_toolchain.sh
+
 # Guard against accidental duplicate source/release files (e.g. 'layout 2.tsx'
 # or macOS conflict copies such as '.env 2.example').
 DUPLICATE_SOURCE_FILES="$(git ls-files \

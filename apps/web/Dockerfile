@@ -19,7 +19,7 @@ FROM base AS deps
 WORKDIR /app
 
 # Install bun for faster package installation
-RUN npm install -g bun
+RUN npm install -g bun@1.3.4
 
 # Copy package files for monorepo
 COPY package.json bun.lock* ./
@@ -38,7 +38,7 @@ FROM base AS builder
 WORKDIR /app
 
 # Install bun
-RUN npm install -g bun
+RUN npm install -g bun@1.3.4
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules

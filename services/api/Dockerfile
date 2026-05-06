@@ -4,7 +4,7 @@
 # ============================================
 # BUILD STAGE
 # ============================================
-FROM oven/bun:1 AS builder
+FROM oven/bun:1.3.4 AS builder
 
 WORKDIR /app
 
@@ -31,7 +31,7 @@ RUN cd services/api && bun run build
 # ============================================
 # PRODUCTION STAGE
 # ============================================
-FROM oven/bun:1-slim AS runner
+FROM oven/bun:1.3.4-slim AS runner
 
 WORKDIR /app
 

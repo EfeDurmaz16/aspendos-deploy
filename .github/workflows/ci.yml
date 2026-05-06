@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUN_VERSION: '1.1.30'
+  BUN_VERSION: '1.3.4'
 
 jobs:
   lint:
@@ -22,6 +22,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
+      - run: bun run toolchain:check
       - run: bun install --frozen-lockfile
       - run: bun run check
 
