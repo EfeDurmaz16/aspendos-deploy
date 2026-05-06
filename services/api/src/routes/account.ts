@@ -3,6 +3,7 @@
  */
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
+import { rejectApiKeyAuth } from '../middleware/auth';
 
 const accountRoutes = new Hono();
 
@@ -17,7 +18,7 @@ setInterval(() => {
 }, 5 * 60_000);
 
 // DELETE / - Delete user account and all associated data (GDPR Art. 17)
-accountRoutes.delete('/', async (c) => {
+accountRoutes.delete('/', rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId') as string | null;
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 
@@ -109,7 +110,7 @@ accountRoutes.delete('/', async (c) => {
 });
 
 // GET /export - GDPR Art. 20 data portability (full structured export)
-accountRoutes.get('/export', async (c) => {
+accountRoutes.get('/export', rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId') as string | null;
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 

@@ -6,7 +6,7 @@
 
 import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import {
     getUserNotificationPreferences,
@@ -26,33 +26,39 @@ const app = new Hono();
 // ============================================
 
 // POST /api/notifications/subscribe - Register push subscription
-app.post('/subscribe', requireAuth, validateBody(pushSubscriptionSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const body = c.get('validatedBody') as {
-        endpoint: string;
-        keys: { p256dh: string; auth: string };
-        deviceType?: string;
-    };
+app.post(
+    '/subscribe',
+    requireAuth,
+    rejectApiKeyAuth,
+    validateBody(pushSubscriptionSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const body = c.get('validatedBody') as {
+            endpoint: string;
+            keys: { p256dh: string; auth: string };
+            deviceType?: string;
+        };
 
-    try {
-        await registerPushSubscription(userId, {
-            endpoint: body.endpoint,
-            keys: {
-                p256dh: body.keys.p256dh,
-                auth: body.keys.auth,
-            },
-            deviceType: body.deviceType,
-        });
+        try {
+            await registerPushSubscription(userId, {
+                endpoint: body.endpoint,
+                keys: {
+                    p256dh: body.keys.p256dh,
+                    auth: body.keys.auth,
+                },
+                deviceType: body.deviceType,
+            });
 
-        return c.json({ success: true }, 201);
-    } catch (error) {
-        console.error('[Notifications] Error registering push subscription:', error);
-        return c.json({ error: 'Failed to register push subscription' }, 500);
+            return c.json({ success: true }, 201);
+        } catch (error) {
+            console.error('[Notifications] Error registering push subscription:', error);
+            return c.json({ error: 'Failed to register push subscription' }, 500);
+        }
     }
-});
+);
 
 // DELETE /api/notifications/subscribe - Unsubscribe from push
-app.delete('/subscribe', requireAuth, async (c) => {
+app.delete('/subscribe', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const body = (await c.req.json()) as { endpoint?: string };
 
@@ -80,7 +86,7 @@ app.delete('/subscribe', requireAuth, async (c) => {
 // ============================================
 
 // GET /api/notifications/preferences - Get user preferences
-app.get('/preferences', requireAuth, async (c) => {
+app.get('/preferences', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     try {
@@ -93,25 +99,31 @@ app.get('/preferences', requireAuth, async (c) => {
 });
 
 // PATCH /api/notifications/preferences - Update preferences
-app.patch('/preferences', requireAuth, validateBody(notificationPreferencesSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const body = c.get('validatedBody') as Partial<NotificationPreferences>;
+app.patch(
+    '/preferences',
+    requireAuth,
+    rejectApiKeyAuth,
+    validateBody(notificationPreferencesSchema),
+    async (c) => {
+        const userId = c.get('userId')!;
+        const body = c.get('validatedBody') as Partial<NotificationPreferences>;
 
-    try {
-        await updateNotificationPreferences(userId, body);
-        return c.json({ success: true });
-    } catch (error) {
-        console.error('[Notifications] Error updating preferences:', error);
-        return c.json({ error: 'Failed to update preferences' }, 500);
+        try {
+            await updateNotificationPreferences(userId, body);
+            return c.json({ success: true });
+        } catch (error) {
+            console.error('[Notifications] Error updating preferences:', error);
+            return c.json({ error: 'Failed to update preferences' }, 500);
+        }
     }
-});
+);
 
 // ============================================
 // SSE STREAM FOR IN-APP NOTIFICATIONS
 // ============================================
 
 // GET /api/notifications/stream - SSE stream for in-app notifications
-app.get('/stream', requireAuth, async (c) => {
+app.get('/stream', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     console.log(`[Notifications] SSE stream connected`);
