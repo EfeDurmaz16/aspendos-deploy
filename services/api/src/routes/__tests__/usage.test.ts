@@ -22,6 +22,9 @@ vi.mock('../../middleware/auth', () => ({
     requireAuth: vi.fn(async (_c, next) => {
         await next();
     }),
+    rejectApiKeyAuth: vi.fn(async (_c, next) => {
+        await next();
+    }),
 }));
 
 describe('Usage Routes', () => {

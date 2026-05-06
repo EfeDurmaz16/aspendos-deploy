@@ -19,6 +19,12 @@ vi.mock('../../middleware/auth', () => ({
     requireAuth: vi.fn(async (_c, next) => {
         await next();
     }),
+    rejectApiKeyAuth: vi.fn(async (c, next) => {
+        if (c.get('apiKeyId')) {
+            return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+        }
+        return next();
+    }),
 }));
 
 const mockPrisma = prisma as any;

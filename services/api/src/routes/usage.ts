@@ -9,7 +9,7 @@ import { prisma } from '@aspendos/db';
 import { Hono } from 'hono';
 import { auditLog } from '../lib/audit-log';
 import { usageLedger } from '../lib/usage-ledger';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 
 type Variables = {
     userId?: string;
@@ -86,7 +86,7 @@ async function requireAdmin(c: any, next: any) {
  * - byModel: Cost breakdown by model with tokens and request count
  * - byDay: Daily cost breakdown
  */
-app.get('/costs', requireAuth, async (c) => {
+app.get('/costs', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId');
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401);
