@@ -82,6 +82,9 @@ bash scripts/check_convex_query_bounds.sh
 info "Checking process-local correctness posture..."
 bash scripts/check_process_local_state.sh
 
+info "Checking fake success patterns..."
+bash scripts/check_fake_success_patterns.sh
+
 info "Checking Helm deployment chart..."
 bash scripts/check_helm_chart.sh
 
@@ -112,6 +115,8 @@ bun run --cwd services/api test \
   src/routes/__tests__/prompt-templates.test.ts \
   src/routes/__tests__/import-session-boundary.test.ts \
   src/__tests__/integration/gdpr-compliance.test.ts \
+  src/lib/__tests__/cost-tracker.test.ts \
+  src/lib/__tests__/data-retention.test.ts \
   src/middleware/__tests__/idempotency.test.ts \
   src/lib/__tests__/job-queue.test.ts
 

@@ -1,7 +1,26 @@
-import { describe, expect, it } from 'vitest';
-import { calculateCost, MODEL_PRICING } from '../cost-tracker';
+import { prisma } from '@aspendos/db';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { calculateCost, MODEL_PRICING, trackUsage } from '../cost-tracker';
+
+vi.mock('@aspendos/db', () => ({
+    prisma: {
+        billingAccount: {
+            findUnique: vi.fn(),
+        },
+        creditLog: {
+            create: vi.fn(),
+            findMany: vi.fn(),
+        },
+    },
+}));
+
+const mockPrisma = prisma as any;
 
 describe('Cost Tracker', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     describe('MODEL_PRICING', () => {
         it('should contain pricing for all known models', () => {
             expect(MODEL_PRICING['gpt-5']).toBeDefined();
@@ -168,6 +187,40 @@ describe('Cost Tracker', () => {
             const geminiCost = calculateCost('gemini-3-flash-preview', tokens.in, tokens.out);
             const minCost = Math.min(...costs);
             expect(geminiCost).toBe(minCost);
+        });
+    });
+
+    describe('trackUsage', () => {
+        it('writes model usage costs to the credit log when a billing account exists', async () => {
+            mockPrisma.billingAccount.findUnique.mockResolvedValue({ id: 'billing-1' });
+            mockPrisma.creditLog.create.mockResolvedValue({});
+
+            const result = await trackUsage({
+                userId: 'user-1',
+                modelId: 'gpt-5-mini',
+                tokensIn: 1000,
+                tokensOut: 1000,
+                reason: 'chat completion',
+            });
+
+            expect(result.costUsd).toBeCloseTo(0.00075, 5);
+            expect(mockPrisma.billingAccount.findUnique).toHaveBeenCalledWith({
+                where: { userId: 'user-1' },
+                select: { id: true },
+            });
+            expect(mockPrisma.creditLog.create).toHaveBeenCalledWith({
+                data: {
+                    billingAccountId: 'billing-1',
+                    amount: -750,
+                    reason: 'chat completion',
+                    metadata: {
+                        modelId: 'gpt-5-mini',
+                        tokensIn: 1000,
+                        tokensOut: 1000,
+                        costUsd: result.costUsd,
+                    },
+                },
+            });
         });
     });
 });

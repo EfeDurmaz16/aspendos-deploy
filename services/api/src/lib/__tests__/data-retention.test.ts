@@ -1,7 +1,26 @@
-import { describe, expect, it } from 'vitest';
-import { getRetentionPolicies } from '../data-retention';
+import { prisma } from '@aspendos/db';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { enforceRetentionPolicies, getRetentionPolicies } from '../data-retention';
+
+vi.mock('@aspendos/db', () => ({
+    prisma: {
+        chat: { deleteMany: vi.fn() },
+        notificationLog: { deleteMany: vi.fn() },
+        creditLog: { deleteMany: vi.fn() },
+        session: { deleteMany: vi.fn() },
+        memory: { updateMany: vi.fn() },
+        memoryFeedback: { deleteMany: vi.fn() },
+        scheduledTask: { deleteMany: vi.fn() },
+    },
+}));
+
+const mockPrisma = prisma as any;
 
 describe('Data Retention', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     describe('getRetentionPolicies', () => {
         it('should return all expected retention policies', () => {
             const policies = getRetentionPolicies();
@@ -174,6 +193,33 @@ describe('Data Retention', () => {
             for (const policy of requiredPolicies) {
                 expect(policies).toHaveProperty(policy);
             }
+        });
+    });
+
+    describe('enforceRetentionPolicies', () => {
+        it('executes all retention policies against persistent storage', async () => {
+            mockPrisma.chat.deleteMany.mockResolvedValue({ count: 1 });
+            mockPrisma.notificationLog.deleteMany.mockResolvedValue({ count: 2 });
+            mockPrisma.creditLog.deleteMany.mockResolvedValue({ count: 3 });
+            mockPrisma.session.deleteMany.mockResolvedValue({ count: 4 });
+            mockPrisma.memory.updateMany.mockResolvedValue({ count: 5 });
+            mockPrisma.memoryFeedback.deleteMany.mockResolvedValue({ count: 6 });
+            mockPrisma.scheduledTask.deleteMany.mockResolvedValue({ count: 7 });
+
+            const results = await enforceRetentionPolicies();
+
+            expect(results).toEqual([
+                { policy: 'archivedChats', deleted: 1 },
+                { policy: 'notificationLogs', deleted: 2 },
+                { policy: 'creditLogs', deleted: 3 },
+                { policy: 'expiredSessions', deleted: 4 },
+                { policy: 'decayedMemories', deleted: 5 },
+                { policy: 'memoryFeedback', deleted: 6 },
+                { policy: 'completedScheduledTasks', deleted: 7 },
+            ]);
+            expect(mockPrisma.chat.deleteMany).toHaveBeenCalled();
+            expect(mockPrisma.memory.updateMany).toHaveBeenCalled();
+            expect(mockPrisma.scheduledTask.deleteMany).toHaveBeenCalled();
         });
     });
 });

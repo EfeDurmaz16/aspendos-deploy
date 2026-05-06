@@ -1,4 +1,4 @@
-const prisma = null as any;
+import { prisma } from '@aspendos/db';
 
 /**
  * Model pricing per 1K tokens (in USD)

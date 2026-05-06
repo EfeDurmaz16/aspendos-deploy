@@ -4,7 +4,7 @@
  * GDPR-compliant data retention with configurable policies per data type.
  * Designed to run as a daily cron job via Railway or similar scheduler.
  */
-const prisma = null as any;
+import { prisma } from '@aspendos/db';
 
 // Retention policies (in days)
 const RETENTION_POLICIES = {
