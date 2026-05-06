@@ -30,6 +30,9 @@ const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const require = createRequire(import.meta.url);
+const useTestFallbackClient =
+    (process.env.NODE_ENV === 'test' || process.env.VITEST) &&
+    process.env.ASPENDOS_USE_REAL_DB !== 'true';
 let PrismaClientCtor: any = null;
 try {
     PrismaClientCtor = require('@prisma/client').PrismaClient;
@@ -109,15 +112,17 @@ function createFallbackPrismaClient(): PrismaClient {
 
 export const prisma =
     globalForPrisma.prisma ||
-    (PrismaClientCtor
-        ? new PrismaClientCtor({
-              adapter,
-              log:
-                  process.env.NODE_ENV === 'production'
-                      ? ['error', 'warn']
-                      : ['query', 'error', 'warn'],
-          })
-        : createFallbackPrismaClient());
+    (useTestFallbackClient
+        ? createFallbackPrismaClient()
+        : PrismaClientCtor
+          ? new PrismaClientCtor({
+                adapter,
+                log:
+                    process.env.NODE_ENV === 'production'
+                        ? ['error', 'warn']
+                        : ['query', 'error', 'warn'],
+            })
+          : createFallbackPrismaClient());
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
