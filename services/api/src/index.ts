@@ -10,6 +10,7 @@ import { closeMCPClients, initializeMCPClients } from './lib/mcp-clients';
 import { initSentry, Sentry, setSentryRequestContext, setSentryUserContext } from './lib/sentry';
 import { apiVersion } from './middleware/api-version';
 import { auditTrail } from './middleware/audit-trail';
+import { getUnverifiedBearerUserId } from './middleware/auth';
 import { botProtection } from './middleware/bot-protection';
 import { cacheControl } from './middleware/cache';
 import { compression } from './middleware/compression';
@@ -261,18 +262,15 @@ app.use('*', async (c, next) => {
     }
 });
 
-// Session middleware — checks Bearer token first, then WorkOS session
+// Session middleware — local/test bearer shortcut, then WorkOS session.
 app.use('*', async (c, next) => {
-    const authHeader = c.req.header('Authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.slice(7);
-        if (token && token !== 'null' && token !== 'undefined') {
-            c.set('user', { id: token, email: '' });
-            c.set('session', { id: token });
-            c.set('userId', token);
-            await next();
-            return;
-        }
+    const bearerUserId = getUnverifiedBearerUserId(c.req.header('Authorization'));
+    if (bearerUserId) {
+        c.set('user', { id: bearerUserId, email: '' });
+        c.set('session', { id: bearerUserId });
+        c.set('userId', bearerUserId);
+        await next();
+        return;
     }
 
     const session = await auth.api.getSession({ headers: c.req.raw.headers });

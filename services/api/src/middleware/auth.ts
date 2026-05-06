@@ -25,18 +25,28 @@ async function isUserBanned(userId: string): Promise<boolean> {
     return user?.banned === true;
 }
 
+export function allowsUnverifiedBearerAuth(): boolean {
+    return process.env.NODE_ENV !== 'production';
+}
+
+export function getUnverifiedBearerUserId(authHeader: string | undefined): string | null {
+    if (!allowsUnverifiedBearerAuth()) return null;
+    if (!authHeader?.startsWith('Bearer ')) return null;
+
+    const token = authHeader.slice(7).trim();
+    if (!token || token === 'null' || token === 'undefined') return null;
+    return token;
+}
+
 export async function authMiddleware(c: Context, next: Next) {
     const existingUserId = c.get('userId' as any);
     if (existingUserId) return next();
 
-    const authHeader = c.req.header('Authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.slice(7);
-        if (token && token !== 'null') {
-            c.set('user', { userId: token, email: '' });
-            c.set('userId', token);
-            return next();
-        }
+    const bearerUserId = getUnverifiedBearerUserId(c.req.header('Authorization'));
+    if (bearerUserId) {
+        c.set('user', { userId: bearerUserId, email: '' });
+        c.set('userId', bearerUserId);
+        return next();
     }
 
     c.set('user', null);

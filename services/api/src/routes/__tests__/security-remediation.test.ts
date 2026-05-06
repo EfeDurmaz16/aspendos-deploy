@@ -9,6 +9,7 @@
  * 5. /metrics requires bearer token
  * 6. CSRF exact path allowlist
  * 7. Banned user gets 403
+ * 8. Production auth rejects unverified bearer user IDs
  */
 
 import { prisma } from '@aspendos/db';
@@ -920,5 +921,79 @@ describe('Security Remediation: Banned user gets 403', () => {
 
         const body = await res2.json();
         expect(body.code).toBe('ACCOUNT_BANNED');
+    });
+});
+
+// ============================================
+// 8. PRODUCTION AUTH REJECTS UNVERIFIED BEARER USER IDS
+// ============================================
+
+describe('Security Remediation: Production bearer auth hardening', () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        process.env.NODE_ENV = 'production';
+    });
+
+    afterEach(() => {
+        process.env.NODE_ENV = originalNodeEnv;
+        vi.restoreAllMocks();
+    });
+
+    it('does not create a user session from an arbitrary bearer token in production', async () => {
+        const { authMiddleware } = await import('../../middleware/auth');
+
+        const app = new Hono();
+        app.use('*', authMiddleware);
+        app.get('/api/chat', (c) =>
+            c.json({
+                userId: c.get('userId' as any),
+                user: c.get('user' as any),
+            })
+        );
+
+        const res = await app.request('/api/chat', {
+            headers: { Authorization: 'Bearer attacker-controlled-user-id' },
+        });
+
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.userId).toBeNull();
+        expect(body.user).toBeNull();
+    });
+
+    it('returns 401 when a protected route only receives an arbitrary bearer token in production', async () => {
+        const { authMiddleware, requireAuth } = await import('../../middleware/auth');
+
+        (auth.api.getSession as any).mockResolvedValue(null);
+
+        const app = new Hono();
+        app.use('*', authMiddleware);
+        app.use('*', requireAuth);
+        app.get('/api/chat', (c) => c.json({ userId: c.get('userId' as any) }));
+
+        const res = await app.request('/api/chat', {
+            headers: { Authorization: 'Bearer attacker-controlled-user-id' },
+        });
+
+        expect(res.status).toBe(401);
+        expect(await res.json()).toEqual({ error: 'Unauthorized' });
+    });
+
+    it('keeps the unverified bearer shortcut available outside production tests', async () => {
+        process.env.NODE_ENV = 'test';
+        const { authMiddleware } = await import('../../middleware/auth');
+
+        const app = new Hono();
+        app.use('*', authMiddleware);
+        app.get('/api/chat', (c) => c.json({ userId: c.get('userId' as any) }));
+
+        const res = await app.request('/api/chat', {
+            headers: { Authorization: 'Bearer local-test-user' },
+        });
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({ userId: 'local-test-user' });
     });
 });
