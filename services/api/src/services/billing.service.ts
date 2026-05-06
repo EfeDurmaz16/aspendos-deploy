@@ -57,8 +57,9 @@ export async function getOrCreateBillingAccount(userId: string): Promise<Billing
                 subscriptionId: sub.stripe_subscription_id,
             };
         }
-    } catch {
-        // fall through to default
+    } catch (error) {
+        console.error('[Billing] Failed to read billing account:', error);
+        throw error;
     }
 
     // No subscription found — return a free-tier shim (no DB write needed)
@@ -200,37 +201,25 @@ export async function recordChatUsage(userId: string) {
  * Check if user has sufficient tokens
  */
 export async function hasTokens(userId: string, _estimatedTokens: number): Promise<boolean> {
-    try {
-        const account = await getOrCreateBillingAccount(userId);
-        const estimatedCredits = _estimatedTokens / 1000;
-        return account.monthlyCredit - account.creditUsed >= estimatedCredits;
-    } catch {
-        return true; // Fail open
-    }
+    const account = await getOrCreateBillingAccount(userId);
+    const estimatedCredits = _estimatedTokens / 1000;
+    return account.monthlyCredit - account.creditUsed >= estimatedCredits;
 }
 
 /**
  * Check if user has chats remaining
  */
 export async function hasChatsRemaining(userId: string): Promise<boolean> {
-    try {
-        const account = await getOrCreateBillingAccount(userId);
-        return (account.chatsRemaining || 0) > 0;
-    } catch {
-        return true;
-    }
+    const account = await getOrCreateBillingAccount(userId);
+    return (account.chatsRemaining || 0) > 0;
 }
 
 /**
  * Check if user has voice minutes remaining
  */
 export async function hasVoiceMinutes(userId: string): Promise<boolean> {
-    try {
-        const account = await getOrCreateBillingAccount(userId);
-        return (account.voiceMinutesRemaining || 0) > 0;
-    } catch {
-        return true;
-    }
+    const account = await getOrCreateBillingAccount(userId);
+    return (account.voiceMinutesRemaining || 0) > 0;
 }
 
 /**
@@ -333,8 +322,9 @@ export async function checkCostCeiling(userId: string): Promise<{
             percentUsed,
             warning: percentUsed >= 80,
         };
-    } catch {
-        return { allowed: true, dailySpend: 0, dailyCeiling: 999, percentUsed: 0, warning: false };
+    } catch (error) {
+        console.error('[Billing] Failed to check cost ceiling:', error);
+        throw error;
     }
 }
 
@@ -352,8 +342,9 @@ export async function getUsageHistory(userId: string, limit?: number) {
         return (logs || []).filter(
             (l: any) => l.event_type === 'token_usage' || l.event_type === 'voice_usage'
         );
-    } catch {
-        return [];
+    } catch (error) {
+        console.error('[Billing] Failed to read usage history:', error);
+        throw error;
     }
 }
 
@@ -444,8 +435,9 @@ export async function getCostSummary(userId: string): Promise<{
         logs = (allLogs || []).filter(
             (l: any) => l.event_type === 'token_usage' && l.timestamp >= resetTs
         );
-    } catch {
-        // empty
+    } catch (error) {
+        console.error('[Billing] Failed to read cost summary:', error);
+        throw error;
     }
 
     const byModelMap = new Map<
@@ -662,8 +654,9 @@ export async function getUnitEconomics(userId: string): Promise<{
         for (const log of logs) {
             periodApiCost += log.details?.usd_cost || 0;
         }
-    } catch {
-        // empty
+    } catch (error) {
+        console.error('[Billing] Failed to read unit economics usage:', error);
+        throw error;
     }
     periodApiCost = Math.round(periodApiCost * 10000) / 10000;
 
