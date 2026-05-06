@@ -55,7 +55,12 @@ describe('chat stream route helpers', () => {
         process.env.CONVEX_SERVICE_SECRET = 'convex-service-secret';
         process.env.NEXT_PUBLIC_CONVEX_URL = 'https://example.convex.cloud';
         delete process.env.SUPERMEMORY_API_KEY;
-        mocks.convexQuery.mockResolvedValue({ _id: 'convex-user-1' });
+        mocks.convexQuery.mockImplementation(async (_ref: unknown, args: Record<string, unknown>) => {
+            if (args?.workos_id) {
+                return { _id: 'convex-user-1' };
+            }
+            return [];
+        });
         mocks.convexMutation.mockResolvedValue({ commitHash: 'commit-1' });
         mocks.streamText.mockReturnValue({
             toUIMessageStreamResponse: () => new Response('ok', { status: 200 }),
@@ -132,12 +137,14 @@ describe('chat stream route helpers', () => {
         expect(mocks.convexMutation).toHaveBeenCalledTimes(2);
         expect(mocks.convexMutation.mock.calls[0]?.[1]).toMatchObject({
             service_secret: 'convex-service-secret',
+            expected_parent_hash: null,
             tool_name: 'calculator',
             user_id: 'convex-user-1',
             status: 'pending',
         });
         expect(mocks.convexMutation.mock.calls[1]?.[1]).toMatchObject({
             service_secret: 'convex-service-secret',
+            expected_parent_hash: 'commit-1',
             tool_name: 'calculator',
             user_id: 'convex-user-1',
             status: 'executed',

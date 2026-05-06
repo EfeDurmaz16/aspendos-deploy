@@ -14,6 +14,7 @@ describe('governance step middleware', () => {
         const approvalSpy = vi.fn(async () => {});
         const convex = {
             mutation: vi.fn(async () => ({ commitHash: 'commit_123' })),
+            query: vi.fn(async () => []),
         };
 
         const gov = createGovernanceCallbacks({
@@ -39,6 +40,9 @@ describe('governance step middleware', () => {
         expect(result.requiresApproval).toBe(true);
         expect(result.blocked).toBe(false);
         expect(approvalSpy).toHaveBeenCalledWith('commit_123', 'stripe.charge');
+        expect((convex.mutation.mock.calls[0] as any)?.[1]).toMatchObject({
+            expected_parent_hash: null,
+        });
         vi.unstubAllEnvs();
     });
 });
