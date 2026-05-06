@@ -589,6 +589,47 @@ export const verifyChain = query({
                 continue;
             }
 
+            if (!commit.fides_signature || !commit.fides_signer_did) {
+                results.push({
+                    hash: commit.hash,
+                    valid: false,
+                    error: 'Missing FIDES signature',
+                });
+                continue;
+            }
+
+            const fidesSignatureValid =
+                commit.fides_signature_source === 'external'
+                    ? await verifyExternalFidesSignature({
+                          args: commit.args,
+                          fides_signature: commit.fides_signature,
+                          fides_signer_did: commit.fides_signer_did,
+                          result: commit.result,
+                          reversibility_class: commit.reversibility_class,
+                          status: commit.status,
+                          tool_name: commit.tool_name,
+                      })
+                    : (await hmacSha256(
+                          commit.fides_signer_did,
+                          canonicalJson(
+                              fidesSignaturePayload({
+                                  args: commit.args,
+                                  result: commit.result,
+                                  reversibility_class: commit.reversibility_class,
+                                  status: commit.status,
+                                  tool_name: commit.tool_name,
+                              })
+                          )
+                      )) === commit.fides_signature;
+            if (!fidesSignatureValid) {
+                results.push({
+                    hash: commit.hash,
+                    valid: false,
+                    error: 'Invalid FIDES signature',
+                });
+                continue;
+            }
+
             // Verify parent linkage
             if (commit.parent_hash && !hashSet.has(commit.parent_hash)) {
                 results.push({
