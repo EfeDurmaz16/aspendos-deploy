@@ -1,8 +1,8 @@
 /**
  * Governance step middleware for Vercel AI SDK v6 tool calls.
  *
- * Wraps around the AI SDK's `onStepFinish` callback to inject FIDES signing
- * and AGIT audit trail into every tool invocation:
+ * Wraps AI SDK tools to inject FIDES signing and AGIT audit trail into every
+ * tool invocation:
  *
  *   Pre-step  → check tool trust, create pending commit, FIDES sign
  *   Post-step → append result commit, store snapshot if undoable
@@ -12,12 +12,13 @@
  *
  *   const gov = createGovernanceCallbacks({ convex, userId });
  *
- *   const result = await streamText({
+ *   const result = await streamText(withGovernance({
+ *     convex, userId
+ *   }, {
  *     model: openai('gpt-5'),
  *     messages,
  *     tools,
- *     onStepFinish: gov.onStepFinish,
- *   });
+ *   }));
  */
 
 import type { ConvexClient } from 'convex/browser';
@@ -72,6 +73,10 @@ export interface StepResult {
 
 /** Convex client — supports both reactive and imperative clients. */
 type AnyConvexClient = ConvexReactClient | ConvexClient;
+type GovernedTool = {
+    execute?: (args: unknown, options?: { toolCallId?: string }) => unknown | Promise<unknown>;
+    [key: string]: unknown;
+};
 
 function getConvexServiceSecret() {
     const secret = process.env.CONVEX_SERVICE_SECRET;
@@ -135,6 +140,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
 
     // Track pending commits by toolCallId so post-step can resolve them
     const pendingCommits = new Map<string, PendingCommit>();
+    const completedToolCalls = new Set<string>();
 
     // -----------------------------------------------------------------------
     // Resolve tool governance metadata: local map → Convex registry → fallback
@@ -226,7 +232,9 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
     // -----------------------------------------------------------------------
     async function postStep(toolCallId: string, result: unknown, success: boolean): Promise<void> {
         const pending = pendingCommits.get(toolCallId);
-        if (!pending) return; // No governance tracking for this call
+        if (!pending) {
+            throw new Error(`Tool result ${toolCallId} has no pre-execution governance commit`);
+        }
 
         const signature = await signGovernanceCommit({
             args: {
@@ -256,6 +264,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
         });
 
         pendingCommits.delete(toolCallId);
+        completedToolCalls.add(toolCallId);
     }
 
     // -----------------------------------------------------------------------
@@ -266,22 +275,25 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
         // Handle tool results (post-step for completed tools)
         if (step.toolResults && step.toolResults.length > 0) {
             const postStepPromises = step.toolResults.map(async (tr) => {
+                if (completedToolCalls.has(tr.toolCallId)) {
+                    return;
+                }
                 await postStep(tr.toolCallId, tr.result, true);
             });
             await Promise.all(postStepPromises);
         }
 
-        // Pre-sign any NEW tool calls that haven't been processed yet.
-        // In AI SDK v6, tool calls in onStepFinish represent calls that
-        // have already been made. We sign them retroactively if not
-        // already tracked (for tools that bypass the pre-step flow).
         if (step.toolCalls && step.toolCalls.length > 0) {
-            const preStepPromises = step.toolCalls
-                .filter((tc) => !pendingCommits.has(tc.toolCallId))
-                .map(async (tc) => {
-                    await preStep(tc.toolName, tc.args, tc.toolCallId);
-                });
-            await Promise.all(preStepPromises);
+            const ungoverned = step.toolCalls.filter(
+                (tc) => !pendingCommits.has(tc.toolCallId) && !completedToolCalls.has(tc.toolCallId)
+            );
+            if (ungoverned.length > 0) {
+                throw new Error(
+                    `Tool calls reached onStepFinish without pre-execution governance: ${ungoverned
+                        .map((tc) => tc.toolName)
+                        .join(', ')}`
+                );
+            }
         }
     }
 
@@ -319,6 +331,56 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
     };
 }
 
+function wrapGovernedTools(
+    gov: ReturnType<typeof createGovernanceCallbacks>,
+    tools: Record<string, GovernedTool>
+) {
+    let generatedToolCallId = 0;
+    return Object.fromEntries(
+        Object.entries(tools).map(([toolName, tool]) => {
+            if (typeof tool.execute !== 'function') {
+                return [toolName, tool];
+            }
+
+            const originalExecute = tool.execute.bind(tool);
+            return [
+                toolName,
+                {
+                    ...tool,
+                    execute: async (args: unknown, options?: { toolCallId?: string }) => {
+                        const toolCallId =
+                            options?.toolCallId ?? `${toolName}:${generatedToolCallId++}`;
+                        const pre = await gov.preStep(toolName, args, toolCallId);
+                        if (pre.blocked) {
+                            throw new Error(
+                                `Tool ${toolName} blocked by governance before execution`
+                            );
+                        }
+                        if (pre.requiresApproval) {
+                            throw new Error(`Tool ${toolName} requires approval before execution`);
+                        }
+
+                        try {
+                            const result = await originalExecute(args, options);
+                            await gov.postStep(toolCallId, result, true);
+                            return result;
+                        } catch (error) {
+                            await gov.postStep(
+                                toolCallId,
+                                {
+                                    error: error instanceof Error ? error.message : 'Unknown error',
+                                },
+                                false
+                            );
+                            throw error;
+                        }
+                    },
+                },
+            ];
+        })
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Convenience: wrap streamText options with governance
 // ---------------------------------------------------------------------------
@@ -338,15 +400,18 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
  *
  *   const result = await streamText(options);
  */
-export function withGovernance<T extends { onStepFinish?: (step: StepResult) => Promise<void> }>(
-    governanceOpts: GovernanceOptions,
-    sdkOptions: T
-): T {
+export function withGovernance<
+    T extends {
+        onStepFinish?: (step: StepResult) => Promise<void>;
+        tools?: Record<string, GovernedTool>;
+    },
+>(governanceOpts: GovernanceOptions, sdkOptions: T): T {
     const gov = createGovernanceCallbacks(governanceOpts);
     const originalOnStepFinish = sdkOptions.onStepFinish;
 
     return {
         ...sdkOptions,
+        ...(sdkOptions.tools ? { tools: wrapGovernedTools(gov, sdkOptions.tools) } : {}),
         onStepFinish: async (step: StepResult) => {
             // Run governance hooks first
             await gov.onStepFinish(step);

@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createGovernanceCallbacks } from '../../../src/lib/governance/step-middleware';
+import {
+    createGovernanceCallbacks,
+    withGovernance,
+} from '../../../src/lib/governance/step-middleware';
 
 vi.mock('../../../src/lib/governance/fides', () => ({
     signGovernanceCommit: vi.fn(async () => ({
@@ -59,6 +62,87 @@ describe('governance step middleware', () => {
             fides_signature: 'fides-sig-1',
             fides_signer_did: 'did:fides:web-agent-1',
         });
+    });
+
+    it('wraps tool execution with pre and post governance commits', async () => {
+        const order: string[] = [];
+        const convex = {
+            mutation: vi.fn(async () => {
+                order.push(order.includes('execute') ? 'post' : 'pre');
+                return { commitHash: order.includes('execute') ? 'result-commit-1' : 'pending-1' };
+            }),
+            query: vi.fn(),
+        };
+        const execute = vi.fn(async () => {
+            order.push('execute');
+            return { success: true };
+        });
+
+        const options = withGovernance(
+            {
+                convex: convex as any,
+                userId: 'user-1' as any,
+                toolMetadata: {
+                    'file.write': {
+                        reversibility_class: 'undoable',
+                        rollback_strategy: { kind: 'none' },
+                        human_explanation: 'Write a file',
+                    },
+                },
+            },
+            {
+                tools: {
+                    'file.write': { execute },
+                },
+            }
+        );
+
+        await (options.tools['file.write'].execute as any)(
+            { path: '/tmp/x' },
+            { toolCallId: 'tool-1' }
+        );
+        await (options as any).onStepFinish({
+            stepType: 'tool-result',
+            toolCalls: [
+                {
+                    args: { path: '/tmp/x' },
+                    toolCallId: 'tool-1',
+                    toolName: 'file.write',
+                },
+            ],
+            toolResults: [
+                {
+                    args: { path: '/tmp/x' },
+                    result: { success: true },
+                    toolCallId: 'tool-1',
+                    toolName: 'file.write',
+                },
+            ],
+        });
+
+        expect(order).toEqual(['pre', 'execute', 'post']);
+        expect(execute).toHaveBeenCalledWith({ path: '/tmp/x' }, { toolCallId: 'tool-1' });
+        expect(convex.mutation).toHaveBeenCalledTimes(2);
+    });
+
+    it('fails loudly when onStepFinish sees tool calls without pre-execution governance', async () => {
+        const governance = createGovernanceCallbacks({
+            convex: { mutation: vi.fn(), query: vi.fn() } as any,
+            userId: 'user-1' as any,
+        });
+
+        await expect(
+            governance.onStepFinish({
+                stepType: 'tool-result',
+                toolCalls: [
+                    {
+                        args: { value: true },
+                        toolCallId: 'tool-1',
+                        toolName: 'unknown.dangerous',
+                    },
+                ],
+            })
+        ).rejects.toThrow(/without pre-execution governance/);
     });
 
     it('treats unknown blocked tools as non-approvable audit records', async () => {
