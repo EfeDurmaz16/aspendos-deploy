@@ -12,6 +12,7 @@ RUN apt-get update && \
 # root Dockerfile, so it must fail on dependency, workspace, or Prisma drift.
 COPY package.json bun.lock ./
 COPY apps/web/ ./apps/web/
+COPY convex/ ./convex/
 COPY packages/ ./packages/
 COPY services/api/ ./services/api/
 COPY services/eval/ ./services/eval/
