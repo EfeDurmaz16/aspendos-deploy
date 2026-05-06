@@ -32,8 +32,6 @@ async function appendBlockedAuditCommit(
         toolName,
         args,
         metadata,
-        fidesSignature: signature.signature,
-        fidesDid: signature.did,
         status: 'failed',
         result,
     });
@@ -135,8 +133,6 @@ export async function runToolStep(
         toolName,
         args,
         metadata,
-        fidesSignature: preGovernanceSignature.signature,
-        fidesDid: preGovernanceSignature.did,
         status: 'pending',
     });
     let preCommitHash = convexPreCommit?.commitHash;
@@ -193,8 +189,6 @@ export async function runToolStep(
         toolName,
         args,
         metadata,
-        fidesSignature: postGovernanceSignature.signature,
-        fidesDid: postGovernanceSignature.did,
         status: postStatus,
         result,
     });

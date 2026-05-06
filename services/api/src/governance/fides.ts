@@ -81,10 +81,15 @@ export class FidesService {
         toolName: string,
         args: unknown,
         metadata: ReversibilityMetadata,
-        options: { result?: unknown; status: 'pending' | 'executed' | 'failed' }
+        options: {
+            parentHash?: string | null;
+            result?: unknown;
+            status: 'pending' | 'executed' | 'failed';
+        }
     ) {
         return canonicalJson({
             args,
+            parent_hash: options.parentHash ?? null,
             result: options.result,
             reversibility_class: metadata.reversibility_class,
             status: options.status,
@@ -150,7 +155,11 @@ export class FidesService {
         toolName: string,
         args: unknown,
         metadata: ReversibilityMetadata,
-        options: { result?: unknown; status: 'pending' | 'executed' | 'failed' }
+        options: {
+            parentHash?: string | null;
+            result?: unknown;
+            status: 'pending' | 'executed' | 'failed';
+        }
     ): string {
         return this.governanceSignaturePayload(toolName, args, metadata, options);
     }
@@ -176,7 +185,11 @@ export class FidesService {
         toolName: string,
         args: unknown,
         metadata: ReversibilityMetadata,
-        options: { result?: unknown; status: 'pending' | 'executed' | 'failed' }
+        options: {
+            parentHash?: string | null;
+            result?: unknown;
+            status: 'pending' | 'executed' | 'failed';
+        }
     ): Promise<FidesSignResult> {
         await this.initialize();
 

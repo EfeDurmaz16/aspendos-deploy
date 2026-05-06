@@ -65,6 +65,7 @@ function commitPayload(args: {
 
 function fidesSignaturePayload(args: {
     args: unknown;
+    parent_hash?: string | null;
     result?: unknown;
     reversibility_class: string;
     status: string;
@@ -72,6 +73,7 @@ function fidesSignaturePayload(args: {
 }) {
     return {
         args: args.args,
+        parent_hash: args.parent_hash ?? null,
         result: args.result,
         reversibility_class: args.reversibility_class,
         status: args.status,
@@ -103,6 +105,7 @@ async function verifyExternalFidesSignature(args: {
     args: unknown;
     fides_signature: string;
     fides_signer_did: string;
+    parent_hash?: string | null;
     result?: unknown;
     reversibility_class: string;
     status: string;
@@ -113,6 +116,7 @@ async function verifyExternalFidesSignature(args: {
         const payload = canonicalJson(
             fidesSignaturePayload({
                 args: args.args,
+                parent_hash: args.parent_hash ?? null,
                 result: args.result,
                 reversibility_class: args.reversibility_class,
                 status: args.status,
@@ -148,6 +152,7 @@ export const signAndCommit = mutation({
     args: {
         service_secret: v.string(),
         user_id: v.id('users'),
+        expected_parent_hash: v.optional(v.union(v.string(), v.null())),
         tool_name: v.string(),
         args: v.any(),
         reversibility_class: v.union(
@@ -189,6 +194,9 @@ export const signAndCommit = mutation({
             .first();
 
         const parentHash = latestCommit?.hash ?? null;
+        if ((args.expected_parent_hash ?? null) !== parentHash) {
+            throw new Error('Commit parent changed; retry with latest parent hash');
+        }
 
         if (!!args.fides_signature !== !!args.fides_signer_did) {
             throw new Error('Both fides_signature and fides_signer_did are required together');
@@ -203,6 +211,7 @@ export const signAndCommit = mutation({
             args: args.args,
             fides_signature: args.fides_signature!,
             fides_signer_did: args.fides_signer_did!,
+            parent_hash: parentHash,
             result: args.result,
             reversibility_class: args.reversibility_class,
             status,
@@ -337,6 +346,7 @@ export const verifyCommit = query({
                     args: commit.args,
                     fides_signature: commit.fides_signature,
                     fides_signer_did: commit.fides_signer_did,
+                    parent_hash: commit.parent_hash ?? null,
                     result: commit.result,
                     reversibility_class: commit.reversibility_class,
                     status: commit.status,
