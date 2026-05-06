@@ -76,6 +76,7 @@ bash scripts/check_convex_query_bounds.sh
 info "Checking server-only Convex secret posture..."
 require_secret_for_release CONVEX_SERVICE_SECRET
 require_secret_for_release BOT_APPROVAL_WEBHOOK_SECRET
+require_secret_for_release STRIPE_WEBHOOK_SECRET
 
 info "Running API critical tests..."
 bun run --cwd services/api test \

@@ -183,6 +183,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CONVEX_SERVICE_SECRET: ${{ secrets.CONVEX_SERVICE_SECRET }}
           BOT_APPROVAL_WEBHOOK_SECRET: ${{ secrets.BOT_APPROVAL_WEBHOOK_SECRET }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           RELEASE_REQUIRE_DATABASE_URL: 'true'
 
   security:
@@ -192,7 +193,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check for committed env files
         run: |
-          FOUND=$(find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" -not -name ".env.local.example" | head -1)
+          FOUND=$(git ls-files \
+            | grep -E '(^|/)\.env(\.|$)' \
+            | grep -Ev '(^|/)\.env(\..*)?\.example$' \
+            | head -1 || true)
           if [ -n "$FOUND" ]; then
             echo "::error::Found .env files committed to repository!"
             exit 1
