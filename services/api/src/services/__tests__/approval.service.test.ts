@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     addToAllowlist,
     approveRequest,
@@ -9,6 +9,7 @@ import {
 
 const convexMutation = vi.fn();
 const convexQuery = vi.fn();
+const originalEnv = { ...process.env };
 
 vi.mock('../../lib/convex', () => ({
     api: {
@@ -36,6 +37,14 @@ describe('approval service persistence', () => {
     beforeEach(() => {
         convexMutation.mockReset();
         convexQuery.mockReset();
+        process.env = {
+            ...originalEnv,
+            CONVEX_SERVICE_SECRET: 'convex-service-secret',
+        };
+    });
+
+    afterEach(() => {
+        process.env = originalEnv;
     });
 
     it('creates persisted approvals', async () => {
@@ -57,6 +66,7 @@ describe('approval service persistence', () => {
             status: 'pending',
         });
         expect(convexMutation.mock.calls[0]?.[1]).toMatchObject({
+            service_secret: 'convex-service-secret',
             user_id: 'convex-user-1',
             surface: 'api',
             expires_at: 423_000,
@@ -133,6 +143,7 @@ describe('approval service persistence', () => {
         });
 
         expect(convexMutation).toHaveBeenCalledWith('approvals.approve', {
+            service_secret: 'convex-service-secret',
             id: 'approval-1',
             user_id: 'convex-user-1',
         });
@@ -145,6 +156,7 @@ describe('approval service persistence', () => {
         await addToAllowlist('workos-user-1', 'file.write', 'permanent');
 
         expect(convexMutation).toHaveBeenCalledWith('toolAllowlist.grant', {
+            service_secret: 'convex-service-secret',
             user_id: 'convex-user-1',
             tool_name: 'file.write',
         });
@@ -159,6 +171,7 @@ describe('approval service persistence', () => {
         await removeFromAllowlist('workos-user-1', 'file.write');
 
         expect(convexMutation).toHaveBeenCalledWith('toolAllowlist.revoke', {
+            service_secret: 'convex-service-secret',
             id: 'entry-1',
             user_id: 'convex-user-1',
         });

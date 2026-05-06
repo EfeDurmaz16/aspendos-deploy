@@ -59,6 +59,7 @@ describe('bot approval webhook', () => {
             NODE_ENV: 'production',
             NEXT_PUBLIC_CONVEX_URL: 'https://example.convex.cloud',
             BOT_APPROVAL_WEBHOOK_SECRET: 'test-secret',
+            CONVEX_SERVICE_SECRET: 'convex-service-secret',
         };
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 202 })));
     });
@@ -141,9 +142,11 @@ describe('bot approval webhook', () => {
         });
         expect(response.status).toBe(200);
         expect(convexQuery.mock.calls[0]?.[1]).toEqual({
+            service_secret: 'convex-service-secret',
             commit_hash: 'commit-1',
         });
         expect(convexMutation.mock.calls[0]?.[1]).toEqual({
+            service_secret: 'convex-service-secret',
             id: 'approval-1',
             action: 'approve',
             now: Date.now(),

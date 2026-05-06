@@ -23,6 +23,16 @@ require_database_url_for_release() {
   [[ "${RELEASE_REQUIRE_DATABASE_URL:-}" == "true" || "${CI:-}" == "true" ]]
 }
 
+require_secret_for_release() {
+  local name="$1"
+  if [[ -z "${!name:-}" ]]; then
+    if require_database_url_for_release; then
+      fail "$name is required for CI/release. Set $name before deploying server-only Convex paths."
+    fi
+    warn "$name is not set; local-only run cannot exercise server-only Convex approval/allowlist paths."
+  fi
+}
+
 info "Running release readiness checks for critical capabilities..."
 
 # Guard against accidental duplicate source/release files (e.g. 'layout 2.tsx'
@@ -62,6 +72,9 @@ fi
 
 info "Checking Convex query bounds..."
 bash scripts/check_convex_query_bounds.sh
+
+info "Checking server-only Convex secret posture..."
+require_secret_for_release CONVEX_SERVICE_SECRET
 
 info "Running API critical tests..."
 bun run --cwd services/api test \

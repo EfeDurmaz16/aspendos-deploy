@@ -52,6 +52,14 @@ function verifySignature(rawBody: string, request: Request) {
     );
 }
 
+function getConvexServiceSecret() {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
+}
+
 /**
  * POST /api/bot/approve
  *
@@ -89,7 +97,9 @@ export async function POST(request: Request) {
         }
 
         // Look up the approval record by commit hash
+        const serviceSecret = getConvexServiceSecret();
         const approval = await convex.query(api.approvals.getByCommitHash, {
+            service_secret: serviceSecret,
             commit_hash: commitHash,
         });
 
@@ -101,6 +111,7 @@ export async function POST(request: Request) {
         }
 
         const decision = await convex.mutation(api.approvals.decide, {
+            service_secret: serviceSecret,
             id: approval._id,
             action,
             now: Date.now(),

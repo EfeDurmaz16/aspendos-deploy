@@ -30,6 +30,14 @@ async function resolveConvexUserId(client: ConvexClient, userId: string) {
     return user._id;
 }
 
+function getConvexServiceSecret() {
+    const secret = process.env.CONVEX_SERVICE_SECRET;
+    if (!secret) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    return secret;
+}
+
 async function createApprovalCommitHash(params: CreateApprovalParams): Promise<string> {
     const digest = await sha256Hex(
         canonicalJson({
@@ -55,6 +63,7 @@ export async function createApproval(params: CreateApprovalParams) {
         const client = getConvexClient();
         const convexUserId = await resolveConvexUserId(client, params.userId);
         const id = await client.mutation(api.approvals.create, {
+            service_secret: getConvexServiceSecret(),
             user_id: convexUserId,
             commit_hash: commitHash,
             surface: 'api',
@@ -71,6 +80,7 @@ export async function approveRequest(approvalId: string, decidedBy: string) {
         const client = getConvexClient();
         const convexUserId = await resolveConvexUserId(client, decidedBy);
         await client.mutation(api.approvals.approve, {
+            service_secret: getConvexServiceSecret(),
             id: approvalId as any,
             user_id: convexUserId,
         });
@@ -85,6 +95,7 @@ export async function rejectRequest(approvalId: string, decidedBy: string) {
         const client = getConvexClient();
         const convexUserId = await resolveConvexUserId(client, decidedBy);
         await client.mutation(api.approvals.reject, {
+            service_secret: getConvexServiceSecret(),
             id: approvalId as any,
             user_id: convexUserId,
         });
@@ -98,7 +109,10 @@ export async function getPendingApprovals(userId: string) {
     try {
         const client = getConvexClient();
         const convexUserId = await resolveConvexUserId(client, userId);
-        return await client.query(api.approvals.listPendingByUser, { user_id: convexUserId });
+        return await client.query(api.approvals.listPendingByUser, {
+            service_secret: getConvexServiceSecret(),
+            user_id: convexUserId,
+        });
     } catch {
         return [];
     }
@@ -109,6 +123,7 @@ export async function getApprovalForUser(userId: string, approvalId: string) {
         const client = getConvexClient();
         const convexUserId = await resolveConvexUserId(client, userId);
         return await client.query(api.approvals.getByIdForUser, {
+            service_secret: getConvexServiceSecret(),
             id: approvalId as any,
             user_id: convexUserId,
         });
@@ -126,6 +141,7 @@ export async function addToAllowlist(
         const client = getConvexClient();
         const convexUserId = await resolveConvexUserId(client, userId);
         await client.mutation(api.toolAllowlist.grant, {
+            service_secret: getConvexServiceSecret(),
             user_id: convexUserId,
             tool_name: toolName,
         });
@@ -139,6 +155,7 @@ export async function isToolAllowed(userId: string, toolName: string): Promise<b
         const client = getConvexClient();
         const convexUserId = await resolveConvexUserId(client, userId);
         return await client.query(api.toolAllowlist.isAllowed, {
+            service_secret: getConvexServiceSecret(),
             user_id: convexUserId,
             tool_name: toolName,
         });
@@ -152,11 +169,13 @@ export async function removeFromAllowlist(userId: string, toolName: string) {
         const client = getConvexClient();
         const convexUserId = await resolveConvexUserId(client, userId);
         const entries = await client.query(api.toolAllowlist.listByUser, {
+            service_secret: getConvexServiceSecret(),
             user_id: convexUserId,
         });
         const entry = (entries as any[]).find((e: any) => e.tool_name === toolName);
         if (entry) {
             await client.mutation(api.toolAllowlist.revoke, {
+                service_secret: getConvexServiceSecret(),
                 id: entry._id,
                 user_id: convexUserId,
             });
@@ -170,7 +189,10 @@ export async function getAllowlist(userId: string) {
     try {
         const client = getConvexClient();
         const convexUserId = await resolveConvexUserId(client, userId);
-        return await client.query(api.toolAllowlist.listByUser, { user_id: convexUserId });
+        return await client.query(api.toolAllowlist.listByUser, {
+            service_secret: getConvexServiceSecret(),
+            user_id: convexUserId,
+        });
     } catch {
         return [];
     }
