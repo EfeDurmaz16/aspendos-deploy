@@ -115,6 +115,13 @@ export async function POST(request: Request) {
             id: approval._id,
             action,
             now: Date.now(),
+            audit: {
+                platform,
+                platform_user_id: platformUserId,
+                ...(body.surfaceMessageId === undefined
+                    ? {}
+                    : { surface_message_id: body.surfaceMessageId }),
+            },
         });
 
         if (decision.outcome === 'not_found') {
@@ -131,20 +138,6 @@ export async function POST(request: Request) {
         if (decision.outcome === 'expired') {
             return NextResponse.json({ error: 'Approval has expired' }, { status: 410 });
         }
-
-        // Log the action
-        await convex.mutation(api.actionLog.log, {
-            service_secret: serviceSecret,
-            user_id: approval.user_id,
-            event_type: `approval.${action}`,
-            details: {
-                commit_hash: commitHash,
-                platform,
-                platform_user_id: platformUserId,
-                surface_message_id: body.surfaceMessageId,
-                idempotent: decision.outcome === 'already_decided',
-            },
-        });
 
         if (
             action === 'approve' &&

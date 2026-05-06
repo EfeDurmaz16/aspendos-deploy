@@ -111,6 +111,13 @@ export const decide = mutation({
         id: v.id('approvals'),
         action: v.union(v.literal('approve'), v.literal('reject')),
         now: v.number(),
+        audit: v.optional(
+            v.object({
+                platform: v.string(),
+                platform_user_id: v.string(),
+                surface_message_id: v.optional(v.string()),
+            })
+        ),
     },
     handler: async (ctx, args) => {
         requireServiceSecret(args.service_secret);
@@ -121,10 +128,27 @@ export const decide = mutation({
 
         const requestedStatus = args.action === 'approve' ? 'approved' : 'rejected';
         if (approval.status !== 'pending') {
+            const idempotent = approval.status === requestedStatus;
+            if (idempotent && args.audit) {
+                await ctx.db.insert('action_log', {
+                    user_id: approval.user_id,
+                    event_type: `approval.${args.action}`,
+                    details: {
+                        commit_hash: approval.commit_hash,
+                        platform: args.audit.platform,
+                        platform_user_id: args.audit.platform_user_id,
+                        ...(args.audit.surface_message_id === undefined
+                            ? {}
+                            : { surface_message_id: args.audit.surface_message_id }),
+                        idempotent: true,
+                    },
+                    timestamp: args.now,
+                });
+            }
             return {
                 outcome: 'already_decided' as const,
                 status: approval.status,
-                idempotent: approval.status === requestedStatus,
+                idempotent,
             };
         }
 
@@ -134,6 +158,22 @@ export const decide = mutation({
         }
 
         await ctx.db.patch(args.id, { status: requestedStatus });
+        if (args.audit) {
+            await ctx.db.insert('action_log', {
+                user_id: approval.user_id,
+                event_type: `approval.${args.action}`,
+                details: {
+                    commit_hash: approval.commit_hash,
+                    platform: args.audit.platform,
+                    platform_user_id: args.audit.platform_user_id,
+                    ...(args.audit.surface_message_id === undefined
+                        ? {}
+                        : { surface_message_id: args.audit.surface_message_id }),
+                    idempotent: false,
+                },
+                timestamp: args.now,
+            });
+        }
         return { outcome: 'updated' as const, status: requestedStatus };
     },
 });

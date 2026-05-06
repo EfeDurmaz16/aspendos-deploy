@@ -19,9 +19,6 @@ vi.mock('../../../../convex/_generated/api', () => ({
             getByCommitHash: 'approvals.getByCommitHash',
             decide: 'approvals.decide',
         },
-        actionLog: {
-            log: 'actionLog.log',
-        },
     },
 }));
 
@@ -117,10 +114,9 @@ describe('bot approval webhook', () => {
             user_id: 'user-1',
         });
         convexMutation.mockResolvedValueOnce({
-            outcome: 'decided',
+            outcome: 'updated',
             status: 'approved',
         });
-        convexMutation.mockResolvedValueOnce({ ok: true });
 
         const { POST } = await import('../../../src/app/api/bot/approve/route');
         const response = await POST(
@@ -141,6 +137,7 @@ describe('bot approval webhook', () => {
             commitHash: 'commit-1',
         });
         expect(response.status).toBe(200);
+        expect(convexMutation).toHaveBeenCalledTimes(1);
         expect(convexQuery.mock.calls[0]?.[1]).toEqual({
             service_secret: 'convex-service-secret',
             commit_hash: 'commit-1',
@@ -150,6 +147,10 @@ describe('bot approval webhook', () => {
             id: 'approval-1',
             action: 'approve',
             now: Date.now(),
+            audit: {
+                platform: 'slack',
+                platform_user_id: 'user-1',
+            },
         });
     });
 
@@ -204,7 +205,6 @@ describe('bot approval webhook', () => {
             status: 'approved',
             idempotent: true,
         });
-        convexMutation.mockResolvedValueOnce({ ok: true });
 
         const { POST } = await import('../../../src/app/api/bot/approve/route');
         const response = await POST(
@@ -227,16 +227,12 @@ describe('bot approval webhook', () => {
             idempotent: true,
         });
         expect(response.status).toBe(200);
-        expect(convexMutation).toHaveBeenCalledTimes(2);
-        expect(convexMutation.mock.calls[1]?.[1]).toMatchObject({
-            user_id: 'user-1',
-            event_type: 'approval.approve',
-            details: {
-                commit_hash: 'commit-1',
+        expect(convexMutation).toHaveBeenCalledTimes(1);
+        expect(convexMutation.mock.calls[0]?.[1]).toMatchObject({
+            audit: {
                 platform: 'slack',
                 platform_user_id: 'user-1',
                 surface_message_id: 'surface-1',
-                idempotent: true,
             },
         });
         expect(fetch).not.toHaveBeenCalled();
