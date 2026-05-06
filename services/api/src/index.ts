@@ -16,6 +16,7 @@ import { botProtection } from './middleware/bot-protection';
 import { cacheControl } from './middleware/cache';
 import { compression } from './middleware/compression';
 import { correlationIdMiddleware } from './middleware/correlation-id';
+import { isCsrfExemptPath } from './middleware/csrf';
 import { endpointRateLimit } from './middleware/endpoint-rate-limit';
 import { featureHealthMiddleware } from './middleware/feature-health';
 import { idempotency } from './middleware/idempotency';
@@ -318,9 +319,7 @@ app.use('*', async (c, next) => {
 
     // Skip CSRF check for specific exempt paths (auth, webhooks with signature verification, cron with secret)
     const path = c.req.path;
-    const CSRF_EXEMPT_PATHS = new Set(['/api/billing/webhook', '/health']);
-    const CSRF_EXEMPT_PREFIXES = ['/api/auth/', '/api/scheduler/webhook', '/api/cron'];
-    if (CSRF_EXEMPT_PATHS.has(path) || CSRF_EXEMPT_PREFIXES.some((p) => path.startsWith(p))) {
+    if (isCsrfExemptPath(path)) {
         return next();
     }
 

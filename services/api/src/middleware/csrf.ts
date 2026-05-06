@@ -34,6 +34,21 @@ function getAllowedOrigins(): Set<string> {
 
 const ALLOWED_ORIGINS = getAllowedOrigins();
 
+const CSRF_EXEMPT_PATHS = new Set(['/api/billing/webhook', '/health']);
+const CSRF_EXEMPT_PREFIXES = [
+    '/api/auth/',
+    '/api/scheduler/webhook',
+    '/api/messaging/webhook',
+    '/api/cron',
+];
+
+export function isCsrfExemptPath(path: string): boolean {
+    return (
+        CSRF_EXEMPT_PATHS.has(path) ||
+        CSRF_EXEMPT_PREFIXES.some((prefix) => path.startsWith(prefix))
+    );
+}
+
 /**
  * CSRF protection middleware.
  *
@@ -51,12 +66,7 @@ export async function csrfProtection(c: Context, next: Next) {
 
     // Skip CSRF check for webhook endpoints (they use signature verification)
     const path = c.req.path;
-    if (path.startsWith('/api/auth/') || path.includes('/webhook') || path === '/health') {
-        return next();
-    }
-
-    // Skip for CRON endpoints (they use secret header)
-    if (path.startsWith('/api/scheduler')) {
+    if (isCsrfExemptPath(path)) {
         return next();
     }
 

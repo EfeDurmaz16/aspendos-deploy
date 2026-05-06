@@ -110,6 +110,7 @@ bun run --cwd services/api test \
   src/routes/__tests__/api-keys.test.ts \
   src/routes/__tests__/api-key-route-permissions.test.ts \
   src/middleware/__tests__/admin-session-boundary.test.ts \
+  src/middleware/__tests__/csrf-webhook-exemptions.test.ts \
   src/routes/__tests__/admin-api-key-boundary.test.ts \
   src/routes/__tests__/usage-admin-api-key-boundary.test.ts \
   src/routes/__tests__/analytics-usage-session-boundary.test.ts \
