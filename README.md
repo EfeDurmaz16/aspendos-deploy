@@ -1,264 +1,138 @@
 # YULA OS
 
-<div align="center">
+YULA is a deterministic control layer for AI agents. It classifies every tool call by reversibility, signs the authority behind the action, commits the action to an audit chain, and exposes approvals, undo, timeline, and verification surfaces around the result.
 
-<img src="https://img.shields.io/badge/YULA-OS-F59E0B?style=for-the-badge&labelColor=000000" alt="YULA OS" />
+The current repository is being hardened around one production spine:
 
-**Your Universal Learning Assistant**
-
-An AI-native operating system for thought — with persistent memory, agentic RAG, and proactive intelligence.
-
-[![Live Demo](https://img.shields.io/badge/Live-yula.dev-F59E0B?style=flat-square&logo=vercel&logoColor=white)](https://yula.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Vercel AI SDK](https://img.shields.io/badge/Vercel_AI_SDK-6.0-000000?style=flat-square&logo=vercel&logoColor=white)](https://sdk.vercel.ai/)
-
-</div>
-
----
-
-## Overview
-
-YULA isn't just another chatbot. It's an **AI operating system** that remembers everything, learns your patterns, and proactively helps you before you even ask.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│   "Remember that restaurant I mentioned last month?"        │
-│                                                             │
-│   YULA instantly retrieves the context, knows your          │
-│   preferences, and suggests a reservation.                  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```text
+classify tool call
+  -> sign authority with FIDES
+  -> create AGIT-style pre-commit
+  -> block / await approval / execute
+  -> append result commit
+  -> audit, verify, undo, or replay from the timeline
 ```
 
-## Key Features
+## Status
 
-### Agentic RAG Router
-Intelligent routing that decides **when** to search your memory — not just how.
+This codebase is in production-readiness hardening, not feature-expansion mode.
 
-```typescript
-// Fast route: Pattern matching (no LLM call, <1ms)
-"Hi" → direct_reply
+Implemented and actively verified:
 
-// LLM route: Complex decisions via Groq Llama (<100ms)
-"What did we discuss about React hooks?" → rag_search
+- FIDES/AGIT-style deterministic action flow in `@aspendos/core`
+- Convex-backed governance tables for commits, approvals, snapshots, action logs, tool registry, and tool allowlist
+- Approval cards and signed approval webhook handling
+- Reversibility classes: `undoable`, `cancelable_window`, `compensatable`, `approval_only`, `irreversible_blocked`
+- Timeline, verify, undo, and approval UI/API surfaces
+- Fail-loud release gates for Prisma generation, Convex typecheck, core deterministic tests, web/API builds, and critical API tests
+- Production guardrails against silent Prisma/FIDES/AGIT fallback success
+
+Known hardening still in progress:
+
+- Make every browser/web AI SDK tool path enforce governance before execution, not only after `onStepFinish`
+- Continue migrating stale memory-first docs and crawler metadata to the provable-agent positioning
+- Add staging canary and live deployment smoke tests
+- Close remaining Convex public-function ownership boundaries beyond approvals/allowlist
+
+## Repository Map
+
+```text
+apps/web/                  Next.js 16 app, timeline, approval, verify, undo, chat surfaces
+services/api/              Hono/Bun API, tool execution, guards, approvals, sandbox, messaging
+convex/                    Governance schema and Convex functions
+packages/aspendos-core/    Deterministic core flow: classify -> sign -> commit -> execute -> verify
+packages/fides-sdk/        Signing and identity primitives
+packages/agit-sdk/         AGIT-style commit primitives
+packages/db/               Prisma package and production DB compatibility layer
+services/mcp-servers/      MCP integrations
+docs/                      ADRs, launch notes, readiness plans, archived strategy docs
+scripts/                   Release/readiness/verification scripts
 ```
-
-### Persistent Memory
-Every conversation becomes searchable knowledge. Vector embeddings via Qdrant enable semantic search across your entire history.
-
-### PAC Notifications
-**Proactive AI Callbacks** — YULA doesn't just respond, it reaches out when it matters.
-
-```
-┌────────────────────────────────────────┐
-│  🔔 PAC Notification                   │
-│                                        │
-│  "You mentioned wanting to review      │
-│   your project proposal today.         │
-│   Ready when you are."                 │
-│                                        │
-└────────────────────────────────────────┘
-```
-
-### Multi-Provider AI
-Unified interface to the best models, each chosen for their strengths:
-
-| Provider | Model | Use Case |
-|----------|-------|----------|
-| Groq | Llama 3.1 | Fast routing decisions |
-| Anthropic | Claude 3.5 | Complex reasoning & code |
-| OpenAI | GPT-4o | General assistance |
-
----
-
-## Architecture
-
-```
-yula/
-├── apps/
-│   ├── web/                 # Next.js 15 + React 19
-│   └── mobile/              # React Native (Expo)
-├── services/
-│   └── api/                 # Hono API server
-├── packages/
-│   └── db/                  # Prisma + PostgreSQL
-└── lib/
-    └── ai/                  # Vercel AI SDK layer
-        ├── router.ts        # Agentic RAG router
-        ├── providers.ts     # Multi-provider registry
-        └── generate.ts      # Unified generation
-```
-
-## Tech Stack
-
-<table>
-<tr>
-<td width="50%">
-
-**Frontend**
-- Next.js 15 (App Router)
-- React 19
-- Tailwind CSS 4
-- Framer Motion
-- shadcn/ui + Radix
-
-</td>
-<td width="50%">
-
-**Backend**
-- Hono (Bun runtime)
-- PostgreSQL + Prisma
-- Qdrant (Vector DB)
-- Better Auth
-
-</td>
-</tr>
-<tr>
-<td>
-
-**AI Layer**
-- Vercel AI SDK
-- @ai-sdk/openai
-- @ai-sdk/anthropic
-- @ai-sdk/groq
-
-</td>
-<td>
-
-**Infrastructure**
-- Vercel (Web)
-- Railway (API + DB)
-- GitHub Actions CI/CD
-
-</td>
-</tr>
-</table>
-
----
 
 ## Quick Start
 
 ```bash
-# Clone
-git clone https://github.com/EfeDurmaz16/aspendos-deploy.git
-cd aspendos-deploy
-
-# Install
 bun install
-
-# Setup database
-bun db:generate
-bun db:push
-
-# Environment
 cp .env.example .env.local
-# Add your API keys
-
-# Run
-bun dev
+bun run check
+bun run test:core
+bun run test:api
+bun run test:web
+bun run release:ready
 ```
 
-## Environment Variables
+Local `release:ready` can run without `DATABASE_URL` or `CONVEX_SERVICE_SECRET`, but it will warn. CI/release mode fails when release-critical secrets are missing.
+
+## Required Environment
+
+Minimum local development:
 
 ```bash
-# AI Providers
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-GROQ_API_KEY=gsk_...
-
-# Database
-DATABASE_URL=postgresql://...
-
-# Vector Store
-QDRANT_URL=https://...
-QDRANT_API_KEY=...
-
-# Auth
-BETTER_AUTH_SECRET=...
-BETTER_AUTH_URL=https://yula.dev
+NEXT_PUBLIC_CONVEX_URL="https://your-project.convex.cloud"
+CONVEX_SERVICE_SECRET="local-dev-shared-secret"
+BOT_APPROVAL_WEBHOOK_SECRET="local-bot-approval-secret"
 ```
 
----
+Production also needs provider-specific secrets such as WorkOS, Stripe, AI Gateway, sandbox, messaging, and rate-limit credentials. See `.env.example`.
 
-## Design Philosophy
+## Verification Commands
 
-### The Monolith Aesthetic
-
-YULA embraces a bold, minimal design language:
-
-| Element | Value |
-|---------|-------|
-| Background | `#050505` / `#000000` |
-| Accent | Electric Amber `#F59E0B` |
-| Border | `#FFFFFF10` |
-| Font | Geist / Geist Mono |
-
-No purple-blue gradients. No visual noise. Just **signal**.
-
----
-
-## API Reference
-
-### Chat Stream
-```bash
-POST /api/chat/stream
-Content-Type: application/json
-
-{
-  "messages": [{ "role": "user", "content": "Hello" }],
-  "model": "gpt-5"
-}
-```
-
-### Memory Search
-```bash
-POST /api/memory/search
-Content-Type: application/json
-
-{
-  "query": "React hooks discussion",
-  "limit": 5
-}
-```
-
-### Health Check
-```bash
-GET /api/health
-
-→ { "status": "healthy", "uptime": 12345 }
-```
-
----
-
-## Contributing
-
-We welcome contributions! Please see [DEPLOYMENT.md](./DEPLOYMENT.md) for setup instructions.
+Use these before opening or merging PRs:
 
 ```bash
-# Run tests
-bun test
-
-# Type check
-bun run typecheck
-
-# Lint
-bun biome check .
+bun run check
+bun run build
+bun run test:core
+bun run test:api
+bun run test:web
+bun run convex:typecheck
+bun run release:ready
 ```
 
----
+Release readiness currently checks:
 
-## License
+- tracked duplicate source/release artifacts
+- Prisma schema and generated client
+- database migration readiness when `DATABASE_URL` is required
+- Convex query bounds guard against unbounded `.collect()`
+- server-only Convex secret posture
+- API critical tests
+- core deterministic action flow
+- API build
+- web build and typecheck
+- Convex typecheck
 
-MIT © 2024 YULA OS
+## Architecture
 
----
+YULA separates product-specific agent control from reusable trust primitives:
 
-<div align="center">
+- YULA owns agent action UX: tool execution, approval cards, timeline, undo, verification, messaging surfaces, and release gates.
+- FIDES owns authority and signature semantics.
+- AGIT owns commit-style provenance semantics.
+- Convex currently stores the production governance state for commits, approvals, snapshots, action logs, allowlists, and tool registry.
+- Prisma remains in the repo for compatibility and database-backed paths, but production code should fail loud rather than silently returning fake empty results.
 
-**[yula.dev](https://yula.dev)** · Built with Vercel AI SDK
+## Reversibility Model
 
-<sub>Your thoughts, amplified.</sub>
+| Class | Meaning |
+| --- | --- |
+| `undoable` | A snapshot or inverse operation can restore prior state. |
+| `cancelable_window` | The action is queued and can be cancelled before a deadline. |
+| `compensatable` | A follow-up action can compensate, such as refunding or deleting an event. |
+| `approval_only` | Human approval is required before execution. |
+| `irreversible_blocked` | The agent must not execute this action. It is audit-only, not approvable. |
 
-</div>
+## Development Rules
+
+- Prefer fail-loud behavior over silent fallbacks.
+- Do not add feature work until release gates stay honest.
+- Keep code commits separate from docs commits.
+- Every production action path should eventually prove: classification, signature, pre-commit, execution decision, result commit, and verification.
+- Any tool that can touch money, secrets, infrastructure, browser targets, files, or external systems must have pre-execution guards.
+
+## Current Product Frame
+
+YULA is not just a memory chatbot. The durable product direction is:
+
+> Prove what agents did, why they were allowed to do it, whether the action was reversible, and who can verify or undo it.
+
