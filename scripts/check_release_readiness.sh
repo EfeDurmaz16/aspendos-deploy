@@ -20,7 +20,11 @@ fail() {
 }
 
 require_database_url_for_release() {
-  [[ "${RELEASE_REQUIRE_DATABASE_URL:-}" == "true" || "${CI:-}" == "true" ]]
+  if [[ -n "${RELEASE_REQUIRE_DATABASE_URL:-}" ]]; then
+    [[ "${RELEASE_REQUIRE_DATABASE_URL}" == "true" ]]
+    return
+  fi
+  [[ "${CI:-}" == "true" ]]
 }
 
 require_secret_for_release() {
