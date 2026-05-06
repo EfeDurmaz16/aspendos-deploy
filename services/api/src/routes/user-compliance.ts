@@ -9,7 +9,7 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
+import { rejectApiKeyAuth, requireAuth } from '../middleware/auth';
 import * as userDeletionService from '../services/user-deletion.service';
 
 type Variables = {
@@ -41,7 +41,7 @@ function complianceStateUnavailable(error: unknown) {
 // ─── POST /api/compliance/export ─────────────────────────────────────────────
 // Request an async data export. Returns a job ID to poll.
 
-app.post('/export', requireAuth, async (c) => {
+app.post('/export', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     // Rate limit: 1 export request per hour
@@ -82,7 +82,7 @@ app.post('/export', requireAuth, async (c) => {
 // ─── GET /api/compliance/export/:jobId ───────────────────────────────────────
 // Check the status of an export job.
 
-app.get('/export/:jobId', requireAuth, async (c) => {
+app.get('/export/:jobId', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
     const jobId = c.req.param('jobId');
     if (!jobId) return c.json({ error: 'Export job id is required' }, 400);
@@ -122,7 +122,7 @@ app.get('/export/:jobId', requireAuth, async (c) => {
 // ─── POST /api/compliance/delete-account ─────────────────────────────────────
 // Schedule account deletion with a 7-day grace period.
 
-app.post('/delete-account', requireAuth, async (c) => {
+app.post('/delete-account', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     let body: { confirm?: boolean; reason?: string };
@@ -169,7 +169,7 @@ app.post('/delete-account', requireAuth, async (c) => {
 // ─── POST /api/compliance/cancel-deletion ────────────────────────────────────
 // Cancel a pending account deletion using the cancellation token.
 
-app.post('/cancel-deletion', requireAuth, async (c) => {
+app.post('/cancel-deletion', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     let body: { cancellationToken?: string };
@@ -211,7 +211,7 @@ app.post('/cancel-deletion', requireAuth, async (c) => {
 // ─── GET /api/compliance/data-summary ────────────────────────────────────────
 // Returns a summary of all stored data for the authenticated user.
 
-app.get('/data-summary', requireAuth, async (c) => {
+app.get('/data-summary', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     const summary = await userDeletionService.getDataSummary(userId);
@@ -222,7 +222,7 @@ app.get('/data-summary', requireAuth, async (c) => {
 // ─── POST /api/compliance/anonymize ──────────────────────────────────────────
 // Anonymize the user account: strip PII but keep aggregate data.
 
-app.post('/anonymize', requireAuth, async (c) => {
+app.post('/anonymize', requireAuth, rejectApiKeyAuth, async (c) => {
     const userId = c.get('userId')!;
 
     let body: { confirm?: boolean };

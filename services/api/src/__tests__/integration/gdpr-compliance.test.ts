@@ -68,13 +68,22 @@ vi.mock('@aspendos/db', () => {
 
 // Mock auth middleware to always set a test user
 vi.mock('../../middleware/auth', () => ({
-    requireAuth: vi.fn().mockImplementation(async (_c: any, next: any) => {
+    requireAuth: vi.fn().mockImplementation(async (c: any, next: any) => {
+        c.set('userId', 'test-user-gdpr-001');
+        return next();
+    }),
+    rejectApiKeyAuth: vi.fn().mockImplementation(async (c: any, next: any) => {
+        if (c.get('apiKeyId')) {
+            return c.json({ error: 'API key authentication is not allowed for this route' }, 403);
+        }
         return next();
     }),
     authMiddleware: vi.fn().mockImplementation(async (_c: any, next: any) => {
         return next();
     }),
 }));
+
+import { requireAuth } from '../../middleware/auth';
 
 // Mock the auth lib (required by middleware/auth)
 vi.mock('../../lib/auth', () => ({
@@ -115,6 +124,7 @@ import {
 
 // Cast prisma to access mocked methods
 const mockPrisma = prisma as any;
+const mockRequireAuth = requireAuth as any;
 
 // ─── Test Constants ──────────────────────────────────────────────────────────
 
@@ -125,6 +135,10 @@ const TEST_USER_ID_2 = 'test-user-gdpr-002';
 
 beforeEach(() => {
     vi.clearAllMocks();
+    mockRequireAuth.mockImplementation(async (c: any, next: any) => {
+        c.set('userId', TEST_USER_ID);
+        return next();
+    });
     clearStores_forTesting();
     delete process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE;
     vi.mocked(convexLib.isConvexConfigured).mockReturnValue(false);
@@ -134,6 +148,33 @@ beforeEach(() => {
         query: vi.fn(),
     } as any);
     setupDefaultMocks();
+});
+
+describe('GDPR Compliance - Route Session Boundaries', () => {
+    it('rejects API-key authenticated access to compliance export routes', async () => {
+        process.env.ALLOW_PROCESS_LOCAL_COMPLIANCE_STATE = 'true';
+        mockRequireAuth.mockImplementationOnce(async (c: any, next: any) => {
+            c.set('userId', TEST_USER_ID);
+            c.set('apiKeyId', 'key-1');
+            c.set('apiKeyPermissions', ['memory:read']);
+            return next();
+        });
+
+        const { default: complianceRoutes, clearExportRateLimiter_forTesting } = await import(
+            '../../routes/user-compliance'
+        );
+        clearExportRateLimiter_forTesting();
+        const { Hono } = await import('hono');
+        const app = new Hono();
+        app.route('/compliance', complianceRoutes);
+
+        const res = await app.request('/compliance/export', { method: 'POST' });
+
+        expect(res.status).toBe(403);
+        await expect(res.json()).resolves.toEqual({
+            error: 'API key authentication is not allowed for this route',
+        });
+    });
 });
 
 afterEach(() => {
