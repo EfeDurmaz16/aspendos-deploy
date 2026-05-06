@@ -87,50 +87,55 @@ function registerMessageHandler(bot: any): void {
 
 function registerActionHandlers(bot: any): void {
     bot.onAction('approve', async (event: any) => {
-        const commitHash = event.action?.value;
-        if (!commitHash) return;
-        try {
-            const approvalRequest = buildApprovalRequest({
-                commitHash,
-                action: 'approve',
-                platform: detectPlatform(event),
-                platformUserId: event.user?.id || 'unknown',
-            });
-            await fetch(`${CALLBACK_BASE}/api/bot/approve`, {
-                method: 'POST',
-                headers: approvalRequest.headers,
-                body: approvalRequest.body,
-            });
-            await event.thread.post(`Approved by ${event.user?.fullName || 'user'}.`);
-        } catch {
-            await event.thread.post('Failed to process approval.');
-        }
+        await submitApprovalAction(event, 'approve');
     });
 
     bot.onAction('reject', async (event: any) => {
-        const commitHash = event.action?.value;
-        if (!commitHash) return;
-        try {
-            const approvalRequest = buildApprovalRequest({
-                commitHash,
-                action: 'reject',
-                platform: detectPlatform(event),
-                platformUserId: event.user?.id || 'unknown',
-            });
-            await fetch(`${CALLBACK_BASE}/api/bot/approve`, {
-                method: 'POST',
-                headers: approvalRequest.headers,
-                body: approvalRequest.body,
-            });
-            await event.thread.post(`Rejected by ${event.user?.fullName || 'user'}.`);
-        } catch {
-            await event.thread.post('Failed to process rejection.');
-        }
+        await submitApprovalAction(event, 'reject');
     });
 
     bot.onAction('retry', async (event: any) => {
         await event.thread.post('Retrying last request...');
     });
+}
+
+export async function submitApprovalAction(event: any, action: 'approve' | 'reject') {
+    const commitHash = event.action?.value;
+    if (!commitHash) return;
+
+    const actionPastTense = action === 'approve' ? 'Approved' : 'Rejected';
+    try {
+        const approvalRequest = buildApprovalRequest({
+            commitHash,
+            action,
+            platform: detectPlatform(event),
+            platformUserId: event.user?.id || 'unknown',
+        });
+        const response = await fetch(`${CALLBACK_BASE}/api/bot/approve`, {
+            method: 'POST',
+            headers: approvalRequest.headers,
+            body: approvalRequest.body,
+        });
+        if (!response.ok) {
+            throw new Error(await approvalErrorMessage(response));
+        }
+        await event.thread.post(`${actionPastTense} by ${event.user?.fullName || 'user'}.`);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown approval error';
+        await event.thread.post(`Failed to process ${action}: ${message}`);
+    }
+}
+
+async function approvalErrorMessage(response: Response) {
+    try {
+        const body = (await response.json()) as { error?: unknown };
+        if (typeof body.error === 'string' && body.error.trim()) {
+            return body.error;
+        }
+    } catch {
+        // Fall through to status-based message.
+    }
+    return `approval endpoint returned ${response.status}`;
 }
 
 function buildApprovalRequest(payload: {
