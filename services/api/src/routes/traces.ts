@@ -75,22 +75,6 @@ tracesRoutes.get('/export/otlp', (c) => {
     });
 });
 
-// GET /:traceId - Get full trace detail with spans
-tracesRoutes.get('/:traceId', (c) => {
-    const userId = c.get('userId') as string | null;
-    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
-    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
-
-    const traceId = c.req.param('traceId');
-    const trace = getTrace(traceId);
-
-    if (!trace) {
-        return c.json({ error: 'Trace not found' }, 404);
-    }
-
-    return c.json(trace);
-});
-
 // ============================================
 // AGENT ACTION LOG TRACES (for /agent-log dashboard)
 // ============================================
@@ -104,8 +88,14 @@ tracesRoutes.get('/recent', async (c) => {
         const { getRecentActions } = await import('../services/action-log.service');
         const actions = await getRecentActions(userId, { limit: 50 });
         return c.json({ actions });
-    } catch {
-        return c.json({ actions: [] });
+    } catch (error) {
+        return c.json(
+            {
+                error: 'Failed to load recent agent actions',
+                cause: error instanceof Error ? error.message : String(error),
+            },
+            503
+        );
     }
 });
 
@@ -137,6 +127,22 @@ tracesRoutes.get('/causal/:actionId', async (c) => {
     } catch {
         return c.json({ error: 'Action not found' }, 404);
     }
+});
+
+// GET /:traceId - Get full trace detail with spans
+tracesRoutes.get('/:traceId', (c) => {
+    const userId = c.get('userId') as string | null;
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!isAdminUser(userId)) return c.json({ error: 'Forbidden' }, 403);
+
+    const traceId = c.req.param('traceId');
+    const trace = getTrace(traceId);
+
+    if (!trace) {
+        return c.json({ error: 'Trace not found' }, 404);
+    }
+
+    return c.json(trace);
 });
 
 export default tracesRoutes;
