@@ -1,10 +1,22 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
+declare const process: { env: { CONVEX_SERVICE_SECRET?: string } };
+
 const DEFAULT_ORGANIZATION_LIMIT = 50;
 const MAX_ORGANIZATION_LIMIT = 200;
 const DEFAULT_MEMBER_LIMIT = 100;
 const MAX_MEMBER_LIMIT = 500;
+
+function requireServiceSecret(serviceSecret: string) {
+    const expected = process.env.CONVEX_SERVICE_SECRET;
+    if (!expected) {
+        throw new Error('CONVEX_SERVICE_SECRET is not configured');
+    }
+    if (serviceSecret !== expected) {
+        throw new Error('Invalid service secret');
+    }
+}
 
 function clampOrganizationLimit(value: number | undefined) {
     return Math.min(Math.max(value ?? DEFAULT_ORGANIZATION_LIMIT, 1), MAX_ORGANIZATION_LIMIT);
@@ -16,6 +28,7 @@ function clampMemberLimit(value: number | undefined) {
 
 export const create = mutation({
     args: {
+        service_secret: v.string(),
         name: v.string(),
         slug: v.string(),
         owner_id: v.id('users'),
@@ -23,6 +36,7 @@ export const create = mutation({
         workos_org_id: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const existing = await ctx.db
             .query('organizations')
             .withIndex('by_slug', (q) => q.eq('slug', args.slug))
@@ -30,7 +44,11 @@ export const create = mutation({
         if (existing) throw new Error(`Organization slug "${args.slug}" already taken`);
 
         const orgId = await ctx.db.insert('organizations', {
-            ...args,
+            name: args.name,
+            slug: args.slug,
+            owner_id: args.owner_id,
+            tier: args.tier,
+            ...(args.workos_org_id === undefined ? {} : { workos_org_id: args.workos_org_id }),
             created_at: Date.now(),
         });
 
@@ -46,8 +64,9 @@ export const create = mutation({
 });
 
 export const getBySlug = query({
-    args: { slug: v.string() },
+    args: { service_secret: v.string(), slug: v.string() },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         return await ctx.db
             .query('organizations')
             .withIndex('by_slug', (q) => q.eq('slug', args.slug))
@@ -56,8 +75,9 @@ export const getBySlug = query({
 });
 
 export const listByUser = query({
-    args: { user_id: v.id('users'), limit: v.optional(v.number()) },
+    args: { service_secret: v.string(), user_id: v.id('users'), limit: v.optional(v.number()) },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const limit = clampOrganizationLimit(args.limit);
         const memberships = await ctx.db
             .query('org_members')
@@ -77,11 +97,13 @@ export const listByUser = query({
 
 export const addMember = mutation({
     args: {
+        service_secret: v.string(),
         org_id: v.id('organizations'),
         user_id: v.id('users'),
         role: v.union(v.literal('admin'), v.literal('member'), v.literal('viewer')),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const existing = await ctx.db
             .query('org_members')
             .withIndex('by_org_user', (q) =>
@@ -91,7 +113,9 @@ export const addMember = mutation({
         if (existing) throw new Error('User is already a member');
 
         return await ctx.db.insert('org_members', {
-            ...args,
+            org_id: args.org_id,
+            user_id: args.user_id,
+            role: args.role,
             joined_at: Date.now(),
         });
     },
@@ -99,10 +123,12 @@ export const addMember = mutation({
 
 export const removeMember = mutation({
     args: {
+        service_secret: v.string(),
         org_id: v.id('organizations'),
         user_id: v.id('users'),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const member = await ctx.db
             .query('org_members')
             .withIndex('by_org_user', (q) =>
@@ -117,11 +143,13 @@ export const removeMember = mutation({
 
 export const updateMemberRole = mutation({
     args: {
+        service_secret: v.string(),
         org_id: v.id('organizations'),
         user_id: v.id('users'),
         role: v.union(v.literal('admin'), v.literal('member'), v.literal('viewer')),
     },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const member = await ctx.db
             .query('org_members')
             .withIndex('by_org_user', (q) =>
@@ -135,8 +163,13 @@ export const updateMemberRole = mutation({
 });
 
 export const getMembers = query({
-    args: { org_id: v.id('organizations'), limit: v.optional(v.number()) },
+    args: {
+        service_secret: v.string(),
+        org_id: v.id('organizations'),
+        limit: v.optional(v.number()),
+    },
     handler: async (ctx, args) => {
+        requireServiceSecret(args.service_secret);
         const limit = clampMemberLimit(args.limit);
         const members = await ctx.db
             .query('org_members')
