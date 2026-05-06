@@ -11,6 +11,7 @@ type FidesSdk = {
 
 export type GovernanceSignaturePayload = {
     args: unknown;
+    parent_hash?: string | null;
     result?: unknown;
     reversibility_class: string;
     status: string;
@@ -54,6 +55,7 @@ export async function signGovernanceCommit(payload: GovernanceSignaturePayload) 
     const signer = await getSigner();
     const canonicalPayload = canonicalJson({
         args: payload.args,
+        parent_hash: payload.parent_hash ?? null,
         result: payload.result,
         reversibility_class: payload.reversibility_class,
         status: payload.status,

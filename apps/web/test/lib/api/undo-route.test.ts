@@ -27,12 +27,13 @@ vi.mock('@/lib/governance/fides', () => ({
 }));
 
 vi.mock('../../../../convex/_generated/api', () => ({
-    api: {
-        commits: {
-            getCurrentUserByHash: 'commits.getCurrentUserByHash',
-            getCurrentUserReversalForHash: 'commits.getCurrentUserReversalForHash',
-            listCurrentUserAfterTimestamp: 'commits.listCurrentUserAfterTimestamp',
-        },
+        api: {
+            commits: {
+                getCurrentUserByHash: 'commits.getCurrentUserByHash',
+                getCurrentUserReversalForHash: 'commits.getCurrentUserReversalForHash',
+                listCurrentUserAfterTimestamp: 'commits.listCurrentUserAfterTimestamp',
+                listByUser: 'commits.listByUser',
+            },
         governance: {
             signAndCommit: 'governance.signAndCommit',
         },
@@ -122,7 +123,8 @@ describe('undo API route authorization', () => {
                 snapshot_id: 'snap-1',
                 target_path: '/tmp/x',
                 prior_content: 'before',
-            });
+            })
+            .mockResolvedValueOnce([{ hash: 'parent-commit-1' }]);
         vi.stubGlobal(
             'fetch',
             vi.fn(async (input: string | URL | Request) => {
@@ -154,6 +156,7 @@ describe('undo API route authorization', () => {
         expect(convexMutation.mock.calls[0]?.[1]).toMatchObject({
             service_secret: 'convex-service-secret',
             user_id: 'user-1',
+            expected_parent_hash: 'parent-commit-1',
             tool_name: 'revert_file-write',
             args: { reverted_hash: 'commit-1', strategy: 'snapshot_restore' },
             status: 'executed',

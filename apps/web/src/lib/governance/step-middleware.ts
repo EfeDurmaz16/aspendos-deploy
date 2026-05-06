@@ -116,6 +116,15 @@ interface PendingCommit {
     metadata: ToolGovernanceMetadata;
 }
 
+async function getLatestCommitHash(convex: AnyConvexClient, userId: Id<'users'>) {
+    const [latestCommit] = await (convex as any).query(api.commits.listByUser, {
+        service_secret: getConvexServiceSecret(),
+        user_id: userId,
+        limit: 1,
+    });
+    return latestCommit?.hash ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Default metadata for unknown tools (fail-closed)
 // ---------------------------------------------------------------------------
@@ -185,8 +194,10 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
             rollbackDeadline = new Date(rollbackStrategy.deadline).getTime();
         }
 
+        const parentHash = await getLatestCommitHash(convex, userId);
         const signature = await signGovernanceCommit({
             args: toolArgs,
+            parent_hash: parentHash,
             reversibility_class: meta.reversibility_class,
             status: 'pending',
             tool_name: toolName,
@@ -196,6 +207,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
         const result = await (convex as any).mutation(api.governance.signAndCommit, {
             service_secret: getConvexServiceSecret(),
             user_id: userId,
+            expected_parent_hash: parentHash,
             tool_name: toolName,
             args: toolArgs,
             reversibility_class: meta.reversibility_class,
@@ -243,6 +255,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
                 prior_commit_hash: pending.commitHash,
                 outcome: 'tool_result',
             },
+            parent_hash: pending.commitHash,
             result,
             reversibility_class: pending.metadata.reversibility_class,
             status: success ? 'executed' : 'failed',
@@ -252,6 +265,7 @@ export function createGovernanceCallbacks(options: GovernanceOptions) {
         await (convex as any).mutation(api.governance.signAndCommit, {
             service_secret: getConvexServiceSecret(),
             user_id: userId,
+            expected_parent_hash: pending.commitHash,
             tool_name: pending.toolName,
             args: {
                 prior_commit_hash: pending.commitHash,

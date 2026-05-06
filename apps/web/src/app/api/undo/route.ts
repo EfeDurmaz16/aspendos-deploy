@@ -322,8 +322,15 @@ async function appendRevertCommit(
         reverted_hash: commit.hash,
         strategy: reversal.strategy,
     };
+    const [latestCommit] = await convex.query(api.commits.listByUser, {
+        service_secret: getConvexServiceSecret(),
+        user_id: commit.user_id as any,
+        limit: 1,
+    });
+    const parentHash = latestCommit?.hash ?? null;
     const signature = await signGovernanceCommit({
         args,
+        parent_hash: parentHash,
         result: reversal.result,
         reversibility_class: 'undoable',
         status: 'executed',
@@ -333,6 +340,7 @@ async function appendRevertCommit(
     await convex.mutation(api.governance.signAndCommit, {
         service_secret: getConvexServiceSecret(),
         user_id: commit.user_id as any,
+        expected_parent_hash: parentHash,
         tool_name: `revert_${commit.tool_name}`,
         args,
         status: 'executed',
